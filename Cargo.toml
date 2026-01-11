@@ -389,7 +389,6 @@ use_self = "allow"
 unwrap_used = "allow"
 unwrap_in_result = "allow"
 todo = "allow"
-indexing_slicing = "allow"
 
 ##
 ## Complexity
