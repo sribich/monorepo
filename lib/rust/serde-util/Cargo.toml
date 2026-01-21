@@ -1,0 +1,19 @@
+[package]
+name = "serde-util"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+serde = { workspace = true, features = ["derive"] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
