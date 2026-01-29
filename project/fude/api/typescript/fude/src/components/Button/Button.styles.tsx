@@ -31,21 +31,15 @@ export const buttonStyles = makeStyles({
                 pointerEvents: "none",
                 opacity: 0.5,
             },
+            ":is([data-pressed])": {
+                transform: "scale(0.97)",
+            },
         },
         spin: {
             animation: "spin 1.5s linear infinite",
             animationName: spin,
         },
     }),
-    modifiers: {
-        pressed: create({
-            button: {
-                ":is([data-pressed])": {
-                    transform: "scale(0.97)",
-                },
-            },
-        }),
-    },
     conditions: {
         inGroup: create({}),
         iconOnly: create({}),

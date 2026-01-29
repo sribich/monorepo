@@ -79,7 +79,7 @@ export const Button = (_props: Button.Props): ReactElement => {
     })
 
     const styleProps = styles.button(
-        styles.button.pressed,
+        transitionStyles.color,
         focusStyles,
         componentSize[size],
         stylexColorVariants[variant][color],
@@ -134,7 +134,6 @@ export const DelegateButton = (props: Button.Props) => {
 
     const styleProps = styles.button(
         transitionStyles.color,
-        styles.button.pressed,
         focusStyles,
         stylexColorVariants[variant][color],
     )
