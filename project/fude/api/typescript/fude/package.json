@@ -12,32 +12,24 @@
   "exports": {
     ".": {
       "import": {
-        "pix": "./src/index.ts",
         "development": "./src/index.ts",
         "types": "./dist/esm/index.d.ts",
         "default": "./dist/esm/index.js"
       },
       "require": {
-        "pix": "./src/index.ts",
         "development": "./src/index.ts",
         "types": "./dist/cjs/index.d.ts",
         "default": "./dist/cjs/index.js"
       },
       "default": {
-        "pix": "./src/index.ts",
         "development": "./src/index.ts",
         "types": "./dist/esm/index.d.ts",
         "default": "./dist/esm/index.js"
       }
     },
-    "./styles.css": {
-      "default": {
-        "default": "./dist/esm/index.css"
-      }
-    },
     "./reset.css": {
       "default": {
-        "default": "./dist/reset.css"
+        "default": "./dist/esm/reset.css"
       }
     }
   },
