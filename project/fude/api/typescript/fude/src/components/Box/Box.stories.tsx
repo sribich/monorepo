@@ -1,9 +1,10 @@
+import { Settings } from "lucide-react"
+
 import preview from "@/preview"
 
+import { Button } from "../Button/Button"
 import { Card, CardBody, CardHeader } from "../Card/Card"
 import { Box } from "./Box"
-import { Button } from "../Button/Button"
-import { Settings } from "lucide-react"
 
 const meta = preview.meta({
     component: Box,

@@ -1,14 +1,14 @@
 import { PersonStanding } from "lucide-react"
+
 import preview from "@/preview"
+
 import { stylesToArgTypes } from "../../theme/props.js"
-import { Button, ButtonGroup } from "./Button.js"
-import { buttonStyles } from "./Button.styles.js"
+import { Button, ButtonGroup } from "./Button"
+import { buttonStyles } from "./Button.stylex"
 
 const meta = preview.meta({
     component: Button,
-    argTypes: {
-        ...stylesToArgTypes(buttonStyles),
-    },
+    ...stylesToArgTypes(buttonStyles),
 })
 
 export const Size = meta.story((props) => (

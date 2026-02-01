@@ -3,6 +3,7 @@ import { borderWidth } from "@sribich/fude-theme/vars/borderWidth.stylex"
 import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
 import { newSpacing } from "@sribich/fude-theme/vars/spacing.stylex"
 import { create, keyframes } from "@stylexjs/stylex"
+
 import { stylexColorVariants } from "../../theme/atomics/color.js"
 import { makeStyles } from "../../theme/props.js"
 
@@ -314,26 +315,22 @@ export const buttonStyles = makeStyles({
                         },
                     }),
                     sm: create({
-                            button: {
+                        button: {
                             height: newSpacing["32"],
                             width: newSpacing["32"],
-                        }
-                    ,
+                        },
                     }),
                     md: create({
-                            button: {
+                        button: {
                             height: newSpacing["40"],
                             width: newSpacing["40"],
-                        }
-                    ,
+                        },
                     }),
                     lg: create({
-
                         button: {
                             height: newSpacing["48"],
                             width: newSpacing["48"],
-                        }
-                    ,
+                        },
                     }),
                 },
             },
