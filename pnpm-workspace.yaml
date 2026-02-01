@@ -1,3 +1,6 @@
 packages:
   - app/*
   - lib/typescript/*
+  - project/*/api/typescript/*
+  - project/*/bin/*
+  - project/*/lib/typescript/*

@@ -60,7 +60,7 @@
 
         cargo-audit
         cargo-deny
-        cargo-geiger
+        # cargo-geiger
         cargo-outdated
         cargo-insta
         cargo-hack
@@ -87,7 +87,7 @@
         alsa-lib
         lld
         binutils
-        mold-wrapped
+        mold
         mpv
         # Needed to build whisper
         gcc13
@@ -95,7 +95,10 @@
         libclang
         cmake
         ffmpeg_7-full
+
+        playwright-driver.browsers
       ]);
+
       buildInputs = with pkgs; [
         curl
         wget
@@ -162,6 +165,11 @@
           export WEBKIT_DISABLE_DMABUF_RENDERER=1
 
           export MOON_TOOLCHAIN_FORCE_GLOBALS=true
+
+
+          export PLAYWRIGHT_BROWSERS_PATH=${pkgs.playwright-driver.browsers}
+          export PLAYWRIGHT_SKIP_VALIDATE_HOST_REQUIREMENTS=true
+          export PLAYWRIGHT_HOST_PLATFORM_OVERRIDE="ubuntu-24.04"
         '';
     }
   );
