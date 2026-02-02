@@ -25,7 +25,6 @@ import { buttonGroupStyles, buttonStyles } from "./Button.stylex.js"
 //==============================================================================
 // ButtonGroup
 //==============================================================================
-const ButtonGroupContext = createNewControlledContext<Button.Props, Button.RefType>()
 
 export namespace ButtonGroup {
     export interface Props extends VariantProps<typeof buttonStyles> {
@@ -39,11 +38,16 @@ export const ButtonGroup = (props: ButtonGroup.Props) => {
     const { styles } = useStyles(buttonGroupStyles, {})
 
     return (
-        <ButtonGroupContext value={restProps}>
+        <ButtonContext value={restProps}>
             <div {...mergeProps(styles.container(), parentMarker)}>{props.children}</div>
-        </ButtonGroupContext>
+        </ButtonContext>
     )
 }
+
+//==============================================================================
+// Button Utils
+//==============================================================================
+const ButtonContext = createNewControlledContext<Button.Props, Button.RefType>()
 
 //==============================================================================
 // Button
@@ -63,7 +67,7 @@ export namespace Button {
 }
 
 export const Button = (_props: Button.Props): ReactElement => {
-    const [props, ref] = ButtonGroupContext.useContext(_props)
+    const [props, ref] = ButtonContext.useContext(_props)
 
     const formContext = use(FormContext)
 
@@ -76,7 +80,7 @@ export const Button = (_props: Button.Props): ReactElement => {
     } = useStyles(buttonStyles, {
         ...formContext,
         ...props,
-        inGroup: ButtonGroupContext.isProvided(),
+        inGroup: ButtonContext.isProvided(),
     })
 
     const styleProps = styles.button(

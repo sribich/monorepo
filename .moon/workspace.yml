@@ -4,6 +4,7 @@ projects:
   - "."
   - "app/*"
   - "lib/*/*"
+  - "project/*/api/*/*"
   - "project/*/bin/*"
   - "project/*/lib/*/*"
 

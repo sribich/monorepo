@@ -12,5 +12,7 @@
     "./tsc/web/app": "./src/tsc/web/app.json",
     "./tsc/web/lib": "./src/tsc/web/lib.json"
   },
-  "files": ["src"]
+  "files": [
+    "src"
+  ]
 }

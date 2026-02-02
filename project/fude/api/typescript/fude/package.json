@@ -33,7 +33,9 @@
       }
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "@internationalized/date": "3.10.1",
     "@internationalized/number": "3.6.5",
@@ -69,16 +71,16 @@
     "@jest/globals": "30.2.0",
     "@sribich/config-typescript": "0.0.0",
     "@sribich/tsbuild": "0.0.0",
-    "@storybook/react-vite": "10.2.1",
+    "@storybook/react-vite": "10.2.3",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
     "@testing-library/user-event": "14.6.1",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.2",
-    "jsdom": "26.0.0",
+    "jsdom": "27.4.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "storybook": "10.2.1",
+    "storybook": "10.2.3",
     "tailwindcss": "4.1.18",
     "typescript": "5.9.3",
     "vite-plugin-stylex-dev": "0.8.0",

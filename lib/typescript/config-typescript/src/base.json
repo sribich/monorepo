@@ -32,7 +32,7 @@
     "declaration": false,
     "importHelpers": true,
     "noEmitOnError": true,
-    "isolatedModules": true,
+    // "isolatedModules": true,
     "verbatimModuleSyntax": true,
     "removeComments": true,
     "sourceMap": false,

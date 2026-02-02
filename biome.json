@@ -9,7 +9,26 @@
     ],
     "ignoreUnknown": true
   },
-  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "assist": {
+    "actions": {
+      "source": {
+        "organizeImports": {
+          "level": "on",
+          "options": {
+            "groups": [
+              ":NODE:",
+              ":BLANK_LINE:",
+              ":PACKAGE:",
+              ":BLANK_LINE:",
+              ":ALIAS:",
+              ":BLANK_LINE:",
+              ":PATH:"
+            ]
+          }
+        }
+      }
+    }
+  },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
