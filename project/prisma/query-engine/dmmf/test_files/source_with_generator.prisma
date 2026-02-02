@@ -1,0 +1,14 @@
+generator js {
+  provider      = "javascript"
+  output        = "./client"
+  extra_config  = "test"
+}
+
+generator foo {
+  provider = "bar"
+}
+
+model Author {
+  id        Int      @id
+  name      String?
+}

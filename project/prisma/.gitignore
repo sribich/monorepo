@@ -1,0 +1,64 @@
+.env
+apps/cli/prisma
+
+db/*
+!.placeholder
+.DS_Store
+current_connector
+prisma-gpg-private.asc
+.test_config
+*.pending-snap
+.pending.md
+dev.db
+
+*.class
+*.log
+.coursier
+.ivy2
+
+# Idea
+.iml
+.idea
+.idea_modules
+
+# test files
+/schema
+/request.json
+/docker.env
+/docker-compose.tests.yml
+
+# VSCode specific
+.vscode/
+
+# Zed editor configuration
+.zed/
+
+# Nix specific
+.direnv/
+/.envrc.local
+nixos.qcow2
+
+# Dev setup
+datamodel_v2.prisma
+dev_datamodel.prisma
+.tmp/
+/target/
+/target-alternatives/
+/result
+
+dmmf.json
+graph.dot
+
+package-lock.json
+
+# Useful for local wasm32-* development
+.cargo/
+
+# Folder with GraphViz representation of query graphs.
+.query_graphs
+
+# Python
+*.pyo
+*.pyc
+__pycache__
+.venv

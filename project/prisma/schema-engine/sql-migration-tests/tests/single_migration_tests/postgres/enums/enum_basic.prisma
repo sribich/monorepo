@@ -1,0 +1,28 @@
+// tags=postgres
+
+datasource pg {
+    provider = "postgresql"
+    url = "dummy-url"
+}
+
+model Test {
+    id String @id @default(cuid())
+    enum MyEnum
+}
+
+enum MyEnum {
+    A
+    B
+}
+
+// Expected Migration:
+// -- CreateEnum
+// CREATE TYPE "MyEnum" AS ENUM ('A', 'B');
+// 
+// -- CreateTable
+// CREATE TABLE "Test" (
+//     "id" TEXT NOT NULL,
+//     "enum" "MyEnum" NOT NULL,
+// 
+//     CONSTRAINT "Test_pkey" PRIMARY KEY ("id")
+// );

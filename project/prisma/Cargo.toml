@@ -1,0 +1,268 @@
+[workspace]
+members = [
+    "apps/*",
+    "schema-engine/core",
+    "schema-engine/connectors/*",
+    "schema-engine/datamodel-renderer",
+    "schema-engine/json-rpc-api",
+    "schema-engine/sql-migration-tests",
+    "schema-engine/sql-introspection-tests",
+    "schema-engine/sql-schema-describer",
+    "query-engine/connectors/*",
+    "query-engine/connector-test-kit-rs/qe-setup",
+    "query-engine/connector-test-kit-rs/query-engine-tests",
+    "query-engine/connector-test-kit-rs/query-test-macros",
+    "query-engine/connector-test-kit-rs/query-tests-setup",
+    "query-engine/core",
+    "query-engine/core-tests",
+    "query-engine/black-box-tests",
+    "query-engine/dmmf",
+    "query-engine/query-structure",
+    "query-engine/query-engine",
+    "query-engine/request-handlers",
+    "query-engine/schema",
+    "query-engine/query-builders/*",
+    "lib/*",
+    "psl/*",
+    "quaint",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.0.0"
+authors = []
+edition = "2024"
+publish = false
+
+[workspace.dependencies]
+generator = { path = "./lib/generator" }
+generator-runtime = { path = "./lib/generator-runtime" }
+generator-shared = { path = "./lib/generator-shared" }
+
+quaint = { path = "./quaint", default-features = false }
+prisma-fmt.path = "./apps/fmt"
+
+build-utils.path = "./lib/build-utils"
+crosstarget-utils.path = "./lib/crosstarget-utils"
+panic-utils.path = "./lib/panic-utils"
+prisma-metrics.path = "./lib/metrics"
+prisma-value.path = "./lib/prisma-value"
+telemetry.path = "./lib/telemetry"
+user-facing-errors.path = "./lib/user-facing-errors"
+user-facing-error-macros.path = "./lib/user-facing-error-macros"
+test-setup.path = "./lib/test-setup"
+test-macros.path = "./lib/test-macros"
+query-engine-common.path = "./lib/query-engine-common"
+sql-ddl.path = "./lib/sql-ddl"
+query-template.path = "./lib/query-template"
+
+psl.path = "./psl/psl"
+psl-core.path = "./psl/psl-core"
+diagnostics.path = "./psl/diagnostics"
+psl-ast.path = "./psl/psl-ast"
+parser-database.path = "./psl/parser-database"
+
+query-engine.path = "./query-engine/query-engine"
+query-core.path = "./query-engine/core"
+schema.path = "./query-engine/schema"
+query-structure.path = "./query-engine/query-structure"
+query-connector.path = "./query-engine/connectors/query-connector"
+query-builder.path = "./query-engine/query-builders/query-builder"
+sql-query-builder.path = "./query-engine/query-builders/sql-query-builder"
+dmmf.path = "./query-engine/dmmf"
+request-handlers = { path = "./query-engine/request-handlers", default-features = false }
+sql-query-connector = { path = "./query-engine/connectors/sql-query-connector", default-features = false }
+
+schema-core.path = "./schema-engine/core"
+datamodel-renderer.path = "./schema-engine/datamodel-renderer"
+schema-connector.path = "./schema-engine/connectors/schema-connector"
+sql-schema-connector.path = "./schema-engine/connectors/sql-schema-connector"
+sql-schema-describer.path = "./schema-engine/sql-schema-describer"
+
+psl-schema = { path = "./psl/psl-schema" }
+
+
+################################################################################
+## Third-Party Dependencies
+################################################################################
+railgun_error = { workspace = true }
+railgun_error_derive = { workspace = true }
+
+ahash = "0.8.11"
+anyhow = "1"
+arboard = "3.4.1"
+async-trait = "0.1.83"
+barrel = { git = "https://github.com/prisma/barrel.git", branch = "mssql-support" }
+base64 = "0.22"
+bigdecimal = "0.3"
+bitflags = "2"
+bit-vec = "0.6"
+bon = "3"
+byteorder = "1.5.0"
+bytes = "1"
+cfg_aliases = "0.2"
+cfg-if = "1"
+chrono = "0.4.39"
+clap = "4.5.4"
+codspeed-criterion-compat = "1"
+colored = "3"
+concat-idents = "1"
+connection-string = "0.2"
+convert_case = "0.8.0"
+crossbeam-channel = "0.5"
+cruet = "0.15"
+cuid = { git = "https://github.com/prisma/cuid-rust", branch = "v1.3.3-wasm32-unknown-unknown" }
+darling = "0.23.0"
+derive_more = "0.99"
+deunicode = "1.6.2"
+dissimilar = "1"
+dotenvy = "0.15.7"
+either = "1"
+enumflags2 = "0.7"
+env_logger = "0.11"
+expect-test = "1.5.0"
+flate2 = "1"
+futures = "0.3"
+futures-util = "0.3.31"
+getrandom = "0.2"
+gix = "0.74.1"
+graphql-parser = { git = "https://github.com/prisma/graphql-parser" }
+hashbrown = "0.16"
+heck = "0.5.0"
+hex = "0.4"
+hyper = "0.14"
+include_dir = "0.7.3"
+indexmap = "2"
+indoc = "2"
+insta = "1"
+itertools = "0.14.0"
+log = "0.4"
+lru = "0.7"
+lru-cache = "0.1"
+lsp-types = "0.95"
+metrics = "0.23.0"
+metrics-util = "0.17.0"
+metrics-exporter-prometheus = { version = "0.15.3", default-features = false }
+mobc = "0.8"
+mysql_async = { git = "https://github.com/prisma/mysql_async", branch = "vendored-openssl" }
+names = { version = "0.11", default-features = false }
+nanoid = "0.4"
+native-tls = "0.2"
+nom = "7"
+num_cpus = "1"
+parking_lot = "0.12.3"
+parse-hyperlinks = "0.23"
+paste = "1"
+pathdiff = "0.2.3"
+percent-encoding = "2"
+pest = "2"
+pest_derive = "2"
+petgraph = "0.8"
+pin-project = "1"
+postgres-native-tls = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
+postgres-types = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
+pretty_assertions = "1"
+prettyplease = "0.2.17"
+proc-macro2 = "1.0.78"
+proc-macro-crate = "3.1.0"
+proc-macro-error2 = "2.0.1"
+quote = "1.0.35"
+rand = "0.9.0"
+rayon = "1.8.1"
+regex = "1.10.4"
+reqwest = { version = "0.12.4", features = ["json"] }
+rustc-hash = { version = "2.1.1" }
+rusqlite = "0.32"
+semver = "1.0.23"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = { version = "1.0.107", features = ["float_roundtrip", "preserve_order", "raw_value"] }
+serde_path_to_error = "0.1.16"
+serde-value = "0.7.0"
+sha2 = "0.10.8"
+similar = "2"
+smallvec = "1"
+strip-ansi-escapes = "0.1"
+structopt = "0.3"
+sqlformat = "0.2"
+sqlparser = "0.32"
+sqlx-core = "0.8"
+sqlx-sqlite = "0.8"
+syn = { version = "2.0.60", features = ["full"] }
+tempfile = "3.10.1"
+thiserror = "2.0.12"
+tokio = "1.36.0"
+tokio-postgres = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
+tokio-tungstenite = "0.26"
+tokio-util = "0.7.11"
+toml = "0.8"
+tracing = "0.1.40"
+tracing-error = "0.2"
+tracing-futures = "0.2"
+tracing-subscriber = "0.3.18"
+tracing-test = "0.2"
+ulid = "1"
+url = "2.5.0"
+urlencoding = "2.1.3"
+uuid = { version = "1.10.0", features = ["v4", "v7"] }
+versions = "6"
+
+################################################################################
+## Test Profile
+################################################################################
+[profile.test]
+
+################################################################################
+## Dev Profile
+################################################################################
+[profile.dev]
+# Enable basic optimizations for _our_ code. This additionally fixes some
+# issues with LeakSanitizer not detecting memory leaks in unoptimized builds.
+opt-level = 1
+debug = false
+strip = false
+
+[profile.dev.package."*"]
+# Fully optimize dependencies so that development performance is not bottlenecked
+# by external factors.
+opt-level = 3
+
+################################################################################
+## Release Profile
+################################################################################
+[profile.release]
+# Enable link-time optimization, eliminates more code and inlines across crate boundaries.
+lto = "fat"
+
+# codegen-units of 1 gives best optimization, but disables parallel building.
+codegen-units = 1
+
+# The default optimization level is 3 for release mode builds.
+# 0 means disable optimization and is the default for debug mode buids.
+# (Setting opt-level=1 for debug builds is a good way of speeding them up a bit.)
+# "s" means optimize for size, "z" reduces size even more.
+opt-level = 3
+
+# Includes debug information in release builds. Necessary for profiling. Does not
+# slow down the executable.
+debug = true
+
+# https://doc.rust-lang.org/rustc/codegen-options/index.html#strip
+strip = "symbols"
+
+################################################################################
+## Clippy
+################################################################################
+[workspace.lints.rust]
+non_exhaustive_omitted_patterns = "allow"
+unsafe_code = "deny"
+
+[workspace.lints.clippy]
+cargo       = { level = "deny", priority = -1 }
+complexity  = { level = "deny", priority = -1 }
+correctness = { level = "deny", priority = -1 }
+nursery     = { level = "deny", priority = -1 }
+pedantic    = { level = "deny", priority = -1 }
+perf        = { level = "deny", priority = -1 }
+restriction = { level = "deny", priority = -1 }
+style       = { level = "deny", priority = -1 }
+suspicious  = { level = "deny", priority = -1 }

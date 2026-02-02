@@ -1,0 +1,33 @@
+[package]
+name = "schema-connector"
+version = "0.1.0"
+edition.workspace = true
+
+[features]
+postgresql = ["psl/postgresql", "quaint/postgresql"]
+postgresql-native = ["postgresql", "quaint/postgresql-native", "quaint/pooled"]
+sqlite = ["psl/sqlite", "quaint/sqlite"]
+sqlite-native = ["sqlite", "quaint/sqlite-native", "quaint/pooled", "quaint/expose-drivers"]
+mysql = ["psl/mysql", "quaint/mysql"]
+mysql-native = ["mysql", "quaint/mysql-native", "quaint/pooled"]
+all-native = [
+    "postgresql-native",
+    "sqlite-native",
+    "mysql-native",
+]
+
+[dependencies]
+psl.workspace = true
+quaint.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+user-facing-errors = { workspace = true, features = [
+    "quaint",
+] }
+
+chrono.workspace = true
+enumflags2.workspace = true
+json-rpc = { path = "../../json-rpc-api", package = "json-rpc-api" }
+sha2.workspace = true
+tracing.workspace = true
+tracing-error.workspace = true

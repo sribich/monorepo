@@ -1,0 +1,53 @@
+[package]
+name = "generator"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+diagnostics.workspace = true
+dmmf.workspace = true
+psl.workspace = true # features = ["postgresql", "sqlite"] }
+query-core.workspace = true
+query-structure.workspace = true
+request-handlers.workspace = true # features = ["sql", "sqlite-native", "postgresql-native"] }
+schema-core.workspace = true# , features = ["postgresql", "sqlite"] }
+user-facing-errors.workspace = true
+generator-shared.workspace = true
+
+railgun_error = { workspace = true }
+railgun_error_derive = { workspace = true }
+
+tracing = { workspace = true }
+convert_case = { workspace = true }
+include_dir = { workspace = true }
+
+thiserror = { workspace = true }
+
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde-value = { workspace = true }
+serde_path_to_error = { workspace = true }
+
+futures-util = { workspace = true }
+
+quote = { workspace = true }
+syn = { workspace = true, features = ["full"] }
+proc-macro2 = { workspace = true }
+
+chrono = { workspace = true }
+bigdecimal = { workspace = true, features = ["serde"] }
+tempfile = { workspace = true }
+
+tokio = { workspace = true, features = ["full"] }
+# dotenvy = { workspace = true }
+prettyplease = { workspace = true }
+uuid = { workspace = true, features = ["v7"] }

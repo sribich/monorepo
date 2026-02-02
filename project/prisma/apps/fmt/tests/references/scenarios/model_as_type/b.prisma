@@ -1,0 +1,5 @@
+model Post {
+  id       Int    @id
+  authorId String
+  UserTwo  User<|>Two[]
+}

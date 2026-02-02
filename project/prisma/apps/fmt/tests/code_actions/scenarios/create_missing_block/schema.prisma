@@ -1,0 +1,13 @@
+generator client {
+    provider = "prisma-client"
+}
+
+datasource db {
+    provider = "postgres"
+    url      = env("DATABASE_URL")
+}
+
+model Kattbjorn {
+    id     String @id
+    friend Animal
+}

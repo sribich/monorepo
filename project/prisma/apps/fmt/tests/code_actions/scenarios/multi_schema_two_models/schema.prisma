@@ -1,0 +1,20 @@
+generator client {
+    provider        = "prisma-client"
+    previewFeatures = []
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = "dummy-url"
+    schemas  = ["one", "two"]
+}
+
+model User {
+    id Int @id
+}
+
+model Post {
+    id Int @id
+
+    @@schema("two")
+}

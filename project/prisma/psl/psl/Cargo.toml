@@ -1,0 +1,22 @@
+[package]
+name = "psl"
+version = "0.1.0"
+edition.workspace = true
+
+[features]
+postgresql = ["psl-core/postgresql"]
+sqlite = ["psl-core/sqlite"]
+mysql = ["psl-core/mysql"]
+all = ["postgresql", "sqlite", "mysql",]
+
+[dependencies]
+psl-schema.workspace = true
+psl-core.workspace = true
+
+
+[dev-dependencies]
+base64.workspace = true
+dissimilar.workspace = true
+expect-test.workspace = true
+indoc.workspace = true
+either.workspace = true

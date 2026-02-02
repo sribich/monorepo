@@ -1,0 +1,43 @@
+[package]
+name = "prisma"
+version = "0.0.0"
+edition = "2024"
+
+[dependencies]
+prisma-fmt.workspace = true
+psl.workspace = true
+psl-ast.workspace = true
+psl-schema.workspace = true
+schema-core.workspace = true
+dmmf.workspace = true
+generator.workspace = true
+
+
+colored.workspace = true
+indoc.workspace = true
+deunicode.workspace = true
+
+dotenv = { version = "0.15.0" }
+
+
+tokio = { workspace = true, features = ["full"] }
+
+thiserror = "1.0.37"
+anyhow = "1.0.65"
+
+clap = { version = "4.0.9", features = ["cargo", "derive"] }
+clap-verbosity-flag = "2.0.1"
+
+serde = { version = "1.0.145", features = ["derive"] }
+serde_json = "1.0.107"
+
+cmd_lib = "1.3.0"
+fork = "0.1.22"
+
+tracing = "0.1.37"
+tracing-subscriber = { version = "0.3.17", features = ["fmt", "json", "time", "env-filter"] }
+tracing-error = "0.2.1"
+url = "2.5.7"
+
+[build-dependencies]
+build-utils.workspace = true

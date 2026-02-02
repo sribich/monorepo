@@ -1,0 +1,15 @@
+generator client {
+  provider        = "prisma-client"
+  previewFeatures = ["views"]
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+enum Pet {
+  Cat
+  Dog
+  Redpanda
+}

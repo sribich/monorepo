@@ -1,0 +1,15 @@
+generator js {
+    provider = "prisma-client"
+}
+
+datasource db {
+    provider = "postgres"
+    url      = env("DATABASE_URL")
+}
+
+/// enum doc
+enum Pet {
+    /// Redpandas are super cute.
+    RedP<|>anda
+    Cat
+}
