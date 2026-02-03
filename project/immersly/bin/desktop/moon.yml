@@ -1,0 +1,60 @@
+language: rust
+
+tasks:
+  cargo:
+    command: cargo
+
+  time:
+    command: cargo build --timings --release
+    local: true
+
+  build:
+    command: cargo -Zcodegen-backend build -vv
+    env:
+      CARGO_PROFILE_DEV_CODEGEN_BACKEND: "cranelift"
+      RUST_LOG: "debug"
+      CC_ENABLE_DEBUG_OUTPUT: "1"
+    local: true
+  run:
+    command: cargo watch -x run --ignore generated/client.ts # -x test -x run
+    # command: bacon run
+    # deps:
+    #   - prelearning-ui:dev
+    env:
+      GTK_IM_MODULE: ""
+      XMODIFIERS: ""
+      # RUSTFLAGS: "-Zcodegen-backend=cranelift"
+      # CARGO_PROFILE_DEV_CODEGEN_BACKEND: "cranelift"
+    options:
+      envFile: "/.env"
+    local: true
+  dev:
+    command: cargo run
+
+  coverage:
+    command: cargo test
+    env:
+      RUSTFLAGS: "-Cinstrument-coverage"
+      RUSTDOCFLAGS: "-Cinstrument-coverage"
+      LLVM_PROFILE_FILE: "sribich-%p-%m.profraw"
+
+  #  test:
+  #    command: cargo nextest run
+
+  # https://github.com/mozilla/grcov?tab=readme-ov-file#alternative-reports
+  coverage_report:
+    command: grcov . -s . --binary-path ../../../../target/debug -t html --branch --ignore-not-existing -o ../../../../target/coverage
+
+  lint:
+    command: cargo clippy
+
+  format:
+    command: cargo fmt --check
+
+  audit:
+    command: cargo audit
+  # deny:
+  # command: cargo deny
+
+  expand:
+    command: cargo expand

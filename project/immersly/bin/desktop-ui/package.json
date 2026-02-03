@@ -1,0 +1,27 @@
+{
+  "name": "desktop-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "dependencies": {
+    "@arktype/util": "0.56.0",
+    "@sribich/fude": "0.0.0",
+    "@sribich/fude-theme": "0.0.0",
+    "@stylexjs/stylex": "0.17.5",
+    "@tanstack/react-query": "5.90.20",
+    "@tanstack/react-router": "1.157.18",
+    "@tanstack/router-devtools": "1.157.18",
+    "@total-typescript/ts-reset": "0.6.1",
+    "arktype": "2.1.29",
+    "lucide-react": "0.563.0",
+    "react": "19.2.4",
+    "react-aria": "3.45.0",
+    "react-dom": "19.2.4",
+    "react-use": "17.6.0"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "typescript": "5.9.3"
+  }
+}

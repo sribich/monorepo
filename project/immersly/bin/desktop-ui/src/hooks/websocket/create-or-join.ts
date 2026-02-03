@@ -1,0 +1,102 @@
+import type { RefObject } from "react"
+import { sharedWebSockets } from "./globals"
+import type { Options, SendMessage, Subscriber } from "./types"
+import { ReadyState } from "./constants"
+import { attachListeners } from "./attach-listener"
+import { attachSharedListeners } from "./attach-shared-listeners"
+import { addSubscriber, removeSubscriber, hasSubscribers } from "./manage-subscribers"
+
+//TODO ensure that all onClose callbacks are called
+
+const cleanSubscribers = (
+    url: string,
+    subscriber: Subscriber,
+    optionsRef: RefObject<Options>,
+    setReadyState: (readyState: ReadyState) => void,
+    clearSocketIoPingInterval: (() => void) | null,
+) => {
+    return () => {
+        removeSubscriber(url, subscriber)
+        if (!hasSubscribers(url)) {
+            try {
+                const socketLike = sharedWebSockets[url]
+                if (socketLike instanceof WebSocket) {
+                    socketLike.onclose = (event: WebSocketEventMap["close"]) => {
+                        if (optionsRef.current.onClose) {
+                            optionsRef.current.onClose(event)
+                        }
+                        setReadyState(ReadyState.CLOSED)
+                    }
+                }
+                socketLike.close()
+            } catch (e) {}
+            if (clearSocketIoPingInterval) clearSocketIoPingInterval()
+
+            delete sharedWebSockets[url]
+        }
+    }
+}
+
+export const createOrJoinSocket = (
+    webSocketRef: RefObject<WebSocket | null>,
+    url: string,
+    setReadyState: (readyState: ReadyState) => void,
+    optionsRef: RefObject<Options>,
+    startRef: RefObject<() => void>,
+    reconnectCount: RefObject<number>,
+    sendMessage: SendMessage,
+): (() => void) => {
+    if (optionsRef.current.share) {
+        let clearSocketIoPingInterval: (() => void) | null = null
+        if (sharedWebSockets[url] === undefined) {
+            sharedWebSockets[url] = new WebSocket(url, optionsRef.current.protocols)
+            webSocketRef.current = sharedWebSockets[url]
+            setReadyState(ReadyState.CONNECTING)
+            clearSocketIoPingInterval = attachSharedListeners(
+                sharedWebSockets[url],
+                url,
+                optionsRef,
+                sendMessage,
+            )
+        } else {
+            webSocketRef.current = sharedWebSockets[url]
+            setReadyState(sharedWebSockets[url].readyState)
+        }
+
+        const subscriber: Subscriber = {
+            setReadyState,
+            optionsRef,
+            reconnectCount,
+            reconnect: startRef,
+        }
+
+        addSubscriber(url, subscriber)
+
+        return cleanSubscribers(
+            url,
+            subscriber,
+            optionsRef,
+            setReadyState,
+            clearSocketIoPingInterval,
+        )
+    }
+
+    webSocketRef.current = new WebSocket(url, optionsRef.current.protocols)
+
+    setReadyState(ReadyState.CONNECTING)
+
+    if (!webSocketRef.current) {
+        throw new Error("WebSocket failed to be created")
+    }
+
+    return attachListeners(
+        webSocketRef.current,
+        {
+            setReadyState,
+        },
+        optionsRef,
+        startRef.current,
+        reconnectCount,
+        sendMessage,
+    )
+}

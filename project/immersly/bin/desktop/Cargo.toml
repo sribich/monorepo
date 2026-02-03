@@ -1,0 +1,110 @@
+[package]
+name = "desktop"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+path = "src/main.rs"
+name = "prelearning"
+
+[build-dependencies]
+
+[dependencies]
+features = { path = "../../lib/rust/features" }
+
+railgun = { workspace = true }
+railgun_api = { workspace = true, features = ["json"] }
+railgun_di = { workspace = true }
+
+sha256-util = { workspace = true }
+srs_bridge_anki = { workspace = true }
+
+forvo = { workspace = true }
+epub = { workspace = true }
+
+dictionary_parser = { workspace = true }
+
+typegen_typescript = { workspace = true }
+lexorank = { workspace = true }
+srs = { workspace = true }
+
+language_pack = { workspace = true }
+language_pack_jp = { workspace = true }
+transcription = { workspace = true }
+
+generator-runtime = { workspace = true }
+prisma-client = { path = "../../lib/rust/prisma-client" }
+
+
+itertools = { workspace = true }
+# foundations = { workspace = true }
+futures-util = { workspace = true }
+zip = { workspace = true }
+serde_path_to_error = { workspace = true }
+serde-untagged = { workspace = true }
+
+typegen = { workspace = true, features = ["axum"] }
+rpc = { workspace = true }
+
+hex = { workspace = true }
+async-trait = { workspace = true }
+base64 = { workspace = true }
+difflib = { workspace = true }
+rustc-hash = { workspace = true }
+rayon = { workspace = true }
+
+mecab = { workspace = true }
+mime = { workspace = true }
+rand = { workspace = true }
+
+
+tokio-stream = { workspace = true }
+color-eyre = { workspace = true }
+thiserror = {workspace = true }
+dirs = { workspace = true }
+chrono = { workspace = true }
+urlencoding = { workspace = true }
+axum = { workspace = true, features = ["tokio", "json", "ws", "macros", "multipart"] }
+axum-extra = { workspace = true, features = ["typed-header"] }
+bincode = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+tokio-util = { workspace = true }
+tower-http = { workspace = true, features = ["cors", "fs"] }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+fsrs = { workspace = true }
+rfd = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter", "registry"] }
+tracing-log = { workspace = true }
+reqwest = { workspace = true }
+once_cell = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
+opentelemetry = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+axum-tracing-opentelemetry = { workspace = true }
+opentelemetry-semantic-conventions = { workspace = true }
+sha2 = { workspace = true }
+uuid = { workspace = true, features = ["v7"] }
+
+
+ffmpeg-sidecar = { workspace = true }
+
+# For S3
+# cpal = { workspace = true }
+# dasp = { workspace = true, features = ["signal", "interpolate", "interpolate-linear", "ring_buffer"] }
+# aws-config = { version = "1.5.5", features = ["behavior-version-latest"] }
+# aws-sdk-s3 = "1.47.0"
+# whisper-rs = { workspace = true, features = ["cuda"] }
+# tracing-opentelemetry 0.23.0
+
+[features]
+
+[lints]
+workspace = true
