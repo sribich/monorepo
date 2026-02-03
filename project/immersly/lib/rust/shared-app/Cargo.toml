@@ -1,0 +1,18 @@
+[package]
+name = "shared-app"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared-domain = { path = "../shared-domain" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

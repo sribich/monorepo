@@ -1,0 +1,22 @@
+[package]
+name = "statistics"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+statistics-app = { path = "../statistics-app" }
+statistics-infra = { path = "../statistics-infra" }
+
+railgun = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

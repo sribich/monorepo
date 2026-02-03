@@ -1,0 +1,39 @@
+# yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
+language: typescript
+tags:
+  - prisma
+
+tasks:
+  run:
+    command: prisma
+
+  migrate:
+    command: prisma migrate dev
+    options:
+      interactive: true
+
+  generate:
+    command: prisma generate
+    outputs:
+      - dist
+    toolchain: system
+    options:
+      cache: false
+      shell: true
+  build:
+    command: noop
+    deps:
+      - generate
+  dev:
+    command: prisma studio --port 5555
+    deps:
+      - generate
+    local: true
+
+  cmd:
+    command: prisma
+    options:
+      envFile: /.env
+
+  expand:
+    command: cargo expand

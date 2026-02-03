@@ -1,0 +1,22 @@
+[package]
+name = "shared-domain"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+railgun = { workspace = true }
+typegen = { workspace = true, features = ["uuid"] }
+
+serde = { workspace = true }
+uuid = { workspace = true, features = ["v7"] }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

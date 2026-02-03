@@ -1,0 +1,12 @@
+model Setting {
+
+    id Bytes @id
+
+    name        String
+    kind        String
+    value       String
+    constraints String?
+
+    @@unique(fields: [name], map: "setting_name_unique")
+    @@map(name: "setting")
+}

@@ -1,0 +1,19 @@
+[package]
+name = "statistics-app"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+statistics-domain = { path = "../statistics-domain" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,22 @@
+[package]
+name = "features"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+statistics = { path = "../statistics" }
+
+hex.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+
+[lints]
+workspace = true

@@ -1,0 +1,19 @@
+[package]
+name = "prisma-client"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+generator-runtime = { workspace = true }
+typegen = { workspace = true, features = ["chrono"] }
+
+serde = { workspace = true, features = ["derive"] }
+
+[lints]
+workspace = true

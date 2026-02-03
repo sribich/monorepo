@@ -1,0 +1,304 @@
+///////////////////////////////
+/// Data Mappings           ///
+///-------------------------///
+/// Prisma -> SQLite        ///
+///-------------------------///
+/// String    TEXT          ///
+/// Boolean   BOOLEAN       ///
+/// Int	      INTEGER       ///
+/// BigInt    INTEGER       ///
+/// Float     REAL          ///
+/// Decimal   DECIMAL       ///
+/// DateTime  NUMERIC       ///
+/// Json      Not supported ///
+/// Bytes     BLOB          ///
+///////////////////////////////
+datasource db {
+    provider = "sqlite"
+    url      = "file:./dist/dev.db"
+}
+
+generator client {
+    provider = "rust"
+    output   = "./src/generated"
+
+    client_format = "folder"
+}
+
+model DataMigration {
+    id Int @id @default(autoincrement())
+
+    name        String
+    executed_at DateTime @default(now())
+
+    @@unique(fields: [name], map: "data_migration_name_uniq")
+    @@map(name: "data_migration")
+}
+
+model Media {
+    id Bytes @id
+
+    title String
+    kind  String
+
+    image_resource_id Bytes?
+    image_resource    Resource? @relation(fields: [image_resource_id], references: [id])
+
+    //====================================
+    // Reverse Relations
+    //====================================
+    Progress Progress?
+
+    //====================================
+    // Indexes
+    //====================================
+    @@unique(fields: [title], map: "library_title_uniq")
+}
+
+model Book {
+    id Bytes @id
+
+    title String?
+
+    path String
+
+    //====================================
+    //
+    //====================================
+    rendered_path       String
+    rendered_audio_path String?
+
+    image_resource_id Bytes?
+    image_resource    Resource? @relation(name: "image", fields: [image_resource_id], references: [id])
+
+    //====================================
+    // Relations
+    //====================================
+    audio_resource_id Bytes?
+    audio_resource    Resource? @relation(name: "audio", fields: [audio_resource_id], references: [id])
+
+    //====================================
+    // Reverse Relations
+    //====================================
+    progress BookProgress?
+}
+
+model BookProgress {
+    id Bytes @id
+
+    timestamp BigInt
+
+    //====================================
+    // Relations
+    //====================================
+    book_id Bytes @unique
+    book    Book  @relation(fields: [book_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model TimestampedBook {
+    id Int @id @default(autoincrement()) // @virtualType(Ruid)
+
+    audio_path String
+
+    parsed_audio_path String?
+    parsed_book_path  String?
+    final_book_path   String?
+
+    //====================================
+    // Reverse Relations
+    //====================================
+    // book_id Int  @unique
+    // book    Book @relation(fields: [book_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model Progress {
+    id Bytes @id
+
+    timestamp BigInt
+
+    //====================================
+    // Relations
+    //====================================
+    media_id Bytes @unique
+    media    Media @relation(fields: [media_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model Pronunciation {
+    id Bytes @id
+
+    word    String
+    reading String?
+
+    name String
+    sex  String
+
+    language String
+
+    resource_id Bytes    @unique
+    Resource    Resource @relation(fields: [resource_id], references: [id])
+
+    @@index(fields: [word])
+}
+
+model Resource {
+    id Bytes @id
+
+    state String
+
+    kind String
+
+    hash String
+    path String
+
+    mime_type String
+
+    // TODO(sr): I should make reverse relations optional.
+    BookAudio     Book[]         @relation("audio")
+    BookImage     Book[]         @relation("image")
+    CardA         Card[]         @relation("reading")
+    CardB         Card[]         @relation("sentence")
+    CardC         Card[]         @relation("image")
+    Pronunciation Pronunciation?
+    Media         Media[]
+}
+
+model Card {
+    id Bytes @id
+
+    state String
+    step  Int?
+
+    due         BigInt
+    last_review BigInt?
+
+    word String
+
+    reading          String
+    reading_audio_id Bytes?
+    reading_audio    Resource? @relation(name: "reading", fields: [reading_audio_id], references: [id])
+
+    sentence          String
+    sentence_audio_id Bytes?
+    sentence_audio    Resource? @relation(name: "sentence", fields: [sentence_audio_id], references: [id])
+
+    image_id Bytes?
+    image    Resource? @relation(name: "image", fields: [image_id], references: [id])
+
+    stability  Float?
+    difficulty Float?
+
+    reviews CardReview[]
+}
+
+model CardReview {
+    id Bytes @id
+
+    date   BigInt
+    rating Int
+
+    card_id Bytes
+    card    Card  @relation(fields: [card_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+}
+
+model Dictionary {
+    id Bytes @id
+
+    title String
+
+    /// values: "mono", "bi"
+    language_type String
+
+    /// The types of data that the dictionary contains. Stored as a comma
+    /// separated list with no whitespace.
+    kinds String
+
+    file_path String
+    data_path String
+
+    /// The LexoRank rank.
+    rank String
+
+    //====================================
+    // Reverse Relations
+    //====================================
+    words       Word[]
+    frequencies Frequency[]
+    accents     PitchAccent[]
+
+    @@index(fields: [rank(sort: Asc)])
+}
+
+model Word {
+    id Bytes @id
+
+    word       String
+    reading    String
+    definition String
+
+    //====================================
+    // Relations
+    //====================================
+    dictionary_id Bytes
+    dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    //====================================
+    // Indexes
+    //====================================
+    @@index(fields: [word])
+    @@index(fields: [reading])
+}
+
+model Frequency {
+    id Bytes @id
+
+    word      String
+    reading   String
+    frequency Int
+    display   String?
+
+    //====================================
+    // Relations
+    //====================================
+    dictionary_id Bytes
+    dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    //====================================
+    // Indexes
+    //====================================
+    @@index(fields: [word])
+    @@index(fields: [reading])
+}
+
+model PitchAccent {
+    id Bytes @id
+
+    word     String
+    reading  String
+    position Int
+
+    //====================================
+    // Relations
+    //====================================
+    dictionary_id Bytes
+    dictionary    Dictionary @relation(fields: [dictionary_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+    //====================================
+    // Indexes
+    //====================================
+    @@index(fields: [word])
+    @@index(fields: [reading])
+}
+
+// TODO(sr): Duplicate models is not throwing
+// model Setting {
+//   @@map(name: "setting")
+//
+//   id     Bytes    @id
+//
+//   name        String
+//   kind        String
+//   value       String
+//   constraints String?
+//
+//   @@unique(fields: [name], map: "setting_name_unique")
+// }
