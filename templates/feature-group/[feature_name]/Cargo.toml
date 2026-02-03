@@ -1,0 +1,20 @@
+[package]
+name = "{{ feature_name }}"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+{{ feature_name }}-app = { path = "../{{ feature_name }}-app" }
+{{ feature_name }}-infra = { path = "../{{ feature_name }}-infra" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
