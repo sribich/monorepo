@@ -1,0 +1,10 @@
+{
+  "extends": ["@sribich/config-typescript/tsc/node24/lib"],
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": false,
+    "checkJs": false,
+    "isolatedDeclarations": true
+  },
+  "include": ["src/**/*"]
+}

@@ -1,0 +1,102 @@
+{
+  "name": "@sribich/tsbuild",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sribich/monorepo.git",
+    "directory": "apps/tsbuild"
+  },
+  "bin": {
+    "tsbuild": "dist/cli.js"
+  },
+  "type": "module",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "./api": {
+      "import": {
+        "types": "./dist/api.d.ts",
+        "default": "./dist/api.js"
+      },
+      "default": {
+        "types": "./dist/api.d.ts",
+        "default": "./dist/api.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "dependencies": {
+    "@arktype/schema": "0.56.0",
+    "@babel/core": "7.29.0",
+    "@babel/plugin-syntax-jsx": "7.28.6",
+    "@babel/plugin-syntax-typescript": "7.28.6",
+    "@babel/preset-typescript": "7.28.5",
+    "@hono/node-server": "1.19.9",
+    "@hono/node-ws": "1.3.0",
+    "@stylexjs/babel-plugin": "0.17.5",
+    "@stylexjs/unplugin": "0.17.5",
+    "@swc/core": "1.15.11",
+    "@tanstack/router-generator": "1.157.18",
+    "@total-typescript/ts-reset": "0.6.1",
+    "@types/react-refresh": "0.14.7",
+    "arktype": "2.1.29",
+    "autoprefixer": "10.4.24",
+    "babel-plugin-react-compiler": "19.0.0-beta-27714ef-20250124",
+    "chalk": "5.6.2",
+    "chokidar": "5.0.0",
+    "cmd-ts": "0.14.3",
+    "consola": "3.4.2",
+    "esbuild": "0.27.2",
+    "find-up": "8.0.0",
+    "glob": "13.0.0",
+    "hono": "4.11.7",
+    "is-glob": "4.0.3",
+    "js-yaml": "4.1.1",
+    "knip": "5.82.1",
+    "less": "4.5.1",
+    "mime": "4.1.0",
+    "oxc-transform": "0.111.0",
+    "parse5": "8.0.0",
+    "picomatch": "4.0.3",
+    "pidtree": "0.6.0",
+    "postcss": "8.5.6",
+    "ramda": "0.32.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-refresh": "0.18.0",
+    "rolldown": "1.0.0-rc.2",
+    "semver": "7.7.3",
+    "send": "1.2.1",
+    "tailwindcss": "4.1.18",
+    "tempy": "3.1.2",
+    "ts-toolbelt": "9.6.0",
+    "typescript": "5.9.3"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@types/babel__core": "7.20.5",
+    "@types/is-glob": "4.0.4",
+    "@types/js-yaml": "4.0.9",
+    "@types/less": "3.0.8",
+    "@types/node": "24.10.9",
+    "@types/picomatch": "4.0.2",
+    "@types/ramda": "0.31.1",
+    "@types/semver": "7.7.1",
+    "@types/send": "1.2.1",
+    "vitest": "4.0.18"
+  }
+}

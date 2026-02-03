@@ -1,0 +1,25 @@
+[package]
+name = "mpv_plugin"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+
+[dependencies]
+railgun_error = { workspace = true }
+tracing = { workspace = true }
+
+arboard = { workspace = true }
+axum = { workspace = true }
+mpv-client = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
+
+[lints]
+workspace = true

@@ -1,0 +1,40 @@
+# yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
+language: typescript
+
+workspace:
+  inheritedTasks:
+    include: []
+
+tasks:
+  run:
+    command: npm exec tsbuild
+    deps:
+      - build
+
+  build:
+    command: tsc
+    inputs:
+      - src/**/*
+    outputs:
+      - dist
+    options:
+      mergeArgs: replace
+      mergeDeps: replace
+      mergeInputs: replace
+
+  dev:
+    command: noop
+    options:
+      mergeArgs: replace
+      mergeDeps: replace
+      mergeInputs: replace
+
+  biome:
+    command: biome
+    # -- check . --apply --colors=force
+    # -- format .
+    # -- format . --write
+    # -- lint .
+    # -- lint . --apply
+    # -- lint . --apply-unsafe
+    # -- ci .
