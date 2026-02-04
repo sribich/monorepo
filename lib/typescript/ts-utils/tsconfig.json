@@ -1,0 +1,5 @@
+{
+  "extends": ["@sribich/config-typescript/bundler/node24/lib"],
+  "compilerOptions": {},
+  "include": ["src/**/*"]
+}
