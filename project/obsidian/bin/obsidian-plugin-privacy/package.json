@@ -1,0 +1,14 @@
+{
+  "name": "@basalt/obsidian-plugin-privacy",
+  "version": "0.0.0",
+  "dependencies": {
+    "@basalt/obsidian-logger": "0.0.0",
+    "electron": "30.0.9",
+    "obsidian": "1.5.7-1"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "@total-typescript/ts-reset": "0.5.1"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "name": "@basalt/obsidian-logger",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "default": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": ["dist"],
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "typescript": "5.6.0-beta"
+  }
+}

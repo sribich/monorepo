@@ -1,0 +1,9 @@
+{
+  "id": "basalt-keymaps",
+  "name": "Basalt Keymaps Plugin",
+  "version": "1.0.0",
+  "author": "sribich",
+  "description": "Provides alternative keymaps for use within obsidian.",
+  "minAppVersion": "0.15.0",
+  "isDesktopOnly": false
+}

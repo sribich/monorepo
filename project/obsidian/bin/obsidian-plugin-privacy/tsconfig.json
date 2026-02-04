@@ -1,0 +1,5 @@
+{
+  "extends": ["@sribich/config-typescript/bundler/web/app"],
+  "compilerOptions": {},
+  "include": ["src/**/*"]
+}

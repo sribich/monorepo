@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
+language: typescript
+
+tasks:
+  link:
+    command: ln -sf $(pwd)/dist '$(bash -c "echo $OBSIDIAN_PLUGIN_DIR/$(basename $(pwd))")'
+    options:
+      cache: false
+      envFile: "/.env"
+    platform: system
+
+  test:
+    args:
+      - "--watch"
+tags:
+  - obsidian

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "tables": {
+    "#test": {
+      "properties": [],
+      "views": [],
+      "templates": {
+        "options": []
+      }
+    }
+  }
+}

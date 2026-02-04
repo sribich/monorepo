@@ -1,0 +1,9 @@
+{
+  "id": "basalt-datatables",
+  "name": "Basalt Datatables Plugin",
+  "version": "1.0.0",
+  "author": "sribich",
+  "description": "Provides notion-like datatable support to obsidian.",
+  "minAppVersion": "0.15.0",
+  "isDesktopOnly": false
+}

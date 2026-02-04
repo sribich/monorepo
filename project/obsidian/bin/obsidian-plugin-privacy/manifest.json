@@ -1,0 +1,9 @@
+{
+  "id": "basalt-offline",
+  "name": "Basalt Offline Plugin",
+  "version": "0.0.0",
+  "author": "sribich",
+  "description": "Exits obsidian if a network connection is made.",
+  "minAppVersion": "0.15.0",
+  "isDesktopOnly": false
+}

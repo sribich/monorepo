@@ -1,0 +1,13 @@
+{
+  "name": "@basalt/obsidian-keymaps-plugin",
+  "version": "0.0.0",
+  "dependencies": {
+    "obsidian": "1.5.7-1",
+    "typescript-parsec": "0.3.4"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "@total-typescript/ts-reset": "0.5.1"
+  }
+}
