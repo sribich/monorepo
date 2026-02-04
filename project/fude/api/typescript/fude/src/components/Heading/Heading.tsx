@@ -17,7 +17,7 @@ const [useHeadingContext, HeadingProvider] = createControlledContext<
 >()
 export { HeadingProvider }
 
-export const HeadingOld = (_props: HeadingProps) => {
+export const Heading = (_props: HeadingProps) => {
     const [props, ref] = useHeadingContext(_props)
 
     const HeadingTag = `h${props.level ?? 2}` as ElementType

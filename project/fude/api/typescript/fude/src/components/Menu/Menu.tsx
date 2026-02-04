@@ -2,12 +2,14 @@ import { mergeProps, useObjectRef } from "@react-aria/utils"
 import { createContext, type ReactNode, type RefObject, use } from "react"
 import type { Key } from "react-aria"
 import {
+    createLeafComponent,
     type MenuItemProps,
     type MenuProps,
     type MenuTriggerProps,
     Menu as RacMenu,
     MenuItem as RacMenuItem,
     MenuTrigger as RacMenuTrigger,
+    MenuSection as AriaMenuSection,
 } from "react-aria-components"
 import {
     type Node,
@@ -33,6 +35,7 @@ import {
 import { MultiProvider } from "../../utils/context"
 import type { NamedStyleSlots } from "../../utils/props"
 import { MenuStyleContext, menuStyles } from "./Menu.styles"
+import { CollectionNode } from "@react-aria/collections"
 
 //==============================================================================
 // Menu Support
@@ -140,63 +143,60 @@ export const Menu = <T extends object>(props: Menu.Props<T>) => {
     )
 }
 
-// //==============================================================================
-// // MenuSection
-// //==============================================================================
-// export namespace MenuSection {
-//     export interface Props<T> extends NamedStyleSlots<"section"> {
-//         item: Node<T>
-//         children?: ReactNode
-//     }
-// }
-//
-// const MenuSection = createCollectionComponent(
-//     "section",
-//     <T extends object>(props: MenuSection.Props<T>, node: Node<MenuSection.Props<T>>) => {
-//         const state = MenuState.useContext()
-//
-//         const headingRef = useRef(undefined)
-//         const { headingProps, groupProps } = useMenuSection({})
-//
-//         const { CollectionNode } = useContext(CollectionRenderer)
-//
-//         /*
-//         const { styles } = useMenuStyles()
-//         const children = useCachedChildren({
-//             items: state.collection.getChildren?.(props.item.key) ?? [],
-//             children: (item) => {
-//                 switch (item.type) {
-//                     case "item":
-//                         return <MenuItemView item={item} />
-//                     case "header":
-//                         // {props.item.rendered}
-//
-// //                         return (
-//                             <Header
-//                                 {...mergeProps(
-//                                     headingProps,
-//                                     props.item.props,
-//                                     styles.sectionHeader(),
-//                                 )}
-//                                 ref={mergeRefs(headingRef, props.item.props.ref)}
-//                             >
-//                                 {item.rendered}
-//                             </Header>
-//                         )
-//                     default:
-//                         throw new Error(`Unknown node type in MenuSection: ${item.type}`)
-//                 }
-//             },
-//         })
-//         */
-//
-//         return (
-//             <section {...groupProps}>
-//                 <CollectionNode collection={state.collection} parent={node} />
-//             </section>
-//         )
-//     },
-// )
+//==============================================================================
+// MenuSection
+//==============================================================================
+export namespace MenuSection {
+    export interface Props extends NamedStyleSlots<"section"> {
+        item: Node<T>
+        children?: ReactNode
+    }
+}
+
+export const MenuSection = (props: MenuSection.Props) => {
+    // const state = MenuState.useContext()
+    // const headingRef = useRef(undefined)
+    // const { headingProps, groupProps } = useMenuSection({})
+    // const { CollectionNode } = useContext(CollectionRenderer)
+
+    /*
+        const { styles } = useMenuStyles()
+        const children = useCachedChildren({
+            items: state.collection.getChildren?.(props.item.key) ?? [],
+            children: (item) => {
+                switch (item.type) {
+                    case "item":
+                        return <MenuItemView item={item} />
+                    case "header":
+                        // {props.item.rendered}
+//                         return (
+                            <Header
+                                {...mergeProps(
+                                    headingProps,
+                                    props.item.props,
+                                    styles.sectionHeader(),
+                                )}
+                                ref={mergeRefs(headingRef, props.item.props.ref)}
+                            >
+                                {item.rendered}
+                            </Header>
+                        )
+                    default:
+                        throw new Error(`Unknown node type in MenuSection: ${item.type}`)
+                }
+            },
+        })
+        */
+
+    return <AriaMenuSection></AriaMenuSection>
+
+    // return (
+    //
+    //     <section {/*...groupProps*/}>
+    //         <CollectionNode collection={state.collection} parent={node} />
+    //     </section>
+    // )
+}
 
 //==============================================================================
 // MenuItem

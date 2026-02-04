@@ -10,19 +10,19 @@ import { headingLevels, typographyStyles } from "./Typography.stylex"
 //==============================================================================
 // Heading
 //==============================================================================
-export const [useHeadingContext, HeadingProvider] = createControlledContext<
-    Heading.Props,
-    HTMLHeadingElement
->()
+// export const [useHeadingContext, HeadingProvider] = createControlledContext<
+//     TypographyHeading.Props,
+//     HTMLHeadingElement
+// >()
 
-export namespace Heading {
+export namespace TypographyHeading {
     export interface Props extends StyleProps, Omit<VariantProps<typeof typographyStyles>, "size"> {
         children: ReactNode
         level: 1 | 2 | 3 | 4 | 5 | 6
     }
 }
 
-export const Heading = (props: Heading.Props) => {
+export const TypographyHeading = (props: TypographyHeading.Props) => {
     const Component = `h${props.level ?? 2}` as ElementType
 
     const styleProps = useStyleProps(props, {})
