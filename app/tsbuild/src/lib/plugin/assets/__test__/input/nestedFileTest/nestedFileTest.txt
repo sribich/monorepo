@@ -1,0 +1,1 @@
+Test that a nested file is put into the output directory without nesting.

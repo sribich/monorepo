@@ -41,7 +41,10 @@ export class RolldownBackend extends Backend {
             // external: config.build.externals
             //     ? (id: string) => config.build.externals!.some((it) => id.indexOf(it) >= 0)
             //     : UNSET_TYPE_CHECK,
-            external: UNSET_TYPE_CHECK,
+            external: (id: string) => {
+                console.log(id)
+                return false
+            }, // config.externals ?? [],
             resolve: {
                 // TODO: Fix this
                 conditionNames: ["development"],

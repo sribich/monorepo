@@ -17,9 +17,8 @@ const removeTypeCheckedFields = <T extends object>(obj: T) => {
     ) as TypeCheckObjectFilter<T>
 }
 
-type Require<T> = T extends Record<string, any>
-    ? { [K in keyof T]-?: T[K] | typeof UNSET_TYPE_CHECK }
-    : never
+type Require<T> =
+    T extends Record<string, any> ? { [K in keyof T]-?: T[K] | typeof UNSET_TYPE_CHECK } : never
 
 export const ESM_REQUIRE_SHIM = `
 await (async () => {
@@ -155,7 +154,7 @@ export const getDefaultOptions = (
          *
          * @see https://esbuild.github.io/api/#external
          */
-        external: UNSET_TYPE_CHECK,
+        external: config.externals ?? [],
         /** @see https://esbuild.github.io/api/#main-fields */
         mainFields: (config.mainFields as string[]) ?? UNSET_TYPE_CHECK,
         /** @see https://esbuild.github.io/api/#node-paths */

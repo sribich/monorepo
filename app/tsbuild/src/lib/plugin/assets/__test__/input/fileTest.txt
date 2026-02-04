@@ -1,0 +1,1 @@
+Test that a file is put into the output directory.
