@@ -1,0 +1,11 @@
+tasks:
+  dev:
+    command: astro dev
+  build:
+    command: astro build
+    deps:
+      - check
+  check:
+    command: astro check
+  preview:
+    command: astro preview
