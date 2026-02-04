@@ -76,7 +76,7 @@ export class RolldownBackend extends Backend {
             },
             moduleTypes: UNSET_TYPE_CHECK,
             experimental: {
-                resolveNewUrlToAsset: false,
+                resolveNewUrlToAsset: true,
                 devMode: false, // devMode starts a hmr server
             },
             define: UNSET_TYPE_CHECK,

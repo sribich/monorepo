@@ -2,6 +2,7 @@ import { join, resolve } from "node:path"
 import esbuild from "esbuild"
 import type { BuildOptions } from "esbuild"
 import type { RunnerContext } from "../../context/runner.js"
+import { workerPlugin } from "../../plugin/worker/worker.plugin.js"
 
 /**
  * TODO: We're gathering entrypoints twice. We should create a global
@@ -28,7 +29,7 @@ export const gatherEntrypoints = async (
                 name: "tsbuild:gather-entrypoints",
                 setup(build) {
                     build.onResolve({ filter: /.*/ }, (args) => {
-                        if (!args.path.startsWith(".") && !initialEntrypoints.includes(args.path)) {
+                        if ((!args.path.startsWith(".") && !initialEntrypoints.includes(args.path)) || args.path.includes(".worker")) {
                             return { external: true }
                         }
                         return

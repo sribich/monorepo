@@ -33,6 +33,7 @@ export class PluginContext extends Context {
         realList.push(servePlugin)
 
         const pluginPromises = realList.map((plugin) => plugin(this.context))
+
         const plugins = await Promise.all(pluginPromises)
 
         this.plugins = plugins.filter(Boolean)

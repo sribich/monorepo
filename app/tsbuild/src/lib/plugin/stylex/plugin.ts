@@ -25,15 +25,18 @@ export const stylexPlugin = (): Plugin => {
         const buildContext = context.build
         const outputDirectory = buildContext.outputDirectory
 
-        return {
-            // @ts-expect-error
-            rolldown: stylex.rolldown({
+        const config = {
                 debug: true,
                 // dev: true,
                 // runtimeInjection: true,
                 treeshakeCompensation: true,
                 styleResolution: "application-order",
-            }),
+            }
+        return {
+            // @ts-expect-error
+            rolldown: stylex.rolldown(config),
+            // @ts-expect-error
+            esbuild: stylex.esbuild(config)
         }
 
         // @ts-expect-error TS7027
