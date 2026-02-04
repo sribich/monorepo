@@ -1,0 +1,42 @@
+{
+  "name": "@sribich/fude-storybook",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "@sribich/fude": "0.0.0",
+    "@sribich/fude-storybook-components": "0.0.0",
+    "@sribich/fude-theme": "0.0.0",
+    "@storybook/addon-a11y": "10.2.3",
+    "@storybook/addon-docs": "10.2.3",
+    "@storybook/addon-themes": "10.2.3",
+    "@storybook/addon-vitest": "10.2.3",
+    "@storybook/react-vite": "10.2.3",
+    "@stylexjs/dev-runtime": "0.11.1",
+    "@stylexjs/stylex": "0.17.5",
+    "@stylexjs/unplugin": "0.17.5",
+    "@tailwindcss/vite": "4.1.18",
+    "@vitejs/plugin-react": "5.1.2",
+    "@vitest/browser-playwright": "4.0.18",
+    "babel-plugin-react-compiler": "19.0.0-beta-27714ef-20250124",
+    "chromatic": "13.3.5",
+    "lucide-react": "0.563.0",
+    "playwright": "1.57.0",
+    "prop-types": "15.8.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-refresh": "0.18.0",
+    "storybook": "10.2.3",
+    "tailwindcss": "4.1.18",
+    "vite": "npm:rolldown-vite@latest",
+    "vitest": "4.0.18"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "esbuild": "0.27.2"
+  },
+  "onlyBuiltDependencies": [
+    "playwright"
+  ],
+  "minimumReleaseAge": 1440
+}

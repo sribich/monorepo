@@ -1,0 +1,7 @@
+{
+  "extends": ["@sribich/config-typescript/bundler/web/lib"],
+  "compilerOptions": {
+    "baseUrl": "."
+  },
+  "include": ["src/**/*"]
+}

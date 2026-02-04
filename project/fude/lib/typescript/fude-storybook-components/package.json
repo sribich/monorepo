@@ -1,0 +1,61 @@
+{
+  "name": "@sribich/fude-storybook-components",
+  "version": "0.0.0",
+  "publishConfig": {
+    "access": "restricted",
+    "registry": "https://npm.pkg.github.com"
+  },
+  "type": "module",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      },
+      "require": {
+        "types": "./dist/cjs/index.d.ts",
+        "default": "./dist/cjs/index.js"
+      },
+      "default": {
+        "types": "./dist/esm/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./styles.css": {
+      "default": {
+        "default": "./dist/styles.css"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@sribich/fude": "0.0.0",
+    "@sribich/fude-theme": "0.0.0",
+    "@sribich/ts-utils": "0.0.0",
+    "@stylexjs/stylex": "0.17.5",
+    "lucide-react": "0.563.0",
+    "tslib": "2.8.1"
+  },
+  "devDependencies": {
+    "@sribich/config-typescript": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "typescript": "5.9.3"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@sribich/eslint-config"
+    ]
+  }
+}

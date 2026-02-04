@@ -1,0 +1,115 @@
+import { Table } from "lucide-react"
+
+import { Tab, Tabs } from "../Tabs"
+import * as TabsStories from "./Tabs.stories"
+
+<Meta of={TabsStories} />
+
+# Tabs
+
+-   [Overview](#overview)
+-   [Props](#props)
+-   [Usage](#usage)
+-   [Variants](#variants)
+-   [Do's and don'ts](#dos-and-donts)
+-   [Use cases and examples](#use-cases-and-examples)
+-   [Related components](#related-components)
+
+## Overview
+
+<Canvas of={TabsStories.Overview} />
+
+## Props
+
+<Controls of={TabsStories.Overview} />
+
+## Usage
+
+<UsageGuidelines guidelines={["Foo"]} />
+
+<Tip>
+    Use tabs to navigate between different contents, if switching between states within the same
+    content use
+    <Link href="/?path=/docs/buttons-buttongroup--docs">
+        Button group
+    </Link>
+    instead
+</Tip>
+
+## Variants
+
+### Test
+
+### Other Test
+
+## Do's and Don'ts
+
+<ComponentRules
+    rules={[
+        {
+            positive: {
+                component: (
+                    <Tabs>
+                        <Tab icon={<Table />} title="Main Table">
+                            Main Table Panel
+                        </Tab>
+                        <Tab icon={<Table />} title="Chart">
+                            Chart Panel
+                        </Tab>
+                        <Tab icon={<Table />} title="Calendar">
+                            Calendar Panel
+                        </Tab>
+                    </Tabs>
+                ),
+                description:
+                    "Use either all text labels, all icon labels, or both, across all labels.",
+            },
+            negative: {
+                component: (
+                    <Tabs>
+                        <Tab>Main Table</Tab>
+                        <Tab icon={<Table />}> </Tab>
+                    </Tabs>
+                ),
+                description:
+                    "Don’t mix tabs that contain only text, with tabs that contain only icons. ",
+            },
+        },
+        {
+            positive: {
+                component: (
+                    <Tabs>
+                        <Tab icon={<Table />} title="Main Table">
+                            Main Table
+                        </Tab>
+                        <Tab icon={<Table />} title="Chart">
+                            Table
+                        </Tab>
+                        <Tab icon={<Table />} title="Calendar" iconSide="right">
+                            More
+                        </Tab>
+                    </Tabs>
+                ),
+                description:
+                    "When there are too many tabs to fit horizontally across the viewport, use a “More” dropdown.",
+            },
+            negative: {
+                component: (
+                    <Tabs>
+                        <Tab title="Calendar">Main...</Tab>
+                        <Tab title="Calendar">Table</Tab>
+                        <Tab title="Calendar">Time...</Tab>
+                        <Tab title="Calendar">Fir...</Tab>
+                    </Tabs>
+                ),
+                description: "Do not cut the tabs name just to make them fit horizontally.",
+            },
+        },
+    ]}
+/>
+
+## Use Cases and Examples
+
+## Related Components
+
+<RelatedComponents componentsNames={["button", "other"]} />
