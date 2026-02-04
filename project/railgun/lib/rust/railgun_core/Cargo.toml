@@ -1,0 +1,18 @@
+[package]
+name = "railgun_core"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+railgun_error = { workspace = true }
+
+const-str = { workspace = true }
+
+[lints]
+workspace = true

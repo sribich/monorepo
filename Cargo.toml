@@ -3,6 +3,38 @@ members = [
     "lib/rust/*",
     "project/*/bin/*",
     "project/*/lib/rust/*",
+
+
+
+    "project/prisma/apps/*",
+    "project/prisma/schema-engine/core",
+    "project/prisma/schema-engine/connectors/*",
+    "project/prisma/schema-engine/datamodel-renderer",
+    "project/prisma/schema-engine/json-rpc-api",
+    "project/prisma/schema-engine/sql-migration-tests",
+    "project/prisma/schema-engine/sql-introspection-tests",
+    "project/prisma/schema-engine/sql-schema-describer",
+    "project/prisma/query-engine/connectors/*",
+    "project/prisma/query-engine/connector-test-kit-rs/qe-setup",
+    "project/prisma/query-engine/connector-test-kit-rs/query-engine-tests",
+    "project/prisma/query-engine/connector-test-kit-rs/query-test-macros",
+    "project/prisma/query-engine/connector-test-kit-rs/query-tests-setup",
+    "project/prisma/query-engine/core",
+    "project/prisma/query-engine/core-tests",
+    "project/prisma/query-engine/black-box-tests",
+    "project/prisma/query-engine/dmmf",
+    "project/prisma/query-engine/query-structure",
+    "project/prisma/query-engine/query-engine",
+    "project/prisma/query-engine/request-handlers",
+    "project/prisma/query-engine/schema",
+    "project/prisma/query-engine/query-builders/*",
+    "project/prisma/psl/*",
+    "project/prisma/quaint",
+]
+exclude = [
+    "project/fude/bin/fude-storybook",
+    "project/immersly/bin/desktop-ui",
+    "project/railgun/bin/docs",
 ]
 resolver = "3"
 
@@ -10,7 +42,9 @@ resolver = "3"
 version = "0.0.0"
 authors = []
 edition = "2024"
+license = "MPL 2.0"
 publish = false
+repository = "https://github.com/sribich/language"
 
 [workspace.dependencies]
 dictionary_parser = { path = "./lib/rust/dictionary_parser" }
@@ -20,69 +54,98 @@ language_pack = { path = "./lib/rust/language_pack" }
 language_pack_jp = { path = "./lib/rust/language_pack_jp" }
 lexorank = { path = "./lib/rust/lexorank" }
 morphology = { path = "./lib/rust/morphology" }
-mpv_plugin = { path = "./lib/rust/mpv_plugin" }
+mpv_plugin = { path = "./app/mpv_plugin" }
 # pitch_detection = { path = "./lib/rust/pitch_detection" }
-prelearning-core = { path = "./lib/rust/prelearning-core" }
 # prisma = { path = "./lib/rust/prisma" }
 # prisma_derive = { path = "./lib/rust/prisma_derive" }
 serde-util = { path = "./lib/rust/serde-util" }
 
-sha256-utils = { path = "./lib/rust/sha256-utils" }
-srs = { path = "./lib/rust/srs" }
+sha256-util = { path = "./lib/rust/sha256-util" }
 srs_bridge_anki = { path = "./lib/rust/srs_bridge_anki" }
 subtitle = { path = "./lib/rust/subtitle" }
 transcription = { path = "./lib/rust/transcription" }
 uuid47 = { path = "./lib/rust/uuid47" }
 
-railgun = { path = "../railgun/lib/rust/railgun" }
-railgun_api = { path = "../railgun/lib/rust/railgun_api" }
-railgun_api_derive = { path = "../railgun/lib/rust/railgun_api_derive" }
-railgun_core = { path = "../railgun/lib/rust/railgun_core" }
-railgun_di = { path = "../railgun/lib/rust/railgun_di" }
-railgun_di_derive = { path = "../railgun/lib/rust/railgun_di_derive" }
-railgun_error = { path = "../railgun/lib/rust/railgun_error" }
-railgun_error_derive = { path = "../railgun/lib/rust/railgun_error_derive" }
-railgun_security = { path = "../railgun/lib/rust/railgun_security" }
-railgun_settings = { path = "../railgun/lib/rust/railgun_settings" }
-railgun_settings_derive = { path = "../railgun/lib/rust/railgun_settings_derive" }
-railgun_telemetry = { path = "../railgun/lib/rust/railgun_telemetry" }
-rpc = { path = "../railgun/lib/rust/rpc" }
-typegen = { path = "../railgun/lib/rust/typegen" }
-typegen_derive = { path = "../railgun/lib/rust/typegen_derive" }
-typegen_typescript = { path = "../railgun/lib/rust/typegen_typescript" }
+macro_util = { path = "./project/railgun/lib/rust/macro_util" }
+railgun = { path = "./project/railgun/lib/rust/railgun" }
+railgun_api = { path = "./project/railgun/lib/rust/railgun_api" }
+railgun_api_derive = { path = "./project/railgun/lib/rust/railgun_api_derive" }
+railgun_core = { path = "./project/railgun/lib/rust/railgun_core" }
+railgun_di = { path = "./project/railgun/lib/rust/railgun_di" }
+railgun_di_derive = { path = "./project/railgun/lib/rust/railgun_di_derive" }
+railgun_error = { path = "./project/railgun/lib/rust/railgun_error" }
+railgun_error_derive = { path = "./project/railgun/lib/rust/railgun_error_derive" }
+railgun_security = { path = "./project/railgun/lib/rust/railgun_security" }
+railgun_settings = { path = "./project/railgun/lib/rust/railgun_settings" }
+railgun_settings_derive = { path = "./project/railgun/lib/rust/railgun_settings_derive" }
+railgun_telemetry = { path = "./project/railgun/lib/rust/railgun_telemetry" }
+rpc = { path = "./project/railgun/lib/rust/rpc" }
+typegen = { path = "./project/railgun/lib/rust/typegen" }
+typegen_derive = { path = "./project/railgun/lib/rust/typegen_derive" }
+typegen_typescript = { path = "./project/railgun/lib/rust/typegen_typescript" }
 
-generator-runtime = { path = "../prisma/libs/generator-runtime" }
+#################################################################################
+## Prisma
+#################################################################################
+quaint = { path = "./project/prisma/quaint", default-features = false }
+prisma-fmt = { path = "./project/prisma/apps/fmt" }
 
-# -- Async
+build-utils = { path = "./project/prisma/lib/rust/build-utils" }
+crosstarget-utils = { path = "./project/prisma/lib/rust/crosstarget-utils" }
+panic-utils = { path = "./project/prisma/lib/rust/panic-utils" }
+prisma-metrics = { path = "./project/prisma/lib/rust/metrics" }
+prisma-value = { path = "./project/prisma/lib/rust/prisma-value" }
+telemetry = { path = "./project/prisma/lib/rust/telemetry" }
+user-facing-errors = { path = "./project/prisma/lib/rust/user-facing-errors" }
+user-facing-error-macros = { path = "./project/prisma/lib/rust/user-facing-error-macros" }
+test-setup = { path = "./project/prisma/lib/rust/test-setup" }
+test-macros = { path = "./project/prisma/lib/rust/test-macros" }
+query-engine-common = { path = "./project/prisma/lib/rust/query-engine-common" }
+sql-ddl = { path = "./project/prisma/lib/rust/sql-ddl" }
+query-template = { path = "./project/prisma/lib/rust/query-template" }
+
+psl = { path = "./project/prisma/psl/psl" }
+psl-core = { path = "./project/prisma/psl/psl-core" }
+diagnostics = { path = "./project/prisma/psl/diagnostics" }
+psl-ast = { path = "./project/prisma/psl/psl-ast" }
+parser-database = { path = "./project/prisma/psl/parser-database" }
+
+query-engine = { path = "./project/prisma/query-engine/query-engine" }
+query-core = { path = "./project/prisma/query-engine/core" }
+schema = { path = "./project/prisma/query-engine/schema" }
+query-structure = { path = "./project/prisma/query-engine/query-structure" }
+query-connector = { path = "./project/prisma/query-engine/connectors/query-connector" }
+query-builder = { path = "./project/prisma/query-engine/query-builders/query-builder" }
+sql-query-builder = { path = "./project/prisma/query-engine/query-builders/sql-query-builder" }
+dmmf = { path = "./project/prisma/query-engine/dmmf" }
+request-handlers = { path = "./project/prisma/query-engine/request-handlers", default-features = false }
+sql-query-connector = { path = "./project/prisma/query-engine/connectors/sql-query-connector", default-features = false }
+
+schema-core = { path = "./project/prisma/schema-engine/core" }
+datamodel-renderer = { path = "./project/prisma/schema-engine/datamodel-renderer" }
+schema-connector = { path = "./project/prisma/schema-engine/connectors/schema-connector" }
+sql-schema-connector = { path = "./project/prisma/schema-engine/connectors/sql-schema-connector" }
+sql-schema-describer = { path = "./project/prisma/schema-engine/sql-schema-describer" }
+
+psl-schema = { path = "./project/prisma/psl/psl-schema" }
+generator = { path = "./project/prisma/lib/rust/generator" }
+generator-runtime = { path = "./project/prisma/lib/rust/generator-runtime" }
+generator-shared = { path = "./project/prisma/lib/rust/generator-shared" }
+
+#################################################################################
+## Dependencies
+#################################################################################
+ahash = "0.8.11"
+anyhow = "1"
+arbitrary = "1.2.0"
+arboard = "3.4.1"
 async-trait = "0.1.83"
-
-# -- Error Handling
-
-# -- Macros
-
-# -- Monitoring
-
-# -- Webservers
 axum = "0.8.4"
 axum-extra = "0.10.1"
 axum-tracing-opentelemetry = "0.28.0"
-
-# -- Testing
-
-android-activity = "0.6.0"
-
-
-# -- Unsorted
-anyhow = "1"
-arbitrary = "1.2.0"
-# arbtest = "0.2.0"
-
-arboard = "3.4.1"
 barrel = { git = "https://github.com/prisma/barrel.git", branch = "mssql-support" }
 base64 = "0.22"
 bigdecimal = "0.3" # 0.3 is needed for prisma
-# bigdecimal = "0.4.3"
-# bigdecimal = "0.4.8"
 bincode = "2.0.0-rc.3"
 bitflags = "2"
 bit-vec = "0.6"
@@ -100,6 +163,7 @@ colored = "3"
 color-eyre = "0.6.2"
 concat-idents = "1"
 connection-string = "0.2"
+const-str = "0.6.2"
 convert_case = "0.8.0"
 crossbeam-channel = "0.5"
 cruet = "0.15"
@@ -129,6 +193,7 @@ gix = "0.74.1"
 graphql-parser = { git = "https://github.com/prisma/graphql-parser" }
 hashbrown = "0.16"
 heapless = "0.8.0"
+heck = "0.5.0"
 hex = "0.4"
 hound = "3.5.1"
 html5ever = "0.31.0"
@@ -168,6 +233,7 @@ opentelemetry-stdout = "0.29.0"
 parking_lot = "0.12.3"
 parse-hyperlinks = "0.23"
 paste = "1"
+pathdiff = "0.2.3"
 percent-encoding = "2"
 pest = "2"
 pest_derive = "2"
@@ -176,6 +242,10 @@ pin-project = "1"
 postgres-native-tls = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
 postgres-types = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
 pretty_assertions = "1"
+prettyplease = "0.2.17"
+proc-macro2 = "1.0.78"
+proc-macro-crate = "3.1.0"
+proc-macro-error2 = "2.0.1"
 quick-xml = "0.37.5"
 quote = "1.0.35"
 rand = "0.9.0"
@@ -187,7 +257,7 @@ rustc-hash = { version = "2.1.1" }
 rusqlite = "0.32"
 # rspack_core = "0.2.0"
 # rspack_error = "0.2.0"
-# rustfft = { version = "6.0.1", default-features = false }
+rustfft = { version = "6.0.1", default-features = false }
 # scoped_threadpool = "0.1.9"
 semver = "1.0.23"
 serde = { version = "1.0.197", features = ["derive"] }
@@ -211,12 +281,15 @@ syn = { version = "2.0.60", features = ["full"] }
 tempfile = "3.10.1"
 thiserror = "2.0.12"
 tiberius = { git = "https://github.com/prisma/tiberius", branch = "main", default-features = false }
+tikv-jemallocator = "0.6.0"
+tikv-jemalloc-ctl = "0.6.0"
 tokio = "1.36.0" # sync feature?
 tokio-postgres = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
 tokio-stream = "0.1.17"
 tokio-tungstenite = "0.26"
 tokio-util = "0.7.11"
 toml = "0.8"
+toml_edit = "0.22.12"
 tower-http = "0.6.2"
 tracing = "0.1.40"
 tracing-core = "0.1"
@@ -228,16 +301,13 @@ tracing-subscriber = "0.3.18"
 tracing-test = "0.2"
 # trybuild = "1.0.91"
 typed-arena = "2.0.2"
-# typestate = "0.8.0"
 ulid = "1"
 unicode-normalization = "0.1.25"
+unicode-properties = "0.1.1"
 url = "2.5.0"
 urlencoding = "2.1.3"
 uuid = { version = "1.10.0", features = ["v4", "v7"] }
 versions = "6"
-# whisper-rs = { git = "https://github.com/tazz4843/whisper-rs.git" } # "0.11.1"
-# whisper-rs = { git = "https://github.com/sribich/whisper-rs.git" }
-# winnow = "0.6.8"
 zip = "2.2.0"
 
 ################################################################################
@@ -318,7 +388,7 @@ clone_on_ref_ptr = "deny"
 create_dir = "deny"
 default_numeric_fallback = "deny"
 doc_include_without_cfg = "deny"
-doc_paragraphs_missing_punctuation = "deny"
+# doc_paragraphs_missing_punctuation = "deny"
 empty_drop = "deny"
 empty_enum_variants_with_brackets = "deny"
 empty_structs_with_brackets = "deny"
@@ -341,7 +411,7 @@ mutex_atomic = "deny"
 mutex_integer = "deny"
 needless_raw_strings = "deny"
 non_zero_suggestions = "deny"
-pattern_type_mismatch = "deny"
+# pattern_type_mismatch = "deny" # Too much noise
 pathbuf_init_then_push = "deny"
 redundant_test_prefix = "deny"
 redundant_type_annotations = "deny"

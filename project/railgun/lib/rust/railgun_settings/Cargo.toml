@@ -1,0 +1,46 @@
+[package]
+name = "railgun_settings"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = [
+    "cli",
+    "settings",
+]
+
+# Enables application cli functionality
+cli = ["settings", "dep:clap"]
+# Enables application configuration management
+settings = [
+    "dep:railgun_settings_derive",
+    "dep:serde",
+    "dep:serde_path_to_error",
+    "dep:toml_edit"
+]
+
+# Enables using jemalloc as a memory allocator
+jemalloc = ["dep:tikv-jemallocator"]
+# Enables memory profiling using jemalloc control and introspection APIs
+jemalloc-profiling = ["dep:tikv-jemalloc-ctl"]
+
+[dependencies]
+railgun_core = { workspace = true }
+railgun_error = { workspace = true }
+railgun_settings_derive = { workspace = true, optional = true }
+
+clap = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
+serde_path_to_error = { workspace = true, optional = true }
+toml_edit = { workspace = true, optional = true, features = ["serde"] }
+tracing = { workspace = true, optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+tikv-jemallocator = { workspace = true, optional = true, features = ["profiling", "stats", "background_threads"] }
+tikv-jemalloc-ctl = { workspace = true, optional = true, features = ["use_std"] }
+
+[lints]
+workspace = true

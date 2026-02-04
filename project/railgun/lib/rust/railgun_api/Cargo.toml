@@ -1,0 +1,28 @@
+[package]
+name = "railgun_api"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+json = ["dep:serde_json"]
+
+[dependencies]
+railgun_api_derive = { workspace = true }
+typegen = { workspace = true }
+
+axum = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+tracing = { workspace = true }
+
+################
+## feature(json)
+################
+serde_json = { workspace = true, optional = true }

@@ -1,0 +1,15 @@
+language: rust
+
+tasks:
+  coverage:
+    command: cargo llvm-cov nextest --package=rrpc
+  #test:
+  #command: noop
+  #deps:
+  # - coverage
+  # - mutation
+  mutation:
+    command: cargo mutants --test-tool=nextest
+
+  expand:
+    command: cargo expand

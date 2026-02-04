@@ -1,0 +1,96 @@
+[package]
+name = "railgun"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = [
+    "error",
+    "cli",
+    "jemalloc",
+    "settings",
+    "telemetry",
+    "typegen"
+]
+
+#
+error = [
+    "dep:railgun_error",
+    "dep:railgun_error_derive"
+]
+
+# Enables application cli functionality
+cli = [
+    "dep:railgun_settings",
+    "railgun_settings/cli"
+]
+# Enables application configuration management
+settings = [
+    "dep:railgun_settings",
+    "railgun_settings/settings"
+]
+
+security = [
+    "dep:railgun_security",
+    # "railgun_security/security"
+]
+
+# Enables using jemalloc as a memory allocator
+jemalloc = [
+    "dep:railgun_settings",
+    "railgun_settings/jemalloc"
+]
+# Enables memory profiling using jemalloc control and introspection APIs
+jemalloc-profiling = [
+    "dep:railgun_settings",
+    "railgun_settings/jemalloc-profiling"
+]
+
+telemetry = [
+    "metrics",
+    "tracing",
+]
+telemetry-client = [
+    "dep:railgun_telemetry",
+    "railgun_telemetry/telemetry-client"
+]
+telemetry-server = [
+    "dep:railgun_telemetry",
+    "railgun_telemetry/telemetry-server"
+]
+
+logging = [
+    "dep:railgun_telemetry",
+    "railgun_telemetry/logging"
+]
+metrics = [
+    "dep:railgun_telemetry",
+    "railgun_telemetry/metrics"
+]
+tracing = [
+    "dep:railgun_telemetry",
+    "railgun_telemetry/tracing"
+]
+typegen = [
+    "dep:typegen"
+]
+
+[dependencies]
+railgun_api = { workspace = true }
+railgun_core = { workspace = true }
+railgun_di = { workspace = true }
+railgun_error = { workspace = true, optional = true }
+railgun_error_derive = { workspace = true, optional = true }
+railgun_security = { workspace = true, optional = true }
+railgun_settings = { workspace = true, optional = true }
+railgun_telemetry = { workspace = true, optional = true }
+rpc = { workspace = true }
+typegen = { workspace = true, optional = true, features = ["axum", "uuid", "chrono"] }
+
+async-trait = { workspace = true }
+
+[lints]
+workspace = true

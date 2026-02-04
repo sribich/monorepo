@@ -1,0 +1,19 @@
+[package]
+name = "railgun_di"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[features]
+default = []
+
+[dependencies]
+railgun_di_derive = { workspace = true }
+railgun_error = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
+

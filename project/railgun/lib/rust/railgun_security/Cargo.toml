@@ -1,0 +1,14 @@
+[package]
+name = "railgun_security"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+
+[dependencies]
+
+[lints]
+workspace = true

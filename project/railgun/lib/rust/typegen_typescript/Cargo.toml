@@ -1,0 +1,25 @@
+[package]
+name = "typegen_typescript"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+typegen = { workspace = true }
+
+unicode-properties = { workspace = true }
+
+################################################################################
+## Flagged Dependencies
+################################################################################
+
+[dev-dependencies]
+expect-test = { workspace = true }

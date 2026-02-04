@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
+language: rust
+
+tasks:
+  expand:
+    command: cargo expand

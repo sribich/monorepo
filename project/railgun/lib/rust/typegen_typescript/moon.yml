@@ -1,0 +1,38 @@
+language: rust
+
+tasks:
+  dev:
+    command: cargo run
+
+  build:
+    command: cargo build
+
+  # coverage:
+  #   command: cargo llvm-cov nextest --package=typegen_typescript
+  # test:
+  #   command: noop
+  #   deps:
+  #     - coverage
+  #     - mutation
+  # mutation:
+  #   command: cargo mutants --test-tool=nextest
+# UPDATE_EXPECT=1 cargo nextest run --package=typegen --all-features
+# MIRIFLAGS="-Zmiri-disable-isolation" cargo miri nextest run --package=typegen --all-features
+# https://rust-unofficial.github.io/too-many-lists/fifth-miri.html
+
+# VALGRIND_OPTS="..." cargo valgrind test
+# https://valgrind.org/info/tools.html
+
+# Sanitizers
+# https://github.com/rust-lang/rust/issues/39699#issuecomment-297589826
+# Address, Memory, Thread, Leak
+# address, cfi, hwaddress, kcfi, leak, memory or thread
+# https://rustc-dev-guide.rust-lang.org/sanitizers.html
+# https://doc.rust-lang.org/beta/unstable-book/compiler-flags/sanitizer.html#memorysanitizer
+
+# RUSTFLAGS="-Zsanitizer=memory" cargo test --target=x86_64-unknown-linux-gnu --package=typegen --all-features
+# ^ - Hack required to not run sanitizer over dependencies. Shouldn't be necessary but apaprently memory is funky
+
+# Rust profiling
+
+# Fuzzing?

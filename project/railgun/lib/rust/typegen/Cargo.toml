@@ -1,0 +1,29 @@
+[package]
+name = "typegen"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+## External Type Support
+########################
+axum = ["dep:axum"]
+chrono = ["dep:chrono"]
+uuid = ["dep:uuid"]
+
+[dependencies]
+railgun_error = { workspace = true }
+typegen_derive = { workspace = true }
+
+unicode-properties = { workspace = true }
+
+axum = { workspace = true, optional = true, features = ["json"] }
+chrono = { workspace = true, optional = true }
+uuid = { workspace = true, optional = true }
+
+[lints]
+workspace = true

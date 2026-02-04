@@ -2127,7 +2127,6 @@ dependencies = [
  "serde_path_to_error",
  "sha2",
  "sha256-util",
- "srs",
  "srs_bridge_anki",
  "thiserror 2.0.18",
  "tokio",
@@ -9182,16 +9181,6 @@ dependencies = [
  "thiserror 2.0.18",
  "tracing",
  "url",
-]
-
-[[package]]
-name = "srs"
-version = "0.0.0"
-dependencies = [
- "chrono",
- "railgun",
- "serde",
- "uuid",
 ]
 
 [[package]]
