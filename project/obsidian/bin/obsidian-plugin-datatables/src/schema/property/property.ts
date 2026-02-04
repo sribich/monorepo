@@ -38,9 +38,11 @@ export const field = scope({
         .join(" | ") as JoinUnion<(typeof properties)[number]["kind"], " | ">,
 }).export().union
 
+const possiblePropertyFilters = properties.filter((it) => Object.keys(it.filter.filters).length > 0)
+
 export const propertyFilters = scope({
-    ...extract(properties, "kind", "filter.type"),
-    union: Object.values(properties)
+    ...extract(possiblePropertyFilters, "kind", "filter.type"),
+    union: Object.values(possiblePropertyFilters)
         .map((it) => it.kind)
         .join(" | ") as JoinUnion<(typeof properties)[number]["kind"], " | ">,
 }).export().union

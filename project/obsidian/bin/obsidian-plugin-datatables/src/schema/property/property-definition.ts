@@ -7,7 +7,7 @@
  * It is used to generate the field definition, which is the actual object
  * that is used to represent a field in the persisted schema.
  */
-import { type Infer, type Type, type } from "arktype"
+import { type Type, type } from "arktype"
 import type { Compute } from "ts-toolbelt/out/Any/Compute"
 
 import type { PropertyKind } from "./property-kind"
@@ -17,7 +17,7 @@ import type { PropertyKind } from "./property-kind"
  */
 export interface FilterItem {
     kind: string
-    data: unknown
+    data?: unknown
 }
 
 export type YamlSerializable =
@@ -29,9 +29,8 @@ export type YamlSerializable =
     | { [name: string]: YamlSerializable }
 
 type Morph<TConfig> = (...args: any[]) => (incoming: TConfig) => void
+
 export interface Filter<TProperty, TFilter, TValue> {
-    // TODO: FIX
-    // @ts-expect-error
     default: TFilter["data"]
     fn: (property: TProperty, filter: TFilter, value: TValue) => boolean
 }
@@ -44,7 +43,7 @@ export interface PropertyDefinition<
     TConfigMorphs extends Record<string, Morph<TConfig>>,
     TField,
     TFieldMorphs extends Record<string, Morph<TField>>,
-    TFilter extends FilterItem,
+    TFilter extends { kind: string; data?: unknown },
     TDefaultFilter extends TFilter["kind"],
 > {
     kind: TKind
@@ -72,7 +71,7 @@ export interface PropertyDefinition<
         }>
     }
     filter: {
-        type: Type<TFilter /* & { propKind: TKind }*/>
+        type: type.instantiate<TFilter /* & { propKind: TKind }*/>
         default?: {
             kind: TDefaultFilter
             data: Extract<TFilter, { kind: TDefaultFilter }>["data"]
@@ -101,7 +100,7 @@ export const makeProperty = <const TKind extends PropertyKind>(kind: TKind) => {
         const TConfigMorphs extends Record<string, Morph<TConfig>>,
         const TField,
         const TFieldMorphs extends Record<string, Morph<TField>>,
-        const TFilter extends { kind: string; data: unknown },
+        const TFilter extends FilterItem,
         const TDefaultFilter extends TFilter["kind"],
     >(definition: {
         // kind: TKind
@@ -117,7 +116,7 @@ export const makeProperty = <const TKind extends PropertyKind>(kind: TKind) => {
             morphs: TFieldMorphs
         }
         filter: {
-            type: Type<TFilter>
+            type: type.Any<TFilter>
             default?: {
                 kind: TDefaultFilter
                 data: InferType<Extract<TFilter, { kind: TDefaultFilter }>["data"]>
@@ -157,19 +156,19 @@ export const makeProperty = <const TKind extends PropertyKind>(kind: TKind) => {
                 ...definition.config,
                 schema: type({
                     name: "string",
-                    kind: `'${kind.toString()}'` as Infer<TKind>, // enumVariant(kind) as Infer<TKind>,
+                    kind: `'${kind.toString()}'`, // enumVariant(kind) as Infer<TKind>,
                     uuid: "string",
                     config: definition.config.type,
-                }),
+                }) as never,
             },
             field: {
                 ...definition.field,
                 schema: type({
                     name: "string",
-                    kind: `'${kind.toString()}'` as Infer<TKind>, // enumVariant(kind) as Infer<TKind>,
+                    kind: `'${kind.toString()}'`,
                     uuid: "string",
                     value: definition.field.type,
-                }),
+                }) as never,
             },
             filter: {
                 ...definition.filter,
@@ -177,3 +176,15 @@ export const makeProperty = <const TKind extends PropertyKind>(kind: TKind) => {
         }
     }
 }
+
+/*
+const createBox = <t extends string>(of: type.Any<t>) =>
+    type({
+        box: of,
+    })
+
+createBox(type("number"))
+
+// Type<{ box: string }>
+const BoxType = createBox(type("string"))
+*/

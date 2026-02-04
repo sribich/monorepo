@@ -1,8 +1,9 @@
-import { assetsPlugin, defineConfig, stylexPlugin } from "@sribich/tsbuild"
+import { assetsPlugin, defineConfig, stylexPlugin, workerPlugin } from "@sribich/tsbuild"
 
 export default defineConfig({
     entrypoints: ["src/main.ts"],
     bundle: true,
+    // backend: "rolldown",
     formats: ["cjs"],
     externals: [
         "obsidian",
@@ -23,7 +24,7 @@ export default defineConfig({
         "os",
         "path",
     ],
-    sourcemap: "inline",
+    sourcemap: "both",
     plugins: [
         assetsPlugin({
             globs: [
@@ -31,6 +32,7 @@ export default defineConfig({
                 { input: "assets", glob: "*" },
             ],
         }),
+        workerPlugin(),
         stylexPlugin(),
     ],
     /*

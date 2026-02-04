@@ -1,10 +1,10 @@
 import { type } from "arktype"
 import { proxy, subscribe } from "valtio"
 
-import { SchemaLoader } from "../../schema/schema-loader"
+import type { SchemaLoader } from "../../schema/schema-loader"
 import { DatatableRoot } from "../../ui/features/datatable-root/DatatableRoot"
 import { jsonCodeBlock } from "../code-block/JsonCodeBlock"
-import { type Processor } from "../processor"
+import type { Processor } from "../processor"
 import { ReactRenderer } from "../renderers/react"
 
 export interface DatatableContext {

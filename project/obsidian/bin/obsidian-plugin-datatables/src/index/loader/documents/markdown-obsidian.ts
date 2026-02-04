@@ -4,6 +4,7 @@ import type { CachedMetadata } from "obsidian"
 import { getProperty } from "../../../schema/property/property"
 import type { DtSchema } from "../../../schema/schema-definition"
 import { type Document, type ReadMarkdownDocument } from "../../document"
+import { ArkErrors } from "arktype"
 
 const FRONTMATTER_EXCLUDE_FIELDS = [
     "tags",
@@ -96,11 +97,12 @@ const parseFields = (
                 }
 
                 const propertySchema = getProperty(property.kind)
-                const { data, problems } = propertySchema.field.type(value[property.name])
 
-                if (problems) {
+                const data = propertySchema.field.type(value[property.name])
+
+                if (data instanceof ArkErrors) {
                     if (property.name === "Do Date") {
-                        console.log(problems.summary)
+                        console.log(data.summary)
                     }
                     // console.warn("Error parsing value")
                     continue

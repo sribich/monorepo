@@ -1,10 +1,10 @@
-import { type Type, type } from "arktype"
+import { ArkErrors, type Type, type } from "arktype"
 
 export const validateOrThrow = <T extends Type<unknown>>(type: T, rawData: unknown): T["infer"] => {
-    const { data, problems } = type(rawData)
+    const data = type(rawData)
 
-    if (problems && problems.length > 0) {
-        throw new Error(`Invalid data: ${problems.summary}`)
+    if (data instanceof ArkErrors) {
+        throw new Error(`Invalid data: ${data.summary}`)
     }
 
     return data
@@ -19,20 +19,21 @@ export const enumVariant = <TVariant extends string>(variant: TVariant) => {
     })
 }
 
+export const parseDate = type("string").pipe((value): Date => new Date(value))
+
 /**
  * TODO: Some shit might happen here where value gets fucked.
  */
-export const dateFilterType = () => {
-    return type("'today' | 'tomorrow' | Date").pipe((value): Date | "today" | "tomorrow" => {
-        if (value instanceof Date) {
-            return value
-        }
+export const dateFilterType = type("'today' | 'tomorrow' | Date").pipe((value): Date => {
+    if (value instanceof Date) {
+        return value
+    }
 
-        const date = new Date(value)
+    return new Date(value)
 
-        return Number.isNaN(date.getTime()) ? value : date
-    })
-}
+    // const date = new Date(value)
+    // return Number.isNaN(date.getTime()) ? value : date
+})
 
 export const EnumType = <
     EnumObject extends Record<string, string>,

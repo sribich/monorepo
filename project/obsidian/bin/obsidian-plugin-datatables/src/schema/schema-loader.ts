@@ -6,6 +6,7 @@ import { objectToPrettyJson } from "../util/json"
 import type { File, Vault } from "../vault/vault"
 import { Schema } from "./schema"
 import { type DtSchema, defaultSchema, schema } from "./schema-definition"
+import { ArkError, ArkErrors } from "arktype"
 
 export class SchemaLoader {
     protected schema!: DtSchema
@@ -160,11 +161,11 @@ export class SchemaLoader {
             throw new Error(`Failed to parse schema content: JSON parsing failed: ${e}`)
         }
 
-        const { data, problems } = schema(jsonData)
+        const data = schema(jsonData)
 
-        if (problems && problems.length > 0) {
+        if (data instanceof ArkErrors) {
             throw new Error(
-                `Failed to parse schema content: Validation failed: ${problems.summary}`,
+                `Failed to parse schema content: Validation failed: ${data.summary}`,
             )
         }
 

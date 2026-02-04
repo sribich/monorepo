@@ -4,6 +4,7 @@ import { makeProperty } from "../property-definition"
 
 export const textFilters = scope({
     is: {
+        $type: "'text'",
         kind: "'IS'",
         data: "string",
     },

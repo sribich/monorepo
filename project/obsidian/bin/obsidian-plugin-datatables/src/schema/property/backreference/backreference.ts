@@ -15,7 +15,7 @@ export const backreference = makeProperty("backreference")({
     },
     field: {
         default: [],
-        type: "string[]",
+        type: type("string[]"),
         morphs: {},
     },
     filter: {

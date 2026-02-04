@@ -5,8 +5,8 @@ import type { Immutable } from "@sribich/ts-utils"
 import type { DtSchema } from "../../schema/schema-definition"
 import type { Vault } from "../../vault/vault"
 import type { Document, DocumentMetadata, ReadDocument } from "../document"
-// // @ts-expect-error - Worker exports are defined at build time by the bundler
-// import InlineWorker from "./loader.worker?worker&inline"
+// @ts-expect-error - Worker exports are defined at build time by the bundler
+import InlineWorker from "./loader.worker?worker&inline"
 import type { WorkerRequest, WorkerResponse } from "./types"
 
 export class Loader {
@@ -55,10 +55,10 @@ export class Loader {
                 window.Worker = _Worker as any // Test only hack
             }
 
-            // const worker = new InlineWorker() as Worker
-            const worker = new Worker(new URL("./loader.worker.ts", __dirname), {
-                type: "module",
-            })
+            const worker = new InlineWorker() as Worker
+            // const worker = new Worker(new URL("./loader.worker.ts", import.meta.url), {
+            //     type: "module",
+            // })
 
             worker.onmessage = (event) => {
                 this.freeWorkers.push(i)

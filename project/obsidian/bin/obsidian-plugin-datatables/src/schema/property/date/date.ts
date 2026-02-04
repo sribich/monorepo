@@ -1,7 +1,7 @@
 import { scope, type } from "arktype"
 import { addDays, endOfDay, isAfter, isBefore, isSameDay, isToday, startOfDay } from "date-fns"
 
-import { dateFilterType } from "../../../util/arktype"
+import { dateFilterType, parseDate } from "../../../util/arktype"
 import { makeProperty } from "../property-definition"
 
 const filterCheckpoints = (() => {
@@ -57,6 +57,7 @@ export const timeFormats = ["12 hour", "24 hour"] as const
 export const dateFilters = scope(
     {
         is: {
+            $type: "'date'",
             kind: "'IS'",
             data: dateFilterType,
         },
@@ -117,8 +118,8 @@ export const date = makeProperty("date")({
             dateEnd: null,
         },
         type: type({
-            "date?": "parsedDate | null",
-            "dateEnd?": "parsedDate | null",
+            "date?": parseDate.or(type("null")),
+            "dateEnd?": parseDate.or(type("null")),
         }),
         morphs: {},
     },

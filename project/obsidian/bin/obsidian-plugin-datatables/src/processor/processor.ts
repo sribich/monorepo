@@ -38,6 +38,7 @@ export const loadProcessors = (host: HostContext) => {
                 const reloadComponent = () => {
                     document["__dev__dt_cleanup_hooks"] ??= []
                     document["__dev__dt_cleanup_hooks"].push(() => {
+                        console.log(context)
                         context.removeChild(child)
                         // context.forceReload()
 

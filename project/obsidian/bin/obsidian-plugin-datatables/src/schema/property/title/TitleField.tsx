@@ -1,7 +1,12 @@
 import { TextField } from "@sribich/fude"
 import { type KeyboardEvent, type MouseEvent } from "react"
 
-import { Overlay, OverlayContent, OverlayTrigger, useOverlayContext } from "../../../ui/components/Overlay/Overlay"
+import {
+    Overlay,
+    OverlayContent,
+    OverlayTrigger,
+    useOverlayContext,
+} from "../../../ui/components/Overlay/Overlay"
 import { assertProperty } from "../../../ui/hooks/useProperty"
 import { useSchema } from "../../../ui/hooks/useSchema"
 import type { PropertyFieldProps } from "../PropertyComponent"
@@ -14,7 +19,8 @@ export const TitleField = (props: PropertyFieldProps) => {
 
     const schema = useSchema()
     const value =
-        schema.property.getValue(property, props.document) || props.document.path.split("/").at(-1)?.split(".").at(0)
+        schema.property.getValue(property, props.document) ||
+        props.document.path.split("/").at(-1)?.split(".").at(0)
 
     if (!value) {
         return "Error"

@@ -1,14 +1,16 @@
-import { type Infer, scope, type } from "arktype"
+import { scope, type } from "arktype"
 
 import type { WithViewFilterMetadata } from "../../view/view.scope"
 import { makeProperty } from "../property-definition"
 
 export const { checkboxFilters } = scope({
     is: {
+        $type: "'checkbox'",
         kind: "'IS'",
         data: "boolean",
     },
     is_not: {
+        $type: "'checkbox'",
         kind: "'IS_NOT'",
         data: "boolean",
     },
@@ -21,7 +23,7 @@ export const checkbox = makeProperty("checkbox")({
     name: "Checkbox",
     config: {
         default: {},
-        type: type("object" as Infer<Record<string, never>>, { keys: "strict" }),
+        type: type("Record<string, never>"), // as Infer<Record<string, never>>, { keys: "" }),
         morphs: {},
     },
     field: {
