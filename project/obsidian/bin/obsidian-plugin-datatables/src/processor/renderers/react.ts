@@ -1,8 +1,8 @@
-import { type FunctionComponent } from "react"
-import { type Root, createRoot } from "react-dom/client"
+import type { FunctionComponent } from "react"
+import { createRoot, type Root } from "react-dom/client"
 
 import { Mount, MountError } from "../../ui/Mount"
-import { type CodeBlockContext, RenderHost, Renderer } from "../render"
+import { type CodeBlockContext, Renderer, type RenderHost } from "../render"
 
 export interface MountContext<
     TProps extends Record<string, unknown>,
@@ -17,9 +17,12 @@ export class ReactRenderer<
     TContext extends Record<string, unknown>,
 > extends Renderer {
     private root?: Root | undefined
+    private mountContext: MountContext<TProps, TContext>
 
-    constructor(private mountContext: MountContext<TProps, TContext>) {
+    constructor(mountContext: MountContext<TProps, TContext>) {
         super()
+
+        this.mountContext = mountContext
     }
 
     public destroy(): void {

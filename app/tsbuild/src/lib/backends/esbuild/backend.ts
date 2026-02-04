@@ -48,8 +48,6 @@ export class EsbuildBackend extends Backend {
             },
         }
 
-        console.log(options)
-
         if (buildContext.mode === "dev") {
             options.conditions ??= []
             options.conditions.unshift("development")

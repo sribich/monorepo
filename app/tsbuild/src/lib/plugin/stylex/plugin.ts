@@ -26,20 +26,20 @@ export const stylexPlugin = (): Plugin => {
         const outputDirectory = buildContext.outputDirectory
 
         const config = {
-                debug: true,
-                // dev: true,
-                // runtimeInjection: true,
-                treeshakeCompensation: true,
-                styleResolution: "application-order",
-            }
-        return {
-            // @ts-expect-error
-            rolldown: stylex.rolldown(config),
-            // @ts-expect-error
-            esbuild: stylex.esbuild(config)
+            debug: true,
+            // dev: true,
+            // runtimeInjection: true,
+            treeshakeCompensation: true,
+            styleResolution: "application-order",
         }
-
-        // @ts-expect-error TS7027
+        //         return {
+        //             // @ts-expect-error
+        //             rolldown: stylex.rolldown(config),
+        //             // @ts-expect-error
+        //             esbuild: stylex.esbuild(config),
+        //         }
+        //
+        // // @ts-expect-error TS7027
         return {
             rolldown: () => {
                 const dev = process.env["NODE_ENV"] === "development"

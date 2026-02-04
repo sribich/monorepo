@@ -1,7 +1,13 @@
-import { assetsPlugin, defineConfig, stylexPlugin, workerPlugin } from "@sribich/tsbuild"
+import {
+    assetsPlugin,
+    defineConfig,
+    outputPlugin,
+    stylexPlugin,
+    workerPlugin,
+} from "@sribich/tsbuild"
 
 export default defineConfig({
-    entrypoints: ["src/main.ts"],
+    entrypoints: ["src/styles.ts"],
     bundle: true,
     // backend: "rolldown",
     formats: ["cjs"],
@@ -34,32 +40,15 @@ export default defineConfig({
         }),
         workerPlugin(),
         stylexPlugin(),
-    ],
-    /*
-    plugin: {
-        assets: {
-            globs: [
-                {
-                    input: "assets",
-                    glob: ".*",
-                },
-                {
-                    input: "assets",
-                    glob: "*",
-                },
-            ],
-        },
-        output: {
+        outputPlugin({
             assetFileNames: (assetInfo) => {
-                if (assetInfo.name === "index.css") {
-                    return "styles.css"
-                }
-                if (assetInfo.name === "index.js") {
+                // This is a hack to fix stylex outputting the file int he wrong spot
+                if (assetInfo.name === "styles.js") {
                     return "main.js"
                 }
 
-                return assetInfo.name
+                // return assetInfo.name
             },
-        },
-        */
+        }),
+    ],
 })

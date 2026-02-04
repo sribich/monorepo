@@ -1,15 +1,15 @@
+import type { RefObject } from "react"
 import { mergeProps } from "react-aria"
 
 import { useRenderProps } from "../../hooks/useRenderProps"
 import { stylexColorVariantsNonInteractive } from "../../theme/atomics/color"
-import { type VariantProps, useStyles } from "../../theme/props"
+import { useStyles, type VariantProps } from "../../theme/props"
 import type { RenderProps } from "../../utils/props"
 import { chipStyles } from "./Chip.styles"
-import type { RefObject } from "react"
 
-////////////////////////////////////////////////////////////////////////////////
-/// Chip
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
+// Chip
+//==============================================================================
 export interface ChipProps extends RenderProps<undefined>, VariantProps<typeof chipStyles> {
     ref?: RefObject<HTMLDivElement>
     /**

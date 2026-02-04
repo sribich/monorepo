@@ -4,9 +4,9 @@ import { SchemaProvider } from "../../hooks/useSchema"
 import { Datatable } from "../datatable/Datatable"
 import { DatatableSourceConfigurator } from "./DatatableSourceConfigurator"
 
-////////////////////////////////////////////////////////////////////////////////
-/// DatatableRoot
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
+// DatatableRoot
+//==============================================================================
 export const DatatableRoot = () => {
     const { proxy } = useMountContext<DatatableContext>()
 
@@ -20,9 +20,9 @@ export const DatatableRoot = () => {
     return <DatatableRootView source={proxy.codeBlock.source} />
 }
 
-////////////////////////////////////////////////////////////////////////////////
-/// DatatableRootView
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
+// DatatableRootView
+//==============================================================================
 interface DatatableRootViewProps {
     source: string
 }

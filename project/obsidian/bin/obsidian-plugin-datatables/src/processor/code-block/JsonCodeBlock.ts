@@ -1,5 +1,5 @@
 import type { Immutable } from "@sribich/ts-utils"
-import type { Type } from "arktype"
+import { ArkErrors, type Type } from "arktype"
 
 import { objectToPrettyJson } from "../../util/json"
 import type { CodeBlockContext } from "../render"
@@ -9,9 +9,6 @@ export interface JsonCodeBlock<TType> {
     update: (receiver: (incoming: TType) => Partial<TType>) => Promise<void>
 }
 
-/**
- * TODO: This is buggy as fuck
- */
 export const jsonCodeBlock = async <TType extends Record<string, unknown>>(
     codeBlock: CodeBlockContext,
     type: Type<TType>,
@@ -20,16 +17,13 @@ export const jsonCodeBlock = async <TType extends Record<string, unknown>>(
     const content = codeBlock.readContent()
 
     if (!content) {
-        // TODO: Figure out why this is throwing rogue {}s in our code.
-        // await codeBlock.writeContent("{}")
         throw new Error(`Codeblock must contain {}`)
-        // content = codeBlock.readContent()
     }
 
-    const { problems, data } = type(JSON.parse(content))
+    const data = type(JSON.parse(content))
 
-    if (problems) {
-        throw new Error(problems.summary)
+    if (data instanceof ArkErrors) {
+        throw new Error(data.summary)
     }
 
     // Because we don't fully re-render the component when the underlying

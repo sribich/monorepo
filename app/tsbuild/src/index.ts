@@ -8,6 +8,7 @@ export { reactRouterPlugin } from "./lib/plugin/react-router/plugin.js"
 export { servePlugin } from "./lib/plugin/serve/plugin.js"
 export { stylexPlugin } from "./lib/plugin/stylex/plugin.js"
 export { workerPlugin } from "./lib/plugin/worker/worker.plugin.js"
+export { outputPlugin } from "./lib/plugin/output/output.plugin.js"
 
 export const defineConfig = (config: Config): Config => {
     return config

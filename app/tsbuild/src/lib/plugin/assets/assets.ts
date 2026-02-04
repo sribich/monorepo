@@ -1,5 +1,5 @@
 import type { Stats } from "node:fs"
-import fs, { stat } from "node:fs/promises"
+import fs, { glob, stat } from "node:fs/promises"
 import path, { join, resolve } from "node:path"
 
 import chalk from "chalk"
@@ -12,7 +12,8 @@ import { diagnostics } from "../../plugin/diagnostics/diagnostics.plugin.js"
 import type { Plugin } from "../../plugin/plugin.js"
 import type { Asset, AssetConfig, AssetGlob } from "./assets.types.js"
 
-export const assetsPlugin = (options: AssetConfig): Plugin =>
+export const assetsPlugin =
+    (options: AssetConfig): Plugin =>
     async (context) => {
         if (!options || options.enabled === false || options.globs.length === 0) {
             return null
@@ -97,11 +98,18 @@ export const assetsPlugin = (options: AssetConfig): Plugin =>
             onBuildEnd: diagnostics.span(
                 { name: "plugin:assets", phase: "onBuildEnd" },
                 async () => {
+                    console.log("here", watcher)
                     if (watcher) {
                         return drainCopies()
                     }
 
-                    watcher = chokidar.watch(watchPatterns, {
+                    const globs = []
+
+                    for (const pattern of watchPatterns) {
+                        globs.push(...(await Array.fromAsync(glob(join(fromDirectory, pattern)))))
+                    }
+
+                    watcher = chokidar.watch(globs, {
                         cwd: fromDirectory,
                     })
 
@@ -111,6 +119,7 @@ export const assetsPlugin = (options: AssetConfig): Plugin =>
                     await new Promise((resolve) => {
                         watcher.once("ready", () => resolve(void 0))
                     })
+
                     await drainCopies()
 
                     if (buildContext.mode !== "dev") {

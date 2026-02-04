@@ -242,6 +242,7 @@ export namespace Table {
 }
 
 export const Table = <T,>(props: Table.Props<T>) => {
+    console.log("rendering a table?")
     const selectionState = useMultipleSelectionState(props)
 
     const { disallowEmptySelection, selectionBehavior, selectionMode } = selectionState

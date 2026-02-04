@@ -1,8 +1,11 @@
-import { FunctionComponent, createContext, createElement } from "react"
+import { createContext, createElement, type FunctionComponent } from "react"
 
 import { ErrorBoundary, ErrorRoot } from "./ErrorRoot"
 
-export interface MountProps<TProps extends Record<string, unknown>, TContext extends Record<string, unknown>> {
+export interface MountProps<
+    TProps extends Record<string, unknown>,
+    TContext extends Record<string, unknown>,
+> {
     component: FunctionComponent<TProps>
     componentProps: TProps
     context: TContext
@@ -12,7 +15,10 @@ export interface MountErrorProps {
     error: Error
 }
 
-export const Mount = <TProps extends Record<string, unknown>, TContext extends Record<string, unknown>>(
+export const Mount = <
+    TProps extends Record<string, unknown>,
+    TContext extends Record<string, unknown>,
+>(
     props: MountProps<TProps, TContext>,
 ) => {
     const { component, componentProps, context } = props

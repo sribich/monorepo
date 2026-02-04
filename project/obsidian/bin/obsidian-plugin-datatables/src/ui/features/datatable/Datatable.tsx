@@ -8,9 +8,9 @@ import { useView } from "../../hooks/useView"
 import { DatatableAddons } from "./addons/DatatableAddons"
 import { DatatableStateProvider, useDatatableState } from "./hooks/useDatatableState"
 
-////////////////////////////////////////////////////////////////////////////////
-/// Datatable
-////////////////////////////////////////////////////////////////////////////////
+//==============================================================================
+// Datatable
+//==============================================================================
 export const Datatable = () => {
     const { view, setView } = useView()
 
@@ -32,7 +32,10 @@ export const Datatable = () => {
                     <Tab
                         id={item.uuid}
                         title={item.name}
-                        icon={createElement(viewComponents[item.kind].icon, { size: 16, className: "mr-1" })}
+                        icon={createElement(viewComponents[item.kind].icon, {
+                            size: 16,
+                            className: "mr-1",
+                        })}
                     >
                         <View view={item} />
                     </Tab>
