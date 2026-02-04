@@ -1,0 +1,18 @@
+[package]
+name = "language_pack"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+language_pack_jp = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

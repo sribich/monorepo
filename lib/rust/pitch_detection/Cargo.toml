@@ -1,0 +1,21 @@
+[package]
+name = "pitch_detection"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+rustfft = { workspace = true }
+
+[[bench]]
+name = "utils_benchmark"
+harness = false
+
+
+[lints]
+workspace = true

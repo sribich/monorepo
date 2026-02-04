@@ -145,14 +145,14 @@ fn timestamp_to_u64(bytes: &[u8; 16]) -> u64 {
     let mut out = [0_u8; 8];
     out[2..].copy_from_slice(&bytes[0..6]);
 
-    #[allow(clippy::big_endian_bytes, reason = "UUID v7 timestamp is big endian.")]
+    #[expect(clippy::big_endian_bytes, reason = "UUID v7 timestamp is big endian.")]
     u64::from_be_bytes(out)
 }
 
 fn u64_to_timestamp(value: u64) -> [u8; 6] {
     let mut out = [0_u8; 6];
 
-    #[allow(clippy::big_endian_bytes, reason = "UUID v7 timestamp is big endian.")]
+    #[expect(clippy::big_endian_bytes, reason = "UUID v7 timestamp is big endian.")]
     out.copy_from_slice(&value.to_be_bytes()[2..]);
     out
 }

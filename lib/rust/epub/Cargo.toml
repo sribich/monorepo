@@ -1,0 +1,30 @@
+[package]
+name = "epub"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[lints]
+workspace = true
+
+[features]
+default = []
+
+[dependencies]
+serde-util = { workspace = true }
+railgun = { workspace = true, features = ["error"] }#default-features = false, features = ["error"] }
+
+html5ever = { workspace = true }
+quick-xml = { workspace = true, features = ["serialize", "overlapped-lists"] }
+serde = { workspace = true, features = ["derive"] }
+typed-arena = { workspace = true }
+unicode-normalization = { workspace = true }
+url = { workspace = true }
+zip = { workspace = true }
+itertools = { workspace = true }
+
+[dev-dependencies]
+indoc = { workspace = true }
+rayon = { workspace = true }

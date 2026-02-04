@@ -1,0 +1,20 @@
+[package]
+name = "lexorank"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+railgun = { workspace = true }
+
+heapless = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

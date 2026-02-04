@@ -1,0 +1,30 @@
+[package]
+name = "language_pack_jp"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+transcription = { workspace = true }
+epub = { workspace = true }
+typegen = { workspace = true }
+
+itertools = { workspace = true }
+#
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+mecab = { workspace = true }
+
+tracing = { workspace = true }
+
+[dev-dependencies]
+expect-test = { workspace = true }
+
+[lints]
+workspace = true

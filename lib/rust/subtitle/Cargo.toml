@@ -1,0 +1,17 @@
+[package]
+name = "subtitle"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+
+[dev-dependencies]
+
+[lints]
+workspace = true
