@@ -1,38 +1,43 @@
-import { type InputOptions, type OutputOptions, type RolldownBuild, rolldown } from "rolldown"
-import { RunnerMode } from "../../runner.js"
+import {
+    type InputOptions,
+    type OutputOptions,
+    type RolldownBuild,
+    rolldown,
+} from "rolldown";
+import { RunnerMode } from "../../runner.js";
 import {
     type DeepRequire,
     UNSET_TYPE_CHECK,
     removeTypeCheckedFields,
-} from "../../util/typecheck.js"
-import { Backend } from "../backend.js"
+} from "../../util/typecheck.js";
+import { Backend } from "../backend.js";
 
 export class RolldownBackend extends Backend {
-    private build: RolldownBuild | undefined = undefined
+    private build: RolldownBuild | undefined = undefined;
 
     override async initialise(): Promise<void> {
         this.build = await rolldown({
             ...(await this.getConfig()),
             ...(this.context.config.rolldown?.input ?? {}),
-        })
+        });
     }
 
     override async terminate(): Promise<void> {
-        await this.build?.close()
+        await this.build?.close();
     }
 
     override async compile(): Promise<void> {
-        const options = await this.getOutputOptions()
+        const options = await this.getOutputOptions();
 
-        await this.build?.generate(options)
+        await this.build?.generate(options);
 
         if (this.context.build.mode === RunnerMode.BUILD) {
-            await this.build?.write(options)
+            await this.build?.write(options);
         }
     }
 
     async getConfig(): Promise<InputOptions> {
-        const config = this.context.config
+        const config = this.context.config;
 
         return removeTypeCheckedFields({
             input: [...config.entrypoints],
@@ -41,10 +46,7 @@ export class RolldownBackend extends Backend {
             // external: config.build.externals
             //     ? (id: string) => config.build.externals!.some((it) => id.indexOf(it) >= 0)
             //     : UNSET_TYPE_CHECK,
-            external: (id: string) => {
-                console.log(id)
-                return false
-            }, // config.externals ?? [],
+            external: config.externals ?? [],
             resolve: {
                 // TODO: Fix this
                 conditionNames: ["development"],
@@ -67,10 +69,10 @@ export class RolldownBackend extends Backend {
                     warning.code === "CIRCULAR_DEPENDENCY" &&
                     warning.message.includes("node_modules")
                 ) {
-                    return
+                    return;
                 }
 
-                handler(warning)
+                handler(warning);
             },
             moduleTypes: UNSET_TYPE_CHECK,
             experimental: {
@@ -129,7 +131,7 @@ export class RolldownBackend extends Backend {
 
             //
             debug: UNSET_TYPE_CHECK,
-        } as any satisfies DeepRequire<InputOptions>)
+        } as any satisfies DeepRequire<InputOptions>);
     }
 
     async getOutputOptions(): Promise<OutputOptions> {
@@ -197,6 +199,6 @@ export class RolldownBackend extends Backend {
             inlineDynamicImports: UNSET_TYPE_CHECK,
 
             manualChunks: UNSET_TYPE_CHECK,
-        } satisfies DeepRequire<OutputOptions>)
+        } satisfies DeepRequire<OutputOptions>);
     }
 }
