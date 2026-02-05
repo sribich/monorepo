@@ -11,4 +11,4 @@ export default meta
 
 type Story = StoryObj<typeof meta>
 
-export const Basic = (props) => <Sketch />
+export const Basic = (props) => <Sketch color="#ff0000" />

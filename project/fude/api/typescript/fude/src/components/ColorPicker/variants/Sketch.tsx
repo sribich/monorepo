@@ -17,7 +17,7 @@ import { Shade } from "../../primitive/Shade"
 import { SketchFields } from "./SketchFields"
 
 export type SketchProps<TColor extends Colors["value"]> = {
-    
+
 }
 
 

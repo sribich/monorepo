@@ -319,6 +319,8 @@ export const parseHexColor = (color: string): [number, number, number, number] =
         throw new Error(`Invalid hex color (2): ${color}`)
     }
 
+    console.log(result, result.match)
+
     switch (result.length) {
         case 3:
             return result

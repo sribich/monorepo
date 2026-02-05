@@ -6,7 +6,7 @@ import { Button } from "../../Button/Button.js"
 import { Divider } from "../../Divider/Divider.js"
 import { Header } from "../../Header/primitive/Header.js"
 import { Popover } from "../../Popover/Popover.js"
-import { Menu, MenuItem, MenuTrigger } from "../Menu.js"
+import { Menu, MenuItem, MenuSection, MenuTrigger } from "../Menu.js"
 
 const meta = {
     title: "Navigation/Menu",
@@ -136,11 +136,11 @@ export const WithSections: Story = {
         <Menu>
             <MenuItem>A</MenuItem>
             <MenuItem>B</MenuItem>
-            <Section>
+            <MenuSection>
                 <Header>Section</Header>
                 <MenuItem>C</MenuItem>
                 <MenuItem>D</MenuItem>
-            </Section>
+            </MenuSection>
         </Menu>
     ),
 }
