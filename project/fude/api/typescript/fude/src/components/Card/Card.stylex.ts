@@ -22,7 +22,7 @@ export const cardStyles = makeStyles({
             borderWidth: 1,
             borderStyle: "solid",
             borderColor: colors.borderUi,
-            boxShadow: boxShadow.lg,
+            boxShadow: boxShadow.sm,
             width: "fit-content",
         },
         header: {
