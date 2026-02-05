@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
+language: typescript
+
+tasks:
+  build:
+    command: noop
+
+  serve:
+    command: storybook dev -p 6006 --no-open
+    options:
+      cache: false
+      persistent: true
+    # deps:
+    #   - ^:build
+  # "storybook:build": "storybook build --docs"
