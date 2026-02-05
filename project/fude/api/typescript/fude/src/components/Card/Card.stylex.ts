@@ -4,6 +4,7 @@ import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { newSpacing, spacing } from "@sribich/fude-theme/vars/spacing.stylex"
 import { zIndex } from "@sribich/fude-theme/vars/zindex.stylex"
 import { create } from "@stylexjs/stylex"
+
 import { createNewGenericContext } from "../../hooks/context"
 import { type CachedStyles, type ExportedStyles, makeStyles } from "../../theme/props"
 
@@ -15,6 +16,7 @@ export const cardStyles = makeStyles({
             position: "relative",
             overflow: "hidden",
             height: "auto",
+            color: colors.foreground,
 
             backgroundColor: colors.background,
             borderWidth: 1,
