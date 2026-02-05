@@ -1,9 +1,9 @@
 import { Logger } from "@basalt/obsidian-logger"
-import { darkColors } from "@sribich/fude-theme"
+import { darkColors, darkTheme } from "@sribich/fude-theme"
+import { props } from "@stylexjs/stylex"
 import "@sribich/fude/reset.css"
 import "@total-typescript/ts-reset"
 
-import { type } from "arktype"
 import { Plugin } from "obsidian"
 
 import { Index } from "./index/index"
@@ -103,7 +103,7 @@ export default class BasaltDatatablePlugin extends Plugin {
 
         document.documentElement.setAttribute(
             "class",
-            `${document.__dev__dt_dark_mode} dark ${/*darkModeClasses.className*/ ""}`,
+            `${document.__dev__dt_dark_mode} dark ${props(darkTheme).className}`,
         )
 
         document.body.setAttribute(

@@ -8,6 +8,7 @@
     "@sribich/fude": "0.0.0",
     "@sribich/fude-theme": "0.0.0",
     "@sribich/ts-utils": "0.0.0",
+    "@stylexjs/stylex": "0.17.5",
     "arktype": "2.1.29",
     "array-move": "4.0.0",
     "date-fns": "4.1.0",

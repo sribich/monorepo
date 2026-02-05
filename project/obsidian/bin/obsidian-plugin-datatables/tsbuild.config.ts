@@ -46,8 +46,6 @@ export default defineConfig({
                 if (assetInfo.name === "styles.js") {
                     return "main.js"
                 }
-
-                // return assetInfo.name
             },
         }),
     ],

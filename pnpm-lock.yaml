@@ -580,6 +580,9 @@ importers:
       '@sribich/ts-utils':
         specifier: 0.0.0
         version: link:../../../../lib/typescript/ts-utils
+      '@stylexjs/stylex':
+        specifier: 0.17.5
+        version: 0.17.5
       arktype:
         specifier: 2.1.29
         version: 2.1.29
