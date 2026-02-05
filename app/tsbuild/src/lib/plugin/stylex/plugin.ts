@@ -32,16 +32,18 @@ export const stylexPlugin = (): Plugin => {
             treeshakeCompensation: true,
             styleResolution: "application-order",
         }
-        //         return {
-        //             // @ts-expect-error
-        //             rolldown: stylex.rolldown(config),
-        //             // @ts-expect-error
-        //             esbuild: stylex.esbuild(config),
-        //         }
-        //
-        // // @ts-expect-error TS7027
+
         return {
-            rolldown: () => {
+            // @ts-expect-error
+            rolldown: stylex.rolldown(config),
+            // @ts-expect-error
+            esbuild: stylex.esbuild(config),
+        }
+
+        // @ts-expect-error TS7027
+        return {
+            /*
+            _rolldown: () => {
                 const dev = process.env["NODE_ENV"] === "development"
                 const stylexRules: Record<string, Rule[]> = {}
 
@@ -173,6 +175,7 @@ export const stylexPlugin = (): Plugin => {
                     },
                 }
             },
+            */
             esbuild: (isMaster) => ({
                 name: "tsbuild:stylex",
                 setup(build) {

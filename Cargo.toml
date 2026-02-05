@@ -34,6 +34,9 @@ members = [
 exclude = [
     "project/fude/bin/fude-storybook",
     "project/immersly/bin/desktop-ui",
+    "project/obsidian/bin/obsidian-plugin-datatables",
+    "project/obsidian/bin/obsidian-plugin-keymaps",
+    "project/obsidian/bin/obsidian-plugin-privacy",
     "project/railgun/bin/docs",
 ]
 resolver = "3"
