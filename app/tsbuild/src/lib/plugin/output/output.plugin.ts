@@ -1,5 +1,5 @@
-import path from "path"
-import { rename, writeFile } from "fs/promises"
+import { writeFile } from "node:fs/promises"
+import path from "node:path"
 
 import type { Plugin } from "../plugin.js"
 import type { OutputPluginConfig } from "./output.types.js"
@@ -11,15 +11,12 @@ export const outputPlugin =
 
         return {
             modifyConfig: (config) => {
-                if (config.esbuild) {
-                    config.esbuild.write = false
-                }
+                config.esbuild ??= {}
+                config.esbuild.write = false
             },
             esbuild: {
                 name: "output-plugin",
                 async setup(build) {
-                    console.log(options, output)
-
                     const assetFileNames = output.assetFileNames
 
                     if (!assetFileNames) {
@@ -36,8 +33,6 @@ export const outputPlugin =
                             const basename = path.basename(file.path)
 
                             const nextname = assetFileNames({ name: basename })
-
-                            console.log(assetFileNames, options)
 
                             if (!nextname) {
                                 continue

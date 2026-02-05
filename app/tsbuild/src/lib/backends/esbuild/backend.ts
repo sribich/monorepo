@@ -1,12 +1,13 @@
-import type { BuildContext as EsbuildBuildContext, BuildOptions } from "esbuild"
+import { writeFile } from "node:fs/promises"
+
+import type { BuildOptions, BuildContext as EsbuildBuildContext } from "esbuild"
 import esbuild from "esbuild"
 
+import type { RunnerContext } from "../../context/runner.js"
 import { logger } from "../../logger.js"
 import { Backend } from "../backend.js"
 import { gatherEntrypoints } from "./entrypoint-resolver.js"
 import { getDefaultOptions } from "./options.js"
-import { writeFile } from "node:fs/promises"
-import type { RunnerContext } from "../../context/runner.js"
 
 /**
  * TODO: Circular dependency checking
@@ -33,6 +34,7 @@ export class EsbuildBackend extends Backend {
         // const options = await this.pluginContext.modifyConfig({
         const options: BuildOptions = {
             ...getDefaultOptions(this.context, this.master, this.initialOptions.format),
+            ...(this.context.config.esbuild ?? {}),
             ...this.initialOptions,
             outdir:
                 this.context.config.formats.length > 1
