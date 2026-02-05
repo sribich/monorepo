@@ -1,13 +1,13 @@
-import { create } from "@stylexjs/stylex"
-
-import { createGenericContext } from "../../hooks/context.js"
-import { type CachedStyles, makeStyles } from "../../theme/props.js"
 import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
 import { borderWidth } from "@sribich/fude-theme/vars/borderWidth.stylex"
 import { boxShadow } from "@sribich/fude-theme/vars/boxShadow.stylex"
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
 import { spacing } from "@sribich/fude-theme/vars/spacing.stylex"
+import { create } from "@stylexjs/stylex"
+
+import { createGenericContext } from "../../hooks/context.js"
+import { type CachedStyles, makeStyles } from "../../theme/props.js"
 
 export const tabsStyles = makeStyles({
     slots: create({

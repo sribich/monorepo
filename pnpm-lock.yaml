@@ -382,10 +382,13 @@ importers:
         version: 5.9.3
 
   project/fude/bin/fude-storybook:
-    dependencies:
+    devDependencies:
       '@chromatic-com/storybook':
         specifier: 5.0.0
         version: 5.0.0(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      '@sribich/config-typescript':
+        specifier: 0.0.0
+        version: link:../../../../lib/typescript/config-typescript
       '@sribich/fude':
         specifier: 0.0.0
         version: link:../../api/typescript/fude
@@ -395,6 +398,9 @@ importers:
       '@sribich/fude-theme':
         specifier: 0.0.0
         version: link:../../api/typescript/fude-theme
+      '@sribich/tsbuild':
+        specifier: 0.0.0
+        version: link:../../../../app/tsbuild
       '@storybook/addon-a11y':
         specifier: 10.2.6
         version: 10.2.6(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
@@ -464,16 +470,6 @@ importers:
       vitest:
         specifier: 4.0.18
         version: 4.0.18(@types/node@24.10.9)(@vitest/browser-playwright@4.0.18)(jiti@2.6.1)(jsdom@28.0.0)(less@4.5.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2)
-    devDependencies:
-      '@sribich/config-typescript':
-        specifier: 0.0.0
-        version: link:../../../../lib/typescript/config-typescript
-      '@sribich/tsbuild':
-        specifier: 0.0.0
-        version: link:../../../../app/tsbuild
-      esbuild:
-        specifier: 0.27.2
-        version: 0.27.2
 
   project/fude/lib/typescript/fude-storybook-components:
     dependencies:

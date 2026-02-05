@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react"
 import { useListData } from "react-stately"
 
-import { Tab, Tabs } from "../Tabs.js"
+import { Tab, Tabs } from "./Tabs"
 
 const meta = {
     title: "Navigation/Tabs",

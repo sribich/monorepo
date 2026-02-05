@@ -1,4 +1,6 @@
+import { type BaseCollection, createLeafComponent } from "@react-aria/collections"
 import { filterDOMProps, useId } from "@react-aria/utils"
+import type { CollectionBase, GlobalDOMAttributes } from "@react-types/shared"
 import { LayoutGroup, motion } from "framer-motion"
 import { type ForwardedRef, type ReactNode, type RefObject, use, useRef } from "react"
 import {
@@ -12,6 +14,7 @@ import {
     useTabList,
     useTabPanel,
 } from "react-aria"
+import { Collection, CollectionBuilder, CollectionRendererContext } from "react-aria-components"
 import { type Node, type TabListState, useTabListState } from "react-stately"
 
 import { createGenericContext } from "../../hooks/context.js"
@@ -21,15 +24,7 @@ import { useRenderProps, useStyleProps } from "../../hooks/useRenderProps.js"
 import { useStyles, type VariantProps } from "../../theme/props.js"
 import { MultiProvider } from "../../utils/context.js"
 import type { RenderProps, StyleProps } from "../../utils/props.js"
-import { TabsStyleProvider, tabsStyles, useTabsStyles } from "./Tabs.styles.js"
-import {
-    Collection,
-    CollectionRendererContext,
-    CollectionBuilder,
-    type TabsProps,
-} from "react-aria-components"
-import type { CollectionBase, GlobalDOMAttributes } from "@react-types/shared"
-import { createLeafComponent, type BaseCollection } from "@react-aria/collections"
+import { TabsStyleProvider, tabsStyles, useTabsStyles } from "./Tabs.stylex.js"
 
 //==============================================================================
 // Tabs

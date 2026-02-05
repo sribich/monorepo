@@ -1,3 +1,8 @@
+import { Meta } from "@storybook/addon-docs/blocks"
+
+import { Ripple } from "./Ripple"
+
+<Meta of={Ripple} title="Ripple/Mdx" />
 
 The ripple component provides a simple ripple effect that can be used
 within a component.

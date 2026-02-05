@@ -115,4 +115,9 @@ export const Group = meta.story({
             <Button data-testid="3">Third</Button>
         </ButtonGroup>
     ),
+    play: async ({ canvas, userEvent }) => {
+        const button = await canvas.findAllByRole("button")
+
+        await userEvent.click(button[0])
+    },
 })
