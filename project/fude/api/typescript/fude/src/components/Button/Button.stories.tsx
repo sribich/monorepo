@@ -1,4 +1,5 @@
 import { PersonStanding } from "lucide-react"
+import { fn, expect } from "storybook/test"
 
 import preview from "@/preview"
 
@@ -104,10 +105,14 @@ export const IconOnly = meta.story((props) => (
     </div>
 ))
 
-export const Group = meta.story((props) => (
-    <ButtonGroup {...props}>
-        <Button>First</Button>
-        <Button isDisabled>Second</Button>
-        <Button>Third</Button>
-    </ButtonGroup>
-))
+export const Group = meta.story({
+    render: (props) => (
+        <ButtonGroup {...props}>
+            <Button>First</Button>
+            <Button isDisabled data-testid="2">
+                Second
+            </Button>
+            <Button data-testid="3">Third</Button>
+        </ButtonGroup>
+    ),
+})
