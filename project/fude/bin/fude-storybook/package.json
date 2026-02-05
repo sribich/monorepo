@@ -35,6 +35,9 @@
     "@sribich/tsbuild": "0.0.0",
     "esbuild": "0.27.2"
   },
+  "scripts": {
+    "build-storybook": "storybook build"
+  },
   "onlyBuiltDependencies": ["playwright"],
   "minimumReleaseAge": 1440
 }

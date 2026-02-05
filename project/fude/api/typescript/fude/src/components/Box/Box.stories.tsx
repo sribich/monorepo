@@ -28,6 +28,6 @@ export const Overview = meta.story(() => (
                 </Button>
             </Box>
         </CardHeader>
-        <CardBody>Card Body</CardBody>
+        <CardBody>Card Bodyx</CardBody>
     </Card>
 ))

@@ -1,4 +1,4 @@
-// import { Checkerboard } from "../Checkerboard"
+import { Checkerboard } from "../Checkerboard"
 import { Sketch } from "../ColorPicker"
 
 const meta = {

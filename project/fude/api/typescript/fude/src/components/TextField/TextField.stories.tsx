@@ -1,7 +1,8 @@
 import preview from "@/preview"
 
 import { stylesToArgTypes } from "../../theme/props"
-import { TextField, textFieldStyles } from "./TextField"
+import { TextField } from "./TextField"
+import { textFieldStyles } from "./TextField.stylex"
 
 const meta = preview.meta({
     title: "Data Entry/TextField",

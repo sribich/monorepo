@@ -13,6 +13,7 @@ import {
     useGridListItem,
     useHover,
 } from "react-aria"
+import { ButtonContext, ListStateContext } from "react-aria-components"
 import {
     type DraggableCollectionState,
     type DroppableCollectionState,
@@ -33,17 +34,14 @@ import {
 } from "../../hooks/useDragAndDrop"
 import { useObjectRef } from "../../hooks/useObjectRef"
 import { useRenderProps } from "../../hooks/useRenderProps"
-import { type VariantProps, useStyles } from "../../theme/props"
+import { useStyles, type VariantProps } from "../../theme/props"
 import type { Collection } from "../../utils/collection/Collection"
-import { createCollectionComponent, type ItemRenderProps } from "../../utils/collection/hooks"
-import { MultiProvider } from "../../utils/context"
-
-import type { RenderProps, StyleProps } from "../../utils/props"
-import { GridListStyleProvider, gridListStyles } from "./GridList.styles"
 import { CollectionBuilder, CollectionItems } from "../../utils/collection/components"
 import { CollectionRenderer } from "../../utils/collection/context"
-import { ListStateContext } from "../ListBox/ListBox"
-import { ButtonContext } from "react-aria-components"
+import { createCollectionComponent, type ItemRenderProps } from "../../utils/collection/hooks"
+import { MultiProvider } from "../../utils/context"
+import type { RenderProps, StyleProps } from "../../utils/props"
+import { GridListStyleProvider, gridListStyles } from "./GridList.styles"
 
 //==============================================================================
 // GridList
@@ -215,7 +213,11 @@ export const GridListItem = createCollectionComponent(
     <T extends object>(props: GridListItem.Props<T>, node: Node<GridListItem.Props<T>>) => {
         const ref = useObjectRef<HTMLDivElement>(props.ref)
 
-        const state = ListStateContext.useGuaranteedContext()
+        const state = use(ListStateContext)
+
+        if (!state) {
+            throw new Error("Must be used within a ListStateContext")
+        }
 
         const { rowProps, gridCellProps, descriptionProps, ...states } = useGridListItem(
             {
