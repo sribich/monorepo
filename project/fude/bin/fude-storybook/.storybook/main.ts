@@ -3,9 +3,11 @@ import { defineMain } from "@storybook/react-vite/node"
 export default defineMain({
     framework: "@storybook/react-vite",
     stories: [
+        "../docs/Introduction.mdx",
+        "../docs/**/*.mdx",
         "../src/**/*.mdx",
         "../src/**/*.stories.@(js|jsx|ts|tsx)",
-        // "../../../api/typescript/fude/src/**/*.mdx",
+        "../../../api/typescript/fude/src/**/*.mdx",
         "../../../api/typescript/fude/src/**/*.stories.@(js|jsx|ts|tsx)",
     ],
     addons: [

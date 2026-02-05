@@ -10,6 +10,7 @@ import "../src/tailwind.css"
 import { darkTheme, lightTheme } from "@sribich/fude-theme"
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { create, props } from "@stylexjs/stylex"
+import { demoModeLoader } from "./demo-mode"
 
 const themeStyles = create({
     themeWrapper: {
@@ -62,6 +63,7 @@ export default definePreview({
         },
     },
     decorators: [withThemeDecorator],
+    loaders: [demoModeLoader],
     globalTypes: {
         theme: {
             name: "Theme",
@@ -73,6 +75,18 @@ export default definePreview({
                     { value: "light", icon: "sun", title: "light" },
                     { value: "dark", icon: "moon", title: "dark" },
                     { value: "side-by-side", icon: "sidebar", title: "side by side" },
+                ],
+            },
+        },
+        demoMode: {
+            name: "Demo Mode",
+            description: "Slows actions when running interactions to mimic user navigation",
+            defaultValue: "off",
+            toolbar: {
+                icon: "circlehollow",
+                items: [
+                    { value: "on", icon: "sun", title: "On" },
+                    { value: "off", icon: "moon", title: "Off" },
                 ],
             },
         },

@@ -2,11 +2,14 @@
   "name": "@sribich/fude-storybook",
   "version": "1.0.0",
   "type": "module",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "@chromatic-com/storybook": "5.0.0",
+    "@sribich/config-typescript": "0.0.0",
     "@sribich/fude": "0.0.0",
     "@sribich/fude-storybook-components": "0.0.0",
     "@sribich/fude-theme": "0.0.0",
+    "@sribich/tsbuild": "0.0.0",
     "@storybook/addon-a11y": "10.2.6",
     "@storybook/addon-docs": "10.2.6",
     "@storybook/addon-themes": "10.2.6",
@@ -30,11 +33,6 @@
     "tailwindcss": "4.1.18",
     "vite": "npm:rolldown-vite@latest",
     "vitest": "4.0.18"
-  },
-  "devDependencies": {
-    "@sribich/config-typescript": "0.0.0",
-    "@sribich/tsbuild": "0.0.0",
-    "esbuild": "0.27.2"
   },
   "scripts": {
     "build-storybook": "storybook build"
