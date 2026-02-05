@@ -7,41 +7,46 @@ import "@sribich/fude/reset.css"
 import "../src/styles.css"
 import "../src/tailwind.css"
 
-import { darkTheme } from "@sribich/fude-theme"
+import { darkTheme, lightTheme } from "@sribich/fude-theme"
+import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { create, props } from "@stylexjs/stylex"
 
 const themeStyles = create({
-    maxHeight: {
-        height: "100%",
-    },
-    flexWrapper: {
+    themeWrapper: {
         height: "100%",
         display: "flex",
-        justifyContent: "center",
-        // backgroundColor: colors.background,
     },
-    themeWrapper: {
-        // maxWidth: "1000px",
-        width: "100%",
+    themeElement: {
+        flex: 1,
         height: "100%",
-        // color: colors.foreground,
-        // backgroundColor: colors.background,
-
-        // "--ui-background": colors.background,
-        // "--ui-foreground": colors.foreground,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "auto",
+        padding: "1rem",
+        backgroundColor: colors.background,
     },
 })
 
 const withThemeDecorator: Decorator = (Story, context) => {
-    const selected = context.parameters["theme"] || context.globals["theme"]
+    const theme = context.parameters["theme"] || context.globals["theme"] || "light"
 
-    const { className } = props(themeStyles.maxHeight, selected === "dark" && darkTheme)
+    if (theme === "side-by-side") {
+        return (
+            <div {...props(themeStyles.themeWrapper)}>
+                <div {...props(themeStyles.themeElement, lightTheme)}>
+                    <Story />
+                </div>
+                <div {...props(themeStyles.themeElement, darkTheme)}>
+                    <Story />
+                </div>
+            </div>
+        )
+    }
 
     return (
-        <div className={`${className}`}>
-            <div {...props(themeStyles.themeWrapper)}>
-                <Story />
-            </div>
+        <div {...props(themeStyles.themeElement, theme === "dark" && darkTheme)}>
+            <Story />
         </div>
     )
 }
@@ -89,26 +94,7 @@ import {
     UsageGuidelines,
 } from "@sribich/fude-storybook"
 
-
 import { DocsContainer, DocsPage, Unstyled } from "@storybook/blocks"
-
-import { create, props } from "@stylexjs/stylex"
-import type { ReactNode } from "react"
-import type React from "react"
-import { Link, RelatedComponents } from "vibe-storybook-components"
-// import "vibe-storybook-components/dist/index.css"
-
-// import "@sribich/fude-storybook/styles.css"
-import "./preview.css"
-import "@sribich/fude/styles.css"
-import "../src/styles.css"
-
-// We need to import our storybook components like this so that
-// the imports are not hoisted so that we can inject the stylex
-// dev-runtime.
-// import { colors } from "../../../lib/typescript/ui/src/theme/vars/colors.stylex"
-// import { darkTheme } from "../../../lib/typescript/ui/src/theme/themes"
-// import { colors } from "@sribich/fude-theme/vars/color.stylex"
 
 const RelatedComponentsDecorator = ({ componentsNames, linkTarget }) => {
     return (
@@ -201,14 +187,5 @@ export default {
             },
         },
     },
-    decorators: [
-        (Story: React.FC) => {
-            return (
-                <div className="w-full p-8">
-                    <Story />
-                </div>
-            )
-        },
-    ],
 }
 */
