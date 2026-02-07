@@ -1,4 +1,4 @@
-// import { PureArgsTable } from "@storybook/blocks"
+import { Controls } from "@storybook/addon-docs/blocks"
 import { props } from "@stylexjs/stylex"
 import type { ReactNode } from "react"
 
@@ -8,8 +8,8 @@ export interface PropsTableProps {
     children: ReactNode
 }
 
-export const PropsTable = (props: PropsTableProps) => {
-    return <div {...props(propsTableStyles.container)}></div>
+export const PropsTable = (_props: PropsTableProps) => {
+    return <Controls {...props(propsTableStyles.container)}></Controls>
 }
 
 /*

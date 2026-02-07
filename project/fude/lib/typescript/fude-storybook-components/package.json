@@ -37,6 +37,7 @@
     "@sribich/fude": "0.0.0",
     "@sribich/fude-theme": "0.0.0",
     "@sribich/ts-utils": "0.0.0",
+    "@storybook/addon-docs": "10.2.6",
     "@stylexjs/stylex": "0.17.5",
     "lucide-react": "0.563.0",
     "tslib": "2.8.1"

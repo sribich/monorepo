@@ -26,6 +26,17 @@
         cargo = rustToolchain;
         rustc = rustToolchain;
       };
+
+      mdx-language-server = pkgs.mdx-language-server.overrideAttrs (old: rec {
+        version = "0.6.3";
+        src = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/@mdx-js/language-server/-/language-server-${version}.tgz";
+          hash = "sha256-rNYJYQjnA7u02nP4a7EL/yJbjGdwP0RLQpAhr/I9xLs";
+        };
+        postPatch = ''
+          ln -s ${./patches/mdx-language-server-package-lock.json} package-lock.json
+        '';
+      });
     in
     {
       NIX_LD = "${pkgs.stdenv.cc.libc}/lib/ld-linux-x86-64.so.2";
@@ -39,6 +50,7 @@
 
         # nodePackages.pnpm
         pnpm
+        mdx-language-server
 
         gst_all_1.gstreamer
         # Common plugins like "filesrc" to combine within e.g. gst-launch
