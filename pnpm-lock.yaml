@@ -407,6 +407,9 @@ importers:
       '@storybook/addon-docs':
         specifier: 10.2.6
         version: 10.2.6(@types/react@19.2.7)(esbuild@0.27.2)(rolldown-vite@7.3.1(@types/node@24.10.9)(esbuild@0.27.2)(jiti@2.6.1)(less@4.5.1)(tsx@4.21.0)(yaml@2.8.2))(rollup@4.57.1)(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      '@storybook/addon-storysource':
+        specifier: 8.6.14
+        version: 8.6.14(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       '@storybook/addon-themes':
         specifier: 10.2.6
         version: 10.2.6(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
@@ -458,6 +461,9 @@ importers:
       storybook:
         specifier: 10.2.6
         version: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      storybook-addon-tag-badges:
+        specifier: 3.0.6
+        version: 3.0.6(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
       storybook-addon-test-codegen:
         specifier: 3.0.1
         version: 3.0.1(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
@@ -482,6 +488,9 @@ importers:
       '@sribich/ts-utils':
         specifier: 0.0.0
         version: link:../../../../../lib/typescript/ts-utils
+      '@storybook/addon-docs':
+        specifier: 10.2.6
+        version: 10.2.6(@types/react@19.2.7)(esbuild@0.27.2)(rollup@4.57.1)(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
       '@stylexjs/stylex':
         specifier: 0.17.5
         version: 0.17.5
@@ -3196,6 +3205,11 @@ packages:
     peerDependencies:
       storybook: ^10.2.6
 
+  '@storybook/addon-storysource@8.6.14':
+    resolution: {integrity: sha512-/eDCNUHPdsVDF53B+Ebi9gHSNcRrA3puo1UCDio8wMN+jBMoWh6E5wSjXDsxWaOyp0Zwuq8XUx8AdgTlg/rcrw==}
+    peerDependencies:
+      storybook: ^8.6.14
+
   '@storybook/addon-themes@10.2.6':
     resolution: {integrity: sha512-2cVvH03UvDIZN3TOxc5QJk1n445OJfoBR4YYW+s9NHOXmMndg5Skx+guQ6Fa3ejRq24xS4/k7ppTaRioBAQPEg==}
     peerDependencies:
@@ -3277,6 +3291,11 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  '@storybook/source-loader@8.6.14':
+    resolution: {integrity: sha512-aFUqrkWh4XSXDmkrK0Nm8q4K94bfgnixFMmql8lBAFuEllFek9Rd3i2RwGOhLUtwzpM89f74nzEgR1kd/ijJ+g==}
+    peerDependencies:
+      storybook: ^8.6.14
 
   '@stylex-extend/babel-plugin@0.3.3':
     resolution: {integrity: sha512-QoKK/1VwCvEtuFmmrZp9UKJ1/hFq0aMFRe4L4IsULNUmDWjLMBsQe3UXs/JhHjCo1EZ/rc88eCXjAAU0KWf1ZA==}
@@ -4534,6 +4553,9 @@ packages:
   es-module-lexer@1.7.0:
     resolution: {integrity: sha512-jEQoCwk8hyb2AZziIOLhDqpm5+2ww5uIE6lkO/6jcOCusfk6LhMHpXXfBLXTZ7Ydyt0j4VoUQv6uGNYbdW+kBA==}
 
+  es-toolkit@1.44.0:
+    resolution: {integrity: sha512-6penXeZalaV88MM3cGkFZZfOoLGWshWWfdy0tWw/RlVVyhvMaWSBTOvXNeiW3e5FwdS5ePW0LGEu17zT139ktg==}
+
   es6-error@4.1.1:
     resolution: {integrity: sha512-Um/+FxMr9CISWh0bi5Zv0iOD+4cFh5qLeks1qhAopKVAJw3drgKbKySikp7wGhDL0HPeaja0P5ULZrxLkniUVg==}
 
@@ -5495,6 +5517,9 @@ packages:
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
+  map-or-similar@1.5.0:
+    resolution: {integrity: sha512-0aF7ZmVon1igznGI4VS30yugpduQW3y3GkcgGJOp7d8x8QrizhigUxjI/m2UojsXXto+jLAH3KSz+xOJTiORjg==}
+
   markdown-extensions@2.0.0:
     resolution: {integrity: sha512-o5vL7aDWatOTX8LzaS1WMoaoxIiLRQJuIKKe2wAw6IeULDHaqbiqiggmx+pKvZDb1Sj+pE46Sn1T7lCqfFtg1Q==}
     engines: {node: '>=16'}
@@ -5568,6 +5593,9 @@ packages:
 
   mdn-data@2.12.2:
     resolution: {integrity: sha512-IEn+pegP1aManZuckezWCO+XZQDplx1366JoVhTpMpBB1sPey/SbveZQUosKiKiGYjg1wH4pMlNgXbCiYgihQA==}
+
+  memoizerific@1.11.3:
+    resolution: {integrity: sha512-/EuHYwAPdLtXwAwSZkh/Gutery6pD2KYd44oQLhAvQp/50mpyduZh8Q7PYHXTCJ+wuXxt7oij2LXyIJOOYFPog==}
 
   merge-stream@2.0.0:
     resolution: {integrity: sha512-abv/qOcuPfk3URPfDzmZU1LKmuw8kT+0nIHvKrKgFrwifol/doWcdA4ZqsWQ8ENrFKkd67Mfpo/LovbIUsbt3w==}
@@ -6536,6 +6564,12 @@ packages:
 
   std-env@3.10.0:
     resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
+
+  storybook-addon-tag-badges@3.0.6:
+    resolution: {integrity: sha512-UQ9kaBqcKYgMsu2fkoLwcKJt83r7y1fzAtjrU9BUhkpILK1Jp0BbzQzeyno9opl5nWhYT57XXSAWDMeXH6dMlw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      storybook: ^10.0.0
 
   storybook-addon-test-codegen@3.0.1:
     resolution: {integrity: sha512-FEDzL19iQemNATYUNCilqGGXqTmXDCiLq4Q2qRczYRTOhpuklZsWEVDgxYJzVTSPOxCZ2MqWaJCNt/J4q2WFfw==}
@@ -10197,6 +10231,30 @@ snapshots:
       - vite
       - webpack
 
+  '@storybook/addon-docs@10.2.6(@types/react@19.2.7)(esbuild@0.27.2)(rollup@4.57.1)(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))':
+    dependencies:
+      '@mdx-js/react': 3.1.1(@types/react@19.2.7)(react@19.2.4)
+      '@storybook/csf-plugin': 10.2.6(esbuild@0.27.2)(rollup@4.57.1)(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@24.10.9)(jiti@2.6.1)(less@4.5.1)(lightningcss@1.31.1)(tsx@4.21.0)(yaml@2.8.2))
+      '@storybook/icons': 2.0.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@storybook/react-dom-shim': 10.2.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      react: 19.2.4
+      react-dom: 19.2.4(react@19.2.4)
+      storybook: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      ts-dedent: 2.2.0
+    transitivePeerDependencies:
+      - '@types/react'
+      - esbuild
+      - rollup
+      - vite
+      - webpack
+
+  '@storybook/addon-storysource@8.6.14(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
+    dependencies:
+      '@storybook/source-loader': 8.6.14(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))
+      estraverse: 5.3.0
+      storybook: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      tiny-invariant: 1.3.3
+
   '@storybook/addon-themes@10.2.6(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
     dependencies:
       storybook: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -10325,6 +10383,13 @@ snapshots:
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
+
+  '@storybook/source-loader@8.6.14(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4))':
+    dependencies:
+      es-toolkit: 1.44.0
+      estraverse: 5.3.0
+      prettier: 3.8.1
+      storybook: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
   '@stylex-extend/babel-plugin@0.3.3':
     dependencies:
@@ -11916,6 +11981,8 @@ snapshots:
 
   es-module-lexer@1.7.0: {}
 
+  es-toolkit@1.44.0: {}
+
   es6-error@4.1.1:
     optional: true
 
@@ -13139,6 +13206,8 @@ snapshots:
     dependencies:
       tmpl: 1.0.5
 
+  map-or-similar@1.5.0: {}
+
   markdown-extensions@2.0.0: {}
 
   markdown-table@3.0.4: {}
@@ -13336,6 +13405,10 @@ snapshots:
   mdn-data@2.0.28: {}
 
   mdn-data@2.12.2: {}
+
+  memoizerific@1.11.3:
+    dependencies:
+      map-or-similar: 1.5.0
 
   merge-stream@2.0.0: {}
 
@@ -14704,6 +14777,11 @@ snapshots:
   statuses@2.0.2: {}
 
   std-env@3.10.0: {}
+
+  storybook-addon-tag-badges@3.0.6(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)):
+    dependencies:
+      memoizerific: 1.11.3
+      storybook: 10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
 
   storybook-addon-test-codegen@3.0.1(storybook@10.2.6(@testing-library/dom@10.4.0)(prettier@3.8.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)):
     dependencies:
