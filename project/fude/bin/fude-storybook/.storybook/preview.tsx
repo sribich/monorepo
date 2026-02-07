@@ -1,15 +1,29 @@
+import {
+    ComponentName,
+    ComponentRule,
+    ComponentRules,
+    PropsTable,
+    SectionName,
+    Tip,
+    Title,
+    UnstyledList,
+    UnstyledListItem,
+    UsageGuidelines,
+} from "@sribich/fude-storybook-components"
+import { darkTheme, lightTheme } from "@sribich/fude-theme"
+import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import addonA11y from "@storybook/addon-a11y"
 import addonDocs from "@storybook/addon-docs"
+import { Canvas, DocsContainer, DocsPage, Meta, Unstyled } from "@storybook/addon-docs/blocks"
 import { type Decorator, definePreview } from "@storybook/react-vite"
+import { create, props } from "@stylexjs/stylex"
+import { MDXBadges } from 'storybook-addon-tag-badges/manager-helpers'
 
 import "./preview.css"
 import "@sribich/fude/reset.css"
 import "../src/styles.css"
 import "../src/tailwind.css"
 
-import { darkTheme, lightTheme } from "@sribich/fude-theme"
-import { colors } from "@sribich/fude-theme/vars/colors.stylex"
-import { create, props } from "@stylexjs/stylex"
 import { demoModeLoader } from "./demo-mode"
 
 const themeStyles = create({
@@ -26,6 +40,19 @@ const themeStyles = create({
         overflow: "auto",
         padding: "1rem",
         backgroundColor: colors.background,
+    },
+    docsWrapper: {
+        height: "100%",
+        color: colors.foreground,
+        backgroundColor: colors.background,
+        display: "flex",
+        justifyContent: "center",
+    },
+    docs: {
+        maxWidth: "1000px",
+        minWidth: "0px",
+        width: "100%",
+        height: "100%",
     },
 })
 
@@ -58,8 +85,67 @@ export default definePreview({
         a11y: {
             options: { xpath: true },
         },
+        layout: "fullscreen",
         docs: {
-            toc: true,
+            canvas: {
+                layout: "fullscreen",
+            },
+            container: ({ children, context }) => {
+                const theme = context.store.userGlobals.globals.theme || "light"
+
+                return (
+                    <DocsContainer context={context}>
+                        <Unstyled>
+                            <div {...props(themeStyles.docsWrapper, theme === "dark" && darkTheme)}>
+                                <div {...props(themeStyles.docs)}>{children}</div>
+                            </div>
+                        </Unstyled>
+                    </DocsContainer>
+                )
+            },
+            page: DocsPage,
+            components: {
+                Controls: PropsTable,
+                Canvas,
+                ComponentName,
+                ComponentRule,
+                ComponentRules,
+                Link: () => null,
+                Meta,
+                h1: ComponentName,
+                h2: SectionName,
+                h3: Title,
+                li: UnstyledListItem,
+                ul: UnstyledList,
+                Tip,
+                UnstyledList,
+                UnstyledListItem,
+                UsageGuidelines,
+                RelatedComponents: () => null,
+                MDXBadges,
+                /*
+                RelatedComponents: ({ componentNames, linkTarget }) => (
+                    <RelatedComponents
+                        componentsNames={componentsNames}
+                        linkTarget={linkTarget}
+                        descriptionComponentsMap={
+                            new Map([
+                                // ["button", <Button />]
+                            ])
+                        }
+                    />
+                ),
+                /*
+                p: Paragraph,
+                AlphaWarning,
+                DeprecatedWarning,
+                SectionName,
+                FunctionArguments,
+                FunctionArgument,
+                RelatedComponent,
+                Frame,
+                */
+            },
         },
     },
     decorators: [withThemeDecorator],
@@ -91,115 +177,41 @@ export default definePreview({
             },
         },
     },
+    options: {
+        storySort: {
+            order: [
+                "Welcome",
+                "Foundations",
+                "Layout",
+                "Navigation",
+                "Typography",
+                "Interactions",
+                "Data Entry",
+                "Data Display",
+                "Media",
+                "Overlays",
+                "Feedback",
+                "Hooks",
+                "Utils",
+                "*",
+            ],
+        },
+    },
     tags: ["autodocs"],
 })
 
 /*
-import {
-    ComponentName,
-    ComponentRule,
-    ComponentRules,
-    PropsTable,
-    SectionName,
-    Tip,
-    Title,
-    UnstyledList,
-    UnstyledListItem,
-    UsageGuidelines,
-} from "@sribich/fude-storybook"
-
 import { DocsContainer, DocsPage, Unstyled } from "@storybook/blocks"
-
-const RelatedComponentsDecorator = ({ componentsNames, linkTarget }) => {
-    return (
-        <RelatedComponents
-            componentsNames={componentsNames}
-            linkTarget={linkTarget}
-            descriptionComponentsMap={
-                new Map([
-                    // ["button", <Button />]
-                ])
-            }
-        />
-    )
-}
 
 export default {
     parameters: {
         actions: { argTypesRegex: "^on.*" },
         layout: "fullscreen",
         docs: {
-            story: {
-                inline: true,
-            },
-            container: (_props: { children: ReactNode; context: never }) => {
-                return (
-                    <DocsContainer context={_props.context}>
-                        <Unstyled>
-                            <div {...props(themeStyles.maxHeight, theme === "dark" && darkTheme)}>
-                                <div {...props(themeStyles.flexWrapper)}>
-                                    <div {...props(themeStyles.themeWrapper)}>
-                                        {_props.children}
-                                    </div>
-                                </div>
-                            </div>
-                        </Unstyled>
-                    </DocsContainer>
-                )
-            },
+
             page: DocsPage,
-            components: {
-                ArgsTable: PropsTable,
-                Controls: PropsTable,
-                PropsTable,
-
-                h1: ComponentName,
-                h2: SectionName,
-                h3: Title,
-                li: UnstyledListItem,
-                ul: UnstyledList,
-                ComponentName,
-                ComponentRule,
-                ComponentRules,
-                Tip,
-                UnstyledList,
-                UnstyledListItem,
-                UsageGuidelines,
-
-                Link,
-                RelatedComponents: RelatedComponentsDecorator,
-                /*
-                p: Paragraph,
-                AlphaWarning,
-                DeprecatedWarning,
-                SectionName,
-                FunctionArguments,
-                FunctionArgument,
-                RelatedComponent,
-                Frame,
-                * /
-            },
         },
-        options: {
-            storySort: {
-                order: [
-                    "Welcome",
-                    "Foundations",
-                    "Layout",
-                    "Navigation",
-                    "Typography",
-                    "Interactions",
-                    "Data Entry",
-                    "Data Display",
-                    "Media",
-                    "Overlays",
-                    "Feedback",
-                    "Hooks",
-                    "Utils",
-                    "*",
-                ],
-            },
-        },
+
     },
 }
 */

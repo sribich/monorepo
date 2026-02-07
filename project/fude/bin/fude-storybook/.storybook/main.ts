@@ -15,7 +15,9 @@ export default defineMain({
         "@storybook/addon-a11y",
         "@storybook/addon-docs",
         "@storybook/addon-themes",
+        "@storybook/addon-storysource",
         "@storybook/addon-vitest",
+        "storybook-addon-tag-badges",
         "storybook-addon-test-codegen",
     ],
     typescript: {
