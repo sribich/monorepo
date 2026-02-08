@@ -4,6 +4,8 @@ import { useMemo } from "react"
 const { style } = create({
     style: {
         margin: 0,
+        marginTop: "72px",
+        marginBottom: "24px",
         padding: 0,
         fontFamily: "figtree",
         fontSize: "32px",
