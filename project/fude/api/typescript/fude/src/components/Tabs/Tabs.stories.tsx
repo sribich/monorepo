@@ -5,6 +5,7 @@ import { Tab, Tabs } from "./Tabs"
 
 const meta = {
     title: "Navigation/Tabs",
+    tags: ["new"],
     component: Tabs,
     argTypes: {
         variant: {

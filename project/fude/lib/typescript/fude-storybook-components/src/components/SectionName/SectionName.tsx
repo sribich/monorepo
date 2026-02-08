@@ -1,27 +1,35 @@
-import { useStyles } from "@sribich/fude"
+import { create, props as stylexProps } from "@stylexjs/stylex"
 import { useMemo } from "react"
 
-import { sectionNameStyles } from "./SectionName.styles"
+const { style } = create({
+    style: {
+        margin: 0,
+        padding: 0,
+        fontFamily: "figtree",
+        fontSize: "32px",
+        fontWeight: 600,
+        letterSpacing: "-.23px",
+    },
+})
 
-export interface SectionNameProps {
-    children: string
-    className: string
+//==============================================================================
+// SectionName
+//==============================================================================
+export namespace SectionName {
+    export interface Props {
+        children: string
+        className: string
+    }
 }
 
-export const SectionName = (props: SectionNameProps) => {
-    const { styles } = useStyles(sectionNameStyles, {})
-
+export const SectionName = (props: SectionName.Props) => {
     const id = useMemo(() => {
-        return props.children
-            .toLowerCase()
-            .replace(/[\’\']/g, "")
-            .split(" ")
-            .join("-")
+        return props.children.toLowerCase().replace(/[’']/g, "").split(" ").join("-")
     }, [props.children])
 
     return (
-        <div id={id} {...styles.container()}>
-            <h2 {...styles.content()}>{props.children}</h2>
-        </div>
+        <h2 id={id} {...stylexProps(style)}>
+            {props.children}
+        </h2>
     )
 }

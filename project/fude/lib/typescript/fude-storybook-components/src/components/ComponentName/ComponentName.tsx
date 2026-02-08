@@ -1,18 +1,28 @@
-import { useStyles } from "@sribich/fude"
+import { create, props as stylexProps } from "@stylexjs/stylex"
 
-import { componentNameStyles } from "./ComponentName.styles"
+const { style } = create({
+    style: {
+        padding: 0,
+        margin: 0,
+        fontSize: "48px",
+        letterSpacing: "-1px",
+        fontWeight: 800,
+        fontFamily: "figtree",
+    },
+})
 
-export interface ComponentNameProps {
-    children: string
-    className: string
+//==============================================================================
+// ComponentName
+//==============================================================================
+export namespace ComponentName {
+    export interface Props {
+        children: string
+        className: string
+    }
 }
 
-export const ComponentName = (props: ComponentNameProps) => {
-    const { styles } = useStyles(componentNameStyles, {})
-
+export const ComponentName = (props: ComponentName.Props) => {
     return (
-        <div {...styles.container()}>
-            <h1 {...styles.content()}>{props.children}</h1>
-        </div>
+        <h1 {...stylexProps(style)}>{props.children}</h1>
     )
 }

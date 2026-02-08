@@ -17,7 +17,7 @@ import addonDocs from "@storybook/addon-docs"
 import { Canvas, DocsContainer, DocsPage, Meta, Unstyled } from "@storybook/addon-docs/blocks"
 import { type Decorator, definePreview } from "@storybook/react-vite"
 import { create, props } from "@stylexjs/stylex"
-import { MDXBadges } from 'storybook-addon-tag-badges/manager-helpers'
+import { MDXBadges } from "storybook-addon-tag-badges/manager-helpers"
 
 import "./preview.css"
 import "@sribich/fude/reset.css"
@@ -43,6 +43,7 @@ const themeStyles = create({
     },
     docsWrapper: {
         height: "100%",
+        padding: "80px 0 64px 0",
         color: colors.foreground,
         backgroundColor: colors.background,
         display: "flex",
@@ -105,15 +106,15 @@ export default definePreview({
             },
             page: DocsPage,
             components: {
-                Controls: PropsTable,
-                Canvas,
-                ComponentName,
+                Canvas, // CanvasWrapper
+                ComponentName, //
                 ComponentRule,
                 ComponentRules,
+                Controls: PropsTable,
                 Link: () => null,
                 Meta,
-                h1: ComponentName,
-                h2: SectionName,
+                h1: ComponentName, //
+                h2: SectionName, //
                 h3: Title,
                 li: UnstyledListItem,
                 ul: UnstyledList,
@@ -140,10 +141,12 @@ export default definePreview({
                 AlphaWarning,
                 DeprecatedWarning,
                 SectionName,
+
                 FunctionArguments,
                 FunctionArgument,
                 RelatedComponent,
                 Frame,
+                StorybookLink,
                 */
             },
         },
@@ -199,19 +202,3 @@ export default definePreview({
     },
     tags: ["autodocs"],
 })
-
-/*
-import { DocsContainer, DocsPage, Unstyled } from "@storybook/blocks"
-
-export default {
-    parameters: {
-        actions: { argTypesRegex: "^on.*" },
-        layout: "fullscreen",
-        docs: {
-
-            page: DocsPage,
-        },
-
-    },
-}
-*/
