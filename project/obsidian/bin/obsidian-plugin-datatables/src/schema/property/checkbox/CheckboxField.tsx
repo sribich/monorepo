@@ -17,5 +17,7 @@ export const CheckboxField = (props: PropertyFieldProps) => {
         schema.property.updateValue(property, props.document, () => !value)
     }
 
-    return <Checkbox aria-label={`${property.name} checkbox`} isSelected={value} onChange={toggle} />
+    return (
+        <Checkbox aria-label={`${property.name} checkbox`} isSelected={value} onChange={toggle} />
+    )
 }

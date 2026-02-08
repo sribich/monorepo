@@ -52,7 +52,12 @@ export const SelectConfig = (props: PropertyConfigProps) => {
             </Menu.Item>
             <Menu.Section />
             */}
-            <GridList aria-label="" items={property.config.options} onAction={onAction} className="flex flex-col gap-2">
+            <GridList
+                aria-label=""
+                items={property.config.options}
+                onAction={onAction}
+                className="flex flex-col gap-2"
+            >
                 {(item) => {
                     return (
                         <GridListItem id={item.id}>
@@ -62,7 +67,12 @@ export const SelectConfig = (props: PropertyConfigProps) => {
                                         <div className="flex flex-1 items-center justify-start">
                                             <Chip rawColor={item.color}>{item.name}</Chip>
                                         </div>
-                                        <Button variant="light" size="sm" radius="sm" className="flex-0">
+                                        <Button
+                                            variant="light"
+                                            size="sm"
+                                            radius="sm"
+                                            className="flex-0"
+                                        >
                                             <MoreHorizontal />
                                         </Button>
                                     </div>
@@ -78,7 +88,12 @@ export const SelectConfig = (props: PropertyConfigProps) => {
             {isAddingOption ? (
                 <TextField autoFocus label="" onKeyUp={addOption} />
             ) : (
-                <Button variant="light" size="sm" color="primary" onPress={() => setAddingOption(true)}>
+                <Button
+                    variant="light"
+                    size="sm"
+                    color="primary"
+                    onPress={() => setAddingOption(true)}
+                >
                     Add option
                 </Button>
             )}
@@ -113,7 +128,12 @@ const SelectConfigPopover = ({ option, property }: SelectConfigPopoverProps) => 
 
     return (
         <Box className="flex max-h-[50vh] w-72 flex-col" padding="2" shadow="md" rounded="md">
-            <TextField className="w-full" label="" defaultValue={option.name} onKeyUp={updateOptionName} />
+            <TextField
+                className="w-full"
+                label=""
+                defaultValue={option.name}
+                onKeyUp={updateOptionName}
+            />
             <Divider />
             <DialogTrigger>
                 <Button>Change Color</Button>

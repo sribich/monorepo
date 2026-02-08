@@ -50,7 +50,9 @@ export const [useViewScopeContext, ViewScopeProvider] = createGenericContext<Vie
  */
 export const useViewScope = (view: string) => {
     if (useViewScopeContext.isProvided()) {
-        throw new Error(`Called useViewScope within an existing scope. Did you mean to call useViewScopeContext?`)
+        throw new Error(
+            `Called useViewScope within an existing scope. Did you mean to call useViewScopeContext?`,
+        )
     }
 
     const schema = useSchema()

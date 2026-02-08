@@ -16,7 +16,9 @@ export const SearchAddon = () => {
             <Button size="sm" variant="light" onClick={() => setSearching(true)}>
                 <Search size="16" />
             </Button>
-            {isSearching && <TextField autoFocus onKeyUp={onKeyUp} placeholder="Type to search..." />}
+            {isSearching && (
+                <TextField autoFocus onKeyUp={onKeyUp} placeholder="Type to search..." />
+            )}
         </>
     )
 }

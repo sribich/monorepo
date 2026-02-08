@@ -99,7 +99,9 @@ export const Filter = (props: FilterProps) => {
                                     <Dialog>
                                         <Menu onAction={onMoreAction}>
                                             <MenuItem id="delete">Delete</MenuItem>
-                                            <MenuItem id="convert">Convert to compound filter</MenuItem>
+                                            <MenuItem id="convert">
+                                                Convert to compound filter
+                                            </MenuItem>
                                         </Menu>
                                     </Dialog>
                                 </Popover>

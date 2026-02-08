@@ -1,16 +1,16 @@
-import { defineConfig } from "astro/config";
-import starlight from "@astrojs/starlight";
-import { URL, fileURLToPath } from "node:url";
-import { join } from "node:path";
+import { defineConfig } from "astro/config"
+import starlight from "@astrojs/starlight"
+import { URL, fileURLToPath } from "node:url"
+import { join } from "node:path"
 
-import { generateDocs } from "@sribich/astro-plugin-docs";
+import { generateDocs } from "@sribich/astro-plugin-docs"
 
-const thisDirectory = fileURLToPath(new URL(".", import.meta.url));
-const contentDir = join(thisDirectory, "src/content/docs/generated");
+const thisDirectory = fileURLToPath(new URL(".", import.meta.url))
+const contentDir = join(thisDirectory, "src/content/docs/generated")
 
 const { integrations, sidebars } = await generateDocs({
     outDir: contentDir,
-});
+})
 
 export default defineConfig({
     integrations: [
@@ -39,7 +39,7 @@ export default defineConfig({
             ],
         }),
     ],
-});
+})
 
 /*
 import { defineConfig } from 'astro/config';

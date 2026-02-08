@@ -24,7 +24,9 @@ export const ReferenceConfig = (props: PropertyConfigProps) => {
             <Button variant="light" size="sm" fullWidth>
                 <div className="flex w-full">
                     <span className="flex-1 text-start">Related to</span>
-                    <span className="flex-0">{isConfigurable ? "Not yet set" : property.config.target}</span>
+                    <span className="flex-0">
+                        {isConfigurable ? "Not yet set" : property.config.target}
+                    </span>
                 </div>
             </Button>
             <Popover>

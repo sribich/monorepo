@@ -21,7 +21,11 @@ export const SelectField = (props: PropertyFieldProps) => {
                 <Chip rawColor={option?.color || undefined}>{option?.name ?? ""}</Chip>
             </OverlayTrigger>
             <OverlayContent>
-                <SelectFieldEdit document={props.document} property={property} selectedOption={option} />
+                <SelectFieldEdit
+                    document={props.document}
+                    property={property}
+                    selectedOption={option}
+                />
             </OverlayContent>
         </Overlay>
     )

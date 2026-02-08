@@ -1,4 +1,13 @@
-import { Cell, Column, ColumnResizer, Row, Table, TableBody, TableHeader, TableResizer } from "@sribich/fude"
+import {
+    Cell,
+    Column,
+    ColumnResizer,
+    Row,
+    Table,
+    TableBody,
+    TableHeader,
+    TableResizer,
+} from "@sribich/fude"
 
 import { useSchema } from "../../../ui/hooks/useSchema"
 import { useViewScopeContext } from "../../../ui/hooks/useViewScope"
@@ -23,7 +32,11 @@ export const TableView = () => {
                             id={column.uuid}
                             isRowHeader
                             isResizable
-                            defaultWidth={viewScope.schema.config.properties.find((it) => it.id === column.uuid)?.width}
+                            defaultWidth={
+                                viewScope.schema.config.properties.find(
+                                    (it) => it.id === column.uuid,
+                                )?.width
+                            }
                         >
                             {column.name}
                             <ColumnResizer />

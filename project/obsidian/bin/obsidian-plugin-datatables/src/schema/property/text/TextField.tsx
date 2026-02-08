@@ -1,7 +1,12 @@
 import { TextField as UiTextField } from "@sribich/fude"
 import { type KeyboardEvent, useRef } from "react"
 
-import { Overlay, OverlayContent, OverlayTrigger, useOverlayContext } from "../../../ui/components/Overlay/Overlay"
+import {
+    Overlay,
+    OverlayContent,
+    OverlayTrigger,
+    useOverlayContext,
+} from "../../../ui/components/Overlay/Overlay"
 import { assertProperty } from "../../../ui/hooks/useProperty"
 import { useSchema } from "../../../ui/hooks/useSchema"
 import type { PropertyFieldProps } from "../PropertyComponent"

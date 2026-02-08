@@ -16,7 +16,11 @@ export const CheckboxFilter = (props: PropertyFilterProps) => {
     const viewScope = useViewScopeContext()
 
     const onAction = (value: string | number) => {
-        schema.view.updateFilter(viewScope.schema.uuid, props.filter.uuid, value === "Checked" ? true : false)
+        schema.view.updateFilter(
+            viewScope.schema.uuid,
+            props.filter.uuid,
+            value === "Checked" ? true : false,
+        )
     }
 
     return (

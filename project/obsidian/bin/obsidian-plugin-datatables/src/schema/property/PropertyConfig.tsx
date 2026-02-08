@@ -24,7 +24,9 @@ export const PropertyConfig = (props: PropertyConfigProps) => {
             >
                 <div className="flex w-40 items-center px-2">
                     <div className="mr-2">{createElement(component.icon, {})}</div>
-                    <div className="overflow-hidden text-ellipsis whitespace-nowrap">{props.property.name}</div>
+                    <div className="overflow-hidden text-ellipsis whitespace-nowrap">
+                        {props.property.name}
+                    </div>
                 </div>
             </Button>
             <Popover>

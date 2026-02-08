@@ -25,7 +25,9 @@ export const useView = () => {
         view: proxy.codeBlock.view,
         setView: (view: string | number) => {
             if (typeof view === "number") {
-                throw new Error(`Tried to set view to incompatible value of type ${typeof view}: ${view}`)
+                throw new Error(
+                    `Tried to set view to incompatible value of type ${typeof view}: ${view}`,
+                )
             }
 
             proxyMut.codeBlock.view = view

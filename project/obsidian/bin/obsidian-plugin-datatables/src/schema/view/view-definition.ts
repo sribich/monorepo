@@ -4,14 +4,15 @@ import { enumVariant } from "../../util/arktype"
 import type { ViewKind } from "./view.kind"
 import { type ViewScope, viewScope } from "./view.scope"
 
-export type View<T> = T extends ViewDefinition<infer TKind, infer TOptions, infer TConfig>
-    ? {
-          kind: TKind
-          name: string
-          options: TOptions
-          config: TConfig
-      }
-    : never
+export type View<T> =
+    T extends ViewDefinition<infer TKind, infer TOptions, infer TConfig>
+        ? {
+              kind: TKind
+              name: string
+              options: TOptions
+              config: TConfig
+          }
+        : never
 
 export interface ViewDefinition<TKind extends ViewKind, TLayout, TConfig> {
     kind: TKind

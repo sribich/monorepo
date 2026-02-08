@@ -47,7 +47,9 @@ const DatatableCollationBar = () => {
     return (
         <Flex>
             {sortBarVisible && <SortBar />}
-            {sortBarVisible && filterBarVisible && <Divider orientation="vertical" className="mx-2" />}
+            {sortBarVisible && filterBarVisible && (
+                <Divider orientation="vertical" className="mx-2" />
+            )}
             {filterBarVisible && <FilterBar />}
         </Flex>
     )

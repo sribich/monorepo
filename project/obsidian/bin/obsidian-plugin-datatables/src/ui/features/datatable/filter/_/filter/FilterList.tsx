@@ -23,7 +23,10 @@ export const FilterList = ({ viewScope }: Props) => {
                 {viewScope.data.filters.map((it) => (
                     <Menu.OrderedItem key={it.uuid} dragId={it.uuid}>
                         <Menu.Item.Text>
-                            {viewScope.data.tableProperties.find((p) => p.uuid === it.property)?.name}
+                            {
+                                viewScope.data.tableProperties.find((p) => p.uuid === it.property)
+                                    ?.name
+                            }
                         </Menu.Item.Text>
                     </Menu.OrderedItem>
                 ))}

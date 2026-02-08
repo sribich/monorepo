@@ -121,13 +121,25 @@ const ViewTabInfo = () => {
             <Popover placement="bottom end">
                 <Dialog>
                     <Box padding="2" rounded="sm">
-                        <GridList size="sm" aria-label="Views" items={allViews} /*dragAndDropHooks={dragAndDropHooks}*/>
+                        <GridList
+                            size="sm"
+                            aria-label="Views"
+                            items={allViews} /*dragAndDropHooks={dragAndDropHooks}*/
+                        >
                             {(view) => (
                                 <GridListItem id={view.uuid} textValue={view.name}>
                                     <div className="flex w-full items-center">
-                                        {createElement(viewComponents[view.kind].icon, { size: 16, className: "mr-1" })}
+                                        {createElement(viewComponents[view.kind].icon, {
+                                            size: 16,
+                                            className: "mr-1",
+                                        })}
                                         <span className="flex-1">{view.name}</span>
-                                        <Button radius="sm" size="sm" variant="light" className="flex-0 p-0">
+                                        <Button
+                                            radius="sm"
+                                            size="sm"
+                                            variant="light"
+                                            className="flex-0 p-0"
+                                        >
                                             <MoreHorizontal size="16" />
                                         </Button>
                                     </div>

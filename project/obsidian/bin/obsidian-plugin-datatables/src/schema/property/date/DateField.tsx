@@ -20,10 +20,14 @@ export const DateField = (props: PropertyFieldProps) => {
 
     return (
         <Overlay>
-            <OverlayTrigger>{value?.date ? new Date(value?.date).toDateString() : null}</OverlayTrigger>
+            <OverlayTrigger>
+                {value?.date ? new Date(value?.date).toDateString() : null}
+            </OverlayTrigger>
             <OverlayContent>
                 <DatePicker
-                    onChange={(value) => onChange(value.toDate(Intl.DateTimeFormat().resolvedOptions().timeZone))}
+                    onChange={(value) =>
+                        onChange(value.toDate(Intl.DateTimeFormat().resolvedOptions().timeZone))
+                    }
                 />
             </OverlayContent>
         </Overlay>

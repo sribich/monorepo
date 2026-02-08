@@ -164,9 +164,7 @@ export class SchemaLoader {
         const data = schema(jsonData)
 
         if (data instanceof ArkErrors) {
-            throw new Error(
-                `Failed to parse schema content: Validation failed: ${data.summary}`,
-            )
+            throw new Error(`Failed to parse schema content: Validation failed: ${data.summary}`)
         }
 
         if (!data) {

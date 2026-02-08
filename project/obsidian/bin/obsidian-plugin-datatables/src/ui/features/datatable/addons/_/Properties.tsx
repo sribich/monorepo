@@ -22,7 +22,8 @@ export const Properties = ({ viewScope }: Props) => {
                     <Menu.Item.Text>Properties</Menu.Item.Text>
                     <Menu.Item.Extra arrow>
                         <Typography.Muted>
-                            {viewScope.data.viewProperties.length}/{viewScope.data.tableProperties.length} shown
+                            {viewScope.data.viewProperties.length}/
+                            {viewScope.data.tableProperties.length} shown
                         </Typography.Muted>
                     </Menu.Item.Extra>
                 </Menu.Item>
