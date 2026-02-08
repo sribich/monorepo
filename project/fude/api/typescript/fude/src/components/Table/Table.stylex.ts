@@ -1,9 +1,8 @@
-import { create } from "@stylexjs/stylex"
-
-import { createGenericContext } from "../../hooks/context"
-import { type CachedStyles, type MadeStyles, makeStyles } from "../../theme/props"
 import { borderWidth } from "@sribich/fude-theme/vars/borderWidth.stylex"
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
+import { create } from "@stylexjs/stylex"
+
+import { makeStyles } from "../../theme/props"
 
 export const tableStyles = makeStyles({
     slots: create({
@@ -22,15 +21,28 @@ export const tableStyles = makeStyles({
             borderColor: colors.borderLayout,
         },
         headRow: {},
-        column: {
+        columnWrapper: {
             ":hover": {
                 background: colors.backgroundHover,
             },
         },
+        column: {
+            display: "flex",
+            flexDirection: "column",
+        },
         columnResizer: {
-            flexGrow: 1,
+            // flexGrow: 1,
             placeSelf: "end",
-            justifySelf: "end",
+            // justifySelf: "end",
+            height: "24px",
+            cursor: "ew-resize",
+            width: "4px",
+            backgroundColor: "black",
+            paddingBlock: "4px",
+            boxSizing: "content-box",
+            "::after": {
+
+            }
         },
         body: {},
         row: {},
@@ -44,6 +56,3 @@ export const tableStyles = makeStyles({
     variants: {},
     defaultVariants: {},
 })
-
-export const [useTableStyles, TableStyleProvider] =
-    createGenericContext<CachedStyles<typeof tableStyles>>()

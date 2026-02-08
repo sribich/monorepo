@@ -22,16 +22,6 @@ export interface StyleRenderProps<T> {
     style?: CSSProperties | ((renderProps: T) => CSSProperties) | undefined
 }
 
-export interface _RenderProps<T = never, TNodeType = ReactNode> extends StyleRenderProps<T> {
-    children?: RenderChild<T, TNodeType> | undefined
-}
-
 export interface RenderProps<T = never, TNodeType = ReactNode> extends StyleRenderProps<T> {
     children?: RenderChild<T, TNodeType> | undefined
 }
-
-// export interface StyleVariants<T extends string> {
-//     classNames?: {
-//         [K in T]?: () => string
-//     }
-// }

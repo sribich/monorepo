@@ -2,8 +2,8 @@ import { useListData } from "react-stately"
 
 import preview from "@/preview"
 
-import { useDragAndDrop } from "../../hooks/useDragAndDrop"
 import { GridList, GridListItem } from "./GridList"
+import { useDragAndDrop } from "react-aria-components"
 
 const meta = preview.meta({
     title: "Navigation/GridList",

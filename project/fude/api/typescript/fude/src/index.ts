@@ -19,7 +19,7 @@
 // import "./reset.css"
 
 export { Popover, PopoverContext, VisuallyHidden } from "react-aria-components"
-export { GridList, GridListItem, useDragAndDrop, isFileDropItem } from "react-aria-components"
+export { useDragAndDrop, isFileDropItem } from "react-aria-components"
 
 ///
 ///
@@ -39,7 +39,7 @@ export * from "./components/Image/Image"
 export * from "./components/Dialog/Dialog"
 export * from "./components/Divider/Divider"
 export * from "./components/Form/Form"
-// export * from "./components/GridList/GridList"
+export * from "./components/GridList/GridList"
 export * from "./components/Heading/Heading"
 export * from "./components/Input/Input"
 export * from "./components/Link/Link"
@@ -54,8 +54,6 @@ export * from "./components/ColorPicker/ColorPicker"
 export * from "./components/ContextMenu/ContextMenu"
 
 export * from "./components/DatePicker/DatePicker"
-// export * from "./components/Header/primitive/Header"
-// export * from "./components/InlineMenu/InlineMenu"
 export * from "./components/ListBox/ListBox"
 export * from "./components/Select/Select"
 export * from "./components/Sidebar/Sidebar"
@@ -69,7 +67,6 @@ export * from "./components/Typography/Typography"
 export * from "./hooks/context"
 export * from "./hooks/useComposedRefs"
 // export * from "./hooks/useContextMenu"
-// export * from "./hooks/useDragAndDrop"
 export * from "./hooks/useObjectRef"
 export * from "./hooks/useRenderProps"
 
@@ -80,11 +77,5 @@ export * from "./hooks/useRenderProps"
 // export * from "./theme/themes"
 export * from "./theme/props"
 
-// ///
-// ///
-// ///
-// export * from "./utils/collection/Document"
-// export * from "./utils/collection/hooks"
 export * from "./utils/mergeProps"
-// export * from "./utils/props"
-// export * from "./utils/refs"
+export * from "./utils/refs"

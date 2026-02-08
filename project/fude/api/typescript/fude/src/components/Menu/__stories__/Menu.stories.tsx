@@ -1,12 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react"
 import { ArrowLeft, ArrowRight } from "lucide-react"
 
-// import { Section } from "../../../utils/collection/hooks.js"
 import { Button } from "../../Button/Button.js"
 import { Divider } from "../../Divider/Divider.js"
-import { Header } from "../../Header/primitive/Header.js"
 import { Popover } from "../../Popover/Popover.js"
 import { Menu, MenuItem, MenuSection, MenuTrigger } from "../Menu.js"
+import { Heading } from "../../Heading/Heading.js"
 
 const meta = {
     title: "Navigation/Menu",
@@ -137,7 +136,7 @@ export const WithSections: Story = {
             <MenuItem>A</MenuItem>
             <MenuItem>B</MenuItem>
             <MenuSection>
-                <Header>Section</Header>
+                <Heading>Section</Heading>
                 <MenuItem>C</MenuItem>
                 <MenuItem>D</MenuItem>
             </MenuSection>

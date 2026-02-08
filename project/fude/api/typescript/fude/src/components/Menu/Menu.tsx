@@ -2,24 +2,16 @@ import { mergeProps, useObjectRef } from "@react-aria/utils"
 import { createContext, type ReactNode, type RefObject, use } from "react"
 import type { Key } from "react-aria"
 import {
-    createLeafComponent,
+    MenuSection as AriaMenuSection,
     type MenuItemProps,
     type MenuProps,
     type MenuTriggerProps,
     Menu as RacMenu,
     MenuItem as RacMenuItem,
     MenuTrigger as RacMenuTrigger,
-    MenuSection as AriaMenuSection,
 } from "react-aria-components"
-import {
-    type Node,
-    type RootMenuTriggerState,
-    type SubmenuTriggerProps,
-    type TreeState,
-    useMenuTriggerState,
-    useSubmenuTriggerState,
-    useTreeState,
-} from "react-stately"
+import type { Node } from "react-stately"
+
 import {
     createControlledContext,
     createGenericContext,
@@ -27,15 +19,9 @@ import {
     createNewGenericContext,
 } from "../../hooks/context"
 import { useStyles, type VariantProps } from "../../theme/props"
-import {
-    type Collect,
-    createCollectionComponent,
-    type ItemRenderProps,
-} from "../../utils/collection/hooks"
-import { MultiProvider } from "../MultiProvider"
 import type { NamedStyleSlots } from "../../utils/props"
+import { MultiProvider } from "../MultiProvider"
 import { MenuStyleContext, menuStyles } from "./Menu.styles"
-import { CollectionNode } from "@react-aria/collections"
 
 //==============================================================================
 // Menu Support
