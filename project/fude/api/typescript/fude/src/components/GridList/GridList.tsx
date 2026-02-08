@@ -39,7 +39,7 @@ import type { Collection } from "../../utils/collection/Collection"
 import { CollectionBuilder, CollectionItems } from "../../utils/collection/components"
 import { CollectionRenderer } from "../../utils/collection/context"
 import { createCollectionComponent, type ItemRenderProps } from "../../utils/collection/hooks"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import type { RenderProps, StyleProps } from "../../utils/props"
 import { GridListStyleProvider, gridListStyles } from "./GridList.styles"
 

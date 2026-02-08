@@ -32,7 +32,7 @@ import {
     createCollectionComponent,
     type ItemRenderProps,
 } from "../../utils/collection/hooks"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import type { NamedStyleSlots } from "../../utils/props"
 import { MenuStyleContext, menuStyles } from "./Menu.styles"
 import { CollectionNode } from "@react-aria/collections"

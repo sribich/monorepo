@@ -16,7 +16,7 @@ import { type CalendarState, useCalendarState } from "react-stately"
 
 import { useObjectRef } from "../../hooks/useObjectRef"
 import { useStyles } from "../../theme/props"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import { mergeProps } from "../../utils/mergeProps"
 import { CalendarStyleProvider, calendarStyles, useCalendarStyles } from "./Calendar.stylex"
 

@@ -73,7 +73,7 @@ import {
     useCollectionNode,
     useRenderedCollection,
 } from "../../utils/collection/hooks"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import { mergeProps } from "../../utils/mergeProps"
 import type { RenderProps, StyleProps, StyleRenderProps } from "../../utils/props"
 import { CheckboxContext } from "../Checkbox/Checkbox"

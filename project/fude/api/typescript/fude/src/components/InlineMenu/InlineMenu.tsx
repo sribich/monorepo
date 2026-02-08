@@ -44,7 +44,7 @@ import { useFocusRing, useMenu, useMenuItem, useSubmenuTrigger } from "react-ari
 import { mergeProps } from "../../utils/mergeProps"
 import { filterDOMProps } from "@react-aria/utils"
 import { useRenderProps, useStyleProps } from "../../hooks/useRenderProps"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import { DividerContext } from "../Divider/Divider"
 import type { FocusStrategy, Key, LinkDOMProps } from "@react-types/shared"
 import { createControlledContext, createGenericContext } from "../../hooks/context"

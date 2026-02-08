@@ -1,5 +1,6 @@
 import type { BaseCollection } from "@react-aria/collections"
 import type { CollectionBase, PressEvents } from "@react-types/shared"
+import { cardMarker } from "@sribich/fude-theme/markers.stylex"
 import { type ReactNode, type Ref, type RefObject, use, useRef } from "react"
 import {
     type AriaFocusRingProps,
@@ -14,18 +15,16 @@ import {
     CollectionRendererContext,
     createLeafComponent,
 } from "react-aria-components"
-import { cardMarker } from "@sribich/fude-theme/markers.stylex"
+
 import { useObjectRef } from "../../hooks/useObjectRef"
 import { useRenderProps } from "../../hooks/useRenderProps"
 import { useStyles, type VariantProps } from "../../theme/props"
-import { MultiProvider } from "../../utils/context"
+import { MultiProvider } from "../MultiProvider"
 import { mergeProps } from "../../utils/mergeProps"
 import type { RenderProps } from "../../utils/props"
 import { BoxContext } from "../Box/Box"
 import { HeadingProvider } from "../Heading/Heading"
 import { CardStyleContext, cardStyles } from "./Card.stylex"
-import { defaultMarker } from "@stylexjs/stylex"
-import { stylexProps } from "../../utils/stylex"
 
 const useCardStyles = (props: Card.Props) => {
     const styleTypeCheck = useRef(false)

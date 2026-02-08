@@ -77,13 +77,14 @@ interface ProviderProps<A, B, C, D, E, F, G, H, I, J, K> {
     children: ReactNode
 }
 
-export function MultiProvider<A, B, C, D, E, F, G, H, I, J, K>({
-    values,
-    children,
-}: ProviderProps<A, B, C, D, E, F, G, H, I, J, K>): React.JSX.Element {
-    for (const [Provider, value] of values) {
-        children = <Provider value={value as any}>{children}</Provider>
+export const MultiProvider = <A, B, C, D, E, F, G, H, I, J, K>(
+    props: ProviderProps<A, B, C, D, E, F, G, H, I, J, K>,
+): ReactNode => {
+    let children = props.children
+
+    for (const [Provider, value] of props.values) {
+        children = <Provider value={value as never}>{children}</Provider>
     }
 
-    return children as React.JSX.Element
+    return children
 }

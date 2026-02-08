@@ -22,7 +22,7 @@ import { type ContextMenuProps, useContextMenu } from "../../hooks/useContextMen
 import { useObjectRef } from "../../hooks/useObjectRef.js"
 import { useRenderProps, useStyleProps } from "../../hooks/useRenderProps.js"
 import { useStyles, type VariantProps } from "../../theme/props.js"
-import { MultiProvider } from "../../utils/context.js"
+import { MultiProvider } from "../MultiProvider.js"
 import type { RenderProps, StyleProps } from "../../utils/props.js"
 import { TabsStyleProvider, tabsStyles, useTabsStyles } from "./Tabs.stylex.js"
 
