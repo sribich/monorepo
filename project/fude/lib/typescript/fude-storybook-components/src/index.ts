@@ -1,7 +1,6 @@
 export * from "./components/ComponentName/ComponentName"
 export * from "./components/ComponentRule/ComponentRule"
 export * from "./components/ComponentRules/ComponentRules"
-export * from "./components/PropsTable/PropsTable"
 export * from "./components/SectionName/SectionName"
 export * from "./components/Tip/Tip"
 export * from "./components/Title/Title"

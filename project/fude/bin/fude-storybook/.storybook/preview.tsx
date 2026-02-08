@@ -2,7 +2,6 @@ import {
     ComponentName,
     ComponentRule,
     ComponentRules,
-    PropsTable,
     SectionName,
     Tip,
     Title,
@@ -14,7 +13,7 @@ import { darkTheme, lightTheme } from "@sribich/fude-theme"
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import addonA11y from "@storybook/addon-a11y"
 import addonDocs from "@storybook/addon-docs"
-import { Canvas, DocsContainer, DocsPage, Meta, Unstyled } from "@storybook/addon-docs/blocks"
+import { Canvas, Controls, DocsContainer, DocsPage, Meta, Unstyled } from "@storybook/addon-docs/blocks"
 import { type Decorator, definePreview } from "@storybook/react-vite"
 import { create, props } from "@stylexjs/stylex"
 import { MDXBadges } from "storybook-addon-tag-badges/manager-helpers"
@@ -106,11 +105,11 @@ export default definePreview({
             },
             page: DocsPage,
             components: {
-                Canvas, // CanvasWrapper
+                Canvas, //
                 ComponentName, //
                 ComponentRule,
                 ComponentRules,
-                Controls: PropsTable,
+                Controls, //
                 Link: () => null,
                 Meta,
                 h1: ComponentName, //
