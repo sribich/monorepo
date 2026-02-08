@@ -134,7 +134,6 @@ export const Menu = <T extends object>(props: Menu.Props<T>) => {
 //==============================================================================
 export namespace MenuSection {
     export interface Props extends NamedStyleSlots<"section"> {
-        item: Node<T>
         children?: ReactNode
     }
 }

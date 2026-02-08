@@ -155,7 +155,7 @@ export type InferStyles<T> =
         : `$Value is not a valid stylex component.`
 
 export type CachedStyle<
-    Conditions extends Record<string, Record<string, unknown>>,
+    Conditions extends Record<string, Record<string, any>>,
     TStyle extends string,
 > = ((...additionalStyles: unknown[]) => { className: string }) & {
     [K in keyof Conditions]: Conditions[K][TStyle]

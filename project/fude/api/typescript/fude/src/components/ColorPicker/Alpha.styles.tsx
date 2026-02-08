@@ -1,20 +1,18 @@
+import { boxShadow } from "@sribich/fude-theme/vars/boxShadow.stylex"
+import { zIndex } from "@sribich/fude-theme/vars/zindex.stylex"
 import { create } from "@stylexjs/stylex"
 
 import { makeStyles } from "../../theme/props"
-import { boxShadow } from "@sribich/fude-theme/vars/boxShadow.stylex"
 
 export const alphaStyles = makeStyles({
     slots: create({
-        alphaContainer: {
+        alpha: {
             position: "absolute",
             inset: 0,
-
-            // overflow: "hidden",
+            zIndex: zIndex.behind1,
             boxShadow: boxShadow.inset,
-        }, // className="absolute inset-0 bg-blue-900 z-10 h-full"
-        alphaSlider: {
-            position: "absolute",
-            inset: 0,
+            borderRadius: "var(--track-radius)",
+            overflow: "hidden",
         },
     }),
     conditions: {},

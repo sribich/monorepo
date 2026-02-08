@@ -1,40 +1,88 @@
+import { type ReactNode, type RefObject, use, useMemo } from "react"
 import {
-    Slider as RacSlider,
-    SliderTrack as RacSliderTrack,
-    SliderThumb as RacSliderThumb,
+    Slider as AriaSlider,
+    type SliderProps as AriaSliderProps,
+    SliderThumb as AriaSliderThumb,
+    type SliderThumbProps as AriaSliderThumbProps,
+    SliderTrack as AriaSliderTrack,
+    type SliderTrackProps as AriaSliderTrackProps,
 } from "react-aria-components"
-import { type RefObject, use } from "react"
-import { type VariantProps, useStyles } from "../../theme/props"
+
+import { createNewGenericContext } from "../../hooks/context"
+import type { CachedStyles } from "../../theme/props"
+import { useStyles, type VariantProps } from "../../theme/props"
 import { mergeProps } from "../../utils/mergeProps"
-import { SliderStyleContext, sliderStyles } from "./Slider.stylex"
-import type { SliderProps, SliderThumbProps, SliderTrackProps } from "react-aria-components"
+import { sliderStyles } from "./Slider.stylex"
+
+//==============================================================================
+// Slider Context
+//==============================================================================
+export const SliderStyleContext = createNewGenericContext<CachedStyles<typeof sliderStyles>>()
 
 //==============================================================================
 // Slider
 //==============================================================================
 export namespace Slider {
-    export interface Props extends SliderProps, VariantProps<typeof sliderStyles> {
+    export interface Props
+        extends Omit<AriaSliderProps, "onChange" | "onChangeEnd">,
+            VariantProps<typeof sliderStyles> {
         ref?: RefObject<HTMLDivElement>
+
         // TODO: Fix this, variant is a string so as it is isDisabled does nothing.
         //       Need to fix useStyles to check for true or false and make them the
         //       string variant
         isDisabled?: boolean
+
+        onChange: (value: number) => void
+        onChangeEnd: (value: number) => void
+
+        renderTrack?: (props: SliderTrack.Props) => ReactNode
+        trackGradient: string
     }
 }
 
 export const Slider = ({ children, ...props }: Slider.Props) => {
-    const cachedStyles = useStyles(sliderStyles, props)
-    const { styles } = cachedStyles
+    const [onChange, onChangeEnd] = useMemo(
+        () => [
+            (value: number | number[]) => {
+                if (Array.isArray(value)) {
+                    console.error("Slider invariant broken: slider has multiple thumbs")
+                } else {
+                    props.onChange?.(value)
+                }
+            },
+            (value: number | number[]) => {
+                if (Array.isArray(value)) {
+                    console.error("Slider invariant broken: slider has multiple thumbs")
+                } else {
+                    props.onChangeEnd?.(value)
+                }
+            },
+        ],
+        [props.onChange, props.onChangeEnd],
+    )
+
+    const { styles, values } = useStyles(sliderStyles, props)
+
+    const Track = props.renderTrack ? props.renderTrack : SliderTrack
 
     return (
-        <SliderStyleContext value={cachedStyles}>
-            <RacSlider {...mergeProps(props, styles.slider())}>
-                <SliderTrack {...styles.trackWrapper()}>
-                    <div {...styles.track()}>
+        <SliderStyleContext value={{ styles, values }}>
+            <AriaSlider
+                {...mergeProps(props, styles.slider())}
+                onChange={onChange}
+                onChangeEnd={onChangeEnd}
+            >
+                <Track {...styles.trackWrapper()}>
+                    <div
+                        {...styles.track(
+                            props.trackGradient && styles.track.trackGradient(props.trackGradient),
+                        )}
+                    >
                         <SliderThumb />
                     </div>
-                </SliderTrack>
-            </RacSlider>
+                </Track>
+            </AriaSlider>
         </SliderStyleContext>
     )
 }
@@ -141,10 +189,8 @@ export const Slider = ({ children, ...props }: Slider.Props) => {
 // SliderTrack
 //==============================================================================
 export namespace SliderTrack {
-    export interface Props extends SliderTrackProps {
-        // trackProps: ReturnType<typeof useSlider>["trackProps"]
-        // noTrack?: boolean | undefined
-        // trackGradient?: string[] | undefined
+    export interface Props extends Omit<AriaSliderTrackProps, "children"> {
+        children: ReactNode
     }
 }
 
@@ -152,7 +198,7 @@ export const SliderTrack = (props: SliderTrack.Props) => {
     const { styles } = use(SliderStyleContext)
 
     return (
-        <RacSliderTrack
+        <AriaSliderTrack
             {...mergeProps(
                 props,
                 // styles.track(props.noTrack && styles.track.customTrack),
@@ -177,11 +223,11 @@ export const SliderTrack = (props: SliderTrack.Props) => {
 // SliderThumb
 //==============================================================================
 export namespace SliderThumb {
-    export interface Props extends SliderThumbProps {}
+    export interface Props extends AriaSliderThumbProps {}
 }
 
 export const SliderThumb = (props: SliderThumb.Props) => {
     const { styles } = use(SliderStyleContext)
 
-    return <RacSliderThumb {...mergeProps(props, styles.thumb())} />
+    return <AriaSliderThumb {...mergeProps(props, styles.thumb())} />
 }

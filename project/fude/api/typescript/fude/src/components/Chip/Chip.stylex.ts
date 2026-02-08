@@ -1,10 +1,10 @@
+import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
+import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
+import { spacing } from "@sribich/fude-theme/vars/spacing.stylex"
 import { create } from "@stylexjs/stylex"
 
 import { getReadableColor } from "../../theme/colors"
 import { makeStyles } from "../../theme/props"
-import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
-import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
-import { spacing } from "@sribich/fude-theme/vars/spacing.stylex"
 
 export const chipStyles = makeStyles({
     slots: create({
@@ -19,7 +19,7 @@ export const chipStyles = makeStyles({
         },
         chipContent: {},
     }),
-    conditions: {
+    modifiers: {
         customColor: {
             chipContainer: (color: string) => ({
                 color: getReadableColor(color),

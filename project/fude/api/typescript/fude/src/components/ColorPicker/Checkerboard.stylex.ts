@@ -1,7 +1,7 @@
+import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
 import { create } from "@stylexjs/stylex"
 
 import { makeStyles } from "../../theme/props"
-import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
 
 export const checkerboardStyles = makeStyles({
     slots: create({
@@ -11,7 +11,7 @@ export const checkerboardStyles = makeStyles({
             width: "100%",
         },
     }),
-    conditions: {
+    modifiers: {
         background: create({
             checkerboard: (image: string) => ({
                 background: image,
