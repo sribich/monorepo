@@ -6,7 +6,6 @@ pub mod use_case;
 use std::sync::Arc;
 
 use application::procedure::add_book::AddBookProcedure;
-use application::procedure::get_media::GetMedia;
 use application::procedure::list_media::ListMedia;
 use application::procedure::read_book::ReadBookProcedure;
 use axum::extract::DefaultBodyLimit;
@@ -17,13 +16,11 @@ use axum::response::IntoResponse;
 use features::shared::domain::value::muid::Muid;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
-use infra::handler::add_audio::add_audio_handler;
 use infra::handler::add_book::add_book_handler;
 use infra::handler::edit_title;
 use infra::handler::play_audio::play_audio_handler;
 use infra::handler::read_book::read_book_handler;
 use infra::handler::reprocess_sync::reprocess_sync_handler;
-use infra::handler::stats::stats_handler;
 use infra::handler::{self};
 use infra::repository::book::SqliteBookReader;
 use infra::repository::book::SqliteBookRepository;
@@ -35,7 +32,6 @@ use railgun::rpc::router::Router;
 use railgun_di::InjectorBuilder;
 use railgun_di::InjectorError;
 use tower_http::services::ServeFile;
-use use_case::add_audio::AddAudioUseCase;
 use use_case::reprocess_sync::ReprocessSyncUseCase;
 use use_case::set_progress::SetProgressUseCase;
 
@@ -56,15 +52,14 @@ impl Feature for LibraryFeature {
             .add::<SqliteBookReader>()?
             .add::<SqliteBookWriter>()?
             .add::<AddBookProcedure>()?
-            .add::<GetMedia>()?
             .add::<ListMedia>()?
-            .add::<AddAudioUseCase>()?
             .add::<ReadBookProcedure>()?
             .add::<ReprocessSyncUseCase>()?
             .add::<SetProgressUseCase>()?;
 
         Ok(())
     }
+
 
     fn routes(
         &self,
@@ -74,17 +69,11 @@ impl Feature for LibraryFeature {
     ) -> Router<AppState> {
         router
             .procedure(
-                "library:GetMedia",
-                procedure.query(handler::get_media::handler),
-            )
-            .procedure(
                 "library:ListMedia",
                 procedure.query(handler::list_media::handler),
             )
-            .procedure("library:AddAudio", procedure.mutation(add_audio_handler))
             .procedure("library:AddBook", procedure.mutation(add_book_handler))
             .procedure("library:ReadBook", procedure.query(read_book_handler))
-            .procedure("Library:Stats", procedure.query(stats_handler))
             .procedure(
                 "library:ReprocessSync",
                 procedure.mutation(reprocess_sync_handler),

@@ -81,7 +81,6 @@ enum ImplKind {
 
 impl From<syn::Type> for ImplKind {
     fn from(value: syn::Type) -> Self {
-        println!("HERE3");
         if let syn::Type::Path(TypePath { path, .. }) = &value
             && let syn::PathArguments::AngleBracketed(AngleBracketedGenericArguments {
                 args, ..

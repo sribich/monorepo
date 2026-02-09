@@ -178,3 +178,55 @@ let data_path = self.setting_service.get_setting::<DataPath>().await;
 
         file.write_all(fit_data.as_bytes()).await.unwrap();
 */
+
+
+/*
+OLD ADD_AUDIO
+
+
+        let data_path = self.setting_service.get_setting::<DataPath>().await;
+        let mut data_path = PathBuf::from(data_path.to_string());
+
+        data_path.push(data.media_id.to_string());
+
+        let rendered_data = read_to_string(data_path.join("rendered.txt"))
+            .await
+            .unwrap();
+
+        let timing_data = read_to_string(data_path.join("audio_timing.json"))
+            .await
+            .unwrap();
+
+        let transcriber = JapaneseTranscriptionContext {};
+
+        let fit_data = transcriber.fit(rendered_data, timing_data);
+        let fit_path = data_path.join("rendered_timing.txt");
+
+        let mut file = File::create(fit_path).await.unwrap();
+
+        file.write_all(fit_data.as_bytes()).await.unwrap();
+
+        /*
+        let result = EpubArchive::open(data.path.as_str()).unwrap();
+
+        let title = result.package.metadata.title.first().unwrap().value.clone();
+        let rendered = result.rendered;
+
+        let mut media = Media::new(title, data.series_id);
+
+        let base_data_path = self.setting_service.get_setting::<DataPath>().await;
+        let fs = Fs::new(base_data_path.path());
+
+        let rendered_path = fs
+            .write(format!("{}/rendered.txt", media.id().to_string()), rendered)
+            .await;
+
+        let book = Book::new(data.path, ExistingPath::from_path(rendered_path));
+
+        media.set_book(book);
+
+        self.library_repository.writer().save_media(media).await;
+         */
+        println!("here");
+        Ok(())
+*/
