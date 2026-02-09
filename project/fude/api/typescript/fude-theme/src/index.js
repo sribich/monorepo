@@ -15,6 +15,8 @@ import "./markers.stylex.js"
 import { createTheme } from "@stylexjs/stylex"
 import { colors } from "./vars/colors.stylex.js"
 
+export * from "./fonts.js"
+
 export const darkColors = {
     // Background Colors
     background: "#111111",

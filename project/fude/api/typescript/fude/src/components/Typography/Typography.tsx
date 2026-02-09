@@ -1,6 +1,5 @@
 import type { ElementType, ReactNode, RefObject } from "react"
 
-import { createControlledContext } from "../../hooks/context"
 import { useStyleProps } from "../../hooks/useRenderProps"
 import { useStyles, type VariantProps } from "../../theme/props"
 import { mergeProps } from "../../utils/mergeProps"

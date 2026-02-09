@@ -1,26 +1,27 @@
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
 import { create } from "@stylexjs/stylex"
+
 import { makeStyles } from "../../theme/props"
 
 export const headingLevels = {
     1: {
-        size: "8xl",
-    },
-    2: {
-        size: "6xl",
-    },
-    3: {
         size: "5xl",
     },
-    4: {
+    2: {
         size: "4xl",
     },
-    5: {
+    3: {
         size: "3xl",
     },
-    6: {
+    4: {
         size: "2xl",
+    },
+    5: {
+        size: "xl",
+    },
+    6: {
+        size: "lg",
     },
 } as const
 

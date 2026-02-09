@@ -1,4 +1,5 @@
 import type { ElementType, ReactNode, RefObject } from "react"
+
 import { createControlledContext, type SlotProps } from "../../hooks/context"
 
 export interface HeadingProps extends SlotProps {

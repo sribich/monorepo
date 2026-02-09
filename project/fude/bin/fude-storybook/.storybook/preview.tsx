@@ -10,12 +10,20 @@ import {
     UsageGuidelines,
 } from "@sribich/fude-storybook-components"
 import { darkTheme, lightTheme } from "@sribich/fude-theme"
+import { fonts } from "@sribich/fude-theme/vars/fonts.stylex"
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import addonA11y from "@storybook/addon-a11y"
 import addonDocs from "@storybook/addon-docs"
-import { Canvas, Controls, DocsContainer, DocsPage, Meta, Unstyled } from "@storybook/addon-docs/blocks"
+import {
+    Canvas,
+    Controls,
+    DocsContainer,
+    DocsPage,
+    Meta,
+    Unstyled,
+} from "@storybook/addon-docs/blocks"
 import { type Decorator, definePreview } from "@storybook/react-vite"
-import { create, props } from "@stylexjs/stylex"
+import { create, createTheme, props } from "@stylexjs/stylex"
 import { MDXBadges } from "storybook-addon-tag-badges/manager-helpers"
 
 import "./preview.css"
@@ -24,6 +32,11 @@ import "../src/styles.css"
 import "../src/tailwind.css"
 
 import { demoModeLoader } from "./demo-mode"
+
+const fontTheme = createTheme(fonts, {
+    display: "Figtree",
+    english: "Inter",
+})
 
 const themeStyles = create({
     themeWrapper: {
@@ -96,7 +109,13 @@ export default definePreview({
                 return (
                     <DocsContainer context={context}>
                         <Unstyled>
-                            <div {...props(themeStyles.docsWrapper, theme === "dark" && darkTheme)}>
+                            <div
+                                {...props(
+                                    themeStyles.docsWrapper,
+                                    theme === "dark" && darkTheme,
+                                    fontTheme,
+                                )}
+                            >
                                 <div {...props(themeStyles.docs)}>{children}</div>
                             </div>
                         </Unstyled>
