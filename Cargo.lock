@@ -2598,6 +2598,7 @@ dependencies = [
  "sha2",
  "shared",
  "statistics",
+ "storage",
 ]
 
 [[package]]
@@ -9238,6 +9239,40 @@ dependencies = [
  "shared",
  "statistics-app",
  "statistics-domain",
+]
+
+[[package]]
+name = "storage"
+version = "0.0.0"
+dependencies = [
+ "railgun",
+ "shared",
+ "storage-app",
+ "storage-infra",
+]
+
+[[package]]
+name = "storage-app"
+version = "0.0.0"
+dependencies = [
+ "shared",
+ "storage-domain",
+]
+
+[[package]]
+name = "storage-domain"
+version = "0.0.0"
+dependencies = [
+ "shared",
+]
+
+[[package]]
+name = "storage-infra"
+version = "0.0.0"
+dependencies = [
+ "shared",
+ "storage-app",
+ "storage-domain",
 ]
 
 [[package]]

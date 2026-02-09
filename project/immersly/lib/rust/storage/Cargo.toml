@@ -1,5 +1,5 @@
 [package]
-name = "features"
+name = "storage"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -11,11 +11,10 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-statistics = { path = "../statistics" }
-storage = { path = "../storage" }
+storage-app = { path = "../storage-app" }
+storage-infra = { path = "../storage-infra" }
 
-hex.workspace = true
-sha2.workspace = true
+railgun = { workspace = true }
 
 [dev-dependencies]
 
