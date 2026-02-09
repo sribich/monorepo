@@ -82,14 +82,5 @@ impl Feature for SchedulerFeature {
                     axum::routing::get(handler::play_card_audio::handler).with_state(state),
                 )
             })
-        // .apply(|router| {
-        //     // .procedure("library:EditTitle", procedure.mutation(edit_title::handler))
-        //     router.nest_service(
-        //         "/edit_title/{id}",
-        //         axum::routing::post(add_card_image::handler)
-        //             .with_state(Arc::clone(&state))
-        //             .layer(DefaultBodyLimit::max(1024 * 1024 * 1024 * 1024)),
-        //     )
-        // })
     }
 }

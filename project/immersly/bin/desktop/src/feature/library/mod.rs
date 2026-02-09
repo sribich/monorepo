@@ -17,7 +17,6 @@ use features::shared::domain::value::muid::Muid;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use infra::handler::add_book::add_book_handler;
-use infra::handler::edit_title;
 use infra::handler::play_audio::play_audio_handler;
 use infra::handler::read_book::read_book_handler;
 use infra::handler::reprocess_sync::reprocess_sync_handler;
@@ -83,19 +82,11 @@ impl Feature for LibraryFeature {
                 procedure.mutation(handler::set_progress::handler),
             )
             .apply(|router| {
-                // .procedure("library:EditTitle", procedure.mutation(edit_title::handler))
                 router
                     .nest_service(
                         "/dictionary_image/{id}/",
                         axum::routing::get(test).with_state(Arc::clone(&state)),
                     )
-                    .nest_service(
-                        "/edit_title/{id}",
-                        axum::routing::post(edit_title::handler)
-                            .with_state(Arc::clone(&state))
-                            .layer(DefaultBodyLimit::max(1024 * 1024 * 1024 * 1024)),
-                    )
-                    //
                     .route("/play/{id}", axum::routing::get(play_audio_handler))
             })
     }
