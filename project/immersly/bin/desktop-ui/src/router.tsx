@@ -7,6 +7,7 @@ import { SettingsPage } from "./features/settings/pages/SettingsPage"
 import { StudyPage } from "./features/study/pages/StudyPage"
 import { RootRoute } from "./routes/__root"
 import { AppLayout } from "./routes/_app"
+import { LibraryEditPage } from "./features/library/pages/LibraryEditPage"
 
 const rootRoute = createRootRoute({
     component: RootRoute,
@@ -44,7 +45,6 @@ export const dictionarySettingsRoute = createRoute({
     component: DictionarySettingsPage,
 })
 
-// TODO: Edit (see MediaEditPage)
 const libraryRoute = createRoute({
     getParentRoute: () => rootLayout,
     path: "library",
@@ -54,6 +54,16 @@ const libraryIndexRoute = createRoute({
     getParentRoute: () => libraryRoute,
     path: "/",
     component: LibraryPage,
+})
+
+export const libraryEditRoute = createRoute({
+    getParentRoute: () => libraryRoute,
+    path: "$book_id/edit",
+    component: () => {
+        const { book_id: bookId } = libraryEditRoute.useParams()
+
+        return <LibraryEditPage bookId={bookId} />
+    },
 })
 
 export const libraryReadRoute = createRoute({
@@ -90,7 +100,7 @@ export const routeTree = rootRoute.addChildren([
     rootLayout.addChildren([
         studyRoute,
         dictionaryRoute.addChildren([dictionaryIndexRoute, dictionarySettingsRoute]),
-        libraryRoute.addChildren([libraryIndexRoute, libraryReadRoute]),
+        libraryRoute.addChildren([libraryIndexRoute, libraryEditRoute, libraryReadRoute]),
         settingsRoute,
     ]),
 ])

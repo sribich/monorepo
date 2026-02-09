@@ -45,24 +45,6 @@ impl LibraryRepository<()> {
 }
 
 impl LibraryRepository<Reader> {
-    pub async fn get_title(
-        &self,
-        id: &LibraryId,
-    ) -> Result<LibraryTitle, Box<dyn core::error::Error>> {
-        let result = self
-            .db
-            .client()
-            .library()
-            .find_unique(model::library::id::equals(id.as_bytes().to_vec()))
-            .with(model::library::image_resource::fetch())
-            .exec()
-            .await
-            .unwrap()
-            .unwrap();
-
-        Ok(result.try_into()?)
-    }
-
     pub async fn from_id(
         &self,
         id: &LibraryId,

@@ -20,7 +20,6 @@ use features::shared::infra::http::AppState;
 use infra::handler::add_audio::add_audio_handler;
 use infra::handler::add_book::add_book_handler;
 use infra::handler::edit_title;
-use infra::handler::get_title;
 use infra::handler::play_audio::play_audio_handler;
 use infra::handler::read_book::read_book_handler;
 use infra::handler::reprocess_sync::reprocess_sync_handler;
@@ -37,7 +36,6 @@ use railgun_di::InjectorBuilder;
 use railgun_di::InjectorError;
 use tower_http::services::ServeFile;
 use use_case::add_audio::AddAudioUseCase;
-use use_case::get_title::GetTitleProcedure;
 use use_case::reprocess_sync::ReprocessSyncUseCase;
 use use_case::set_progress::SetProgressUseCase;
 
@@ -60,7 +58,6 @@ impl Feature for LibraryFeature {
             .add::<AddBookProcedure>()?
             .add::<GetMedia>()?
             .add::<ListMedia>()?
-            .add::<GetTitleProcedure>()?
             .add::<AddAudioUseCase>()?
             .add::<ReadBookProcedure>()?
             .add::<ReprocessSyncUseCase>()?
@@ -86,7 +83,6 @@ impl Feature for LibraryFeature {
             )
             .procedure("library:AddAudio", procedure.mutation(add_audio_handler))
             .procedure("library:AddBook", procedure.mutation(add_book_handler))
-            .procedure("library:GetTitle", procedure.query(get_title::handler))
             .procedure("library:ReadBook", procedure.query(read_book_handler))
             .procedure("Library:Stats", procedure.query(stats_handler))
             .procedure(

@@ -1,14 +1,15 @@
 import { use, useState } from "react"
+
 import { getTitle } from "../../../generated/rpc-client/library_GetTitle"
 import { ApiHostContext } from "../../../hooks/useApiPort"
 
-export namespace MediaEditPage {
+export namespace LibraryEditPage {
     export interface Props {
-        mediaId: string
+        bookId: string
     }
 }
 
-export const MediaEditPage = (props: MediaEditPage.Props) => {
+export const LibraryEditPage = (props: LibraryEditPage.Props) => {
     const { host } = use(ApiHostContext)
 
     const { data, isLoading } = getTitle([props.mediaId], {
