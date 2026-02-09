@@ -162,19 +162,21 @@ mod max_integer {
     // engine, the test only passes by accident: the queries succeed on the database level, but conversion of JS values
     // to quaint values fails after reading the inserted values back from the database.
 
-    #[connector_test(exclude(
-        MySql(5.6),
-    ))]
+    #[connector_test(exclude(MySql(5.6),))]
     async fn unfitted_int_should_fail(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ id: 1, int: {I32_OVERFLOW_MAX} }}) {{ id int }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ id: 1, int: {I32_OVERFLOW_MAX} }}) {{ id int }} }}"
+            ),
             0
         );
 
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ id: 1, int: {I32_OVERFLOW_MIN} }}) {{ id int }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ id: 1, int: {I32_OVERFLOW_MIN} }}) {{ id int }} }}"
+            ),
             0
         );
 
@@ -197,10 +199,7 @@ mod max_integer {
     // Info: `driver-adapters` are currently excluded because they yield a different error message,
     // coming straight from the database. This is because these "Unable to fit integer value" errors
     // are only thrown by the native quaint driver, not the underlying database driver.
-    #[connector_test(
-        schema(overflow_pg),
-        only(Postgres),
-    )]
+    #[connector_test(schema(overflow_pg), only(Postgres))]
     async fn unfitted_int_should_fail_pg_quaint(runner: Runner) -> TestResult<()> {
         // int
         assert_error!(
@@ -219,13 +218,17 @@ mod max_integer {
         // smallint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             None,
             "Unable to fit integer value '32768' into an INT2 (16-bit signed integer)."
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             None,
             "Unable to fit integer value '-32769' into an INT2 (16-bit signed integer)."
         );
@@ -307,13 +310,17 @@ mod max_integer {
         // tinyint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ tinyint: {I8_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ tinyint: {I8_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'tinyint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ tinyint: {I8_OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ tinyint: {I8_OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'tinyint'"
         );
@@ -321,13 +328,17 @@ mod max_integer {
         // smallint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'smallint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ smallint: {I16_OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'smallint'"
         );
@@ -335,13 +346,17 @@ mod max_integer {
         // mediumint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ mediumint: {I24_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ mediumint: {I24_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'mediumint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ mediumint: {I24_OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ mediumint: {I24_OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'mediumint'"
         );
@@ -364,13 +379,19 @@ mod max_integer {
         // Type year is stored as an 8-bit unsigned integer but the actual boundaries are 1901-2155.
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ year: {} }}) {{ id }} }}", 2156),
+            format!(
+                "mutation {{ createOneTest(data: {{ year: {} }}) {{ id }} }}",
+                2156
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'year'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ year: {} }}) {{ id }} }}", 1900),
+            format!(
+                "mutation {{ createOneTest(data: {{ year: {} }}) {{ id }} }}",
+                1900
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'year'"
         );
@@ -378,13 +399,17 @@ mod max_integer {
         // unsigned tinyint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_tinyint: {U8_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_tinyint: {U8_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_tinyint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_tinyint: {OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_tinyint: {OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_tinyint'"
         );
@@ -392,13 +417,17 @@ mod max_integer {
         // unsigned smallint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_smallint: {U16_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_smallint: {U16_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_smallint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_smallint: {OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_smallint: {OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_smallint'"
         );
@@ -406,13 +435,17 @@ mod max_integer {
         // unsigned mediumint
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_mediumint: {U24_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_mediumint: {U24_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_mediumint'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_mediumint: {OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_mediumint: {OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_mediumint'"
         );
@@ -420,13 +453,17 @@ mod max_integer {
         // unsigned int
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_int: {U32_OVERFLOW_MAX} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_int: {U32_OVERFLOW_MAX} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_int'"
         );
         assert_error!(
             runner,
-            format!("mutation {{ createOneTest(data: {{ unsigned_int: {OVERFLOW_MIN} }}) {{ id }} }}"),
+            format!(
+                "mutation {{ createOneTest(data: {{ unsigned_int: {OVERFLOW_MIN} }}) {{ id }} }}"
+            ),
             2020,
             "Value out of range for the type: Out of range value for column 'unsigned_int'"
         );
@@ -527,7 +564,7 @@ mod max_integer {
         );
 
         Ok(())
-    } 
+    }
 }
 
 #[test_suite(schema(schema))]

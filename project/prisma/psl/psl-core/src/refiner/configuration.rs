@@ -1,7 +1,10 @@
 use psl_ast::Parsed;
-use psl_schema::{Schema, SchemaFile, SchemaRefiner};
+use psl_schema::Schema;
+use psl_schema::SchemaFile;
+use psl_schema::SchemaRefiner;
 
-use crate::{Configuration, validate_configuration};
+use crate::Configuration;
+use crate::validate_configuration;
 
 pub struct Configured;
 
@@ -13,10 +16,9 @@ pub struct ConfiguredSchema {
 pub struct ConfiguredFile {}
 
 impl SchemaRefiner for Configured {
-    type From = Parsed;
-
-    type SchemaContext = ConfiguredSchema;
     type FileContext = ConfiguredFile;
+    type From = Parsed;
+    type SchemaContext = ConfiguredSchema;
 
     fn refine_context(&self, from: &Schema<Self::From>) -> Self::SchemaContext {
         ConfiguredSchema {
@@ -32,7 +34,8 @@ impl SchemaRefiner for Configured {
     ) -> Self::FileContext {
         let configuration = &mut context.configuration;
 
-        let config = validate_configuration(file.context().ast(), &mut from.diagnostics().borrow_mut());
+        let config =
+            validate_configuration(file.context().ast(), &mut from.diagnostics().borrow_mut());
         configuration.extend(config);
 
         ConfiguredFile {}

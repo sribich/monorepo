@@ -1,12 +1,18 @@
-use crate::{CoreError, CoreResult};
 use crosstarget_utils::time::ElapsedTimeCounter;
 use json_rpc::types::MigrationList;
-use schema_connector::{
-    ConnectorError, MigrationRecord, Namespaces, PersistenceNotInitializedError, SchemaConnector,
-    migrations_directory::{MigrationDirectory, Migrations, error_on_changed_provider},
-};
+use schema_connector::ConnectorError;
+use schema_connector::MigrationRecord;
+use schema_connector::Namespaces;
+use schema_connector::PersistenceNotInitializedError;
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory::MigrationDirectory;
+use schema_connector::migrations_directory::Migrations;
+use schema_connector::migrations_directory::error_on_changed_provider;
 use tracing::Instrument;
 use user_facing_errors::schema_engine::FoundFailedMigrations;
+
+use crate::CoreError;
+use crate::CoreResult;
 
 /// The input to the `applyMigrations` command.
 #[derive(Debug)]
@@ -61,7 +67,11 @@ pub async fn apply_migrations(
         .collect();
 
     let analysis_duration_ms = start.elapsed_time().as_millis() as u64;
-    tracing::info!(analysis_duration_ms, "Analysis run in {}ms", analysis_duration_ms,);
+    tracing::info!(
+        analysis_duration_ms,
+        "Analysis run in {}ms",
+        analysis_duration_ms,
+    );
 
     let mut applied_migration_names: Vec<String> = Vec::with_capacity(unapplied_migrations.len());
 

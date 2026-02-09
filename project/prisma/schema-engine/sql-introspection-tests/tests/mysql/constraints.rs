@@ -95,7 +95,8 @@ async fn check_constraints_stopgap(api: &mut TestApi) -> TestResult {
           user_id Int @id
         }
     "#]];
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }

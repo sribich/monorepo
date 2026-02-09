@@ -1,12 +1,11 @@
-use std::{
-    future::Future,
-    time::{Duration, Instant},
-};
+use std::future::Future;
+use std::time::Duration;
+use std::time::Instant;
+pub use std::time::SystemTime;
+pub use std::time::SystemTimeError;
 
 pub use crate::common::datetime::*;
 use crate::common::timeout::TimeoutError;
-
-pub use std::time::{SystemTime, SystemTimeError};
 
 #[derive(Clone, Copy)]
 pub struct ElapsedTimeCounter {

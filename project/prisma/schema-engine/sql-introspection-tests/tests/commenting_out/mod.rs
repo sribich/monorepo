@@ -51,7 +51,10 @@ async fn a_table_without_required_uniques(api: &mut TestApi) -> TestResult {
                 t.add_column("id", types::integer());
                 t.add_column("opt_unique", types::integer().nullable(true));
 
-                t.add_constraint("sqlite_autoindex_Post_1", types::unique_constraint(vec!["opt_unique"]));
+                t.add_constraint(
+                    "sqlite_autoindex_Post_1",
+                    types::unique_constraint(vec!["opt_unique"]),
+                );
             });
         })
         .await?;

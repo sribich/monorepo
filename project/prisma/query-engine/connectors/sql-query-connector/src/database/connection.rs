@@ -1,24 +1,36 @@
 #![cfg_attr(target_arch = "wasm32", allow(dead_code))]
 
-use super::{catch, transaction::SqlConnectorTransaction};
-use crate::{SqlError, database::operations::*};
+use std::collections::HashMap;
+use std::str::FromStr;
+
 use async_trait::async_trait;
 use connector::ConnectionLike;
-use connector_interface::{
-    self as connector, AggregationRow, Connection, ReadOperations, Transaction, WriteOperations,
-};
+use connector_interface::AggregationRow;
+use connector_interface::Connection;
+use connector_interface::ReadOperations;
+use connector_interface::Transaction;
+use connector_interface::WriteOperations;
+use connector_interface::{self as connector};
 use prisma_value::PrismaValue;
-use quaint::{
-    connector::{IsolationLevel, TransactionCapable},
-    prelude::{ConnectionInfo, Queryable},
-};
-use query_structure::{
-    AggregationSelection, Filter, QueryArguments, RecordFilter, RelationLoadStrategy, SelectionResult, WriteArgs,
-    prelude::*,
-};
+use quaint::connector::IsolationLevel;
+use quaint::connector::TransactionCapable;
+use quaint::prelude::ConnectionInfo;
+use quaint::prelude::Queryable;
+use query_structure::AggregationSelection;
+use query_structure::Filter;
+use query_structure::QueryArguments;
+use query_structure::RecordFilter;
+use query_structure::RelationLoadStrategy;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use query_structure::prelude::*;
 use sql_query_builder::Context;
-use std::{collections::HashMap, str::FromStr};
 use telemetry::TraceParent;
+
+use super::catch;
+use super::transaction::SqlConnectorTransaction;
+use crate::SqlError;
+use crate::database::operations::*;
 
 pub(crate) struct SqlConnection<C> {
     inner: C,
@@ -39,7 +51,10 @@ where
     }
 }
 
-impl<C> ConnectionLike for SqlConnection<C> where C: Queryable + TransactionCapable + Send + Sync + 'static {}
+impl<C> ConnectionLike for SqlConnection<C> where
+    C: Queryable + TransactionCapable + Send + Sync + 'static
+{
+}
 
 #[async_trait]
 impl<C> Connection for SqlConnection<C>
@@ -68,7 +83,10 @@ where
         catch(&self.connection_info, async move {
             let tx = fut_tx.await.map_err(SqlError::from)?;
 
-            Ok(Box::new(SqlConnectorTransaction::new(tx, connection_info, features)) as Box<dyn Transaction>)
+            Ok(
+                Box::new(SqlConnectorTransaction::new(tx, connection_info, features))
+                    as Box<dyn Transaction>,
+            )
         })
         .await
     }
@@ -160,7 +178,15 @@ where
         let ctx = Context::new(&self.connection_info, traceparent);
         catch(
             &self.connection_info,
-            read::aggregate(&self.inner, model, query_arguments, selections, group_by, having, &ctx),
+            read::aggregate(
+                &self.inner,
+                model,
+                query_arguments,
+                selections,
+                group_by,
+                having,
+                &ctx,
+            ),
         )
         .await
     }
@@ -219,7 +245,14 @@ where
         let ctx = Context::new(&self.connection_info, traceparent);
         catch(
             &self.connection_info,
-            write::create_records_returning(&self.inner, model, args, skip_duplicates, selected_fields, &ctx),
+            write::create_records_returning(
+                &self.inner,
+                model,
+                args,
+                skip_duplicates,
+                selected_fields,
+                &ctx,
+            ),
         )
         .await
     }
@@ -252,7 +285,15 @@ where
         let ctx = Context::new(&self.connection_info, traceparent);
         catch(
             &self.connection_info,
-            write::update_records_returning(&self.inner, model, record_filter, args, selected_fields, limit, &ctx),
+            write::update_records_returning(
+                &self.inner,
+                model,
+                record_filter,
+                args,
+                selected_fields,
+                limit,
+                &ctx,
+            ),
         )
         .await
     }
@@ -268,7 +309,14 @@ where
         let ctx = Context::new(&self.connection_info, traceparent);
         catch(
             &self.connection_info,
-            write::update_record(&self.inner, model, record_filter, args, selected_fields, &ctx),
+            write::update_record(
+                &self.inner,
+                model,
+                record_filter,
+                args,
+                selected_fields,
+                &ctx,
+            ),
         )
         .await
     }
@@ -309,7 +357,11 @@ where
         traceparent: Option<TraceParent>,
     ) -> connector::Result<SingleRecord> {
         let ctx = Context::new(&self.connection_info, traceparent);
-        catch(&self.connection_info, upsert::native_upsert(&self.inner, upsert, &ctx)).await
+        catch(
+            &self.connection_info,
+            upsert::native_upsert(&self.inner, upsert, &ctx),
+        )
+        .await
     }
 
     async fn m2m_connect(
@@ -342,7 +394,10 @@ where
         .await
     }
 
-    async fn execute_raw(&mut self, inputs: HashMap<String, PrismaValue>) -> connector::Result<usize> {
+    async fn execute_raw(
+        &mut self,
+        inputs: HashMap<String, PrismaValue>,
+    ) -> connector::Result<usize> {
         catch(
             &self.connection_info,
             write::execute_raw(&self.inner, self.features, inputs),

@@ -1,12 +1,23 @@
 mod attributes;
 
+use std::collections::HashMap;
+use std::collections::HashSet;
+
+use psl_ast::ast::EnumValueId;
+use psl_ast::ast::Expression;
+use psl_ast::ast::WithName;
+
 use self::attributes::AttributesValidationState;
-use crate::{
-    DatamodelError, Diagnostics, InFile, StringId, ast, extension::ExtensionTypes, interner::StringInterner,
-    names::Names, relations::Relations, types::Types,
-};
-use psl_ast::ast::{EnumValueId, Expression, WithName};
-use std::collections::{HashMap, HashSet};
+use crate::DatamodelError;
+use crate::Diagnostics;
+use crate::InFile;
+use crate::StringId;
+use crate::ast;
+use crate::extension::ExtensionTypes;
+use crate::interner::StringInterner;
+use crate::names::Names;
+use crate::relations::Relations;
+use crate::types::Types;
 
 /// Validation context. This is an implementation detail of ParserDatabase. It
 /// contains the database itself, as well as context that is discarded after
@@ -89,8 +100,11 @@ impl<'db> Context<'db> {
     pub(crate) fn push_attribute_validation_error(&mut self, message: &str) {
         let attribute = self.current_attribute();
 
-        let err =
-            DatamodelError::new_attribute_validation_error(message, &format!("@{}", attribute.name()), attribute.span);
+        let err = DatamodelError::new_attribute_validation_error(
+            message,
+            &format!("@{}", attribute.name()),
+            attribute.span,
+        );
         self.push_error(err);
     }
 
@@ -102,7 +116,11 @@ impl<'db> Context<'db> {
     ///
     /// Other than for this peculiarity, this method is identical to
     /// `visit_attributes()`.
-    pub(super) fn visit_scalar_field_attributes(&mut self, model_id: crate::ModelId, field_id: ast::FieldId) {
+    pub(super) fn visit_scalar_field_attributes(
+        &mut self,
+        model_id: crate::ModelId,
+        field_id: ast::FieldId,
+    ) {
         self.visit_attributes((model_id.0, (model_id.1, field_id)));
     }
 
@@ -140,7 +158,9 @@ impl<'db> Context<'db> {
     /// arguments to other attributes: everywhere else, attributes are named,
     /// with a default that can be first, but with native types, arguments are
     /// purely positional.
-    pub(crate) fn visit_datasource_scoped(&mut self) -> Option<(StringId, StringId, crate::AttributeId)> {
+    pub(crate) fn visit_datasource_scoped(
+        &mut self,
+    ) -> Option<(StringId, StringId, crate::AttributeId)> {
         let attrs = iter_attributes(self.attributes.attributes.as_ref(), self.asts)
             .filter(|(_, attr)| attr.name.name.contains('.'));
         let mut native_type_attr = None;
@@ -155,7 +175,10 @@ impl<'db> Context<'db> {
                 Some((datasource_name, attr_name)) => {
                     let ds = self.interner.intern(datasource_name);
                     let attr_name = self.interner.intern(attr_name);
-                    if native_type_attr.replace((ds, attr_idx, attr_name)).is_some() {
+                    if native_type_attr
+                        .replace((ds, attr_idx, attr_name))
+                        .is_some()
+                    {
                         diagnostics.push_error(DatamodelError::new_duplicate_attribute_error(
                             datasource_name,
                             attr.span,
@@ -175,8 +198,8 @@ impl<'db> Context<'db> {
     /// is defined.
     #[must_use]
     pub(crate) fn visit_optional_single_attr(&mut self, name: &'static str) -> bool {
-        let mut attrs =
-            iter_attributes(self.attributes.attributes.as_ref(), self.asts).filter(|(_, a)| a.name.name == name);
+        let mut attrs = iter_attributes(self.attributes.attributes.as_ref(), self.asts)
+            .filter(|(_, a)| a.name.name == name);
         let (first_idx, first) = match attrs.next() {
             Some(first) => first,
             None => return false,
@@ -184,8 +207,8 @@ impl<'db> Context<'db> {
         let diagnostics = &mut self.diagnostics;
 
         if attrs.next().is_some() {
-            for (idx, attr) in
-                iter_attributes(self.attributes.attributes.as_ref(), self.asts).filter(|(_, a)| a.name.name == name)
+            for (idx, attr) in iter_attributes(self.attributes.attributes.as_ref(), self.asts)
+                .filter(|(_, a)| a.name.name == name)
             {
                 diagnostics.push_error(DatamodelError::new_duplicate_attribute_error(
                     &attr.name.name,
@@ -243,7 +266,9 @@ impl<'db> Context<'db> {
             }
             (Some(arg_idx), Some(_)) => {
                 let arg = self.arg_at(arg_idx);
-                Err(DatamodelError::new_duplicate_default_argument_error(name, arg.span))
+                Err(DatamodelError::new_duplicate_default_argument_error(
+                    name, arg.span,
+                ))
             }
             (None, None) => Err(DatamodelError::new_argument_not_found_error(
                 name,
@@ -256,12 +281,18 @@ impl<'db> Context<'db> {
     /// first unnamed argument.
     ///
     /// Use this to implement unnamed argument behavior.
-    pub(crate) fn visit_default_arg(&mut self, name: &'static str) -> Result<&'db ast::Expression, DatamodelError> {
+    pub(crate) fn visit_default_arg(
+        &mut self,
+        name: &'static str,
+    ) -> Result<&'db ast::Expression, DatamodelError> {
         Ok(self.visit_default_arg_with_idx(name)?.1)
     }
 
     /// Visit an optional argument in the current attribute.
-    pub(crate) fn visit_optional_arg(&mut self, name: &'static str) -> Option<&'db ast::Expression> {
+    pub(crate) fn visit_optional_arg(
+        &mut self,
+        name: &'static str,
+    ) -> Option<&'db ast::Expression> {
         let arg_name = self.interner.intern(name);
         let idx = self.attributes.args.remove(&Some(arg_name))?;
         Some(&self.current_attribute().arguments.arguments[idx].value)
@@ -289,7 +320,9 @@ impl<'db> Context<'db> {
     /// attribute set. The Drop impl will helpfully panic otherwise.
     pub(crate) fn validate_visited_attributes(&mut self) {
         if !self.attributes.args.is_empty() || self.attributes.attribute.is_some() {
-            panic!("State error: validate_visited_attributes() when an attribute is still under validation.");
+            panic!(
+                "State error: validate_visited_attributes() when an attribute is still under validation."
+            );
         }
 
         let diagnostics = &mut self.diagnostics;
@@ -312,20 +345,29 @@ impl<'db> Context<'db> {
     }
 
     /// Find a specific field in a specific model.
-    pub(crate) fn find_model_field(&self, model_id: crate::ModelId, field_name: &str) -> Option<ast::FieldId> {
+    pub(crate) fn find_model_field(
+        &self,
+        model_id: crate::ModelId,
+        field_name: &str,
+    ) -> Option<ast::FieldId> {
         let name = self.interner.lookup(field_name)?;
         self.names.model_fields.get(&(model_id, name)).cloned()
     }
 
     pub(crate) fn iter_tops(&self) -> impl Iterator<Item = (crate::TopId, &'db ast::Top)> + 'db {
-        self.asts
-            .iter()
-            .flat_map(|(file_id, _, _, ast)| ast.iter_tops().map(move |(top_id, top)| ((file_id, top_id), top)))
+        self.asts.iter().flat_map(|(file_id, _, _, ast)| {
+            ast.iter_tops()
+                .map(move |(top_id, top)| ((file_id, top_id), top))
+        })
     }
 
     /// Starts validating the arguments for an attribute, checking for duplicate arguments in the
     /// process. Returns whether the attribute is valid enough to be usable.
-    fn set_attribute(&mut self, attribute_id: crate::AttributeId, attribute: &'db ast::Attribute) -> bool {
+    fn set_attribute(
+        &mut self,
+        attribute_id: crate::AttributeId,
+        attribute: &'db ast::Attribute,
+    ) -> bool {
         if self.attributes.attribute.is_some() || !self.attributes.args.is_empty() {
             panic!(
                 "State error: we cannot start validating new arguments before `validate_visited_arguments()` or `discard_arguments()` has been called.\n{:#?}",
@@ -399,11 +441,15 @@ impl<'db> Context<'db> {
         let mut unnamed_arguments = Vec::new();
 
         for (arg_idx, arg) in arguments.arguments.iter().enumerate() {
-            let arg_name = arg.name.as_ref().map(|name| self.interner.intern(&name.name));
+            let arg_name = arg
+                .name
+                .as_ref()
+                .map(|name| self.interner.intern(&name.name));
             if let Some(existing_argument) = self.attributes.args.insert(arg_name, arg_idx) {
                 if arg.is_unnamed() {
                     if unnamed_arguments.is_empty() {
-                        let existing_arg_value = &attribute.arguments.arguments[existing_argument].value;
+                        let existing_arg_value =
+                            &attribute.arguments.arguments[existing_argument].value;
                         unnamed_arguments.push(existing_arg_value.to_string())
                     }
 
@@ -440,7 +486,10 @@ fn iter_attributes<'a, 'ast: 'a>(
         .into_iter()
         .flat_map(move |container| asts[*container].iter().enumerate().map(|a| (a, *container)))
         .map(|((idx, attr), (file_id, container))| {
-            ((file_id, ast::AttributeId::new_in_container(container, idx)), attr)
+            (
+                (file_id, ast::AttributeId::new_in_container(container, idx)),
+                attr,
+            )
         })
 }
 

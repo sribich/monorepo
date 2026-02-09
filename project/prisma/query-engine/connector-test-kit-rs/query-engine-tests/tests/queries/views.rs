@@ -105,7 +105,11 @@ mod views {
 
     #[connector_test]
     async fn no_find_unique(runner: Runner) -> TestResult<()> {
-        test_no_toplevel_query(runner, r#"{ findUniqueTestView(where: { id: 1 }) { fullName } }"#).await
+        test_no_toplevel_query(
+            runner,
+            r#"{ findUniqueTestView(where: { id: 1 }) { fullName } }"#,
+        )
+        .await
     }
 
     #[connector_test]
@@ -440,7 +444,11 @@ mod views {
 
         create_test_model(runner, r#"{ id: 1, firstName: "John", lastName: "Doe" }"#).await?;
         create_test_model(runner, r#"{ id: 2, firstName: "Jane", lastName: "Doe" }"#).await?;
-        create_test_model(runner, r#"{ id: 3, firstName: "Bob", lastName: "Maurane" }"#).await?;
+        create_test_model(
+            runner,
+            r#"{ id: 3, firstName: "Bob", lastName: "Maurane" }"#,
+        )
+        .await?;
 
         Ok(())
     }
@@ -473,7 +481,9 @@ mod views {
 
     async fn create_test_model(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

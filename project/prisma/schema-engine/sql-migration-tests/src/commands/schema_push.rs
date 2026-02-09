@@ -1,12 +1,18 @@
-use colored::Colorize;
-use psl::parser_database::{ExtensionTypes, NoExtensionTypes};
-use schema_core::commands::schema_push::{SchemaPushInput, SchemaPushOutput, schema_push};
-use schema_core::json_rpc::types::{SchemaContainer, SchemasContainer};
-use schema_core::{
-    CoreError, CoreResult, schema_connector::SchemaConnector,
-};
+use std::borrow::Cow;
+use std::fmt::Debug;
 use std::time::Duration;
-use std::{borrow::Cow, fmt::Debug};
+
+use colored::Colorize;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::NoExtensionTypes;
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::schema_push::SchemaPushInput;
+use schema_core::commands::schema_push::SchemaPushOutput;
+use schema_core::commands::schema_push::schema_push;
+use schema_core::json_rpc::types::SchemaContainer;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector::SchemaConnector;
 use tracing_futures::Instrument;
 
 pub struct SchemaPush<'a> {
@@ -234,7 +240,10 @@ impl SchemaPushAssertion {
     #[track_caller]
     pub fn assert_executable(self) -> Self {
         if !self.result.unexecutable.is_empty() {
-            println!("\nExpected no unexecutable errors in {}", "assert_executable".bold());
+            println!(
+                "\nExpected no unexecutable errors in {}",
+                "assert_executable".bold()
+            );
             self.result.unexecutable.iter().for_each(|unexecutable| {
                 println!("\t - {}", unexecutable.red());
             });
@@ -251,7 +260,12 @@ impl SchemaPushAssertion {
         let mut found_and_not_expected: Vec<Cow<'_, str>> = Vec::new();
 
         expected_messages.iter().for_each(|expected| {
-            if self.result.unexecutable.iter().any(|found| found == expected) {
+            if self
+                .result
+                .unexecutable
+                .iter()
+                .any(|found| found == expected)
+            {
                 good.push(expected);
             } else {
                 expected_and_not_found.push(expected);

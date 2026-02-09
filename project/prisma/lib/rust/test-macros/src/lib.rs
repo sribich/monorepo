@@ -1,10 +1,15 @@
 extern crate proc_macro;
 
-use darling::{FromMeta, ast::NestedMeta};
+use darling::FromMeta;
+use darling::ast::NestedMeta;
 use proc_macro::TokenStream;
-use proc_macro2::{Delimiter, TokenTree};
+use proc_macro2::Delimiter;
+use proc_macro2::TokenTree;
 use quote::quote;
-use syn::{Lit, LitStr, Meta, Signature};
+use syn::Lit;
+use syn::LitStr;
+use syn::Meta;
+use syn::Signature;
 
 #[proc_macro_attribute]
 pub fn test_connector(args: TokenStream, input: TokenStream) -> TokenStream {
@@ -24,10 +29,15 @@ pub fn test_connector(args: TokenStream, input: TokenStream) -> TokenStream {
         let sig_tokens = input
             .clone()
             .into_iter()
-            .take_while(|t| !matches!(t, TokenTree::Group(g) if matches!(g.delimiter(), Delimiter::Brace)))
+            .take_while(
+                |t| !matches!(t, TokenTree::Group(g) if matches!(g.delimiter(), Delimiter::Brace)),
+            )
             .collect();
 
-        let body = input.into_iter().last().expect("Failed to find function body");
+        let body = input
+            .into_iter()
+            .last()
+            .expect("Failed to find function body");
 
         match syn::parse2(sig_tokens) {
             Ok(sig) => (sig, body.into()),
@@ -48,7 +58,9 @@ pub fn test_connector(args: TokenStream, input: TokenStream) -> TokenStream {
         Ok(args) => args,
         Err(err) => return err.to_compile_error().into(),
     };
-    let ignore_attr = attrs.ignore_reason.map(|reason| quote!(#[ignore = #reason]));
+    let ignore_attr = attrs
+        .ignore_reason
+        .map(|reason| quote!(#[ignore = #reason]));
 
     let tokens = if sig.asyncness.is_some() {
         let (return_ty, unwrap) = match sig.output {

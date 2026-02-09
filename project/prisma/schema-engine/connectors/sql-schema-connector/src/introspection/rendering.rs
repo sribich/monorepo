@@ -11,11 +11,13 @@ mod relation_field;
 mod scalar_field;
 mod views;
 
-use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use std::borrow::Cow;
+
 use datamodel_renderer as renderer;
 use psl::PreviewFeature;
 use schema_connector::ViewDefinition;
-use std::borrow::Cow;
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
 
 /// Combines the SQL database schema and an existing PSL schema to a
 /// PSL schema definition string.
@@ -36,14 +38,19 @@ pub(crate) fn to_psl_string(
     enums::render(introspection_file_name.clone(), ctx, &mut datamodel);
     models::render(introspection_file_name.clone(), ctx, &mut datamodel);
 
-    if ctx.config.preview_features().contains(PreviewFeature::Views) {
+    if ctx
+        .config
+        .preview_features()
+        .contains(PreviewFeature::Views)
+    {
         views.extend(views::render(introspection_file_name, ctx, &mut datamodel));
     }
 
     let is_empty = datamodel.is_empty();
 
     if ctx.render_config {
-        let config = configuration::render(ctx.previous_schema, ctx.sql_schema, ctx.force_namespaces);
+        let config =
+            configuration::render(ctx.previous_schema, ctx.sql_schema, ctx.force_namespaces);
 
         datamodel.set_configuration(config);
     }

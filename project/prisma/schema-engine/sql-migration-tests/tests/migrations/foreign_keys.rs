@@ -19,7 +19,9 @@ fn foreign_keys_of_inline_one_to_one_relations_have_a_unique_constraint(api: Tes
     api.schema_push_w_datasource(dm).send().assert_green();
     api.assert_schema().assert_table("Box", |t| {
         t.assert_indexes_count(1)
-            .assert_index_on_columns(&["cat_id"], |idx| idx.assert_is_unique().assert_name("Box_cat_id_key"))
+            .assert_index_on_columns(&["cat_id"], |idx| {
+                idx.assert_is_unique().assert_name("Box_cat_id_key")
+            })
     });
 }
 
@@ -61,7 +63,9 @@ fn foreign_keys_are_added_on_existing_tables(api: TestApi) -> TestResult {
     api.assert_schema().assert_table("Account", |table| {
         table
             .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["user_email"], |fk| fk.assert_references("User", &["email"]))
+            .assert_fk_on_columns(&["user_email"], |fk| {
+                fk.assert_references("User", &["email"])
+            })
     });
 }
 
@@ -104,7 +108,9 @@ fn foreign_keys_can_be_added_on_existing_columns(api: TestApi) -> TestResult {
     api.assert_schema().assert_table("Account", |table| {
         table
             .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["user_email"], |fk| fk.assert_references("User", &["email"]))
+            .assert_fk_on_columns(&["user_email"], |fk| {
+                fk.assert_references("User", &["email"])
+            })
     });
 }
 
@@ -129,7 +135,9 @@ fn foreign_keys_can_be_dropped_on_existing_columns(api: TestApi) {
     api.assert_schema().assert_table("Account", |table| {
         table
             .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["user_email"], |fk| fk.assert_references("User", &["email"]))
+            .assert_fk_on_columns(&["user_email"], |fk| {
+                fk.assert_references("User", &["email"])
+            })
     });
 
     let dm2 = r#"
@@ -245,7 +253,9 @@ fn changing_a_relation_field_to_a_scalar_field_must_work(api: TestApi) {
 }
 
 #[test_connector(exclude(Vitess))]
-fn changing_a_foreign_key_constrained_column_from_nullable_to_required_and_back_works(api: TestApi) {
+fn changing_a_foreign_key_constrained_column_from_nullable_to_required_and_back_works(
+    api: TestApi,
+) {
     let dm = r#"
         model Student {
             id       String @id @default(cuid())

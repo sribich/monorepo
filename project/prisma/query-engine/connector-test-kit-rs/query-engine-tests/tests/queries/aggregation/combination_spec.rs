@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod combinations {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -282,7 +283,9 @@ mod combinations {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneItem(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneItem(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 
@@ -517,7 +520,9 @@ mod decimal_combinations {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneItem(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneItem(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod non_uniq_index {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {

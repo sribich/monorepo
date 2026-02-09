@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(capabilities(CreateMany, InsertReturning))]
 mod create_many_and_return {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -177,7 +178,10 @@ mod create_many_and_return {
     }
 
     // "createMany" should "not error on duplicates with skipDuplicates true"
-    #[connector_test(schema(schema_4), capabilities(CreateMany, CreateSkipDuplicates, InsertReturning))]
+    #[connector_test(
+        schema(schema_4),
+        capabilities(CreateMany, CreateSkipDuplicates, InsertReturning)
+    )]
     async fn create_many_no_error_skip_dup(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -355,7 +359,10 @@ mod create_many_and_return {
               }
             }))
             .await?
-            .assert_failure(2009, Some("Field 'child' not found in enclosing type".to_string()));
+            .assert_failure(
+                2009,
+                Some("Field 'child' not found in enclosing type".to_string()),
+            );
 
         Ok(())
     }
@@ -422,7 +429,10 @@ mod create_many_and_return {
               }
             }))
             .await?
-            .assert_failure(2009, Some("Field 'children' not found in enclosing type".to_string()));
+            .assert_failure(
+                2009,
+                Some("Field 'children' not found in enclosing type".to_string()),
+            );
 
         Ok(())
     }
@@ -462,7 +472,10 @@ mod create_many_and_return {
               }
             }))
             .await?
-            .assert_failure(2009, Some("Field 'children' not found in enclosing type".to_string()));
+            .assert_failure(
+                2009,
+                Some("Field 'children' not found in enclosing type".to_string()),
+            );
 
         runner
             .query_json(serde_json::json!({
@@ -477,7 +490,10 @@ mod create_many_and_return {
               }
             }))
             .await?
-            .assert_failure(2009, Some("Field 'tests' not found in enclosing type".to_string()));
+            .assert_failure(
+                2009,
+                Some("Field 'tests' not found in enclosing type".to_string()),
+            );
 
         Ok(())
     }
@@ -511,7 +527,10 @@ mod create_many_and_return {
               }
             }))
             .await?
-            .assert_failure(2009, Some("Field 'students' not found in enclosing type".to_string()));
+            .assert_failure(
+                2009,
+                Some("Field 'students' not found in enclosing type".to_string()),
+            );
 
         Ok(())
     }
@@ -597,7 +616,10 @@ mod create_many_and_return {
             let data = sets
                 .into_iter()
                 .map(|set| {
-                    let res = set.into_iter().map(|field| format!("{field}: {id}")).join(", ");
+                    let res = set
+                        .into_iter()
+                        .map(|field| format!("{field}: {id}"))
+                        .join(", ");
 
                     id += 1;
 
@@ -743,7 +765,8 @@ mod create_many_and_return {
     capabilities(Json, AdvancedJsonNullability, CreateMany, InsertReturning)
 )]
 mod json_create_many_and_return {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test]
     async fn create_many_json_adv(runner: Runner) -> TestResult<()> {

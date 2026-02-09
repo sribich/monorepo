@@ -4,7 +4,8 @@ use query_engine_tests::*;
 //  unchecked_nested_updated_many
 mod unchecked_nested_um {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -205,10 +206,7 @@ mod unchecked_nested_um {
     }
 
     // "Unchecked nested many updates" should "allow to write to autoincrement IDs directly"
-    #[connector_test(
-        schema(schema_3),
-        capabilities(AutoIncrement, WritableAutoincField)
-    )]
+    #[connector_test(schema(schema_3), capabilities(AutoIncrement, WritableAutoincField))]
     async fn allow_write_autoinc_id(runner: Runner) -> TestResult<()> {
         run_query!(
             &runner,

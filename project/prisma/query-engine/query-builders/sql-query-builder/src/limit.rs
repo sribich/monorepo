@@ -1,6 +1,8 @@
-use crate::{Context, model_extensions::*};
 use quaint::ast::*;
 use query_structure::*;
+
+use crate::Context;
+use crate::model_extensions::*;
 
 pub fn wrap_with_limit_subquery_if_needed<'a>(
     model: &Model,

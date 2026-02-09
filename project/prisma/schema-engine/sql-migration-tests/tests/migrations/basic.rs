@@ -1,7 +1,8 @@
 mod vitess;
 
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::{ColumnTypeFamily, DefaultKind};
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::DefaultKind;
 
 #[test_connector]
 fn adding_an_id_field_of_type_int_with_autoincrement_works(api: TestApi) {
@@ -72,7 +73,8 @@ fn a_model_can_be_removed(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -83,13 +85,17 @@ fn a_model_can_be_removed(api: TestApi) {
     "#,
     );
 
-    api.create_migration("second-migration", &dm2, &directory).send_sync();
+    api.create_migration("second-migration", &dm2, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
         .assert_applied_migrations(&["initial", "second-migration"]);
 
-    let output = api.diagnose_migration_history(&directory).send_sync().into_output();
+    let output = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(output.is_empty());
 }
@@ -116,33 +122,44 @@ fn adding_a_scalar_field_must_work(api: TestApi) {
         table
             .assert_columns_count(9)
             .assert_column("int", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("bigInt", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::BigInt)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::BigInt)
             })
             .assert_column("float", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Float)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Float)
             })
             .assert_column("boolean", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Boolean)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Boolean)
             })
             .assert_column("string", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::String)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::String)
             })
             .assert_column("dateTime", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::DateTime)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::DateTime)
             })
             .assert_column("decimal", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Decimal)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Decimal)
             })
             .assert_column("bytes", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Binary)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Binary)
             })
     });
 
     // Check that the migration is idempotent.
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -156,7 +173,9 @@ fn adding_an_optional_field_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm2).send().assert_green();
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("field", |column| column.assert_default(None).assert_is_nullable())
+        table.assert_column("field", |column| {
+            column.assert_default(None).assert_is_nullable()
+        })
     });
 }
 
@@ -171,7 +190,9 @@ fn adding_an_optional_datetime_field_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm2).send().assert_green();
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("field", |column| column.assert_default(None).assert_is_nullable())
+        table.assert_column("field", |column| {
+            column.assert_default(None).assert_is_nullable()
+        })
     });
 }
 
@@ -198,8 +219,9 @@ fn adding_an_id_field_of_type_int_must_work(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm2).send().assert_green();
-    api.assert_schema()
-        .assert_table("Test", |t| t.assert_column("myId", |c| c.assert_no_auto_increment()));
+    api.assert_schema().assert_table("Test", |t| {
+        t.assert_column("myId", |c| c.assert_no_auto_increment())
+    });
 }
 
 #[test_connector(tags(Sqlite))]
@@ -229,8 +251,9 @@ fn removing_a_scalar_field_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm1).send().assert_green();
 
-    api.assert_schema()
-        .assert_table("Test", |table| table.assert_columns_count(2).assert_has_column("field"));
+    api.assert_schema().assert_table("Test", |table| {
+        table.assert_columns_count(2).assert_has_column("field")
+    });
 
     let dm2 = r#"
         model Test {
@@ -382,7 +405,10 @@ fn switching_databases_must_work(api: TestApi) {
         }
     "#;
 
-    api.schema_push(dm2).migration_id(Some("mig2")).send().assert_green();
+    api.schema_push(dm2)
+        .migration_id(Some("mig2"))
+        .send()
+        .assert_green();
 }
 
 #[test_connector(tags(Sqlite))]
@@ -432,7 +458,9 @@ fn created_at_does_not_get_arbitrarily_migrated(api: TestApi) {
 
     api.schema_push_w_datasource(dm1).send().assert_green();
     api.assert_schema().assert_table("Fruit", |t| {
-        t.assert_column("createdAt", |c| c.assert_default_kind(Some(DefaultKind::Now)))
+        t.assert_column("createdAt", |c| {
+            c.assert_default_kind(Some(DefaultKind::Now))
+        })
     });
 
     let insert = Insert::single_into(api.render_table_name("Fruit")).value("name", "banana");
@@ -499,6 +527,7 @@ fn adding_a_primary_key_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm2).send().assert_green();
 
-    api.assert_schema()
-        .assert_table("Test", |t| t.assert_pk(|pk| pk.assert_constraint_name("Test_pkey")));
+    api.assert_schema().assert_table("Test", |t| {
+        t.assert_pk(|pk| pk.assert_constraint_name("Test_pkey"))
+    });
 }

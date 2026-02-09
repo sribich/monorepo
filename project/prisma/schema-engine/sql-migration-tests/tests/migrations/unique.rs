@@ -155,7 +155,8 @@ fn removing_unique_from_an_existing_field_must_work(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm2).send().assert_green();
-    api.assert_schema().assert_table("A", |t| t.assert_indexes_count(0));
+    api.assert_schema()
+        .assert_table("A", |t| t.assert_indexes_count(0));
 }
 
 #[test_connector]

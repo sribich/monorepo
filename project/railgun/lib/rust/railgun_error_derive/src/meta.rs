@@ -1,6 +1,12 @@
-use macro_util::ast::{Field, Meta, Struct, Unresolved, variant::Variant};
+use macro_util::ast::Field;
+use macro_util::ast::Meta;
+use macro_util::ast::Struct;
+use macro_util::ast::Unresolved;
+use macro_util::ast::variant::Variant;
 
-use crate::attributes::{ContainerAttributes, FieldAttributes, VariantAttributes};
+use crate::attributes::ContainerAttributes;
+use crate::attributes::FieldAttributes;
+use crate::attributes::VariantAttributes;
 
 pub struct StructMeta<'syn> {
     pub has_location: bool,

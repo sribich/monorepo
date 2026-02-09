@@ -1,6 +1,7 @@
+use super::AttributePosition;
+use super::WithName;
+use super::WithSpan;
 use crate::ast::{self};
-
-use super::{AttributePosition, WithName, WithSpan};
 
 /// In a scalar field.
 #[derive(Debug)]
@@ -51,7 +52,11 @@ impl<'ast> FieldPosition<'ast> {
             if attr.span().contains(position) {
                 // We can't go by Span::contains() because we also care about the empty space
                 // between arguments and that's hard to capture in the pest grammar.
-                return FieldPosition::Attribute(attr.name(), attr_idx, AttributePosition::new(attr, position));
+                return FieldPosition::Attribute(
+                    attr.name(),
+                    attr_idx,
+                    AttributePosition::new(attr, position),
+                );
             }
         }
 

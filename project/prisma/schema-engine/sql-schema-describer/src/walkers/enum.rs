@@ -1,4 +1,8 @@
-use crate::{Enum, EnumId, EnumVariant, EnumVariantId, Walker};
+use crate::Enum;
+use crate::EnumId;
+use crate::EnumVariant;
+use crate::EnumVariantId;
+use crate::Walker;
 
 /// Traverse an enum.
 pub type EnumWalker<'a> = Walker<'a, EnumId>;
@@ -22,7 +26,8 @@ impl<'a> EnumWalker<'a> {
     /// The namespace the enum belongs to, if defined.
     /// If not, falls back to the default runtime namespace, if one is set.
     pub fn namespace(self) -> Option<&'a str> {
-        self.explicit_namespace().or(self.schema.runtime_namespace.as_deref())
+        self.explicit_namespace()
+            .or(self.schema.runtime_namespace.as_deref())
     }
 
     /// The name of the enum. This is a made up name on MySQL.
@@ -32,14 +37,18 @@ impl<'a> EnumWalker<'a> {
 
     /// The variants of the enum.
     pub fn variants(self) -> impl ExactSizeIterator<Item = EnumVariantWalker<'a>> {
-        super::range_for_key(&self.schema.enum_variants, self.id, |variant| variant.enum_id)
-            .map(move |idx| self.walk(EnumVariantId(idx as u32)))
+        super::range_for_key(&self.schema.enum_variants, self.id, |variant| {
+            variant.enum_id
+        })
+        .map(move |idx| self.walk(EnumVariantId(idx as u32)))
     }
 
     /// The names of the variants of the enum.
     pub fn values(self) -> impl ExactSizeIterator<Item = &'a str> {
-        super::range_for_key(&self.schema.enum_variants, self.id, |variant| variant.enum_id)
-            .map(move |idx| self.schema.enum_variants[idx].variant_name.as_str())
+        super::range_for_key(&self.schema.enum_variants, self.id, |variant| {
+            variant.enum_id
+        })
+        .map(move |idx| self.schema.enum_variants[idx].variant_name.as_str())
     }
 
     /// Description (comment) of the enum.

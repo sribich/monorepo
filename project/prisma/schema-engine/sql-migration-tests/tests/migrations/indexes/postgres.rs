@@ -21,7 +21,9 @@ fn hash_index(api: TestApi) {
 
     api.assert_schema().assert_table("A", |table| {
         table.assert_index_on_columns(&["a"], |index| {
-            index.assert_is_not_unique().assert_algorithm(SqlIndexAlgorithm::Hash)
+            index
+                .assert_is_not_unique()
+                .assert_algorithm(SqlIndexAlgorithm::Hash)
         })
     });
 

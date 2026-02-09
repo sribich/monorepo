@@ -1,16 +1,23 @@
-use super::*;
-use crate::inputs::DeleteManyRecordsSelectorsInput;
-use crate::query_graph_builder::write::limit::validate_limit;
-use crate::{
-    ArgumentListLookup, FilteredQuery, ParsedField,
-    query_ast::*,
-    query_graph::{Node, QueryGraph, QueryGraphDependency},
-};
-use crate::{DataExpectation, RowSink};
-use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{Filter, Model};
-use schema::{QuerySchema, constants::args};
 use std::convert::TryInto;
+
+use psl::datamodel_connector::ConnectorCapability;
+use query_structure::Filter;
+use query_structure::Model;
+use schema::QuerySchema;
+use schema::constants::args;
+
+use super::*;
+use crate::ArgumentListLookup;
+use crate::DataExpectation;
+use crate::FilteredQuery;
+use crate::ParsedField;
+use crate::RowSink;
+use crate::inputs::DeleteManyRecordsSelectorsInput;
+use crate::query_ast::*;
+use crate::query_graph::Node;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
+use crate::query_graph_builder::write::limit::validate_limit;
 
 /// Creates a top level delete record query and adds it to the query graph.
 pub(crate) fn delete_record(
@@ -39,7 +46,8 @@ pub(crate) fn delete_record(
         }));
         let delete_node = graph.create_node(delete_query);
 
-        let emulation_nodes = utils::insert_emulated_on_delete(graph, query_schema, &model, &delete_node)?;
+        let emulation_nodes =
+            utils::insert_emulated_on_delete(graph, query_schema, &model, &delete_node)?;
         if !emulation_nodes.is_empty() {
             // If there are any emulation nodes present, we will be making multiple queries,
             // which means we need transaction.
@@ -57,7 +65,9 @@ pub(crate) fn delete_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::Discard,
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Delete).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Delete)
+                        .build(),
                 )),
             ),
         )?;
@@ -80,7 +90,8 @@ pub(crate) fn delete_record(
         let delete_node = graph.create_node(delete_query);
 
         // Ensure relevant relations are updated after delete.
-        let dependencies = utils::insert_emulated_on_delete(graph, query_schema, &model, &read_node)?;
+        let dependencies =
+            utils::insert_emulated_on_delete(graph, query_schema, &model, &read_node)?;
         utils::create_execution_order_edges(graph, dependencies, delete_node)?;
 
         // If the read node did not find the row, we know for sure that the delete node also won't
@@ -99,7 +110,9 @@ pub(crate) fn delete_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::Discard,
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Delete).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Delete)
+                        .build(),
                 )),
             ),
         )?;
@@ -141,7 +154,8 @@ pub fn delete_many_records(
         let read_query = utils::read_ids_infallible(model.clone(), model_id.clone(), filter);
         let read_query_node = graph.create_node(read_query);
 
-        let dependencies = utils::insert_emulated_on_delete(graph, query_schema, &model, &read_query_node)?;
+        let dependencies =
+            utils::insert_emulated_on_delete(graph, query_schema, &model, &read_query_node)?;
         utils::create_execution_order_edges(graph, dependencies, delete_many_node)?;
 
         graph.create_edge(
@@ -167,7 +181,11 @@ pub fn delete_many_records(
 /// 2. There are no nested selections
 /// 3. Either there are no predicates on relation fields or connector supports generating
 ///    filters without joins for such predicates
-fn can_use_atomic_delete(query_schema: &QuerySchema, field: &ParsedField<'_>, filter: &Filter) -> bool {
+fn can_use_atomic_delete(
+    query_schema: &QuerySchema,
+    field: &ParsedField<'_>,
+    filter: &Filter,
+) -> bool {
     if !query_schema.has_capability(ConnectorCapability::DeleteReturning) {
         return false;
     }

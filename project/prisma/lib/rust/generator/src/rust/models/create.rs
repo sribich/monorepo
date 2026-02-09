@@ -1,5 +1,6 @@
 use convert_case::Case;
-use generator_shared::{casing::cased_ident, extensions::FieldExtension};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::FieldExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
 use query_structure::walkers::ModelWalker;
@@ -21,15 +22,16 @@ pub fn generate_types(model: ModelWalker) -> TokenStream {
 fn create(model: ModelWalker) -> Option<TokenStream> {
     let model_name = cased_ident(model.name(), Case::Snake);
 
-    let (names, (types, push_wrappers)): (Vec<_>, (Vec<_>, Vec<_>)) = get_required_model_fields(&model)?
-        .into_iter()
-        .map(|field| {
-            (
-                cased_ident(field.inner.name(), Case::Snake),
-                (field.r#type, field.push_wrapper),
-            )
-        })
-        .unzip();
+    let (names, (types, push_wrappers)): (Vec<_>, (Vec<_>, Vec<_>)) =
+        get_required_model_fields(&model)?
+            .into_iter()
+            .map(|field| {
+                (
+                    cased_ident(field.inner.name(), Case::Snake),
+                    (field.r#type, field.push_wrapper),
+                )
+            })
+            .unzip();
 
     Some(quote! {
         #[derive(Clone, Debug)]

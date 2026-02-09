@@ -9,25 +9,30 @@ mod runner;
 mod schema_gen;
 mod templating;
 
+use std::future::Future;
+use std::sync::LazyLock;
+
+use colored::Colorize;
 pub use config::*;
 pub use connector_tag::*;
 pub use datamodel_rendering::*;
 pub use error::*;
 pub use logging::*;
+use prisma_metrics::MetricRecorder;
+use prisma_metrics::MetricRegistry;
+use prisma_metrics::WithMetricsInstrumentation;
+use psl::datamodel_connector::ConnectorCapabilities;
 pub use query_core;
 pub use query_result::*;
-pub use request_handlers::{GraphqlBody, MultiQuery};
+pub use request_handlers::GraphqlBody;
+pub use request_handlers::MultiQuery;
 pub use runner::*;
 pub use schema_gen::*;
 pub use templating::*;
-
-use colored::Colorize;
-use prisma_metrics::{MetricRecorder, MetricRegistry, WithMetricsInstrumentation};
-use psl::datamodel_connector::ConnectorCapabilities;
-use std::future::Future;
-use std::sync::LazyLock;
 use tokio::runtime::Builder;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel};
+use tokio::sync::mpsc::UnboundedReceiver;
+use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::unbounded_channel;
 use tracing_futures::WithSubscriber;
 
 pub type TestResult<T> = Result<T, TestError>;
@@ -40,8 +45,9 @@ pub static ENV_LOG_LEVEL: LazyLock<String> =
     LazyLock::new(|| std::env::var("LOG_LEVEL").unwrap_or_else(|_| "info".to_owned()));
 
 /// Engine protocol used to run tests. Either 'graphql' or 'json'.
-pub static ENGINE_PROTOCOL: LazyLock<String> =
-    LazyLock::new(|| std::env::var("PRISMA_ENGINE_PROTOCOL").unwrap_or_else(|_| "graphql".to_owned()));
+pub static ENGINE_PROTOCOL: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("PRISMA_ENGINE_PROTOCOL").unwrap_or_else(|_| "graphql".to_owned())
+});
 
 /// Teardown of a test setup.
 async fn teardown_project(
@@ -117,7 +123,9 @@ pub fn run_relation_link_test<F>(
     // cost. Only `boxify` is instantiated for each instance of run_relation_link_test, not the
     // whole larger function body. This measurably improves compile times of query-engine-tests.
     /// Helper for test return type erasure.
-    fn boxify<F>(f: F) -> impl for<'a> Fn(&'a Runner, &'a DatamodelWithParams) -> BoxFuture<'a, TestResult<()>>
+    fn boxify<F>(
+        f: F,
+    ) -> impl for<'a> Fn(&'a Runner, &'a DatamodelWithParams) -> BoxFuture<'a, TestResult<()>>
     where
         F: (for<'a> AsyncFn<'a, Runner, DatamodelWithParams, TestResult<()>>) + 'static,
     {
@@ -180,8 +188,11 @@ fn run_relation_link_test_impl(
         return;
     }
 
-    static RELATION_TEST_IDX: LazyLock<Option<usize>> =
-        LazyLock::new(|| std::env::var("RELATION_TEST_IDX").ok().and_then(|s| s.parse().ok()));
+    static RELATION_TEST_IDX: LazyLock<Option<usize>> = LazyLock::new(|| {
+        std::env::var("RELATION_TEST_IDX")
+            .ok()
+            .and_then(|s| s.parse().ok())
+    });
 
     let (dms, capabilities) = schema_with_relation(on_parent, on_child, id_only);
 
@@ -268,7 +279,9 @@ pub fn run_connector_test<T>(
     // The implementation of the function is separated from this façade because of monomorphization
     // cost. Only `boxify` is instantiated for each instance of run_connector_test, not the whole
     // larger function body. This measurably improves compile times of query-engine-tests.
-    fn boxify(test_fn: impl ConnectorTestFn) -> impl Fn(Runner) -> BoxFuture<'static, TestResult<()>> {
+    fn boxify(
+        test_fn: impl ConnectorTestFn,
+    ) -> impl Fn(Runner) -> BoxFuture<'static, TestResult<()>> {
         move |runner| Box::pin(test_fn.call(runner))
     }
 
@@ -388,7 +401,10 @@ fn run_connector_test_impl(
     });
 }
 
-fn build_full_test_name(test_fn_full_name: &'static str, original_test_function_name: &'static str) -> String {
+fn build_full_test_name(
+    test_fn_full_name: &'static str,
+    original_test_function_name: &'static str,
+) -> String {
     let mut parts = test_fn_full_name.split("::").skip(1).collect::<Vec<_>>();
     parts.pop();
     parts.push(original_test_function_name);

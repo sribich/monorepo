@@ -1,12 +1,16 @@
+use schema_connector::Warnings;
+use schema_connector::warnings as generators;
+
 use crate::introspection::introspection_pair::ModelPair;
-use schema_connector::{Warnings, warnings as generators};
 
 /// Analyze and generate warnigs from a model.
 pub(super) fn generate_warnings(model: ModelPair<'_>, warnings: &mut Warnings) {
     if model.id().and_then(|id| id.name()).is_some() {
-        warnings.reintrospected_id_names_in_model.push(generators::Model {
-            model: model.name().to_string(),
-        });
+        warnings
+            .reintrospected_id_names_in_model
+            .push(generators::Model {
+                model: model.name().to_string(),
+            });
     }
 
     if model.scalar_fields().len() == 0 {
@@ -58,17 +62,21 @@ pub(super) fn generate_warnings(model: ModelPair<'_>, warnings: &mut Warnings) {
     }
 
     for constraint in model.check_constraints() {
-        warnings.check_constraints.push(generators::ModelAndConstraint {
-            model: model.name().to_string(),
-            constraint: constraint.to_string(),
-        })
+        warnings
+            .check_constraints
+            .push(generators::ModelAndConstraint {
+                model: model.name().to_string(),
+                constraint: constraint.to_string(),
+            })
     }
 
     for expr_indx in model.expression_indexes() {
-        warnings.expression_indexes.push(generators::ModelAndConstraint {
-            model: model.name().to_string(),
-            constraint: expr_indx.to_string(),
-        })
+        warnings
+            .expression_indexes
+            .push(generators::ModelAndConstraint {
+                model: model.name().to_string(),
+                constraint: expr_indx.to_string(),
+            })
     }
 
     for field in model.scalar_fields() {

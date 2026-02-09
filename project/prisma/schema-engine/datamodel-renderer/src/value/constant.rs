@@ -1,4 +1,5 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 /// A unquoted identifier. Should be used if a value has certain naming standards.
 #[derive(Debug)]

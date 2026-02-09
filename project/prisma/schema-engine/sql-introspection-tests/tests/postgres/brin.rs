@@ -6,9 +6,11 @@ use test_macros::test_connector;
 #[test_connector(tags(Postgres))]
 async fn bit_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bit)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bit_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bit)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bit_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -31,9 +33,11 @@ async fn bit_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn varbit_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data varbit)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data varbit_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data varbit)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data varbit_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -56,9 +60,11 @@ async fn varbit_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn bpchar_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bpchar)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bpchar_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bpchar)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bpchar_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -81,9 +87,11 @@ async fn bpchar_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn bpchar_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bpchar)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bpchar_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bpchar)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bpchar_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -106,9 +114,11 @@ async fn bpchar_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn bytea_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bytea)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bytea_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bytea)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bytea_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -131,9 +141,11 @@ async fn bytea_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn bytea_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bytea)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bytea_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bytea)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data bytea_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -156,9 +168,11 @@ async fn bytea_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn date_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -181,9 +195,11 @@ async fn date_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn date_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -206,9 +222,11 @@ async fn date_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn date_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data date)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data date_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -231,9 +249,11 @@ async fn date_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn float_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -256,9 +276,11 @@ async fn float_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn float_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -281,9 +303,11 @@ async fn float_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn float_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data real)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float4_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -306,9 +330,12 @@ async fn float_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn double_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_minmax_ops);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",
+    );
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -331,9 +358,12 @@ async fn double_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn double_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_bloom_ops);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",
+    );
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -356,9 +386,12 @@ async fn double_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn double_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_minmax_multi_ops);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data double precision)",
+    );
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data float8_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -381,9 +414,11 @@ async fn double_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn inet_inclusion_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_inclusion_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_inclusion_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -406,9 +441,11 @@ async fn inet_inclusion_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn inet_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -431,9 +468,11 @@ async fn inet_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn inet_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -456,9 +495,11 @@ async fn inet_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn inet_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data inet)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data inet_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -481,9 +522,11 @@ async fn inet_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int2_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -506,9 +549,11 @@ async fn int2_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn int2_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -531,9 +576,11 @@ async fn int2_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int2_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data smallint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int2_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -556,9 +603,11 @@ async fn int2_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int4_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -581,9 +630,11 @@ async fn int4_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn int4_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -606,9 +657,11 @@ async fn int4_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int4_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int4_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -631,9 +684,11 @@ async fn int4_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int8_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -656,9 +711,11 @@ async fn int8_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn int8_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -681,9 +738,11 @@ async fn int8_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn int8_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data bigint)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data int8_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -706,9 +765,11 @@ async fn int8_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn numeric_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -731,9 +792,11 @@ async fn numeric_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn numeric_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -756,9 +819,11 @@ async fn numeric_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn numeric_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data decimal)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data numeric_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -781,9 +846,11 @@ async fn numeric_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn oid_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -806,9 +873,11 @@ async fn oid_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn oid_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -831,9 +900,11 @@ async fn oid_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn oid_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data oid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data oid_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -856,9 +927,11 @@ async fn oid_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn text_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data text_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data text_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -881,9 +954,11 @@ async fn text_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn text_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data text_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data text_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -906,9 +981,11 @@ async fn text_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timestamp_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamp_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamp_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -931,9 +1008,11 @@ async fn timestamp_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn timestamp_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamp_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamp_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -956,7 +1035,8 @@ async fn timestamp_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timestamp_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamp)",);
     let create_idx = format!(
         "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamp_minmax_multi_ops);",
     );
@@ -982,9 +1062,11 @@ async fn timestamp_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timestamptz_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamptz_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamptz_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1007,9 +1089,11 @@ async fn timestamptz_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn timestamptz_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamptz_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamptz_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1032,7 +1116,8 @@ async fn timestamptz_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timestamptz_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timestamptz)",);
     let create_idx = format!(
         "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timestamptz_minmax_multi_ops);",
     );
@@ -1058,9 +1143,11 @@ async fn timestamptz_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn time_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1083,9 +1170,11 @@ async fn time_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn time_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1108,9 +1197,11 @@ async fn time_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn time_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data time)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data time_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1133,9 +1224,11 @@ async fn time_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timetz_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1158,9 +1251,11 @@ async fn timetz_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn timetz_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1183,9 +1278,11 @@ async fn timetz_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn timetz_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data timetz)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data timetz_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1208,9 +1305,11 @@ async fn timetz_minmax_multi_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn uuid_bloom_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_bloom_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_bloom_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1233,9 +1332,11 @@ async fn uuid_bloom_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn uuid_minmax_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_minmax_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_minmax_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -1258,9 +1359,11 @@ async fn uuid_minmax_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres14))]
 async fn uuid_minmax_multi_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_minmax_multi_ops);",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data uuid)",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING BRIN (data uuid_minmax_multi_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;

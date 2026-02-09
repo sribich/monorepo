@@ -42,7 +42,9 @@ fn altering_the_type_of_a_column_in_a_non_empty_table_warns(api: TestApi) {
         .assert_single_row(|row| row.assert_int_value("dogs", 7));
 
     api.assert_schema().assert_table("User", |table| {
-        table.assert_column("dogs", |col| col.assert_type_is_bigint().assert_is_required())
+        table.assert_column("dogs", |col| {
+            col.assert_type_is_bigint().assert_is_required()
+        })
     });
 }
 
@@ -62,8 +64,10 @@ fn migrating_a_required_column_from_int_to_string_should_cast(api: TestApi) {
         .value("serialNumber", 47i64)
         .result_raw();
 
-    api.dump_table("Test")
-        .assert_single_row(|row| row.assert_text_value("id", "abcd").assert_int_value("serialNumber", 47));
+    api.dump_table("Test").assert_single_row(|row| {
+        row.assert_text_value("id", "abcd")
+            .assert_int_value("serialNumber", 47)
+    });
 
     let dm2 = r#"
         model Test {
@@ -99,7 +103,10 @@ fn changing_a_string_array_column_to_scalar_is_fine(api: TestApi) {
         .value("id", "film1")
         .value(
             "mainProtagonist",
-            Value::array(vec![Value::text("giant shark"), Value::text("jason statham")]),
+            Value::array(vec![
+                Value::text("giant shark"),
+                Value::text("jason statham"),
+            ]),
         )
         .result_raw();
 
@@ -110,7 +117,10 @@ fn changing_a_string_array_column_to_scalar_is_fine(api: TestApi) {
             }
             "#;
 
-    api.schema_push_w_datasource(dm2).force(true).send().assert_green();
+    api.schema_push_w_datasource(dm2)
+        .force(true)
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("Film", |table| {
         table.assert_column("mainProtagonist", |column| column.assert_is_required())
@@ -136,7 +146,10 @@ fn changing_an_int_array_column_to_scalar_is_not_possible(api: TestApi) {
 
     api.insert("Film")
         .value("id", "film1")
-        .value("mainProtagonist", Value::array(vec![Value::int32(7), Value::int32(11)]))
+        .value(
+            "mainProtagonist",
+            Value::array(vec![Value::int32(7), Value::int32(11)]),
+        )
         .result_raw();
 
     let dm2 = r#"
@@ -279,7 +292,10 @@ fn datetime_to_float_conversions_are_impossible(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.insert("Cat")
-        .value("birthday", Value::datetime("2018-01-18T08:01:02Z".parse().unwrap()))
+        .value(
+            "birthday",
+            Value::datetime("2018-01-18T08:01:02Z".parse().unwrap()),
+        )
         .result_raw();
 
     let dm2 = r#"
@@ -298,8 +314,9 @@ fn datetime_to_float_conversions_are_impossible(api: TestApi) {
         .assert_executable()
         .assert_no_steps();
 
-    api.dump_table("Cat")
-        .assert_single_row(|row| row.assert_datetime_value("birthday", "2018-01-18T08:01:02Z".parse().unwrap()));
+    api.dump_table("Cat").assert_single_row(|row| {
+        row.assert_datetime_value("birthday", "2018-01-18T08:01:02Z".parse().unwrap())
+    });
 
     api.schema_push_w_datasource(dm2)
         .force(true)

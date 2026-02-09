@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-use metrics::{Key, Label};
-use serde::{Deserialize, Serialize};
+use metrics::Key;
+use metrics::Label;
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct KeyLabels {
@@ -66,13 +68,21 @@ impl Metric {
                 global_labels.clone(),
             ),
             None => {
-                let description = descriptions.get(key.name()).map(|s| s.to_string()).unwrap_or_default();
+                let description = descriptions
+                    .get(key.name())
+                    .map(|s| s.to_string())
+                    .unwrap_or_default();
                 Self::new(key, description, value, global_labels.clone())
             }
         }
     }
 
-    fn new(key: Key, description: String, value: MetricValue, global_labels: HashMap<String, String>) -> Self {
+    fn new(
+        key: Key,
+        description: String,
+        value: MetricValue,
+        global_labels: HashMap<String, String>,
+    ) -> Self {
         let (name, labels) = key.into_parts();
 
         let mut labels_map: HashMap<String, String> = labels
@@ -107,8 +117,10 @@ impl From<Key> for KeyLabels {
             labels: Default::default(),
         };
 
-        kl.labels
-            .extend(key.labels().map(|l| (l.key().to_string(), l.value().to_string())));
+        kl.labels.extend(
+            key.labels()
+                .map(|l| (l.key().to_string(), l.value().to_string())),
+        );
 
         kl
     }

@@ -1,6 +1,9 @@
-use crate::{QueryGraphBuilderError, QueryGraphBuilderResult};
-use schema::constants::filters;
 use std::str::FromStr;
+
+use schema::constants::filters;
+
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphBuilderResult;
 
 #[derive(Debug)]
 pub enum FilterGrouping {

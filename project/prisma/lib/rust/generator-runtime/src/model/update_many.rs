@@ -1,13 +1,19 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{
-        BatchResult, ModelOperation, ModelWriteOperation, Query, QueryConvert, QueryResult, SelectionQuery, query,
-    },
-};
+use super::Model;
+use super::WhereInput;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::BatchResult;
+use crate::query::ModelOperation;
+use crate::query::ModelWriteOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct UpdateMany<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -21,7 +27,11 @@ pub struct UpdateManyParams<TModel: Model> {
 
 impl<'db, TModel: Model> UpdateMany<'db, TModel> {
     #[must_use]
-    pub fn new(client: &'db InternalClient, r#where: Vec<TModel::Where>, update: Vec<TModel::Set>) -> Self {
+    pub fn new(
+        client: &'db InternalClient,
+        r#where: Vec<TModel::Where>,
+        update: Vec<TModel::Set>,
+    ) -> Self {
         Self {
             client,
             params: UpdateManyParams { r#where, update },
@@ -37,7 +47,10 @@ impl<'db, TModel: Model> UpdateMany<'db, TModel> {
             [
                 Some((
                     "data".to_owned(),
-                    PrismaValue::Object(merge_fields(set_params.into_iter().map(Into::into).collect())).into(),
+                    PrismaValue::Object(merge_fields(
+                        set_params.into_iter().map(Into::into).collect(),
+                    ))
+                    .into(),
                 )),
                 (!where_params.is_empty()).then(|| {
                     (

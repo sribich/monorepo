@@ -1,12 +1,21 @@
+use std::collections::HashMap;
+use std::fmt::Write as _;
+use std::str::FromStr;
+use std::sync::LazyLock;
+
 use bigdecimal::BigDecimal;
 use chrono::Utc;
-use quaint::{Value, prelude::Insert};
+use quaint::Value;
+use quaint::prelude::Insert;
 use sql_migration_tests::test_api::*;
-use std::{collections::HashMap, fmt::Write as _, str::FromStr, sync::LazyLock};
 
 static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
     vec![
-        ("Oid", Value::int32(u8::MAX), &["VarChar(100)", "Integer", "BigInt"]),
+        (
+            "Oid",
+            Value::int32(u8::MAX),
+            &["VarChar(100)", "Integer", "BigInt"],
+        ),
         ("Money", Value::int64(u8::MAX), &["VarChar(100)"]),
         ("Inet", Value::text("10.1.2.3"), &["VarChar(100)"]),
         (
@@ -39,7 +48,14 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
         (
             "BigInt",
             Value::int64(i64::MAX),
-            &["BigInt", "Real", "DoublePrecision", "VarChar(53)", "Char(53)", "Text"],
+            &[
+                "BigInt",
+                "Real",
+                "DoublePrecision",
+                "VarChar(53)",
+                "Char(53)",
+                "Text",
+            ],
         ),
         (
             "Decimal(10,2)",
@@ -62,7 +78,13 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
         (
             "Real",
             Value::float(f32::MIN),
-            &["DoublePrecision", "VarChar(53)", "VarChar", "Char(53)", "Text"],
+            &[
+                "DoublePrecision",
+                "VarChar(53)",
+                "VarChar",
+                "Char(53)",
+                "Text",
+            ],
         ),
         (
             "DoublePrecision",
@@ -70,14 +92,22 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
             &["DoublePrecision", "Text", "VarChar", "Char(1000)"],
         ),
         ("VarChar", Value::text("fiver"), &["Text"]),
-        ("VarChar(5)", Value::text("fiver"), &["VarChar(53)", "Char(53)", "Text"]),
+        (
+            "VarChar(5)",
+            Value::text("fiver"),
+            &["VarChar(53)", "Char(53)", "Text"],
+        ),
         (
             "Char(1)", // same as Char
             Value::text("t"),
             &["VarChar(3)", "Char(3)", "Text"],
         ),
         ("Text", Value::text("true"), &["VarChar", "Text"]),
-        ("ByteA", Value::bytes(b"DEAD".to_vec()), &["Text", "VarChar"]),
+        (
+            "ByteA",
+            Value::bytes(b"DEAD".to_vec()),
+            &["Text", "VarChar"],
+        ),
         (
             "Timestamp(3)",
             Value::datetime(Utc::now()),
@@ -107,7 +137,13 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
         (
             "Date",
             Value::date(Utc::now().naive_utc().date()),
-            &["VarChar(53)", "Char(28)", "Text", "Timestamp(3)", "Timestamptz(3)"],
+            &[
+                "VarChar(53)",
+                "Char(28)",
+                "Text",
+                "Timestamp(3)",
+                "Timestamptz(3)",
+            ],
         ),
         (
             "Time(3)",
@@ -119,7 +155,11 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
             Value::datetime(Utc::now()),
             &["VarChar(53)", "Char(19)", "Text", "Time(3)", "Timetz(6)"],
         ),
-        ("Boolean", Value::boolean(false), &["VarChar", "Char(5)", "Text"]),
+        (
+            "Boolean",
+            Value::boolean(false),
+            &["VarChar", "Char(5)", "Text"],
+        ),
         (
             "Bit(1)", // same as Bit
             Value::text("0"),
@@ -130,8 +170,16 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
             Value::text("0010101001"),
             &["VarChar(53)", "Char(53)", "Text", "VarBit(10)"],
         ),
-        ("VarBit", Value::text("000101010101010010"), &["VarChar", "Text"]),
-        ("VarBit(5)", Value::text("0010"), &["VarChar(53)", "Char(53)", "Text"]),
+        (
+            "VarBit",
+            Value::text("000101010101010010"),
+            &["VarChar", "Text"],
+        ),
+        (
+            "VarBit(5)",
+            Value::text("0010"),
+            &["VarChar(53)", "Char(53)", "Text"],
+        ),
         (
             "Uuid",
             Value::text("75bf0037-a8b8-4512-beea-5a186f8abf1e"),
@@ -154,9 +202,21 @@ static SAFE_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
 static RISKY_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
     vec![
         ("Money", Value::int64(u8::MAX), &["Decimal"]),
-        ("SmallInt", Value::int32(2), &["Decimal(2,1)", "VarChar(3)", "Char(1)"]),
-        ("Integer", Value::int32(1), &["Decimal(2,1)", "VarChar(4)", "Char(1)"]),
-        ("BigInt", Value::int32(2), &["Decimal(2,1)", "VarChar(17)", "Char(1)"]),
+        (
+            "SmallInt",
+            Value::int32(2),
+            &["Decimal(2,1)", "VarChar(3)", "Char(1)"],
+        ),
+        (
+            "Integer",
+            Value::int32(1),
+            &["Decimal(2,1)", "VarChar(4)", "Char(1)"],
+        ),
+        (
+            "BigInt",
+            Value::int32(2),
+            &["Decimal(2,1)", "VarChar(17)", "Char(1)"],
+        ),
         (
             "Decimal(10,2)",
             Value::numeric(BigDecimal::from_str("1").unwrap()),
@@ -173,7 +233,13 @@ static RISKY_CASTS: LazyLock<Vec<(&str, Value, &[&str])>> = LazyLock::new(|| {
         (
             "Decimal(5,0)",
             Value::numeric(BigDecimal::from_str("10").unwrap()),
-            &["SmallInt", "VarChar(5)", "Char(5)", "Real", "DoublePrecision"],
+            &[
+                "SmallInt",
+                "VarChar(5)",
+                "Char(5)",
+                "Real",
+                "DoublePrecision",
+            ],
         ),
         (
             "Real",
@@ -848,7 +914,9 @@ fn safe_casts_with_existing_data_should_work(api: TestApi) {
         api.assert_schema().assert_table("A", |table| {
             next_assertions.iter().fold(
                 table.assert_columns_count(next_assertions.len() + 1),
-                |table, (name, expected)| table.assert_column(name, |c| c.assert_native_type(expected, connector)),
+                |table, (name, expected)| {
+                    table.assert_column(name, |c| c.assert_native_type(expected, connector))
+                },
             )
         });
 
@@ -1039,7 +1107,9 @@ fn not_castable_with_existing_data_should_warn(api: TestApi) {
 
         // todo we could force here and then check that the db really returns not castable
         // then we would again need to have separate calls per mapping
-        api.schema_push_w_datasource(&dm2).send().assert_warnings(&warnings);
+        api.schema_push_w_datasource(&dm2)
+            .send()
+            .assert_warnings(&warnings);
 
         //second assertions same as first
         api.assert_schema().assert_table("A", |table| {
@@ -1068,17 +1138,31 @@ static SAFE_CASTS_NON_LIST_TO_STRING: CastList = LazyLock::new(|| {
                 ("BigInt", Value::array(vec![Value::int64(i64::MAX)])),
                 (
                     "Decimal(10,2)",
-                    Value::array(vec![Value::numeric(BigDecimal::from_str("128.90").unwrap())]),
+                    Value::array(vec![Value::numeric(
+                        BigDecimal::from_str("128.90").unwrap(),
+                    )]),
                 ),
                 ("Real", Value::array(vec![Value::float(f32::MIN)])),
-                ("DoublePrecision", Value::array(vec![Value::double(f64::MIN)])),
+                (
+                    "DoublePrecision",
+                    Value::array(vec![Value::double(f64::MIN)]),
+                ),
                 ("VarChar", Value::array(vec!["test"])),
                 ("Char(1)", Value::array(vec!["a"])),
                 ("Text", Value::array(vec!["text"])),
                 ("ByteA", Value::array(vec![Value::bytes(b"DEAD".to_vec())])),
-                ("Timestamp(3)", Value::array(vec![Value::datetime(Utc::now())])),
-                ("Timestamptz(3)", Value::array(vec![Value::datetime(Utc::now())])),
-                ("Date", Value::array(vec![Value::date(Utc::now().naive_utc().date())])),
+                (
+                    "Timestamp(3)",
+                    Value::array(vec![Value::datetime(Utc::now())]),
+                ),
+                (
+                    "Timestamptz(3)",
+                    Value::array(vec![Value::datetime(Utc::now())]),
+                ),
+                (
+                    "Date",
+                    Value::array(vec![Value::date(Utc::now().naive_utc().date())]),
+                ),
                 (
                     "Time(3)",
                     Value::array(vec![Value::time(Utc::now().naive_utc().time())]),
@@ -1086,8 +1170,14 @@ static SAFE_CASTS_NON_LIST_TO_STRING: CastList = LazyLock::new(|| {
                 ("Timetz(3)", Value::array(vec![Value::datetime(Utc::now())])),
                 ("Boolean", Value::array(vec![false])),
                 ("Bit(10)", Value::array(vec![Value::text("0010101001")])),
-                ("VarBit", Value::array(vec![Value::text("000101010101010010")])),
-                ("Uuid", Value::array(vec!["75bf0037-a8b8-4512-beea-5a186f8abf1e"])),
+                (
+                    "VarBit",
+                    Value::array(vec![Value::text("000101010101010010")]),
+                ),
+                (
+                    "Uuid",
+                    Value::array(vec!["75bf0037-a8b8-4512-beea-5a186f8abf1e"]),
+                ),
                 ("Xml", Value::array(vec![Value::xml("[]")])),
                 (
                     "Json",
@@ -1107,17 +1197,31 @@ static SAFE_CASTS_NON_LIST_TO_STRING: CastList = LazyLock::new(|| {
                 ("BigInt", Value::array(vec![Value::int64(i64::MAX)])),
                 (
                     "Decimal(10,2)",
-                    Value::array(vec![Value::numeric(BigDecimal::from_str("128.90").unwrap())]),
+                    Value::array(vec![Value::numeric(
+                        BigDecimal::from_str("128.90").unwrap(),
+                    )]),
                 ),
                 ("Real", Value::array(vec![Value::float(f32::MIN)])),
-                ("DoublePrecision", Value::array(vec![Value::double(f64::MIN)])),
+                (
+                    "DoublePrecision",
+                    Value::array(vec![Value::double(f64::MIN)]),
+                ),
                 ("VarChar", Value::array(vec!["test"])),
                 ("Char(1)", Value::array(vec!["a"])),
                 ("Text", Value::array(vec!["text"])),
                 ("ByteA", Value::array(vec![Value::bytes(b"DEAD".to_vec())])),
-                ("Timestamp(3)", Value::array(vec![Value::datetime(Utc::now())])),
-                ("Timestamptz(3)", Value::array(vec![Value::datetime(Utc::now())])),
-                ("Date", Value::array(vec![Value::date(Utc::now().naive_utc().date())])),
+                (
+                    "Timestamp(3)",
+                    Value::array(vec![Value::datetime(Utc::now())]),
+                ),
+                (
+                    "Timestamptz(3)",
+                    Value::array(vec![Value::datetime(Utc::now())]),
+                ),
+                (
+                    "Date",
+                    Value::array(vec![Value::date(Utc::now().naive_utc().date())]),
+                ),
                 (
                     "Time(3)",
                     Value::array(vec![Value::time(Utc::now().naive_utc().time())]),
@@ -1125,8 +1229,14 @@ static SAFE_CASTS_NON_LIST_TO_STRING: CastList = LazyLock::new(|| {
                 ("Timetz(3)", Value::array(vec![Value::datetime(Utc::now())])),
                 ("Boolean", Value::array(vec![false])),
                 ("Bit(10)", Value::array(vec![Value::text("0010101001")])),
-                ("VarBit", Value::array(vec![Value::text("000101010101010010")])),
-                ("Uuid", Value::array(vec!["75bf0037-a8b8-4512-beea-5a186f8abf1e"])),
+                (
+                    "VarBit",
+                    Value::array(vec![Value::text("000101010101010010")]),
+                ),
+                (
+                    "Uuid",
+                    Value::array(vec!["75bf0037-a8b8-4512-beea-5a186f8abf1e"]),
+                ),
                 ("Xml", Value::array(vec![Value::xml("[]")])),
                 (
                     "Json",
@@ -1220,7 +1330,9 @@ fn safe_casts_from_array_with_existing_data_should_work(api: TestApi) {
         api.assert_schema().assert_table("A", |table| {
             next_assertions.iter().fold(
                 table.assert_columns_count(next_assertions.len() + 1),
-                |table, (name, expected)| table.assert_column(name, |c| c.assert_native_type(expected, connector)),
+                |table, (name, expected)| {
+                    table.assert_column(name, |c| c.assert_native_type(expected, connector))
+                },
             )
         });
 

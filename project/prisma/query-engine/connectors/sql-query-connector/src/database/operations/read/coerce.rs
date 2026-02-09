@@ -1,11 +1,14 @@
-use bigdecimal::{BigDecimal, ParseBigDecimalError};
+use std::borrow::Cow;
+use std::io;
+use std::str::FromStr;
+
+use bigdecimal::BigDecimal;
+use bigdecimal::ParseBigDecimalError;
 use itertools::Itertools;
 use query_structure::*;
-use std::{borrow::Cow, io, str::FromStr};
-
-use crate::SqlError;
 
 use super::process::InMemoryProcessorForJoins;
+use crate::SqlError;
 
 pub(crate) enum IndexedSelection<'a> {
     Relation(&'a RelationSelection),
@@ -32,14 +35,16 @@ pub(crate) fn coerce_record_with_json_relation(
                     }
                     val => {
                         // TODO(perf): Find ways to avoid serializing and deserializing multiple times.
-                        let json_val: serde_json::Value = serde_json::from_str(val.as_json().unwrap()).unwrap();
+                        let json_val: serde_json::Value =
+                            serde_json::from_str(val.as_json().unwrap()).unwrap();
 
                         *val = coerce_json_relation_to_pv(json_val, rs)?;
                     }
                 }
             }
             IndexedSelection::Virtual(name) => {
-                let json_val: serde_json::Value = serde_json::from_str(val.as_json().unwrap()).unwrap();
+                let json_val: serde_json::Value =
+                    serde_json::from_str(val.as_json().unwrap()).unwrap();
 
                 *val = coerce_json_virtual_field_to_pv(name, json_val)?
             }
@@ -49,7 +54,10 @@ pub(crate) fn coerce_record_with_json_relation(
     Ok(())
 }
 
-fn coerce_json_relation_to_pv(value: serde_json::Value, rs: &RelationSelection) -> crate::Result<PrismaValue> {
+fn coerce_json_relation_to_pv(
+    value: serde_json::Value,
+    rs: &RelationSelection,
+) -> crate::Result<PrismaValue> {
     let relations = rs.relations().collect_vec();
 
     match value {
@@ -120,7 +128,10 @@ fn coerce_json_relation_to_pv(value: serde_json::Value, rs: &RelationSelection) 
     }
 }
 
-pub(crate) fn coerce_json_scalar_to_pv(value: serde_json::Value, sf: &ScalarField) -> crate::Result<PrismaValue> {
+pub(crate) fn coerce_json_scalar_to_pv(
+    value: serde_json::Value,
+    sf: &ScalarField,
+) -> crate::Result<PrismaValue> {
     if sf.type_identifier().is_json() && !sf.is_list() {
         return Ok(PrismaValue::Json(serde_json::to_string(&value)?));
     }
@@ -149,21 +160,38 @@ pub(crate) fn coerce_json_scalar_to_pv(value: serde_json::Value, sf: &ScalarFiel
         serde_json::Value::Bool(b) => Ok(PrismaValue::Boolean(b)),
         serde_json::Value::Number(n) => match sf.type_identifier() {
             TypeIdentifier::Int => Ok(PrismaValue::Int(n.as_i64().ok_or_else(|| {
-                build_conversion_error(sf, &format!("Number({n})"), &format!("{:?}", sf.type_identifier()))
+                build_conversion_error(
+                    sf,
+                    &format!("Number({n})"),
+                    &format!("{:?}", sf.type_identifier()),
+                )
             })?)),
             TypeIdentifier::BigInt => Ok(PrismaValue::BigInt(n.as_i64().ok_or_else(|| {
-                build_conversion_error(sf, &format!("Number({n})"), &format!("{:?}", sf.type_identifier()))
+                build_conversion_error(
+                    sf,
+                    &format!("Number({n})"),
+                    &format!("{:?}", sf.type_identifier()),
+                )
             })?)),
             TypeIdentifier::Float | TypeIdentifier::Decimal => {
                 let bd = parse_decimal(&n.to_string()).map_err(|_| {
-                    build_conversion_error(sf, &format!("Number({n})"), &format!("{:?}", sf.type_identifier()))
+                    build_conversion_error(
+                        sf,
+                        &format!("Number({n})"),
+                        &format!("{:?}", sf.type_identifier()),
+                    )
                 })?;
 
                 Ok(PrismaValue::Float(bd))
             }
             TypeIdentifier::Boolean => {
-                let err =
-                    || build_conversion_error(sf, &format!("Number({n})"), &format!("{:?}", sf.type_identifier()));
+                let err = || {
+                    build_conversion_error(
+                        sf,
+                        &format!("Number({n})"),
+                        &format!("{:?}", sf.type_identifier()),
+                    )
+                };
                 let i = n.as_i64().ok_or_else(err)?;
 
                 match i {
@@ -205,14 +233,16 @@ pub(crate) fn coerce_json_scalar_to_pv(value: serde_json::Value, sf: &ScalarFiel
 
                 Ok(PrismaValue::Float(res))
             }
-            TypeIdentifier::UUID => Ok(PrismaValue::Uuid(uuid::Uuid::parse_str(&s).map_err(|err| {
-                build_conversion_error_with_reason(
-                    sf,
-                    &format!("String({s})"),
-                    &format!("{:?}", sf.type_identifier()),
-                    &err.to_string(),
-                )
-            })?)),
+            TypeIdentifier::UUID => Ok(PrismaValue::Uuid(uuid::Uuid::parse_str(&s).map_err(
+                |err| {
+                    build_conversion_error_with_reason(
+                        sf,
+                        &format!("String({s})"),
+                        &format!("{:?}", sf.type_identifier()),
+                        &err.to_string(),
+                    )
+                },
+            )?)),
             TypeIdentifier::Bytes => {
                 let bytes = sf.parse_json_bytes(&s).map_err(|err| {
                     build_conversion_error_with_reason(
@@ -250,11 +280,16 @@ pub(crate) fn coerce_json_scalar_to_pv(value: serde_json::Value, sf: &ScalarFiel
                 .map(|v| coerce_json_scalar_to_pv(v, sf))
                 .collect::<crate::Result<Vec<_>>>()?,
         )),
-        serde_json::Value::Object(_) => unreachable!("Objects should be caught by the json catch-all above."),
+        serde_json::Value::Object(_) => {
+            unreachable!("Objects should be caught by the json catch-all above.")
+        }
     }
 }
 
-fn coerce_json_virtual_field_to_pv(key: &str, value: serde_json::Value) -> crate::Result<PrismaValue> {
+fn coerce_json_virtual_field_to_pv(
+    key: &str,
+    value: serde_json::Value,
+) -> crate::Result<PrismaValue> {
     match value {
         serde_json::Value::Object(obj) => {
             let values: crate::Result<Vec<_>> = obj
@@ -288,7 +323,12 @@ fn build_conversion_error(sf: &ScalarField, from: &str, to: &str) -> SqlError {
     ))
 }
 
-fn build_conversion_error_with_reason(sf: &ScalarField, from: &str, to: &str, reason: &str) -> SqlError {
+fn build_conversion_error_with_reason(
+    sf: &ScalarField,
+    from: &str,
+    to: &str,
+    reason: &str,
+) -> SqlError {
     let container_name = sf.container().name();
     let field_name = sf.name();
 

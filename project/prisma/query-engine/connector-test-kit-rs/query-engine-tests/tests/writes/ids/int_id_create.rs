@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod int_id_create {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_int() -> String {
         let schema = indoc! {
@@ -131,10 +132,7 @@ mod int_id_create {
     }
 
     // "Creating an item with an id field of type Int with autoincrement and providing an id" should "error for checked inputs"
-    #[connector_test(
-        schema(schema_int_autoinc_provide_id),
-        capabilities(AutoIncrement)
-    )]
+    #[connector_test(schema(schema_int_autoinc_provide_id), capabilities(AutoIncrement))]
     async fn create_id_int_autoinc_providing_id(runner: Runner) -> TestResult<()> {
         assert_error!(
             &runner,

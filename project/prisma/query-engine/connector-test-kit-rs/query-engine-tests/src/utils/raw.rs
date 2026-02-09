@@ -1,6 +1,8 @@
-use chrono::{DateTime, FixedOffset};
+use chrono::DateTime;
+use chrono::FixedOffset;
 use prisma_value::encode_bytes;
-use query_tests_setup::{TestError, TestResult};
+use query_tests_setup::TestError;
+use query_tests_setup::TestResult;
 
 pub fn fmt_query_raw(query: &str, params: impl IntoIterator<Item = RawParam>) -> String {
     let params = params_to_json(params);
@@ -38,7 +40,8 @@ pub enum RawParam {
 
 impl RawParam {
     pub fn try_datetime(s: &str) -> TestResult<Self> {
-        let datetime = DateTime::parse_from_rfc3339(s).map_err(|err| TestError::ParseError(err.to_string()))?;
+        let datetime = DateTime::parse_from_rfc3339(s)
+            .map_err(|err| TestError::ParseError(err.to_string()))?;
 
         Ok(Self::DateTime(datetime))
     }
@@ -67,7 +70,10 @@ impl RawParam {
 }
 
 fn params_to_json(params: impl IntoIterator<Item = RawParam>) -> Vec<serde_json::Value> {
-    params.into_iter().map(serde_json::Value::from).collect::<Vec<_>>()
+    params
+        .into_iter()
+        .map(serde_json::Value::from)
+        .collect::<Vec<_>>()
 }
 
 macro_rules! raw_value_from {

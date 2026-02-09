@@ -1,9 +1,10 @@
-use either::Either;
-use sql_schema_describer::{
-    ForeignKeyWalker, IndexType,
-    walkers::{IndexWalker, TableWalker},
-};
 use std::iter;
+
+use either::Either;
+use sql_schema_describer::ForeignKeyWalker;
+use sql_schema_describer::IndexType;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableWalker;
 
 pub(super) fn get_fks_covered_by_index<'a>(
     table: TableWalker<'a>,

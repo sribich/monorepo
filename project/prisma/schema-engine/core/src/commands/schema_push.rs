@@ -1,8 +1,12 @@
-use crate::{CoreResult, SchemaContainerExt, parse_schema_multi};
 use json_rpc::types::SchemasContainer;
 use psl::parser_database::ExtensionTypes;
-use schema_connector::{ConnectorError, SchemaConnector};
+use schema_connector::ConnectorError;
+use schema_connector::SchemaConnector;
 use tracing_futures::Instrument;
+
+use crate::CoreResult;
+use crate::SchemaContainerExt;
+use crate::parse_schema_multi;
 
 /// Request params for the `schemaPush` method.
 #[derive(Debug)]
@@ -52,7 +56,11 @@ pub async fn schema_push(
     let _ = connector.ensure_connection_validity().await;
     let dialect = connector.schema_dialect();
 
-    let to = dialect.schema_from_datamodel(sources, connector.default_runtime_namespace(), extension_types)?;
+    let to = dialect.schema_from_datamodel(
+        sources,
+        connector.default_runtime_namespace(),
+        extension_types,
+    )?;
     // We only consider the namespaces present in the "to" schema aka the PSL file for the introspection of the "from" schema.
     // So when the user removes a previously existing namespace from their PSL file we will not modify that namespace in the database.
     let namespaces = dialect.extract_namespaces(&to);
@@ -70,7 +78,11 @@ pub async fn schema_push(
         .check(&database_migration)
         .await?;
 
-    let executed_steps = match (checks.unexecutable_migrations.len(), checks.warnings.len(), input.force) {
+    let executed_steps = match (
+        checks.unexecutable_migrations.len(),
+        checks.warnings.len(),
+        input.force,
+    ) {
         (unexecutable, _, _) if unexecutable > 0 => {
             tracing::warn!(unexecutable = ?checks.unexecutable_migrations, "Aborting migration because at least one unexecutable step was detected.");
 
@@ -86,7 +98,11 @@ pub async fn schema_push(
         }
     };
 
-    let warnings = checks.warnings.into_iter().map(|warning| warning.description).collect();
+    let warnings = checks
+        .warnings
+        .into_iter()
+        .map(|warning| warning.description)
+        .collect();
 
     let unexecutable = checks
         .unexecutable_migrations

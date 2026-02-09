@@ -151,7 +151,10 @@ pub fn simple_child_references<'a>(
     match *parent_id {
         _ if on_child.is_list() && !on_parent.is_list() => vec![(RelationReference::NoRef)],
         Identifier::Simple if on_child.is_to_one_opt() && on_parent.is_to_one_opt() => {
-            vec![RelationReference::SimpleParentId(on_child), RelationReference::NoRef]
+            vec![
+                RelationReference::SimpleParentId(on_child),
+                RelationReference::NoRef,
+            ]
         }
         Identifier::Simple => vec![RelationReference::SimpleParentId(on_child)],
         Identifier::Compound => vec![RelationReference::CompoundParentId(on_child)],
@@ -169,13 +172,13 @@ pub fn full_child_references<'a>(
     if !is_m2m {
         match *parent_id {
             _ if on_child.is_list() && !on_parent.is_list() => vec![RelationReference::NoRef],
-            Identifier::Simple if on_child.is_to_one_opt() && on_parent.is_to_one_opt() => {
-                vec![RelationReference::SimpleParentId(on_child), RelationReference::NoRef]
-                    .clone_append(&mut common_parent_references(on_child))
-            }
-            Identifier::Simple => {
-                vec![RelationReference::SimpleParentId(on_child)].clone_append(&mut common_parent_references(on_child))
-            }
+            Identifier::Simple if on_child.is_to_one_opt() && on_parent.is_to_one_opt() => vec![
+                RelationReference::SimpleParentId(on_child),
+                RelationReference::NoRef,
+            ]
+            .clone_append(&mut common_parent_references(on_child)),
+            Identifier::Simple => vec![RelationReference::SimpleParentId(on_child)]
+                .clone_append(&mut common_parent_references(on_child)),
             Identifier::Compound => vec![RelationReference::CompoundParentId(on_child)]
                 .clone_append(&mut common_parent_references(on_child)),
             _ => common_parent_references(on_child),
@@ -212,7 +215,9 @@ pub fn simple_parent_references<'a>(
     let is_m2m = on_parent.is_list() && on_child.is_list();
 
     match *child_id {
-        _ if child_reference.render() != RelationReference::NoRef.render() && !is_m2m => vec![RelationReference::NoRef],
+        _ if child_reference.render() != RelationReference::NoRef.render() && !is_m2m => {
+            vec![RelationReference::NoRef]
+        }
         Identifier::Simple => vec![RelationReference::SimpleChildId(on_parent)],
         Identifier::Compound => vec![RelationReference::CompoundChildId(on_parent)],
         Identifier::None => vec![RelationReference::ChildReference(on_parent)],
@@ -231,7 +236,8 @@ pub fn full_parent_references<'a>(
         match (child_id, child_reference) {
             (_, _) if on_parent.is_list() && !on_child.is_list() => vec![RelationReference::NoRef],
             (&Identifier::Simple, RelationReference::NoRef) => {
-                vec![RelationReference::SimpleChildId(on_parent)].clone_append(&mut common_child_references(on_parent))
+                vec![RelationReference::SimpleChildId(on_parent)]
+                    .clone_append(&mut common_child_references(on_parent))
             }
             (&Identifier::Simple, _) if on_parent.is_list() && on_child.is_list() => {
                 let mut refs = vec![RelationReference::SimpleChildId(on_parent)]
@@ -241,8 +247,10 @@ pub fn full_parent_references<'a>(
                 refs
             }
             (&Identifier::Simple, _) => vec![RelationReference::NoRef],
-            (&Identifier::Compound, RelationReference::NoRef) => vec![RelationReference::CompoundChildId(on_parent)]
-                .clone_append(&mut common_child_references(on_parent)),
+            (&Identifier::Compound, RelationReference::NoRef) => {
+                vec![RelationReference::CompoundChildId(on_parent)]
+                    .clone_append(&mut common_child_references(on_parent))
+            }
             (&Identifier::Compound, _) if on_parent.is_list() && on_child.is_list() => {
                 let mut refs = vec![RelationReference::CompoundChildId(on_parent)]
                     .clone_append(&mut common_child_references(on_parent));

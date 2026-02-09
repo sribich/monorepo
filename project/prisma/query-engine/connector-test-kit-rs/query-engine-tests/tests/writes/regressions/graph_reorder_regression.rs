@@ -37,7 +37,10 @@ mod graph_reorder {
             &runner,
             r#"mutation { createOneCompany(data:{ id: "company" }) { id } }"#
         );
-        run_query!(&runner, r#"mutation { createOneVisit(data:{ id:"visit" }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneVisit(data:{ id:"visit" }) { id } }"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

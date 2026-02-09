@@ -3,11 +3,14 @@
 mod context;
 
 pub(crate) use context::DatamodelCalculatorContext;
-
-use crate::introspection::{rendering, warnings};
-use psl::{PreviewFeature, parser_database::ExtensionTypes};
-use schema_connector::{IntrospectionContext, IntrospectionResult};
+use psl::PreviewFeature;
+use psl::parser_database::ExtensionTypes;
+use schema_connector::IntrospectionContext;
+use schema_connector::IntrospectionResult;
 use sql_schema_describer as sql;
+
+use crate::introspection::rendering;
+use crate::introspection::warnings;
 
 /// Calculate datamodels from a database schema.
 pub fn calculate(
@@ -21,7 +24,11 @@ pub fn calculate(
 
     let (datamodels, is_empty, views) = rendering::to_psl_string(introspection_file_name, &ctx);
 
-    let views = if ctx.config.preview_features().contains(PreviewFeature::Views) {
+    let views = if ctx
+        .config
+        .preview_features()
+        .contains(PreviewFeature::Views)
+    {
         Some(views)
     } else {
         None

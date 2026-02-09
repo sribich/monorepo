@@ -1,8 +1,11 @@
 use std::path::PathBuf;
 
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use psl::parser_database::NoExtensionTypes;
-use schema_connector::{ConnectorParams, IntrospectionContext, SchemaConnector};
+use schema_connector::ConnectorParams;
+use schema_connector::IntrospectionContext;
+use schema_connector::SchemaConnector;
 use sql_introspection_tests::test_api::*;
 use sql_schema_connector::SqlSchemaConnector;
 use url::Url;

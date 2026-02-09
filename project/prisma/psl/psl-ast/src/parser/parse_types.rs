@@ -1,6 +1,11 @@
-use super::{Rule, helpers::Pair};
-use crate::{ast::*, parser::parse_expression::parse_expression};
-use diagnostics::{DatamodelError, Diagnostics, FileId};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use crate::ast::*;
+use crate::parser::parse_expression::parse_expression;
 
 pub fn parse_field_type(
     pair: Pair<'_>,
@@ -14,7 +19,10 @@ pub fn parse_field_type(
             FieldArity::Optional,
             parse_base_type(current.into_inner().next().unwrap(), diagnostics, file_id),
         )),
-        Rule::base_type => Ok((FieldArity::Required, parse_base_type(current, diagnostics, file_id))),
+        Rule::base_type => Ok((
+            FieldArity::Required,
+            parse_base_type(current, diagnostics, file_id),
+        )),
         Rule::list_type => Ok((
             FieldArity::List,
             parse_base_type(current.into_inner().next().unwrap(), diagnostics, file_id),
@@ -31,7 +39,10 @@ pub fn parse_field_type(
             "Optional lists are not supported. Use either `Type[]` or `Type?`.",
             (file_id, current.as_span()).into(),
         )),
-        _ => unreachable!("Encountered impossible field during parsing: {:?}", current.tokens()),
+        _ => unreachable!(
+            "Encountered impossible field during parsing: {:?}",
+            current.tokens()
+        ),
     }
 }
 
@@ -46,6 +57,9 @@ fn parse_base_type(pair: Pair<'_>, diagnostics: &mut Diagnostics, file_id: FileI
             Expression::StringValue(lit, span) => FieldType::Unsupported(lit, span),
             _ => unreachable!("Encountered impossible type during parsing"),
         },
-        _ => unreachable!("Encountered impossible type during parsing: {:?}", current.tokens()),
+        _ => unreachable!(
+            "Encountered impossible type during parsing: {:?}",
+            current.tokens()
+        ),
     }
 }

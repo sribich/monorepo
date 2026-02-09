@@ -1,6 +1,7 @@
-use crate::test_api::*;
 use pretty_assertions::assert_eq;
 use sql_schema_describer::*;
+
+use crate::test_api::*;
 
 #[test_connector(tags(Mysql))]
 fn views_can_be_described(api: TestApi) {
@@ -13,7 +14,10 @@ fn views_can_be_described(api: TestApi) {
     api.raw_cmd(sql);
 
     let result = api.describe();
-    let view = result.get_view("ab").expect("couldn't get ab view").to_owned();
+    let view = result
+        .get_view("ab")
+        .expect("couldn't get ab view")
+        .to_owned();
 
     let expected_sql = format!(
         "select `{0}`.`a`.`a_id` AS `a_id` from `{0}`.`a` union all select `{0}`.`b`.`b_id` AS `b_id` from `{0}`.`b`",

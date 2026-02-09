@@ -1,4 +1,5 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 /// A documentation block on top of an item in the PSL.
 #[derive(Debug)]

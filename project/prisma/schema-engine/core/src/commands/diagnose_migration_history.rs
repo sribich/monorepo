@@ -1,9 +1,15 @@
-use crate::{CoreResult, migration_schema_cache::MigrationSchemaCache};
 use json_rpc::types::MigrationList;
-use schema_connector::{
-    ConnectorError, MigrationRecord, Namespaces, PersistenceNotInitializedError, SchemaConnector,
-    migrations_directory::{MigrationDirectory, Migrations, error_on_changed_provider},
-};
+use schema_connector::ConnectorError;
+use schema_connector::MigrationRecord;
+use schema_connector::Namespaces;
+use schema_connector::PersistenceNotInitializedError;
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory::MigrationDirectory;
+use schema_connector::migrations_directory::Migrations;
+use schema_connector::migrations_directory::error_on_changed_provider;
+
+use crate::CoreResult;
+use crate::migration_schema_cache::MigrationSchemaCache;
 
 // Diagnose Migration History
 
@@ -140,7 +146,11 @@ pub async fn diagnose_migration_history(
     let mut diagnostics = Diagnostics::new(&migrations_from_filesystem.migration_directories);
 
     // Check filesystem history against database history.
-    for (index, fs_migration) in migrations_from_filesystem.migration_directories.iter().enumerate() {
+    for (index, fs_migration) in migrations_from_filesystem
+        .migration_directories
+        .iter()
+        .enumerate()
+    {
         let corresponding_db_migration = migrations_from_database
             .iter()
             .find(|db_migration| db_migration.migration_name == fs_migration.migration_name());
@@ -154,7 +164,9 @@ pub async fn diagnose_migration_history(
                 diagnostics.edited_migrations.push(db_migration);
             }
             Some(_) => (),
-            None => diagnostics.fs_migrations_not_in_db.push((index, fs_migration)),
+            None => diagnostics
+                .fs_migrations_not_in_db
+                .push((index, fs_migration)),
         }
     }
 
@@ -169,7 +181,9 @@ pub async fn diagnose_migration_history(
         }
 
         if corresponding_fs_migration.is_none() {
-            diagnostics.db_migrations_not_in_fs.push((index, db_migration))
+            diagnostics
+                .db_migrations_not_in_fs
+                .push((index, db_migration))
         }
     }
 
@@ -181,8 +195,12 @@ pub async fn diagnose_migration_history(
             .filter(|fs_migration| {
                 migrations_from_database
                     .iter()
-                    .filter(|db_migration| db_migration.finished_at.is_some() && db_migration.rolled_back_at.is_none())
-                    .any(|db_migration| db_migration.migration_name == fs_migration.migration_name())
+                    .filter(|db_migration| {
+                        db_migration.finished_at.is_some() && db_migration.rolled_back_at.is_none()
+                    })
+                    .any(|db_migration| {
+                        db_migration.migration_name == fs_migration.migration_name()
+                    })
             })
             .cloned()
             .collect(),
@@ -201,13 +219,15 @@ pub async fn diagnose_migration_history(
                 .await;
 
             let to = connector.schema_from_database(namespaces.clone()).await;
-            let drift = match from.and_then(|from| to.map(|to| dialect.diff(from, to))).map(|mig| {
-                if dialect.migration_is_empty(&mig) {
-                    None
-                } else {
-                    Some(mig)
-                }
-            }) {
+            let drift = match from
+                .and_then(|from| to.map(|to| dialect.diff(from, to)))
+                .map(|mig| {
+                    if dialect.migration_is_empty(&mig) {
+                        None
+                    } else {
+                        Some(mig)
+                    }
+                }) {
                 Ok(Some(drift)) => Some(DriftDiagnostic::DriftDetected {
                     summary: dialect.migration_summary(&drift),
                 }),
@@ -215,15 +235,15 @@ pub async fn diagnose_migration_history(
                 _ => None,
             };
 
-            let error_in_unapplied_migration = if !matches!(drift, Some(DriftDiagnostic::MigrationFailedToApply { .. }))
-            {
-                connector
-                    .validate_migrations(&migrations_from_filesystem, namespaces)
-                    .await
-                    .err()
-            } else {
-                None
-            };
+            let error_in_unapplied_migration =
+                if !matches!(drift, Some(DriftDiagnostic::MigrationFailedToApply { .. })) {
+                    connector
+                        .validate_migrations(&migrations_from_filesystem, namespaces)
+                        .await
+                        .err()
+                } else {
+                    None
+                };
 
             (drift, error_in_unapplied_migration)
         } else {
@@ -290,7 +310,10 @@ impl<'a> Diagnostics<'a> {
     }
 
     fn history(&self) -> Option<HistoryDiagnostic> {
-        match (self.fs_migrations_not_in_db.len(), self.db_migrations_not_in_fs.len()) {
+        match (
+            self.fs_migrations_not_in_db.len(),
+            self.db_migrations_not_in_fs.len(),
+        ) {
             (0, 0) => None,
             (_, 0) => Some(HistoryDiagnostic::DatabaseIsBehind {
                 unapplied_migration_names: self.fs_migration_names(),
@@ -299,13 +322,15 @@ impl<'a> Diagnostics<'a> {
                 unpersisted_migration_names: self.db_migration_names(),
             }),
             (_, _) => Some(HistoryDiagnostic::HistoriesDiverge {
-                last_common_migration_name: self.fs_migrations_not_in_db.first().and_then(|(idx, _)| {
-                    if *idx == 0 {
-                        None
-                    } else {
-                        Some(self.fs_migrations[idx - 1].migration_name().to_owned())
-                    }
-                }),
+                last_common_migration_name: self.fs_migrations_not_in_db.first().and_then(
+                    |(idx, _)| {
+                        if *idx == 0 {
+                            None
+                        } else {
+                            Some(self.fs_migrations[idx - 1].migration_name().to_owned())
+                        }
+                    },
+                ),
                 unpersisted_migration_names: self.db_migration_names(),
                 unapplied_migration_names: self.fs_migration_names(),
             }),

@@ -2,7 +2,10 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod disconnect_inside_update {
-    use query_engine_tests::{DatamodelWithParams, assert_error, run_query, run_query_json};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "a P1 to C1 relation " should "be disconnectable through a nested mutation by id"
@@ -57,7 +60,10 @@ mod disconnect_inside_update {
         on_child = "ToOneOpt",
         capabilities(FilteredInlineChildNestedToOneDisconnect)
     )]
-    async fn p1_c1_by_filters_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_by_filters_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -108,7 +114,10 @@ mod disconnect_inside_update {
         on_child = "ToOneOpt",
         capabilities(FilteredInlineChildNestedToOneDisconnect)
     )]
-    async fn p1_c1_by_fails_if_filters_no_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_by_fails_if_filters_no_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -257,7 +266,10 @@ mod disconnect_inside_update {
 
     // "a P1 to C1!  relation with the child and the parent already in a relation" should "should error in a nested mutation by unique"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1_req_child_par_inrel_error(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_req_child_par_inrel_error(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -330,8 +342,12 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let parent = t.parent().parse(res.clone(), &["data", "createOneParent"])?;
-        let second_child_ids = t.child().parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
+        let parent = t
+            .parent()
+            .parse(res.clone(), &["data", "createOneParent"])?;
+        let second_child_ids = t
+            .child()
+            .parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
         let second_child = second_child_ids.get(1).unwrap();
 
         insta::assert_snapshot!(
@@ -353,7 +369,10 @@ mod disconnect_inside_update {
 
     // "a PM to C1 relation with the child already in a relation" should "be disconnectable through a nested mutation by unique"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_child_inrel_with_filters(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_child_inrel_with_filters(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let res = run_query_json!(
             runner,
             format!(
@@ -377,7 +396,9 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let parent = t.parent().parse(res.clone(), &["data", "createOneParent"])?;
+        let parent = t
+            .parent()
+            .parse(res.clone(), &["data", "createOneParent"])?;
 
         // Works when filters match
         insta::assert_snapshot!(
@@ -498,8 +519,12 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let parent = t.parent().parse(res.clone(), &["data", "createOneParent"])?;
-        let first_child_ids = t.child().parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
+        let parent = t
+            .parent()
+            .parse(res.clone(), &["data", "createOneParent"])?;
+        let first_child_ids = t
+            .child()
+            .parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
         let first_child = first_child_ids.first().unwrap();
 
         let other_parent_res = run_query_json!(
@@ -524,9 +549,10 @@ mod disconnect_inside_update {
                 selection = t.child().selection()
             )
         );
-        let other_child_ids = t
-            .child()
-            .parse_many(other_parent_res, &["data", "createOneParent", "childrenOpt"])?;
+        let other_child_ids = t.child().parse_many(
+            other_parent_res,
+            &["data", "createOneParent", "childrenOpt"],
+        )?;
         let other_child = other_child_ids.get(1).unwrap();
 
         insta::assert_snapshot!(
@@ -604,8 +630,12 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let parent = t.parent().parse(res.clone(), &["data", "createOneParent"])?;
-        let child_1_ids = t.child().parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
+        let parent = t
+            .parent()
+            .parse(res.clone(), &["data", "createOneParent"])?;
+        let child_1_ids = t
+            .child()
+            .parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
         let child_1 = child_1_ids.first().unwrap();
 
         let other_parent_res = run_query_json!(
@@ -630,9 +660,10 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let other_child_ids = t
-            .child()
-            .parse_many(other_parent_res, &["data", "createOneParent", "childrenOpt"])?;
+        let other_child_ids = t.child().parse_many(
+            other_parent_res,
+            &["data", "createOneParent", "childrenOpt"],
+        )?;
         let other_child = other_child_ids.get(1).unwrap();
 
         run_query!(
@@ -680,8 +711,12 @@ mod disconnect_inside_update {
                 child_selection = t.child().selection()
             )
         );
-        let parent = t.parent().parse(res.clone(), &["data", "createOneParent"])?;
-        let child_1_ids = t.child().parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
+        let parent = t
+            .parent()
+            .parse(res.clone(), &["data", "createOneParent"])?;
+        let child_1_ids = t
+            .child()
+            .parse_many(res, &["data", "createOneParent", "childrenOpt"])?;
         let child_1 = child_1_ids.first().unwrap();
 
         run_query!(

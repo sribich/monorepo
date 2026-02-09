@@ -5,7 +5,9 @@ use query_engine_tests::*;
 // On D1, the migration setup fails because Schema Engine doesn't know anything about Driver Adapters.
 #[test_suite(schema(schema), exclude(MySQL("mariadb"), Vitess))]
 mod views_with_relations {
-    use query_engine_tests::{Runner, connector_test, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::connector_test;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -82,7 +84,11 @@ mod views_with_relations {
         migrate_view(runner, schema_name).await?;
         create_test_model(runner, r#"{ id: 1, firstName: "John", lastName: "Doe" }"#).await?;
         create_test_model(runner, r#"{ id: 2, firstName: "Jane", lastName: "Doe" }"#).await?;
-        create_test_model(runner, r#"{ id: 3, firstName: "Bob", lastName: "Maurane" }"#).await?;
+        create_test_model(
+            runner,
+            r#"{ id: 3, firstName: "Bob", lastName: "Maurane" }"#,
+        )
+        .await?;
 
         create_child(runner, r#"{ id: 1, name: "Derek" viewId: 1 }"#).await?;
         create_child(runner, r#"{ id: 2, name: "Kevin" viewId: 1 }"#).await?;
@@ -114,7 +120,9 @@ mod views_with_relations {
 
     async fn create_test_model(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -122,7 +130,9 @@ mod views_with_relations {
 
     async fn create_child(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneChild(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneChild(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

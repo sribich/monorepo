@@ -1,17 +1,27 @@
-use crate::{ForeignKey, ForeignKeyAction, ForeignKeyColumn, ForeignKeyId, TableColumnWalker, TableWalker, Walker};
+use crate::ForeignKey;
+use crate::ForeignKeyAction;
+use crate::ForeignKeyColumn;
+use crate::ForeignKeyId;
+use crate::TableColumnWalker;
+use crate::TableWalker;
+use crate::Walker;
 
 /// Traverse a foreign key.
 pub type ForeignKeyWalker<'a> = Walker<'a, ForeignKeyId>;
 
 impl<'schema> ForeignKeyWalker<'schema> {
     pub(super) fn columns(self) -> &'schema [ForeignKeyColumn] {
-        let range = super::range_for_key(&self.schema.foreign_key_columns, self.id, |col| col.foreign_key_id);
+        let range = super::range_for_key(&self.schema.foreign_key_columns, self.id, |col| {
+            col.foreign_key_id
+        });
         &self.schema.foreign_key_columns[range]
     }
 
     /// The foreign key columns on the referencing table.
     pub fn constrained_columns(self) -> impl ExactSizeIterator<Item = TableColumnWalker<'schema>> {
-        self.columns().iter().map(move |col| self.walk(col.constrained_column))
+        self.columns()
+            .iter()
+            .map(move |col| self.walk(col.constrained_column))
     }
 
     /// The name of the foreign key constraint.
@@ -35,7 +45,9 @@ impl<'schema> ForeignKeyWalker<'schema> {
 
     /// The columns referenced by the foreign key on the referenced table.
     pub fn referenced_columns(self) -> impl ExactSizeIterator<Item = TableColumnWalker<'schema>> {
-        self.columns().iter().map(move |col| self.walk(col.referenced_column))
+        self.columns()
+            .iter()
+            .map(move |col| self.walk(col.referenced_column))
     }
 
     /// The table the foreign key "points to".

@@ -1,5 +1,6 @@
 use axum::body::Bytes;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 /// Allows for encoding and decoding WebSocket messages.
 pub trait Codec {

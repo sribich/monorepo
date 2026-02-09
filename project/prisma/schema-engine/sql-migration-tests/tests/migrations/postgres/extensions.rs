@@ -1,6 +1,9 @@
 use indoc::indoc;
-use psl::{SourceFile, parser_database::NoExtensionTypes};
-use schema_core::{ExtensionType, ExtensionTypeConfig, schema_connector::DiffTarget};
+use psl::SourceFile;
+use psl::parser_database::NoExtensionTypes;
+use schema_core::ExtensionType;
+use schema_core::ExtensionTypeConfig;
+use schema_core::schema_connector::DiffTarget;
 use sql_migration_tests::test_api::*;
 
 const CONNECTOR: &dyn psl::datamodel_connector::Connector = psl::builtin_connectors::POSTGRES;
@@ -20,7 +23,10 @@ fn extensions_can_be_created(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema().assert_has_extension("citext");
 }
@@ -40,7 +46,10 @@ fn multiple_extensions_can_be_created(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema().assert_has_extension("citext");
     api.assert_schema().assert_has_extension("pg_trgm");
@@ -61,7 +70,10 @@ fn mapped_extensions_can_be_created(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema().assert_has_extension("uuid-ossp");
 }
@@ -81,9 +93,14 @@ fn extensions_can_be_created_with_a_version(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
-    api.assert_schema().assert_has_extension("citext").assert_version("1.5");
+    api.assert_schema()
+        .assert_has_extension("citext")
+        .assert_version("1.5");
 }
 
 #[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
@@ -101,9 +118,14 @@ fn extension_version_can_be_changed(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
-    api.assert_schema().assert_has_extension("citext").assert_version("1.5");
+    api.assert_schema()
+        .assert_has_extension("citext")
+        .assert_version("1.5");
 
     let dm = indoc! {r#"
         datasource db {
@@ -118,9 +140,14 @@ fn extension_version_can_be_changed(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
-    api.assert_schema().assert_has_extension("citext").assert_version("1.6");
+    api.assert_schema()
+        .assert_has_extension("citext")
+        .assert_version("1.6");
 }
 
 #[test_connector(tags(Postgres14), preview_features("postgresqlExtensions"))]
@@ -138,9 +165,14 @@ fn extension_version_does_not_change_on_empty(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
-    api.assert_schema().assert_has_extension("citext").assert_version("1.5");
+    api.assert_schema()
+        .assert_has_extension("citext")
+        .assert_version("1.5");
 
     let dm = indoc! {r#"
         datasource db {
@@ -157,7 +189,9 @@ fn extension_version_does_not_change_on_empty(api: TestApi) {
 
     api.schema_push(dm).send().assert_green().assert_no_steps();
 
-    api.assert_schema().assert_has_extension("citext").assert_version("1.5");
+    api.assert_schema()
+        .assert_has_extension("citext")
+        .assert_version("1.5");
 }
 
 #[test_connector(tags(Postgres), preview_features("postgresqlExtensions"))]
@@ -177,7 +211,10 @@ fn extension_schema_can_be_defined(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema()
         .assert_has_extension("citext")
@@ -201,7 +238,10 @@ fn relocatable_extension_can_be_relocated(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema()
         .assert_has_extension("citext")
@@ -220,7 +260,10 @@ fn relocatable_extension_can_be_relocated(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema()
         .assert_has_extension("citext")
@@ -244,9 +287,14 @@ fn non_relocatable_extension_can_be_relocated(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
-    api.assert_schema().assert_has_extension("xml2").assert_schema("public");
+    api.assert_schema()
+        .assert_has_extension("xml2")
+        .assert_schema("public");
 
     let dm = indoc! {r#"
         datasource db {
@@ -261,7 +309,10 @@ fn non_relocatable_extension_can_be_relocated(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema()
         .assert_has_extension("xml2")
@@ -283,7 +334,10 @@ fn removing_schema_definition_does_nothing(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema()
         .assert_has_extension("citext")
@@ -328,7 +382,10 @@ fn extension_functions_can_be_used_in_the_same_migration(api: TestApi) {
         }
     "#};
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     api.assert_schema().assert_has_extension("uuid-ossp");
 
@@ -434,8 +491,14 @@ fn diff_extension_type_changed_modifiers(api: TestApi) {
     api.raw_cmd("CREATE EXTENSION IF NOT EXISTS vector");
 
     let diff = api.connector_diff(
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm1))], &extensions),
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm2))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm1))],
+            &extensions,
+        ),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm2))],
+            &extensions,
+        ),
         None,
     );
 
@@ -476,8 +539,14 @@ fn diff_extension_type_unchanged_modifiers(api: TestApi) {
     api.raw_cmd("CREATE EXTENSION IF NOT EXISTS vector");
 
     let diff = api.connector_diff(
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
         None,
     );
 
@@ -531,8 +600,14 @@ fn diff_extension_type_changed_db_type_modifiers(api: TestApi) {
     api.raw_cmd("CREATE EXTENSION IF NOT EXISTS vector");
 
     let diff = api.connector_diff(
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm1))], &extensions),
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm2))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm1))],
+            &extensions,
+        ),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm2))],
+            &extensions,
+        ),
         None,
     );
 
@@ -572,8 +647,14 @@ fn diff_extension_type_unchanged_db_type_modifiers(api: TestApi) {
     api.raw_cmd("CREATE EXTENSION IF NOT EXISTS vector");
 
     let diff = api.connector_diff(
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
         None,
     );
 
@@ -607,7 +688,10 @@ fn diff_unchanged_unsupported_type(api: TestApi) {
 
     let diff = api.connector_diff(
         DiffTarget::Database,
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
         None,
     );
 
@@ -642,7 +726,10 @@ fn diff_changed_unsupported_type(api: TestApi) {
 
     let diff = api.connector_diff(
         DiffTarget::Database,
-        DiffTarget::Datamodel(vec![("schema.prisma".into(), SourceFile::new_static(dm))], &extensions),
+        DiffTarget::Datamodel(
+            vec![("schema.prisma".into(), SourceFile::new_static(dm))],
+            &extensions,
+        ),
         None,
     );
 

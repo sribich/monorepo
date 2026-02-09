@@ -2,9 +2,11 @@ use query_engine_tests::*;
 
 #[test_suite(schema(schema), capabilities(ScalarLists))]
 mod updated_at {
-    use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
     use std::time::Duration;
+
+    use indoc::indoc;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use tokio::time::sleep;
 
     fn schema() -> String {

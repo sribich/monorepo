@@ -1,5 +1,6 @@
-use deunicode::deunicode;
 use std::borrow::Cow;
+
+use deunicode::deunicode;
 
 /// Slugify with default options.
 pub fn slugify(input: &str) -> String {
@@ -148,7 +149,10 @@ impl Slugifier {
         I: rayon::prelude::IntoParallelIterator<Item = &'a str>,
     {
         use rayon::prelude::*;
-        inputs.into_par_iter().map(|s| slugify_impl(s, &self.options)).collect()
+        inputs
+            .into_par_iter()
+            .map(|s| slugify_impl(s, &self.options))
+            .collect()
     }
 }
 
@@ -194,13 +198,18 @@ where
     I: rayon::prelude::IntoParallelIterator<Item = &'a str>,
 {
     use rayon::prelude::*;
-    inputs.into_par_iter().map(|s| slugify_impl(s, options)).collect()
+    inputs
+        .into_par_iter()
+        .map(|s| slugify_impl(s, options))
+        .collect()
 }
 
 fn should_use_parallel(inputs: &[&str]) -> bool {
     let total_bytes: usize = inputs.iter().map(|s| s.len()).sum();
     let count = inputs.len();
-    let cores = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(1);
+    let cores = std::thread::available_parallelism()
+        .map(|n| n.get())
+        .unwrap_or(1);
     let byte_threshold = 100_000usize.saturating_mul(cores);
     if total_bytes >= byte_threshold {
         return true;
@@ -273,7 +282,11 @@ fn filter_pre_transliteration_cow<'a>(input: &'a Cow<'a, str>, options: &Options
     let needs_filtering = input.chars().any(|ch| {
         (options.drop_apostrophes && (ch == '\'' || ch == '\u{2019}'))
             || (options.drop_emoji
-                && !(ch.is_alphabetic() || ch.is_numeric() || ch.is_whitespace() || ch == '-' || ch == '_'))
+                && !(ch.is_alphabetic()
+                    || ch.is_numeric()
+                    || ch.is_whitespace()
+                    || ch == '-'
+                    || ch == '_'))
     });
     if !needs_filtering {
         return input.clone();
@@ -284,7 +297,11 @@ fn filter_pre_transliteration_cow<'a>(input: &'a Cow<'a, str>, options: &Options
             continue;
         }
         if options.drop_emoji
-            && !(ch.is_alphabetic() || ch.is_numeric() || ch.is_whitespace() || ch == '-' || ch == '_')
+            && !(ch.is_alphabetic()
+                || ch.is_numeric()
+                || ch.is_whitespace()
+                || ch == '-'
+                || ch == '_')
         {
             out.push(' ');
             continue;
@@ -299,7 +316,10 @@ fn estimate_slug_capacity(ascii: &str, options: &Options) -> usize {
     let input_len = ascii.len();
     let sep_len = options.separator.len();
     if let Some(max_len) = options.max_length {
-        return std::cmp::min(input_len + (input_len / 4) * (sep_len.saturating_sub(1)), max_len);
+        return std::cmp::min(
+            input_len + (input_len / 4) * (sep_len.saturating_sub(1)),
+            max_len,
+        );
     }
     let estimated_separators = input_len / 4;
     let separator_overhead = estimated_separators.saturating_mul(sep_len.saturating_sub(1));

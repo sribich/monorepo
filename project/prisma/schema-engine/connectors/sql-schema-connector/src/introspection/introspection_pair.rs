@@ -13,13 +13,16 @@ mod relation_field;
 mod scalar_field;
 mod view;
 
-pub(crate) use default::{DefaultKind, DefaultValuePair};
+pub(crate) use default::DefaultKind;
+pub(crate) use default::DefaultValuePair;
 pub(crate) use enumerator::EnumPair;
 pub(crate) use id::IdPair;
 pub(crate) use index::IndexPair;
-pub(crate) use index_field::{IndexFieldPair, IndexOps};
+pub(crate) use index_field::IndexFieldPair;
+pub(crate) use index_field::IndexOps;
 pub(crate) use model::ModelPair;
-pub(crate) use relation_field::{RelationFieldDirection, RelationFieldPair};
+pub(crate) use relation_field::RelationFieldDirection;
+pub(crate) use relation_field::RelationFieldPair;
 pub(crate) use scalar_field::ScalarFieldPair;
 pub(crate) use view::ViewPair;
 

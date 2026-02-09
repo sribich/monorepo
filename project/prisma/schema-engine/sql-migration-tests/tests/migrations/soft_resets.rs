@@ -1,5 +1,6 @@
 use connection_string::JdbcString;
-use quaint::{prelude::Queryable, single::Quaint};
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
 use sql_migration_tests::multi_engine_test_api::*;
 use test_macros::test_connector;
 
@@ -40,7 +41,9 @@ fn soft_resets_work_on_postgres(mut api: TestApi) {
     // Check that the test user can't drop databases.
     {
         let test_user_connection = tok(Quaint::new(&test_user_connection_string)).unwrap();
-        let err = tok(test_user_connection.raw_cmd(&format!(r#"DROP DATABASE {}"#, api.test_fn_name()))).unwrap_err();
+        let err =
+            tok(test_user_connection.raw_cmd(&format!(r#"DROP DATABASE {}"#, api.test_fn_name())))
+                .unwrap_err();
 
         assert_eq!(err.original_code().unwrap(), "42501"); // insufficient_privilege (https://www.postgresql.org/docs/current/errcodes-appendix.html)
     }
@@ -70,9 +73,16 @@ fn soft_resets_work_on_postgres(mut api: TestApi) {
         engine.reset().send_sync(None);
         engine.assert_schema().assert_tables_count(0);
 
-        engine.schema_push(dm).send().assert_has_executed_steps().assert_green();
+        engine
+            .schema_push(dm)
+            .send()
+            .assert_has_executed_steps()
+            .assert_green();
 
-        engine.assert_schema().assert_tables_count(1).assert_has_table("Cat");
+        engine
+            .assert_schema()
+            .assert_tables_count(1)
+            .assert_has_table("Cat");
 
         engine.reset().send_sync(None);
         engine.assert_schema().assert_tables_count(0);
@@ -97,7 +107,9 @@ fn soft_resets_work_on_mysql(api: TestApi) {
     {
         let mut engine = api.new_engine();
 
-        engine.create_migration("01init", dm, &migrations_directory).send_sync();
+        engine
+            .create_migration("01init", dm, &migrations_directory)
+            .send_sync();
 
         engine
             .apply_migrations(&migrations_directory)
@@ -136,7 +148,10 @@ fn soft_resets_work_on_mysql(api: TestApi) {
     // Check that the test user can't drop databases.
     {
         let test_user_connection = tok(Quaint::new(&test_user_connection_string)).unwrap();
-        let err = tok(test_user_connection.raw_cmd(&format!(r#"DROP DATABASE `{}`"#, api.test_fn_name()))).unwrap_err();
+        let err = tok(
+            test_user_connection.raw_cmd(&format!(r#"DROP DATABASE `{}`"#, api.test_fn_name()))
+        )
+        .unwrap_err();
 
         // insufficient_privilege
         // https://docs.oracle.com/cd/E19078-01/mysql/mysql-refman-5.1/error-handling.html
@@ -150,9 +165,16 @@ fn soft_resets_work_on_mysql(api: TestApi) {
         engine.reset().send_sync(None);
         engine.assert_schema().assert_tables_count(0);
 
-        engine.schema_push(dm).send().assert_has_executed_steps().assert_green();
+        engine
+            .schema_push(dm)
+            .send()
+            .assert_has_executed_steps()
+            .assert_green();
 
-        engine.assert_schema().assert_tables_count(1).assert_has_table("Cat");
+        engine
+            .assert_schema()
+            .assert_tables_count(1)
+            .assert_has_table("Cat");
 
         engine.reset().send_sync(None);
         engine.assert_schema().assert_tables_count(0);

@@ -1,12 +1,25 @@
 use std::sync::Arc;
 
-use psl::{PreviewFeatures, SourceFile, ValidatedSchema, parser_database::ExtensionTypes};
+use psl::PreviewFeatures;
+use psl::SourceFile;
+use psl::ValidatedSchema;
+use psl::parser_database::ExtensionTypes;
 
-use crate::{
-    BoxFuture, ConnectorHost, ConnectorResult, DatabaseSchema, DestructiveChangeChecker, DestructiveChangeDiagnostics,
-    DiffTarget, IntrospectSqlQueryInput, IntrospectSqlQueryOutput, IntrospectionContext, IntrospectionResult,
-    Migration, MigrationPersistence, Namespaces, migrations_directory::Migrations,
-};
+use crate::BoxFuture;
+use crate::ConnectorHost;
+use crate::ConnectorResult;
+use crate::DatabaseSchema;
+use crate::DestructiveChangeChecker;
+use crate::DestructiveChangeDiagnostics;
+use crate::DiffTarget;
+use crate::IntrospectSqlQueryInput;
+use crate::IntrospectSqlQueryOutput;
+use crate::IntrospectionContext;
+use crate::IntrospectionResult;
+use crate::Migration;
+use crate::MigrationPersistence;
+use crate::Namespaces;
+use crate::migrations_directory::Migrations;
 
 /// The dialect for schema operations on a particular database.
 pub trait SchemaDialect: Send + Sync + 'static {
@@ -99,11 +112,18 @@ pub trait SchemaConnector: Send + Sync + 'static {
     fn acquire_lock(&mut self) -> BoxFuture<'_, ConnectorResult<()>>;
 
     /// Applies the migration to the database. Returns the number of executed steps.
-    fn apply_migration<'a>(&'a mut self, migration: &'a Migration) -> BoxFuture<'a, ConnectorResult<u32>>;
+    fn apply_migration<'a>(
+        &'a mut self,
+        migration: &'a Migration,
+    ) -> BoxFuture<'a, ConnectorResult<u32>>;
 
     /// Apply a migration script to the database. The migration persistence is
     /// managed by the core.
-    fn apply_script<'a>(&'a mut self, migration_name: &'a str, script: &'a str) -> BoxFuture<'a, ConnectorResult<()>>;
+    fn apply_script<'a>(
+        &'a mut self,
+        migration_name: &'a str,
+        script: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// A string that should identify what database backend is being used. Note that this is not necessarily
     /// the connector name. The SQL connector for example can return "postgresql", "mysql" or "sqlite".
@@ -197,11 +217,12 @@ pub trait SchemaConnector: Send + Sync + 'static {
     ) -> BoxFuture<'a, ConnectorResult<DatabaseSchema>> {
         Box::pin(async move {
             match diff_target {
-                DiffTarget::Datamodel(sources, extension_types) => {
-                    self.schema_dialect()
-                        .schema_from_datamodel(sources, default_namespace, extension_types)
+                DiffTarget::Datamodel(sources, extension_types) => self
+                    .schema_dialect()
+                    .schema_from_datamodel(sources, default_namespace, extension_types),
+                DiffTarget::Migrations(migrations) => {
+                    self.schema_from_migrations(migrations, namespaces).await
                 }
-                DiffTarget::Migrations(migrations) => self.schema_from_migrations(migrations, namespaces).await,
                 DiffTarget::Database => self.schema_from_database(namespaces).await,
                 DiffTarget::Empty => Ok(self.schema_dialect().empty_database_schema()),
             }

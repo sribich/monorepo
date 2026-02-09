@@ -1,4 +1,5 @@
-use typegen::{NamedType, Typegen};
+use typegen::NamedType;
+use typegen::Typegen;
 
 #[cfg(test)]
 #[test]

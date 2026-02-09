@@ -1,12 +1,24 @@
-use crate::{
-    ConnectorTag, ConnectorVersion, MySqlConnectorTag,
-    PostgresConnectorTag, SqliteConnectorTag, TestResult, VitessConnectorTag,
-};
+use std::convert::TryFrom;
+use std::env;
+use std::fmt::Display;
+use std::fs::File;
+use std::io::Read;
+use std::path::PathBuf;
+use std::str::FromStr;
+
 use log::warn;
 use qe_setup::driver_adapters::DriverAdapter;
-use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, env, fmt::Display, fs::File, io::Read, path::PathBuf, str::FromStr};
+use serde::Deserialize;
+use serde::Serialize;
 use thiserror::Error;
+
+use crate::ConnectorTag;
+use crate::ConnectorVersion;
+use crate::MySqlConnectorTag;
+use crate::PostgresConnectorTag;
+use crate::SqliteConnectorTag;
+use crate::TestResult;
+use crate::VitessConnectorTag;
 
 static TEST_CONFIG_FILE_NAME: &str = ".test_config";
 
@@ -93,7 +105,10 @@ pub struct TestConfigFromSerde {
 
 impl TestConfigFromSerde {
     pub fn test_connector(&self) -> TestResult<(ConnectorTag, ConnectorVersion)> {
-        let version = ConnectorVersion::try_from((self.connector.as_str(), self.connector_version.as_deref()))?;
+        let version = ConnectorVersion::try_from((
+            self.connector.as_str(),
+            self.connector_version.as_deref(),
+        ))?;
         let tag: ConnectorTag = match version {
             ConnectorVersion::Postgres(_) => &PostgresConnectorTag,
             ConnectorVersion::MySql(_) => &MySqlConnectorTag,
@@ -114,7 +129,9 @@ impl TestConfigFromSerde {
             | Ok(ConnectorVersion::MySql(None))
             | Ok(ConnectorVersion::Postgres(None))
             | Ok(ConnectorVersion::Sqlite(None)) => {
-                exit_with_message("The current test connector requires a version to be set to run.");
+                exit_with_message(
+                    "The current test connector requires a version to be set to run.",
+                );
             }
             Ok(ConnectorVersion::Vitess(Some(_)))
             | Ok(ConnectorVersion::MySql(Some(_)))
@@ -124,13 +141,17 @@ impl TestConfigFromSerde {
         }
 
         if self.external_test_executor.is_some() {
-            if self.external_test_executor.unwrap() == TestExecutor::Mobile && self.mobile_emulator_url.is_none() {
+            if self.external_test_executor.unwrap() == TestExecutor::Mobile
+                && self.mobile_emulator_url.is_none()
+            {
                 exit_with_message(
                     "When using the mobile external test executor, the mobile emulator URL (MOBILE_EMULATOR_URL env var) must be set.",
                 );
             }
 
-            if self.external_test_executor.unwrap() != TestExecutor::Mobile && self.driver_adapter.is_none() {
+            if self.external_test_executor.unwrap() != TestExecutor::Mobile
+                && self.driver_adapter.is_none()
+            {
                 exit_with_message(
                     "When using an external test executor, the driver adapter (DRIVER_ADAPTER env var) must be set.",
                 );
@@ -174,7 +195,10 @@ pub(crate) struct WithDriverAdapter {
 
 impl WithDriverAdapter {
     fn json_stringify_config(&self) -> String {
-        self.config.as_ref().map(|cfg| cfg.json_stringify()).unwrap_or_default()
+        self.config
+            .as_ref()
+            .map(|cfg| cfg.json_stringify())
+            .unwrap_or_default()
     }
 }
 
@@ -251,10 +275,12 @@ Use the Makefile.
 "####;
 
 fn exit_with_message(msg: &str) -> ! {
-    use std::io::{Write, stderr};
+    use std::io::Write;
+    use std::io::stderr;
     let stderr = stderr();
     let mut sink = stderr.lock();
-    sink.write_all(b"Error in the test configuration:\n").unwrap();
+    sink.write_all(b"Error in the test configuration:\n")
+        .unwrap();
     sink.write_all(msg.as_bytes()).unwrap();
     sink.write_all(b"Aborting test process\n").unwrap();
 
@@ -305,7 +331,9 @@ impl TestConfig {
             .map(|value| serde_json::from_str::<TestExecutor>(&value).ok())
             .unwrap_or_default();
 
-        let driver_adapter = std::env::var("DRIVER_ADAPTER").ok().map(DriverAdapter::from);
+        let driver_adapter = std::env::var("DRIVER_ADAPTER")
+            .ok()
+            .map(DriverAdapter::from);
         let driver_adapter_config = std::env::var("DRIVER_ADAPTER_CONFIG")
             .map(|config| serde_json::from_str::<DriverAdapterConfig>(config.as_str()).ok())
             .unwrap_or_default();
@@ -394,7 +422,9 @@ impl TestConfig {
             let path = PathBuf::from(file);
             let md = path.metadata();
             if !path.exists() || md.is_err() || !md.unwrap().is_file() {
-                exit_with_message(&format!("The external test executor path `{file}` must be a file"));
+                exit_with_message(&format!(
+                    "The external test executor path `{file}` must be a file"
+                ));
             }
             #[cfg(unix)]
             {
@@ -434,7 +464,9 @@ impl TestConfig {
 
     pub fn max_bind_values(&self) -> Option<usize> {
         let version = self.parse_connector_version().unwrap();
-        let local_mbv = self.with_driver_adapter().and_then(|config| config.max_bind_values);
+        let local_mbv = self
+            .with_driver_adapter()
+            .and_then(|config| config.max_bind_values);
 
         local_mbv.or_else(|| version.max_bind_values())
     }

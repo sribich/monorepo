@@ -30,7 +30,9 @@ fn schema_push_happy_path(api: TestApi) {
             table.assert_column("boxId", |col| col.assert_type_family(ColumnTypeFamily::Int))
         })
         .assert_table("Box", |table| {
-            table.assert_column("material", |col| col.assert_type_family(ColumnTypeFamily::String))
+            table.assert_column("material", |col| {
+                col.assert_type_family(ColumnTypeFamily::String)
+            })
         });
 
     let dm2 = r#"
@@ -60,7 +62,9 @@ fn schema_push_happy_path(api: TestApi) {
         .assert_table("Box", |table| {
             table
                 .assert_columns_count(3)
-                .assert_column("texture", |col| col.assert_type_family(ColumnTypeFamily::String))
+                .assert_column("texture", |col| {
+                    col.assert_type_family(ColumnTypeFamily::String)
+                })
         });
 }
 
@@ -195,7 +199,11 @@ fn alter_constraint_name_push(api: TestApi) {
         (r#"(map: "CustomId")"#, r#", map: "CustomCompoundId""#)
     };
 
-    let no_named_fk = if api.is_sqlite() { "" } else { r#", map: "CustomFK""# };
+    let no_named_fk = if api.is_sqlite() {
+        ""
+    } else {
+        r#", map: "CustomFK""#
+    };
 
     let custom_dm = format!(
         r#"
@@ -219,7 +227,9 @@ fn alter_constraint_name_push(api: TestApi) {
      "#
     );
 
-    api.schema_push_w_datasource(custom_dm).send().assert_green();
+    api.schema_push_w_datasource(custom_dm)
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("A", |table| {
         if !no_named_pk {
@@ -368,7 +378,10 @@ fn mysql_should_diff_column_ordering_correctly_issue_10983(api: TestApi) {
     "#;
 
     api.raw_cmd(ddl);
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -386,5 +399,8 @@ fn issue_repro_extended_indexes(api: TestApi) {
     "#};
 
     api.schema_push_w_datasource(dm).send().assert_executable();
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }

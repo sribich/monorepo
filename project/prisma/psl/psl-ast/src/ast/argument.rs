@@ -1,5 +1,10 @@
-use super::{Expression, Identifier, Span, WithSpan};
-use std::fmt::{Display, Formatter};
+use std::fmt::Display;
+use std::fmt::Formatter;
+
+use super::Expression;
+use super::Identifier;
+use super::Span;
+use super::WithSpan;
 
 /// A list of arguments inside parentheses.
 #[derive(Debug, Clone, Default)]

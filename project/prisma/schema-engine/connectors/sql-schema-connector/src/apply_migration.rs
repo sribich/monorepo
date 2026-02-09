@@ -1,12 +1,15 @@
-use crate::{
-    SqlConnector, SqlSchemaConnector,
-    migration_pair::MigrationPair,
-    sql_migration::{SqlMigration, SqlMigrationStep},
-    sql_renderer::SqlRenderer,
-};
-use schema_connector::{ConnectorResult, DestructiveChangeDiagnostics, Migration};
+use schema_connector::ConnectorResult;
+use schema_connector::DestructiveChangeDiagnostics;
+use schema_connector::Migration;
 use sql_schema_describer::SqlSchema;
 use tracing_futures::Instrument;
+
+use crate::SqlConnector;
+use crate::SqlSchemaConnector;
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::SqlMigration;
+use crate::sql_migration::SqlMigrationStep;
+use crate::sql_renderer::SqlRenderer;
 
 #[tracing::instrument(skip(connector, migration))]
 pub(crate) async fn apply_migration(
@@ -77,8 +80,11 @@ pub(crate) fn render_script(
     }
 
     for step in &migration.steps {
-        let statements: Vec<String> =
-            render_raw_sql(step, renderer, MigrationPair::new(&migration.before, &migration.after));
+        let statements: Vec<String> = render_raw_sql(
+            step,
+            renderer,
+            MigrationPair::new(&migration.before, &migration.after),
+        );
 
         if !statements.is_empty() {
             if is_first_step {
@@ -121,7 +127,10 @@ pub(crate) async fn apply_script(
         .print(&format!("Applying migration `{migration_name}`\n"))
         .await?;
     connector.inner.dialect().scan_migration_script(script);
-    connector.inner.apply_migration_script(migration_name, script).await
+    connector
+        .inner
+        .apply_migration_script(migration_name, script)
+        .await
 }
 
 fn render_raw_sql(
@@ -133,10 +142,16 @@ fn render_raw_sql(
         SqlMigrationStep::AlterSequence(sequence_ids, changes) => {
             renderer.render_alter_sequence(*sequence_ids, *changes, schemas)
         }
-        SqlMigrationStep::AlterPrimaryKey(table_id) => renderer.render_alter_primary_key(schemas.walk(*table_id)),
+        SqlMigrationStep::AlterPrimaryKey(table_id) => {
+            renderer.render_alter_primary_key(schemas.walk(*table_id))
+        }
         SqlMigrationStep::AlterEnum(alter_enum) => renderer.render_alter_enum(alter_enum, schemas),
-        SqlMigrationStep::RedefineTables(redefine_tables) => renderer.render_redefine_tables(redefine_tables, schemas),
-        SqlMigrationStep::CreateEnum(enum_id) => renderer.render_create_enum(schemas.next.walk(*enum_id)),
+        SqlMigrationStep::RedefineTables(redefine_tables) => {
+            renderer.render_redefine_tables(redefine_tables, schemas)
+        }
+        SqlMigrationStep::CreateEnum(enum_id) => {
+            renderer.render_create_enum(schemas.next.walk(*enum_id))
+        }
         SqlMigrationStep::CreateSchema(namespace_id) => {
             renderer.render_create_namespace(schemas.next.walk(*namespace_id))
         }
@@ -159,7 +174,9 @@ fn render_raw_sql(
                 .filter(|&ns| !is_default_namespace_in_schema(ns, schemas.next));
             renderer.render_drop_table(rendered_ns, table.name())
         }
-        SqlMigrationStep::RedefineIndex { index } => renderer.render_drop_and_recreate_index(schemas.walk(*index)),
+        SqlMigrationStep::RedefineIndex { index } => {
+            renderer.render_drop_and_recreate_index(schemas.walk(*index))
+        }
         SqlMigrationStep::AddForeignKey { foreign_key_id } => {
             let foreign_key = schemas.next.walk(*foreign_key_id);
             vec![renderer.render_add_foreign_key(foreign_key)]
@@ -172,7 +189,9 @@ fn render_raw_sql(
                 .filter(|&ns| !is_default_namespace_in_schema(ns, schemas.next));
             vec![renderer.render_drop_foreign_key(rendered_ns, foreign_key)]
         }
-        SqlMigrationStep::AlterTable(alter_table) => renderer.render_alter_table(alter_table, schemas),
+        SqlMigrationStep::AlterTable(alter_table) => {
+            renderer.render_alter_table(alter_table, schemas)
+        }
         SqlMigrationStep::CreateIndex {
             table_id: _,
             index_id,
@@ -186,7 +205,9 @@ fn render_raw_sql(
                 .filter(|&ns| !is_default_namespace_in_schema(ns, schemas.next));
             vec![renderer.render_drop_index(rendered_ns, index)]
         }
-        SqlMigrationStep::RenameIndex { index } => renderer.render_rename_index(schemas.walk(*index)),
+        SqlMigrationStep::RenameIndex { index } => {
+            renderer.render_rename_index(schemas.walk(*index))
+        }
         SqlMigrationStep::DropView(drop_view) => {
             let view = schemas.previous.walk(drop_view.view_id);
             let rendered_ns = view
@@ -210,9 +231,10 @@ fn render_raw_sql(
         SqlMigrationStep::CreateExtension(create_extension) => {
             renderer.render_create_extension(create_extension, schemas.next)
         }
-        SqlMigrationStep::AlterExtension(alter_extension) => {
-            renderer.render_alter_extension(alter_extension, MigrationPair::new(schemas.previous, schemas.next))
-        }
+        SqlMigrationStep::AlterExtension(alter_extension) => renderer.render_alter_extension(
+            alter_extension,
+            MigrationPair::new(schemas.previous, schemas.next),
+        ),
         SqlMigrationStep::DropExtension(drop_extension) => {
             renderer.render_drop_extension(drop_extension, schemas.previous)
         }

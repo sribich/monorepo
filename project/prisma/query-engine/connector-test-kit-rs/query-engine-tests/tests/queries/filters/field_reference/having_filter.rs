@@ -1,11 +1,12 @@
-use super::setup;
-
 use query_engine_tests::*;
+
+use super::setup;
 
 #[test_suite(schema(setup::common_types))]
 mod having_filter {
-    use super::setup;
     use query_engine_tests::run_query;
+
+    use super::setup;
 
     #[connector_test]
     async fn basic_having_filter(runner: Runner) -> TestResult<()> {
@@ -75,7 +76,9 @@ mod having_filter {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

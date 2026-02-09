@@ -9,14 +9,17 @@ mod property;
 
 pub use attribute::AttributePosition;
 pub use datasource::SourcePosition;
-pub use r#enum::{EnumPosition, EnumValuePosition};
+pub use r#enum::EnumPosition;
+pub use r#enum::EnumValuePosition;
 pub use expression::ExpressionPosition;
 pub use field::FieldPosition;
 pub use generator::GeneratorPosition;
 pub use model::ModelPosition;
 pub use property::PropertyPosition;
 
-use crate::ast::{self, top_idx_to_top_id, traits::*};
+use crate::ast::top_idx_to_top_id;
+use crate::ast::traits::*;
+use crate::ast::{self};
 
 impl ast::SchemaAst {
     /// Find the AST node at the given position (byte offset).
@@ -26,13 +29,17 @@ impl ast::SchemaAst {
                 ast::TopId::Model(model_id) => {
                     SchemaPosition::Model(model_id, ModelPosition::new(&self[model_id], position))
                 }
-                ast::TopId::Enum(enum_id) => SchemaPosition::Enum(enum_id, EnumPosition::new(&self[enum_id], position)),
-                ast::TopId::Source(source_id) => {
-                    SchemaPosition::DataSource(source_id, SourcePosition::new(&self[source_id], position))
+                ast::TopId::Enum(enum_id) => {
+                    SchemaPosition::Enum(enum_id, EnumPosition::new(&self[enum_id], position))
                 }
-                ast::TopId::Generator(generator_id) => {
-                    SchemaPosition::Generator(generator_id, GeneratorPosition::new(&self[generator_id], position))
-                }
+                ast::TopId::Source(source_id) => SchemaPosition::DataSource(
+                    source_id,
+                    SourcePosition::new(&self[source_id], position),
+                ),
+                ast::TopId::Generator(generator_id) => SchemaPosition::Generator(
+                    generator_id,
+                    GeneratorPosition::new(&self[generator_id], position),
+                ),
             })
             // If no top matched, we're in between top-level items. This is normal and expected.
             .unwrap_or(SchemaPosition::TopLevel)
@@ -54,7 +61,9 @@ impl ast::SchemaAst {
             }
         });
 
-        top_idx.map(|idx| top_idx_to_top_id(idx, &self.tops[idx])).ok()
+        top_idx
+            .map(|idx| top_idx_to_top_id(idx, &self.tops[idx]))
+            .ok()
     }
 }
 

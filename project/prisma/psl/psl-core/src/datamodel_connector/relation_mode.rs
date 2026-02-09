@@ -1,6 +1,9 @@
-use crate::datamodel_connector::ReferentialAction;
-use enumflags2::{BitFlags, bitflags};
 use std::fmt;
+
+use enumflags2::BitFlags;
+use enumflags2::bitflags;
+
+use crate::datamodel_connector::ReferentialAction;
 
 /// Defines the part of the stack where referential actions are handled.
 #[bitflags]

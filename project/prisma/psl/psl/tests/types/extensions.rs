@@ -1,12 +1,15 @@
 use expect_test::expect;
 use indoc::indoc;
-use psl::parser_database::{ExtensionTypeEntry, ExtensionTypeId, ExtensionTypes, ScalarFieldType};
+use psl::parser_database::ExtensionTypeEntry;
+use psl::parser_database::ExtensionTypeId;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::ScalarFieldType;
 
-use crate::{
-    Provider,
-    common::{DatamodelAssert, ModelAssert, ScalarFieldAssert},
-    with_header,
-};
+use crate::Provider;
+use crate::common::DatamodelAssert;
+use crate::common::ModelAssert;
+use crate::common::ScalarFieldAssert;
+use crate::with_header;
 
 #[test]
 fn accepts_extension_type_reference() {
@@ -128,7 +131,11 @@ impl ExtensionTypes for TestExtensions {
             .map(ExtensionTypeId::from)
     }
 
-    fn get_by_db_name_and_modifiers(&self, name: &str, modifiers: Option<&[String]>) -> Option<ExtensionTypeEntry<'_>> {
+    fn get_by_db_name_and_modifiers(
+        &self,
+        name: &str,
+        modifiers: Option<&[String]>,
+    ) -> Option<ExtensionTypeEntry<'_>> {
         self.types
             .iter()
             .enumerate()
@@ -139,29 +146,37 @@ impl ExtensionTypes for TestExtensions {
                 self.types
                     .iter()
                     .enumerate()
-                    .find(|(_, (_, db_name, _, db_type_modifiers))| db_name == name && db_type_modifiers.is_none())
+                    .find(|(_, (_, db_name, _, db_type_modifiers))| {
+                        db_name == name && db_type_modifiers.is_none()
+                    })
             })
             .map(
-                |(i, (prisma_name, db_name, number_of_args, expected_db_type_modifiers))| ExtensionTypeEntry {
+                |(i, (prisma_name, db_name, number_of_args, expected_db_type_modifiers))| {
+                    ExtensionTypeEntry {
+                        id: ExtensionTypeId::from(i),
+                        prisma_name: prisma_name.as_str(),
+                        db_namespace: None,
+                        db_name: db_name.as_str(),
+                        number_of_db_type_modifiers: *number_of_args,
+                        db_type_modifiers: expected_db_type_modifiers.as_deref(),
+                    }
+                },
+            )
+    }
+
+    fn enumerate(
+        &self,
+    ) -> Box<dyn Iterator<Item = psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
+        Box::new(self.types.iter().enumerate().map(
+            |(i, (prisma_name, db_name, number_of_args, expected_db_type_modifiers))| {
+                ExtensionTypeEntry {
                     id: ExtensionTypeId::from(i),
                     prisma_name: prisma_name.as_str(),
                     db_namespace: None,
                     db_name: db_name.as_str(),
                     number_of_db_type_modifiers: *number_of_args,
                     db_type_modifiers: expected_db_type_modifiers.as_deref(),
-                },
-            )
-    }
-
-    fn enumerate(&self) -> Box<dyn Iterator<Item = psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
-        Box::new(self.types.iter().enumerate().map(
-            |(i, (prisma_name, db_name, number_of_args, expected_db_type_modifiers))| ExtensionTypeEntry {
-                id: ExtensionTypeId::from(i),
-                prisma_name: prisma_name.as_str(),
-                db_namespace: None,
-                db_name: db_name.as_str(),
-                number_of_db_type_modifiers: *number_of_args,
-                db_type_modifiers: expected_db_type_modifiers.as_deref(),
+                }
             },
         ))
     }

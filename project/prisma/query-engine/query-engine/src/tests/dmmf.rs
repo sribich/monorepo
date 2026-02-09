@@ -1,11 +1,14 @@
-use crate::{
-    PrismaResult,
-    cli::CliCommand,
-    opt::{CliOpt, PrismaOpt, Subcommand},
-};
-use query_core::schema::{self, QuerySchema};
-use serial_test::serial;
 use std::sync::Arc;
+
+use query_core::schema::QuerySchema;
+use query_core::schema::{self};
+use serial_test::serial;
+
+use crate::PrismaResult;
+use crate::cli::CliCommand;
+use crate::opt::CliOpt;
+use crate::opt::PrismaOpt;
+use crate::opt::Subcommand;
 
 pub fn get_query_schema(datamodel_string: &str) -> QuerySchema {
     let dm = psl::parse_schema_without_extensions(datamodel_string).unwrap();

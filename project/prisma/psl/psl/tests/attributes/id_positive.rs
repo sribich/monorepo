@@ -1,6 +1,8 @@
 use psl::parser_database::ScalarType;
 
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn int_id_without_default_should_have_strategy_none() {
@@ -299,7 +301,8 @@ fn mapped_singular_id_must_work() {
         }
     "#};
 
-    let datamodel = psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
+    let datamodel =
+        psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
 
     datamodel
         .assert_has_model("Model")
@@ -346,7 +349,8 @@ fn id_accepts_length_arg_on_mysql() {
          }
      "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(dml, Provider::Mysql, &[])).unwrap();
+    let schema =
+        psl::parse_schema_without_extensions(with_header(dml, Provider::Mysql, &[])).unwrap();
 
     schema
         .assert_has_model("User")

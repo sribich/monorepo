@@ -18,25 +18,44 @@ mod validate;
 
 use std::sync::Arc;
 
-pub use crate::{
-    common::{ALL_PREVIEW_FEATURES, FeatureMapWithProvider, PreviewFeature, PreviewFeatures},
-    configuration::{
-        Configuration, Datasource, DatasourceConnectorData, DatasourceUrls, Generator, GeneratorConfigValue,
-        StringFromEnvVar,
-    },
-    refiner::{configuration::*, validation::*},
-    reformat::{reformat, reformat_multiple, reformat_validated_schema_into_single},
-};
 pub use diagnostics;
-pub use parser_database::{self, coerce, coerce_array, generators, is_reserved_type_name};
+use diagnostics::Diagnostics;
+use parser_database::ExtensionTypes;
+use parser_database::Files;
+use parser_database::ParserDatabase;
+use parser_database::SourceFile;
+use parser_database::ast;
+pub use parser_database::coerce;
+pub use parser_database::coerce_array;
+pub use parser_database::generators;
+pub use parser_database::is_reserved_type_name;
+pub use parser_database::{self};
 pub use psl_ast;
-use psl_schema::{DefaultRefiner, Schema, SchemaFile, SchemaRefiner};
+use psl_ast::ast::WithName;
+use psl_schema::DefaultRefiner;
+use psl_schema::Schema;
+use psl_schema::SchemaFile;
+use psl_schema::SchemaRefiner;
 pub use set_config_dir::set_config_dir;
 
-use self::validate::{datasource_loader, generator_loader};
-use diagnostics::Diagnostics;
-use parser_database::{ExtensionTypes, Files, ParserDatabase, SourceFile, ast};
-use psl_ast::ast::WithName;
+use self::validate::datasource_loader;
+use self::validate::generator_loader;
+pub use crate::common::ALL_PREVIEW_FEATURES;
+pub use crate::common::FeatureMapWithProvider;
+pub use crate::common::PreviewFeature;
+pub use crate::common::PreviewFeatures;
+pub use crate::configuration::Configuration;
+pub use crate::configuration::Datasource;
+pub use crate::configuration::DatasourceConnectorData;
+pub use crate::configuration::DatasourceUrls;
+pub use crate::configuration::Generator;
+pub use crate::configuration::GeneratorConfigValue;
+pub use crate::configuration::StringFromEnvVar;
+pub use crate::refiner::configuration::*;
+pub use crate::refiner::validation::*;
+pub use crate::reformat::reformat;
+pub use crate::reformat::reformat_multiple;
+pub use crate::reformat::reformat_validated_schema_into_single;
 
 /// The collection of all available connectors.
 pub type ConnectorRegistry<'a> = &'a [&'static dyn datamodel_connector::Connector];
@@ -44,7 +63,8 @@ pub type ConnectorRegistry<'a> = &'a [&'static dyn datamodel_connector::Connecto
 /// Loads all configuration blocks from a datamodel using the built-in source definitions.
 pub fn parse_configuration(schema: &str) -> Result<Configuration, diagnostics::Diagnostics> {
     let source_file = SourceFile::new_allocated(Arc::from(schema.to_owned().into_boxed_str()));
-    let (_, out, mut diagnostics) = error_tolerant_parse_configuration(&[("schema.prisma".into(), source_file)]);
+    let (_, out, mut diagnostics) =
+        error_tolerant_parse_configuration(&[("schema.prisma".into(), source_file)]);
     diagnostics.to_result().map(|_| out)
 }
 
@@ -58,7 +78,9 @@ pub fn parse_configuration_multi_file(
     }
 }
 
-pub fn error_tolerant_parse_configuration(files: &[(String, SourceFile)]) -> (Files, Configuration, Diagnostics) {
+pub fn error_tolerant_parse_configuration(
+    files: &[(String, SourceFile)],
+) -> (Files, Configuration, Diagnostics) {
     let mut diagnostics = Diagnostics::default();
     let mut configuration = Configuration::default();
 
@@ -72,7 +94,10 @@ pub fn error_tolerant_parse_configuration(files: &[(String, SourceFile)]) -> (Fi
     (asts, configuration, diagnostics)
 }
 
-fn validate_configuration(psl_ast: &ast::SchemaAst, diagnostics: &mut Diagnostics) -> Configuration {
+fn validate_configuration(
+    psl_ast: &ast::SchemaAst,
+    diagnostics: &mut Diagnostics,
+) -> Configuration {
     let datasources = datasource_loader::load_datasources_from_ast(psl_ast, diagnostics);
 
     // We need to know the active provider to determine which features are active.
@@ -84,7 +109,11 @@ fn validate_configuration(psl_ast: &ast::SchemaAst, diagnostics: &mut Diagnostic
         .map(FeatureMapWithProvider::new)
         .unwrap_or_else(|| (*ALL_PREVIEW_FEATURES).clone());
 
-    let generators = generator_loader::load_generators_from_ast(psl_ast, diagnostics, &feature_map_with_provider);
+    let generators = generator_loader::load_generators_from_ast(
+        psl_ast,
+        diagnostics,
+        &feature_map_with_provider,
+    );
 
     Configuration::new(generators, datasources, diagnostics.warnings().to_owned())
 }
@@ -133,7 +162,10 @@ pub fn validate(file: SourceFile, extension_types: &dyn ExtensionTypes) -> Valid
 
 /// The most general API for dealing with Prisma schemas. It accumulates what analysis and
 /// validation information it can, and returns it along with any error and warning diagnostics.
-pub fn validate_multi_file(files: &[(String, SourceFile)], extension_types: &dyn ExtensionTypes) -> ValidatedSchema {
+pub fn validate_multi_file(
+    files: &[(String, SourceFile)],
+    extension_types: &dyn ExtensionTypes,
+) -> ValidatedSchema {
     assert!(
         !files.is_empty(),
         "psl::validate_multi_file() must be called with at least one file"
@@ -170,7 +202,10 @@ pub fn validate_multi_file(files: &[(String, SourceFile)], extension_types: &dyn
 /// Retrieves a Prisma schema without validating it.
 /// You should only use this method when actually validating the schema is too expensive
 /// computationally or in terms of bundle size (e.g., for `query-engine-wasm`).
-pub fn parse_without_validation(file: SourceFile, extension_types: &dyn ExtensionTypes) -> ValidatedSchema {
+pub fn parse_without_validation(
+    file: SourceFile,
+    extension_types: &dyn ExtensionTypes,
+) -> ValidatedSchema {
     let mut diagnostics = Diagnostics::new();
     let db = ParserDatabase::new_single_file(file, &mut diagnostics, extension_types);
     let configuration = validate_configuration(db.ast_assert_single(), &mut diagnostics);

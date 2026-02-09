@@ -1,8 +1,14 @@
+use std::borrow::Cow;
+use std::fmt::Write;
+
 use sql_migration_tests::test_api::*;
-use std::{borrow::Cow, fmt::Write};
 
 /// (source native type, test value to insert, target native type)
-type Case = (&'static str, quaint::ValueType<'static>, &'static [&'static str]);
+type Case = (
+    &'static str,
+    quaint::ValueType<'static>,
+    &'static [&'static str],
+);
 type Cases = &'static [Case];
 
 const SAFE_CASTS: Cases = &[
@@ -289,12 +295,24 @@ const RISKY_CASTS: Cases = &[
     (
         "Binary(8)",
         quaint::ValueType::Bytes(Some(Cow::Borrowed(b"08088044"))),
-        &["Bit(32)", "Int", "UnsignedBigInt", "UnsignedInt", "UnsignedMediumInt"],
+        &[
+            "Bit(32)",
+            "Int",
+            "UnsignedBigInt",
+            "UnsignedInt",
+            "UnsignedMediumInt",
+        ],
     ),
     (
         "Binary(1)",
         quaint::ValueType::Bytes(Some(Cow::Borrowed(b"0"))),
-        &["Time(0)", "SmallInt", "TinyInt", "UnsignedSmallInt", "UnsignedTinyInt"],
+        &[
+            "Time(0)",
+            "SmallInt",
+            "TinyInt",
+            "UnsignedSmallInt",
+            "UnsignedTinyInt",
+        ],
     ),
     (
         "Binary(4)",
@@ -363,7 +381,11 @@ const RISKY_CASTS: Cases = &[
             "VarChar(20)",
         ],
     ),
-    ("SmallInt", quaint::ValueType::Int32(Some(1990)), &["Year", "Double"]),
+    (
+        "SmallInt",
+        quaint::ValueType::Int32(Some(1990)),
+        &["Year", "Double"],
+    ),
     (
         "TinyBlob",
         quaint::ValueType::Bytes(Some(Cow::Borrowed(b"abc"))),
@@ -394,7 +416,13 @@ const IMPOSSIBLE_CASTS: Cases = &[
     (
         "BigInt",
         quaint::ValueType::Int64(Some(500)),
-        &["Decimal(15,6)", "Date", "DateTime(0)", "Json", "Timestamp(0)"],
+        &[
+            "Decimal(15,6)",
+            "Date",
+            "DateTime(0)",
+            "Json",
+            "Timestamp(0)",
+        ],
     ),
     (
         "Binary(12)",
@@ -538,7 +566,11 @@ const IMPOSSIBLE_CASTS: Cases = &[
             "Year",
         ],
     ),
-    ("Time(0)", quaint::ValueType::Int32(Some(0)), &["Json", "Year"]),
+    (
+        "Time(0)",
+        quaint::ValueType::Int32(Some(0)),
+        &["Json", "Year"],
+    ),
     (
         "TinyBlob",
         quaint::ValueType::Bytes(Some(Cow::Borrowed(&[0x00]))),
@@ -615,8 +647,8 @@ fn native_type_name_to_prisma_scalar_type_name(scalar_type: &str) -> &'static st
         ("Year", "Int"),
     ];
 
-    let scalar_type =
-        scalar_type.trim_end_matches(|ch: char| [' ', ',', '(', ')'].contains(&ch) || ch.is_ascii_digit());
+    let scalar_type = scalar_type
+        .trim_end_matches(|ch: char| [' ', ',', '(', ')'].contains(&ch) || ch.is_ascii_digit());
 
     let idx = TYPES_MAP
         .binary_search_by_key(&scalar_type, |(native, _prisma)| native)
@@ -627,7 +659,11 @@ fn native_type_name_to_prisma_scalar_type_name(scalar_type: &str) -> &'static st
 }
 
 fn colnames_for_cases(cases: Cases) -> Vec<String> {
-    let max_colname = cases.iter().map(|(_, _, to_types)| to_types.len()).max().unwrap();
+    let max_colname = cases
+        .iter()
+        .map(|(_, _, to_types)| to_types.len())
+        .max()
+        .unwrap();
 
     std::iter::repeat(())
         .enumerate()
@@ -716,7 +752,10 @@ fn filter_from_types(api: &TestApi, cases: Cases) -> Cow<'static, [Case]> {
     cases.into()
 }
 
-fn filter_to_types(api: &TestApi, to_types: &'static [&'static str]) -> Cow<'static, [&'static str]> {
+fn filter_to_types(
+    api: &TestApi,
+    to_types: &'static [&'static str],
+) -> Cow<'static, [&'static str]> {
     if api.is_mariadb() {
         return Cow::Owned(
             to_types
@@ -776,7 +815,9 @@ fn safe_casts_with_existing_data_should_work(api: TestApi) {
             to_types.iter().enumerate().fold(
                 table.assert_columns_count(to_types.len() + 1),
                 |table, (idx, to_type)| {
-                    table.assert_column(&colnames[idx], |col| col.assert_native_type(to_type, connector))
+                    table.assert_column(&colnames[idx], |col| {
+                        col.assert_native_type(to_type, connector)
+                    })
                 },
             )
         });
@@ -838,9 +879,14 @@ fn risky_casts_with_existing_data_should_warn(api: TestApi) {
             .assert_warnings(&warnings);
 
         api.assert_schema().assert_table("Test", |table| {
-            to_types.iter().enumerate().fold(table, |table, (idx, to_type)| {
-                table.assert_column(&colnames[idx], |col| col.assert_native_type(to_type, connector))
-            })
+            to_types
+                .iter()
+                .enumerate()
+                .fold(table, |table, (idx, to_type)| {
+                    table.assert_column(&colnames[idx], |col| {
+                        col.assert_native_type(to_type, connector)
+                    })
+                })
         });
 
         api.raw_cmd("DROP TABLE `Test`");
@@ -900,9 +946,14 @@ fn impossible_casts_with_existing_data_should_warn(api: TestApi) {
             .assert_warnings(&warnings);
 
         api.assert_schema().assert_table("Test", |table| {
-            to_types.iter().enumerate().fold(table, |table, (idx, to_type)| {
-                table.assert_column(&colnames[idx], |col| col.assert_native_type(to_type, connector))
-            })
+            to_types
+                .iter()
+                .enumerate()
+                .fold(table, |table, (idx, to_type)| {
+                    table.assert_column(&colnames[idx], |col| {
+                        col.assert_native_type(to_type, connector)
+                    })
+                })
         });
 
         api.raw_cmd("DROP TABLE `Test`");

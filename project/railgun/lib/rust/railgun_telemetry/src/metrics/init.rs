@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use opentelemetry::global::set_meter_provider;
-use opentelemetry_otlp::{MetricExporter, WithExportConfig};
-use opentelemetry_sdk::{
-    Resource,
-    metrics::{PeriodicReader, PeriodicReaderBuilder, SdkMeterProvider},
-};
+use opentelemetry_otlp::MetricExporter;
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::metrics::PeriodicReader;
+use opentelemetry_sdk::metrics::PeriodicReaderBuilder;
+use opentelemetry_sdk::metrics::SdkMeterProvider;
 
 pub(crate) fn init() -> SdkMeterProvider {
     let exporter = MetricExporter::builder()

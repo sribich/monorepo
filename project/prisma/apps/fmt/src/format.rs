@@ -1,15 +1,18 @@
-use crate::FormatOpts;
+use std::fs::File;
+use std::fs::{self};
+use std::io::BufWriter;
+use std::io::Read;
+use std::io::Write as _;
+use std::io::{self};
+
 use psl::reformat;
-use std::{
-    fs::{self, File},
-    io::{self, BufWriter, Read, Write as _},
-};
+
+use crate::FormatOpts;
 
 pub fn run(opts: FormatOpts) {
     let datamodel_string = match opts.input {
-        Some(file_name) => {
-            fs::read_to_string(&file_name).unwrap_or_else(|_| panic!("Unable to open file {}", file_name.display()))
-        }
+        Some(file_name) => fs::read_to_string(&file_name)
+            .unwrap_or_else(|_| panic!("Unable to open file {}", file_name.display())),
         None => {
             let mut buf = String::new();
 
@@ -24,10 +27,14 @@ pub fn run(opts: FormatOpts) {
     let reformatted = reformat(&datamodel_string, opts.tabwidth).unwrap_or(datamodel_string);
     match opts.output {
         Some(file_name) => {
-            let file = File::open(&file_name).unwrap_or_else(|_| panic!("Unable to open file {}", file_name.display()));
+            let file = File::open(&file_name)
+                .unwrap_or_else(|_| panic!("Unable to open file {}", file_name.display()));
             let mut file = BufWriter::new(file);
             file.write_all(reformatted.as_bytes()).unwrap();
         }
-        None => io::stdout().lock().write_all(reformatted.as_bytes()).unwrap(),
+        None => io::stdout()
+            .lock()
+            .write_all(reformatted.as_bytes())
+            .unwrap(),
     }
 }

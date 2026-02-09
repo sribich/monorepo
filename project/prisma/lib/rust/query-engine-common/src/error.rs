@@ -38,14 +38,21 @@ impl From<ApiError> for user_facing_errors::Error {
             }) => (*err).into(),
             ApiError::Conversion(errors, dml_string) => {
                 let mut full_error = errors.to_pretty_string("schema.prisma", &dml_string);
-                write!(full_error, "\nValidation Error Count: {}", errors.errors().len()).unwrap();
+                write!(
+                    full_error,
+                    "\nValidation Error Count: {}",
+                    errors.errors().len()
+                )
+                .unwrap();
 
                 user_facing_errors::Error::from(user_facing_errors::KnownError::new(
                     user_facing_errors::common::SchemaParserError { full_error },
                 ))
             }
             ApiError::Core(error) => user_facing_errors::Error::from(error),
-            other => user_facing_errors::Error::new_non_panic_with_current_backtrace(other.to_string()),
+            other => {
+                user_facing_errors::Error::new_non_panic_with_current_backtrace(other.to_string())
+            }
         }
     }
 }

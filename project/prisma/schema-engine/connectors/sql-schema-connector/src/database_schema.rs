@@ -1,5 +1,6 @@
 use schema_connector::DatabaseSchema;
-use sql_schema_describer::{self as sql, SqlSchema};
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::{self as sql};
 
 #[derive(Default, Debug, Clone)]
 pub(crate) struct SqlDatabaseSchema {

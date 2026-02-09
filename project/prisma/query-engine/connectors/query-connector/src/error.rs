@@ -1,9 +1,11 @@
+use std::fmt::Display;
+
 use itertools::Itertools;
 use query_structure::Filter;
 use query_structure::prelude::DomainError;
-use std::fmt::Display;
 use thiserror::Error;
-use user_facing_errors::{KnownError, query_engine::DatabaseConstraint};
+use user_facing_errors::KnownError;
+use user_facing_errors::query_engine::DatabaseConstraint;
 
 #[derive(Debug, Error)]
 #[error("{}", kind)]
@@ -24,28 +26,29 @@ impl ConnectorError {
                     constraint: constraint.clone(),
                 },
             )),
-            ErrorKind::TableDoesNotExist { table } => {
-                Some(KnownError::new(user_facing_errors::query_engine::TableDoesNotExist {
+            ErrorKind::TableDoesNotExist { table } => Some(KnownError::new(
+                user_facing_errors::query_engine::TableDoesNotExist {
                     table: table.clone(),
-                }))
-            }
-            ErrorKind::ColumnDoesNotExist { column } => {
-                Some(KnownError::new(user_facing_errors::query_engine::ColumnDoesNotExist {
+                },
+            )),
+            ErrorKind::ColumnDoesNotExist { column } => Some(KnownError::new(
+                user_facing_errors::query_engine::ColumnDoesNotExist {
                     column: column.clone(),
-                }))
-            }
+                },
+            )),
             ErrorKind::InvalidDatabaseUrl { details, url: _ } => {
-                let details = user_facing_errors::quaint::invalid_connection_string_description(details);
+                let details =
+                    user_facing_errors::quaint::invalid_connection_string_description(details);
 
-                Some(KnownError::new(user_facing_errors::common::InvalidConnectionString {
-                    details,
-                }))
+                Some(KnownError::new(
+                    user_facing_errors::common::InvalidConnectionString { details },
+                ))
             }
-            ErrorKind::ForeignKeyConstraintViolation { constraint } => {
-                Some(KnownError::new(user_facing_errors::query_engine::ForeignKeyViolation {
+            ErrorKind::ForeignKeyConstraintViolation { constraint } => Some(KnownError::new(
+                user_facing_errors::query_engine::ForeignKeyViolation {
                     constraint: constraint.clone(),
-                }))
-            }
+                },
+            )),
             ErrorKind::ConversionError(message) => Some(KnownError::new(
                 user_facing_errors::query_engine::InconsistentColumnData {
                     message: format!("{message}"),
@@ -56,19 +59,21 @@ impl ConnectorError {
                     database_error: message.to_owned(),
                 },
             )),
-            ErrorKind::UnsupportedFeature(feature) => {
-                Some(KnownError::new(user_facing_errors::query_engine::UnsupportedFeature {
+            ErrorKind::UnsupportedFeature(feature) => Some(KnownError::new(
+                user_facing_errors::query_engine::UnsupportedFeature {
                     feature: feature.clone(),
-                }))
-            }
-            ErrorKind::MultiError(merror) => Some(KnownError::new(user_facing_errors::query_engine::MultiError {
-                errors: format!("{merror}"),
-            })),
-            ErrorKind::UniqueConstraintViolation { constraint } => {
-                Some(KnownError::new(user_facing_errors::query_engine::UniqueKeyViolation {
+                },
+            )),
+            ErrorKind::MultiError(merror) => Some(KnownError::new(
+                user_facing_errors::query_engine::MultiError {
+                    errors: format!("{merror}"),
+                },
+            )),
+            ErrorKind::UniqueConstraintViolation { constraint } => Some(KnownError::new(
+                user_facing_errors::query_engine::UniqueKeyViolation {
                     constraint: constraint.clone(),
-                }))
-            }
+                },
+            )),
 
             ErrorKind::IncorrectNumberOfParameters { expected, actual } => Some(KnownError::new(
                 user_facing_errors::common::IncorrectNumberOfParameters {
@@ -86,28 +91,36 @@ impl ConnectorError {
                 user_facing_errors::query_engine::MissingNativeFullTextSearchIndex {},
             )),
             ErrorKind::TransactionAborted { message } => Some(KnownError::new(
-                user_facing_errors::query_engine::InteractiveTransactionError { error: message.clone() },
+                user_facing_errors::query_engine::InteractiveTransactionError {
+                    error: message.clone(),
+                },
             )),
             ErrorKind::TransactionWriteConflict => Some(KnownError::new(
                 user_facing_errors::query_engine::TransactionWriteConflict {},
             )),
-            ErrorKind::TransactionAlreadyClosed { message } => {
-                Some(KnownError::new(user_facing_errors::common::TransactionAlreadyClosed {
-                    message: message.clone(),
-                }))
-            }
-            ErrorKind::ConnectionClosed => Some(KnownError::new(user_facing_errors::common::ConnectionClosed)),
-            ErrorKind::RawDatabaseError { code, message } => Some(user_facing_errors::KnownError::new(
-                user_facing_errors::query_engine::RawQueryFailed {
-                    code: code.clone(),
+            ErrorKind::TransactionAlreadyClosed { message } => Some(KnownError::new(
+                user_facing_errors::common::TransactionAlreadyClosed {
                     message: message.clone(),
                 },
             )),
+            ErrorKind::ConnectionClosed => Some(KnownError::new(
+                user_facing_errors::common::ConnectionClosed,
+            )),
+            ErrorKind::RawDatabaseError { code, message } => {
+                Some(user_facing_errors::KnownError::new(
+                    user_facing_errors::query_engine::RawQueryFailed {
+                        code: code.clone(),
+                        message: message.clone(),
+                    },
+                ))
+            }
             ErrorKind::ExternalError(id) => Some(user_facing_errors::KnownError::new(
                 user_facing_errors::query_engine::ExternalError { id: id.to_owned() },
             )),
             ErrorKind::RecordDoesNotExist { cause } => Some(KnownError::new(
-                user_facing_errors::query_engine::RecordRequiredButNotFound { cause: cause.clone() },
+                user_facing_errors::query_engine::RecordRequiredButNotFound {
+                    cause: cause.clone(),
+                },
             )),
 
             ErrorKind::TooManyConnections(e) => Some(user_facing_errors::KnownError::new(

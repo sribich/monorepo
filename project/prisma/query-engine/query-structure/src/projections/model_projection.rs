@@ -1,6 +1,11 @@
-use crate::{Field, FieldSelection, ScalarFieldRef, SelectedField, TypeIdentifier};
 use itertools::Itertools;
 use psl::psl_ast::ast::FieldArity;
+
+use crate::Field;
+use crate::FieldSelection;
+use crate::ScalarFieldRef;
+use crate::SelectedField;
+use crate::TypeIdentifier;
 
 /// Projection of a `Model`. A projection is a (sub)set of fields of a model.
 /// There can only ever be fields of one model contained in a particular `ModelProjection`
@@ -40,7 +45,10 @@ impl From<&FieldSelection> for ModelProjection {
 impl ModelProjection {
     pub fn new(fields: Vec<Field>) -> Self {
         Self {
-            fields: fields.into_iter().unique_by(|f| f.name().to_owned()).collect(),
+            fields: fields
+                .into_iter()
+                .unique_by(|f| f.name().to_owned())
+                .collect(),
         }
     }
 
@@ -98,13 +106,15 @@ impl ModelProjection {
     }
 
     pub fn type_identifiers_with_arities(&self) -> Vec<(TypeIdentifier, FieldArity)> {
-        self.scalar_fields().map(|f| f.type_identifier_with_arity()).collect()
+        self.scalar_fields()
+            .map(|f| f.type_identifier_with_arity())
+            .collect()
     }
 }
 
 impl IntoIterator for ModelProjection {
-    type Item = Field;
     type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = Field;
 
     fn into_iter(self) -> Self::IntoIter {
         self.fields.into_iter()

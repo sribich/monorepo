@@ -1,7 +1,7 @@
-use super::{
-    check::{Check, Column, Table},
-    database_inspection_results::DatabaseInspectionResults,
-};
+use super::check::Check;
+use super::check::Column;
+use super::check::Table;
+use super::database_inspection_results::DatabaseInspectionResults;
 
 #[derive(Debug)]
 pub(crate) enum SqlMigrationWarningCheck {
@@ -60,7 +60,8 @@ impl Check for SqlMigrationWarningCheck {
                 table: table.clone(),
                 namespace: namespace.clone(),
             }),
-            SqlMigrationWarningCheck::NonEmptyColumnDrop { .. } | SqlMigrationWarningCheck::RiskyCast { .. } => None,
+            SqlMigrationWarningCheck::NonEmptyColumnDrop { .. }
+            | SqlMigrationWarningCheck::RiskyCast { .. } => None,
             _ => None,
         }
     }
@@ -88,9 +89,8 @@ impl Check for SqlMigrationWarningCheck {
                 column: column.clone(),
             }),
 
-            SqlMigrationWarningCheck::NonEmptyTableDrop { .. } | SqlMigrationWarningCheck::PrimaryKeyChange { .. } => {
-                None
-            }
+            SqlMigrationWarningCheck::NonEmptyTableDrop { .. }
+            | SqlMigrationWarningCheck::PrimaryKeyChange { .. } => None,
             _ => None,
         }
     }
@@ -117,19 +117,20 @@ impl Check for SqlMigrationWarningCheck {
                     )),
                 }
             }
-            SqlMigrationWarningCheck::NonEmptyTableDrop { table, namespace } => match database_check_results
-                .get_row_count(&Table {
+            SqlMigrationWarningCheck::NonEmptyTableDrop { table, namespace } => {
+                match database_check_results.get_row_count(&Table {
                     table: table.clone(),
                     namespace: namespace.clone(),
                 }) {
-                Some(0) => None, // dropping the table is safe if it's empty
-                Some(rows_count) => Some(format!(
-                    "You are about to drop the `{table}` table, which is not empty ({rows_count} rows)."
-                )),
-                None => Some(format!(
-                    "You are about to drop the `{table}` table. If the table is not empty, all the data it contains will be lost."
-                )),
-            },
+                    Some(0) => None, // dropping the table is safe if it's empty
+                    Some(rows_count) => Some(format!(
+                        "You are about to drop the `{table}` table, which is not empty ({rows_count} rows)."
+                    )),
+                    None => Some(format!(
+                        "You are about to drop the `{table}` table. If the table is not empty, all the data it contains will be lost."
+                    )),
+                }
+            }
             SqlMigrationWarningCheck::NonEmptyColumnDrop {
                 table,
                 column,
@@ -190,16 +191,17 @@ impl Check for SqlMigrationWarningCheck {
                     "You are about to alter the column `{column}` on the `{table}` table. The data in that column will be cast from `{previous_type}` to `{next_type}`. This cast may fail. Please make sure the data in the column can be cast."
                 )),
             },
-            SqlMigrationWarningCheck::PrimaryKeyChange { table, namespace } => match database_check_results
-                .get_row_count(&Table {
+            SqlMigrationWarningCheck::PrimaryKeyChange { table, namespace } => {
+                match database_check_results.get_row_count(&Table {
                     table: table.clone(),
                     namespace: namespace.clone(),
                 }) {
-                Some(0) => None,
-                _ => Some(format!(
-                    "The primary key for the `{table}` table will be changed. If it partially fails, the table could be left without primary key constraint."
-                )),
-            },
+                    Some(0) => None,
+                    _ => Some(format!(
+                        "The primary key for the `{table}` table will be changed. If it partially fails, the table could be left without primary key constraint."
+                    )),
+                }
+            }
             SqlMigrationWarningCheck::UniqueConstraintAddition { table, columns } => Some(format!(
                 "A unique constraint covering the columns `[{columns}]` on the table `{table}` will be added. If there are existing duplicate values, this will fail.",
                 table = table,

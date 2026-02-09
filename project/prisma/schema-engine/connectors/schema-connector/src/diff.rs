@@ -1,6 +1,9 @@
-use crate::migrations_directory::Migrations;
-use psl::parser_database::{ExtensionTypes, SourceFile};
 use std::fmt::Debug;
+
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::SourceFile;
+
+use crate::migrations_directory::Migrations;
 
 /// Diffable things
 pub enum DiffTarget<'a> {

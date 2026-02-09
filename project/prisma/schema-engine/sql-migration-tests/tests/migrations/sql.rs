@@ -14,8 +14,9 @@ fn can_handle_reserved_sql_keywords_for_model_name(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm1).send().assert_green();
-    api.assert_schema()
-        .assert_table("Group", |t| t.assert_column("field", |c| c.assert_type_is_string()));
+    api.assert_schema().assert_table("Group", |t| {
+        t.assert_column("field", |c| c.assert_type_is_string())
+    });
 
     let dm2 = r#"
         model Group {
@@ -25,8 +26,9 @@ fn can_handle_reserved_sql_keywords_for_model_name(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm2).send().assert_green();
-    api.assert_schema()
-        .assert_table("Group", |t| t.assert_column("field", |c| c.assert_type_is_int()));
+    api.assert_schema().assert_table("Group", |t| {
+        t.assert_column("field", |c| c.assert_type_is_int())
+    });
 }
 
 #[test_connector]
@@ -39,8 +41,9 @@ fn can_handle_reserved_sql_keywords_for_field_name(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm1).send().assert_green();
-    api.assert_schema()
-        .assert_table("Test", |t| t.assert_column("Group", |c| c.assert_type_is_string()));
+    api.assert_schema().assert_table("Test", |t| {
+        t.assert_column("Group", |c| c.assert_type_is_string())
+    });
 
     let dm2 = r#"
         model Test {
@@ -50,8 +53,9 @@ fn can_handle_reserved_sql_keywords_for_field_name(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm2).send().assert_green();
-    api.assert_schema()
-        .assert_table("Test", |t| t.assert_column("Group", |c| c.assert_type_is_int()));
+    api.assert_schema().assert_table("Test", |t| {
+        t.assert_column("Group", |c| c.assert_type_is_int())
+    });
 }
 
 #[test_connector]
@@ -244,7 +248,8 @@ fn enum_defaults_must_work(api: TestApi) {
         .send()
         .assert_green();
 
-    let insert = quaint::ast::Insert::single_into(api.render_table_name("Cat")).value("id", "the-id");
+    let insert =
+        quaint::ast::Insert::single_into(api.render_table_name("Cat")).value("id", "the-id");
     api.query(insert.into());
 
     let row = api

@@ -1,7 +1,12 @@
+use std::convert::TryFrom;
+use std::str::FromStr;
+
+use psl::datamodel_connector::ConnectorCapabilities;
+use psl::datamodel_connector::ConnectorCapability;
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::*;
-use psl::datamodel_connector::{ConnectorCapabilities, ConnectorCapability};
-use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, str::FromStr};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatamodelWithParams {
@@ -125,13 +130,19 @@ pub(crate) fn schema_with_relation(
     for parent_id in id_options.iter() {
         for child_id in id_options.iter() {
             // Based on Id and relation fields
-            for child_ref_to_parent in child_references(simple_test_mode, parent_id, on_parent, on_child) {
-                for parent_ref_to_child in
-                    parent_references(simple_test_mode, child_id, &child_ref_to_parent, on_parent, on_child)
-                {
+            for child_ref_to_parent in
+                child_references(simple_test_mode, parent_id, on_parent, on_child)
+            {
+                for parent_ref_to_child in parent_references(
+                    simple_test_mode,
+                    child_id,
+                    &child_ref_to_parent,
+                    on_parent,
+                    on_child,
+                ) {
                     // TODO: The RelationReference.render() equality is a hack. Implement PartialEq instead
-                    let is_virtual_req_rel_field =
-                        on_parent.is_required() && parent_ref_to_child.render() == RelationReference::NoRef.render();
+                    let is_virtual_req_rel_field = on_parent.is_required()
+                        && parent_ref_to_child.render() == RelationReference::NoRef.render();
 
                     // skip required virtual relation fields as those are disallowed in a Prisma Schema
                     if is_virtual_req_rel_field {
@@ -144,7 +155,9 @@ pub(crate) fn schema_with_relation(
                     } else {
                         match *parent_id {
                             Identifier::Simple => parent_unique_params.clone_push(&id_param),
-                            Identifier::Compound => parent_unique_params.clone_push(&compound_id_param),
+                            Identifier::Compound => {
+                                parent_unique_params.clone_push(&compound_id_param)
+                            }
                             Identifier::None => parent_unique_params.clone(),
                         }
                     };
@@ -154,15 +167,21 @@ pub(crate) fn schema_with_relation(
                     } else {
                         match *child_id {
                             Identifier::Simple => child_unique_params.clone_push(&id_param),
-                            Identifier::Compound => child_unique_params.clone_push(&compound_id_param),
+                            Identifier::Compound => {
+                                child_unique_params.clone_push(&compound_id_param)
+                            }
                             Identifier::None => child_unique_params.clone(),
                         }
                     };
 
                     for parent_param in parent_params.iter() {
                         for child_param in child_params.iter() {
-                            let (parent_field, child_field) =
-                                render_relation_fields(on_parent, &parent_ref_to_child, on_child, &child_ref_to_parent);
+                            let (parent_field, child_field) = render_relation_fields(
+                                on_parent,
+                                &parent_ref_to_child,
+                                on_child,
+                                &child_ref_to_parent,
+                            );
 
                             let datamodel = indoc::formatdoc! {"
                                 model Parent {{
@@ -192,7 +211,8 @@ pub(crate) fn schema_with_relation(
 
                             match (parent_id, child_id) {
                                 (Identifier::Compound, _) | (_, Identifier::Compound) => {
-                                    required_capabilities_for_dm |= ConnectorCapability::CompoundIds;
+                                    required_capabilities_for_dm |=
+                                        ConnectorCapability::CompoundIds;
                                 }
                                 (Identifier::None, _) | (_, Identifier::None) => {
                                     required_capabilities_for_dm |= ConnectorCapability::AnyId;
@@ -224,8 +244,16 @@ fn render_relation_fields(
     child_ref_to_parent: &RelationReference,
 ) -> (String, String) {
     if parent.is_list() && child.is_list() {
-        let rendered_parent = format!("#m2m({}, {}, id, String)", parent.field_name(), parent.type_name());
-        let rendered_child = format!("#m2m({}, {}, id, String)", child.field_name(), child.type_name(),);
+        let rendered_parent = format!(
+            "#m2m({}, {}, id, String)",
+            parent.field_name(),
+            parent.type_name()
+        );
+        let rendered_child = format!(
+            "#m2m({}, {}, id, String)",
+            child.field_name(),
+            child.type_name(),
+        );
 
         (rendered_parent, rendered_child)
     } else {
@@ -250,9 +278,13 @@ fn render_relation_fields(
                 RelationReference::CompoundParentId(_) => r#"@@unique([parent_id_1, parent_id_2])"#,
                 RelationReference::CompoundChildId(_) => r#"@@unique([child_id_1, child_id_2])"#,
                 RelationReference::ParentReference(_) => r#"@@unique([parentRef])"#,
-                RelationReference::CompoundParentReference(_) => r#"@@unique([parent_p_1, parent_p_2])"#,
+                RelationReference::CompoundParentReference(_) => {
+                    r#"@@unique([parent_p_1, parent_p_2])"#
+                }
                 RelationReference::ChildReference(_) => r#"@@unique([parent_c])"#,
-                RelationReference::CompoundChildReference(_) => r#"@@unique([child_c_1, child_c_2])"#,
+                RelationReference::CompoundChildReference(_) => {
+                    r#"@@unique([child_c_1, child_c_2])"#
+                }
                 RelationReference::IdReference => "",
                 RelationReference::NoRef => "",
             };
@@ -263,9 +295,13 @@ fn render_relation_fields(
                 RelationReference::CompoundParentId(_) => r#"@@unique([parent_id_1, parent_id_2])"#,
                 RelationReference::CompoundChildId(_) => r#"@@unique([child_id_1, child_id_2])"#,
                 RelationReference::ParentReference(_) => r#"@@unique([parentRef])"#,
-                RelationReference::CompoundParentReference(_) => r#"@@unique([parent_p_1, parent_p_2])"#,
+                RelationReference::CompoundParentReference(_) => {
+                    r#"@@unique([parent_p_1, parent_p_2])"#
+                }
                 RelationReference::ChildReference(_) => r#"@@unique([parent_c])"#,
-                RelationReference::CompoundChildReference(_) => r#"@@unique([child_c_1, child_c_2])"#,
+                RelationReference::CompoundChildReference(_) => {
+                    r#"@@unique([child_c_1, child_c_2])"#
+                }
                 RelationReference::IdReference => "",
                 RelationReference::NoRef => "",
             };

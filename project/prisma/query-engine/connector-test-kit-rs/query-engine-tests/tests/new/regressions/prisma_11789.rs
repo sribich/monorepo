@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use indoc::formatdoc;
 use query_engine_tests::*;
-use std::sync::Arc;
 
 #[test_suite(schema(schema), only(Sqlite))]
 mod prisma_concurrent_write {

@@ -41,7 +41,11 @@ mod views {
 
     #[connector_test]
     async fn no_delete_one_mutation(runner: Runner) -> TestResult<()> {
-        test_no_toplevel_mutation(runner, r#"mutation { deleteOneTestView(where: { id: 1 }) { id } }"#).await
+        test_no_toplevel_mutation(
+            runner,
+            r#"mutation { deleteOneTestView(where: { id: 1 }) { id } }"#,
+        )
+        .await
     }
 
     #[connector_test]

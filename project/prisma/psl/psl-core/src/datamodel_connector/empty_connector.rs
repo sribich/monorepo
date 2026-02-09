@@ -1,7 +1,9 @@
-pub(crate) use crate::datamodel_connector::*;
-use diagnostics::{DatamodelError, Span};
+use diagnostics::DatamodelError;
+use diagnostics::Span;
 use enumflags2::BitFlags;
 use parser_database::ScalarFieldType;
+
+pub(crate) use crate::datamodel_connector::*;
 
 /// A [Connector](/trait.Connector.html) implementor meant to
 /// be used as a default when no datasource is defined.
@@ -54,7 +56,10 @@ impl Connector for EmptyDatamodelConnector {
         None
     }
 
-    fn native_type_to_parts<'t>(&self, _native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>) {
+    fn native_type_to_parts<'t>(
+        &self,
+        _native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, Cow<'t, [String]>) {
         unreachable!("EmptyDatamodelConnector::native_type_to_string()")
     }
 

@@ -1,11 +1,14 @@
-use std::{borrow::Cow, fmt};
-
-use crate::{
-    datamodel::attributes::{BlockAttribute, FieldAttribute},
-    value::{Array, Constant, Function, Text, Value},
-};
+use std::borrow::Cow;
+use std::fmt;
 
 use super::IndexFieldInput;
+use crate::datamodel::attributes::BlockAttribute;
+use crate::datamodel::attributes::FieldAttribute;
+use crate::value::Array;
+use crate::value::Constant;
+use crate::value::Function;
+use crate::value::Text;
+use crate::value::Value;
 
 /// Defines the id attribute in a model block.
 #[derive(Debug)]
@@ -54,7 +57,8 @@ impl<'a> IdDefinition<'a> {
     /// //                          ^^^^^ here
     /// ```
     pub fn clustered(&mut self, clustered: bool) {
-        self.0.push_param(("clustered", Constant::new_no_validate(clustered)));
+        self.0
+            .push_param(("clustered", Constant::new_no_validate(clustered)));
     }
 }
 
@@ -96,7 +100,8 @@ impl<'a> IdFieldDefinition<'a> {
     /// //                       ^^^^^ here
     /// ```
     pub fn clustered(&mut self, clustered: bool) {
-        self.0.push_param(("clustered", Constant::new_no_validate(clustered)));
+        self.0
+            .push_param(("clustered", Constant::new_no_validate(clustered)));
     }
 
     /// The constraint sort setting.
@@ -106,7 +111,8 @@ impl<'a> IdFieldDefinition<'a> {
     /// //                  ^^^^ here
     /// ```
     pub fn sort_order(&mut self, sort: impl Into<Cow<'a, str>>) {
-        self.0.push_param(("sort", Constant::new_no_validate(sort.into())));
+        self.0
+            .push_param(("sort", Constant::new_no_validate(sort.into())));
     }
 
     /// The constraint length setting.
@@ -116,7 +122,8 @@ impl<'a> IdFieldDefinition<'a> {
     /// //                    ^^ here
     /// ```
     pub fn length(&mut self, length: u32) {
-        self.0.push_param(("length", Constant::new_no_validate(length)));
+        self.0
+            .push_param(("length", Constant::new_no_validate(length)));
     }
 }
 

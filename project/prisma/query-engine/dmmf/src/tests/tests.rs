@@ -1,4 +1,5 @@
-use crate::{dmmf_from_schema, tests::setup::*};
+use crate::dmmf_from_schema;
+use crate::tests::setup::*;
 
 #[test]
 fn views_ignore() {

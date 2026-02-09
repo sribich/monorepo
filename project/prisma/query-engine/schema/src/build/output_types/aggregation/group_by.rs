@@ -1,6 +1,9 @@
-use super::*;
+use std::convert::identity;
+use std::sync::LazyLock;
+
 use constants::aggregations::*;
-use std::{convert::identity, sync::LazyLock};
+
+use super::*;
 
 /// Builds group by aggregation object type for given model (e.g. GroupByUserOutputType).
 pub(crate) fn group_by_output_object_type(ctx: &'_ QuerySchema, model: Model) -> ObjectType<'_> {

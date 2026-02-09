@@ -13,7 +13,8 @@ pub(crate) fn run(schema: &str) -> String {
                     .map(|act| format!("{act:?}"))
                     .collect::<Vec<_>>();
 
-                serde_json::to_string(&available_referential_actions).expect("Failed to render JSON")
+                serde_json::to_string(&available_referential_actions)
+                    .expect("Failed to render JSON")
             } else {
                 "[]".to_string()
             }

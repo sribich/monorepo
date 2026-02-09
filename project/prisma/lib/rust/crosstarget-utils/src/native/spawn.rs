@@ -1,5 +1,6 @@
-use futures::TryFutureExt;
 use std::future::Future;
+
+use futures::TryFutureExt;
 
 use crate::common::spawn::SpawnError;
 

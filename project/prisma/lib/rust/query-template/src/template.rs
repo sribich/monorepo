@@ -1,7 +1,8 @@
-use crate::fragment::Fragment;
-use crate::placeholder::PlaceholderFormat;
 use std::fmt;
 use std::fmt::Debug;
+
+use crate::fragment::Fragment;
+use crate::placeholder::PlaceholderFormat;
 
 #[derive(Debug)]
 pub struct QueryTemplate<P> {
@@ -27,8 +28,12 @@ impl<P> QueryTemplate<P> {
         for fragment in &self.fragments {
             match fragment {
                 Fragment::StringChunk { chunk } => sql.push_str(chunk),
-                Fragment::Parameter => self.placeholder_format.write(&mut sql, &mut placeholder_number)?,
-                Fragment::ParameterTuple | Fragment::ParameterTupleList { .. } => return Err(fmt::Error), // Unsupported in Query Engine
+                Fragment::Parameter => self
+                    .placeholder_format
+                    .write(&mut sql, &mut placeholder_number)?,
+                Fragment::ParameterTuple | Fragment::ParameterTupleList { .. } => {
+                    return Err(fmt::Error);
+                } // Unsupported in Query Engine
             };
         }
         Ok(sql)

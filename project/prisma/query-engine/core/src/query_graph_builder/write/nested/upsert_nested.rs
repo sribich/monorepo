@@ -1,14 +1,23 @@
-use super::*;
-use crate::inputs::{IfInput, UpdateManyRecordsSelectorsInput, UpdateOrCreateArgsInput, UpdateRecordSelectorsInput};
-use crate::query_graph_builder::write::utils::coerce_vec;
-use crate::{DataExpectation, RowSink};
-use crate::{
-    ParsedInputMap, ParsedInputValue,
-    query_graph::{Flow, NodeRef, QueryGraph, QueryGraphDependency},
-};
-use query_structure::{Filter, RelationFieldRef};
-use schema::constants::args;
 use std::convert::TryInto;
+
+use query_structure::Filter;
+use query_structure::RelationFieldRef;
+use schema::constants::args;
+
+use super::*;
+use crate::DataExpectation;
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::RowSink;
+use crate::inputs::IfInput;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::inputs::UpdateOrCreateArgsInput;
+use crate::inputs::UpdateRecordSelectorsInput;
+use crate::query_graph::Flow;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
+use crate::query_graph_builder::write::utils::coerce_vec;
 
 /// Handles a nested upsert.
 /// The constructed query graph can have different shapes based on the relation
@@ -108,8 +117,12 @@ pub fn nested_upsert(
         let child_link = parent_relation_field.related_field().linking_fields();
 
         let mut as_map: ParsedInputMap<'_> = value.try_into()?;
-        let create_input = as_map.swap_remove(args::CREATE).expect("create argument is missing");
-        let update_input = as_map.swap_remove(args::UPDATE).expect("update argument is missing");
+        let create_input = as_map
+            .swap_remove(args::CREATE)
+            .expect("create argument is missing");
+        let update_input = as_map
+            .swap_remove(args::UPDATE)
+            .expect("update argument is missing");
         let where_input = as_map.swap_remove(args::WHERE);
 
         // Read child(ren) node
@@ -132,12 +145,20 @@ pub fn nested_upsert(
             (None, false) => Filter::empty(),
         };
 
-        let read_children_node =
-            utils::insert_find_children_by_parent_node(graph, &parent_node, parent_relation_field, filter.clone())?;
+        let read_children_node = utils::insert_find_children_by_parent_node(
+            graph,
+            &parent_node,
+            parent_relation_field,
+            filter.clone(),
+        )?;
 
         let if_node = graph.create_node(Flow::if_non_empty());
-        let create_node =
-            create::create_record_node(graph, query_schema, child_model.clone(), create_input.try_into()?)?;
+        let create_node = create::create_record_node(
+            graph,
+            query_schema,
+            child_model.clone(),
+            create_input.try_into()?,
+        )?;
         let update_node = update::update_record_node(
             graph,
             query_schema,
@@ -150,7 +171,11 @@ pub fn nested_upsert(
         graph.create_edge(
             &read_children_node,
             &if_node,
-            QueryGraphDependency::ProjectedDataDependency(child_model_identifier.clone(), RowSink::All(&IfInput), None),
+            QueryGraphDependency::ProjectedDataDependency(
+                child_model_identifier.clone(),
+                RowSink::All(&IfInput),
+                None,
+            ),
         )?;
 
         graph.create_edge(
@@ -176,14 +201,19 @@ pub fn nested_upsert(
         // the update path (if the children already exists and goes to the THEN node).
         // It's only after we've executed the emulation that it'll traverse the update node, hence the ExecutionOrder between
         // the emulation node and the update node.
-        let then_node = if let Some(emulation_node) = utils::insert_emulated_on_update_with_intermediary_node(
-            graph,
-            query_schema,
-            &child_model,
-            &read_children_node,
-            &update_node,
-        )? {
-            graph.create_edge(&emulation_node, &update_node, QueryGraphDependency::ExecutionOrder)?;
+        let then_node = if let Some(emulation_node) =
+            utils::insert_emulated_on_update_with_intermediary_node(
+                graph,
+                query_schema,
+                &child_model,
+                &read_children_node,
+                &update_node,
+            )? {
+            graph.create_edge(
+                &emulation_node,
+                &update_node,
+                QueryGraphDependency::ExecutionOrder,
+            )?;
 
             emulation_node
         } else {
@@ -196,11 +226,18 @@ pub fn nested_upsert(
         // Specific handling based on relation type and inlining side.
         if parent_relation_field.relation().is_many_to_many() {
             // Many to many only needs a connect node.
-            connect::connect_records_node(graph, &parent_node, &create_node, parent_relation_field, 1)?;
+            connect::connect_records_node(
+                graph,
+                &parent_node,
+                &create_node,
+                parent_relation_field,
+                1,
+            )?;
         } else if parent_relation_field.is_inlined_on_enclosing_model() {
             let parent_model = parent_relation_field.model();
             let parent_model_id = parent_model.shard_aware_primary_identifier();
-            let update_node = utils::update_records_node_placeholder(graph, filter, parent_model.clone());
+            let update_node =
+                utils::update_records_node_placeholder(graph, filter, parent_model.clone());
 
             // Edge to retrieve the finder
             graph.create_edge(

@@ -1,10 +1,11 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
 use super::IndexOps;
-use crate::{
-    datamodel::attributes::FieldAttribute,
-    value::{Constant, Function, Text},
-};
+use crate::datamodel::attributes::FieldAttribute;
+use crate::value::Constant;
+use crate::value::Function;
+use crate::value::Text;
 
 /// Input parameters for a field in a model index definition.
 #[derive(Debug, Clone)]
@@ -107,7 +108,8 @@ impl<'a> UniqueFieldAttribute<'a> {
     /// //            ^^^ here
     /// ```
     pub fn sort_order(&mut self, value: impl Into<Cow<'a, str>>) {
-        self.0.push_param(("sort", Constant::new_no_validate(value.into())));
+        self.0
+            .push_param(("sort", Constant::new_no_validate(value.into())));
     }
 
     /// Define the length of the inline field index.
@@ -117,7 +119,8 @@ impl<'a> UniqueFieldAttribute<'a> {
     /// //              ^^ here
     /// ```
     pub fn length(&mut self, length: u32) {
-        self.0.push_param(("length", Constant::new_no_validate(length)));
+        self.0
+            .push_param(("length", Constant::new_no_validate(length)));
     }
 
     /// Define the length clustering of the inline field index.
@@ -127,7 +130,8 @@ impl<'a> UniqueFieldAttribute<'a> {
     /// //                 ^^^^ here
     /// ```
     pub fn clustered(&mut self, value: bool) {
-        self.0.push_param(("clustered", Constant::new_no_validate(value)))
+        self.0
+            .push_param(("clustered", Constant::new_no_validate(value)))
     }
 
     /// Define the constraint name.

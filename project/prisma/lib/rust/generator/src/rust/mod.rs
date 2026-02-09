@@ -4,26 +4,31 @@ mod models;
 mod module;
 mod prisma;
 
-use std::{
-    fs::{File, create_dir_all, remove_dir_all},
-    io::Write,
-    path::Path,
-    process::Command,
-};
+use std::fs::File;
+use std::fs::create_dir_all;
+use std::fs::remove_dir_all;
+use std::io::Write;
+use std::path::Path;
+use std::process::Command;
 
-use convert_case::{Case, Casing};
+use convert_case::Case;
+use convert_case::Casing;
 use models::generate_models_module;
 use module::Module;
 use prisma::generate_prisma_module;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::format_ident;
+use quote::quote;
 use railgun_error::ResultExt;
 
-use super::{
-    Generator, GeneratorArgs, Result,
-    config::{self, Config},
-    error::{ExternalErrorContext, IoErrorContext, StringErrorContext},
-};
+use super::Generator;
+use super::GeneratorArgs;
+use super::Result;
+use super::config::Config;
+use super::config::{self};
+use super::error::ExternalErrorContext;
+use super::error::IoErrorContext;
+use super::error::StringErrorContext;
 
 pub struct RustGenerator;
 
@@ -41,11 +46,12 @@ impl Generator for RustGenerator {
         let output_path = Path::new(raw_path);
 
         let serialized = serde_json::to_string(&args.config.config).unwrap();
-        let config: Config = serde_json::from_str(&serialized)
-            .boxed_local()
-            .context(ExternalErrorContext {
-                reason: "Failed to parse prisma schema config",
-            })?;
+        let config: Config =
+            serde_json::from_str(&serialized)
+                .boxed_local()
+                .context(ExternalErrorContext {
+                    reason: "Failed to parse prisma schema config",
+                })?;
 
         match &config.client_format {
             config::ClientFormat::File if output_path.extension().is_none() => {
@@ -83,7 +89,13 @@ impl Generator for RustGenerator {
 
 impl RustGenerator {
     fn generate_client(args: &GeneratorArgs) -> Result<Module> {
-        let datamodel = args.schema.context().db.iter_sources().collect::<Vec<_>>().join("\n");
+        let datamodel = args
+            .schema
+            .context()
+            .db
+            .iter_sources()
+            .collect::<Vec<_>>()
+            .join("\n");
         let datasource = args
             .schema
             .context()
@@ -167,9 +179,11 @@ fn write_module(module: &Module, path: &Path) -> Result<()> {
 
 fn write_file(content: &TokenStream, path: &Path) -> Result<()> {
     if let Some(parent) = path.parent() {
-        create_dir_all(parent).boxed_local().context(ExternalErrorContext {
-            reason: "Failed to create parent directory",
-        })?;
+        create_dir_all(parent)
+            .boxed_local()
+            .context(ExternalErrorContext {
+                reason: "Failed to create parent directory",
+            })?;
     }
 
     let mut file = File::create(path).context(IoErrorContext {})?;
@@ -181,7 +195,8 @@ fn write_file(content: &TokenStream, path: &Path) -> Result<()> {
         })?;
     let pretty_content = prettyplease::unparse(&pretty_file);
 
-    file.write_all(pretty_content.as_bytes()).context(IoErrorContext {})?;
+    file.write_all(pretty_content.as_bytes())
+        .context(IoErrorContext {})?;
 
     Command::new("rustfmt")
         .arg("--edition=2021")

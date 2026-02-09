@@ -1,6 +1,7 @@
 use psl::parser_database::ScalarType;
 use quaint::prelude::ColumnType;
-use schema_connector::{ConnectorError, ConnectorResult};
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
 
 use crate::sql_renderer::IteratorJoin;
 
@@ -261,7 +262,9 @@ fn parse_position_opt(input: Input<'_>) -> ConnectorResult<(Input<'_>, Option<us
     }
 }
 
-fn parse_alias_opt(input: Input<'_>) -> ConnectorResult<(Input<'_>, Option<&'_ str>, Option<bool>)> {
+fn parse_alias_opt(
+    input: Input<'_>,
+) -> ConnectorResult<(Input<'_>, Option<&'_ str>, Option<bool>)> {
     if let Some((input, alias)) = input
         .trim_start()
         .strip_prefix_char(':')
@@ -289,17 +292,26 @@ fn parse_rest(input: Input<'_>) -> ConnectorResult<Option<&str>> {
 
 fn validate_param(param: &ParsedParameterDoc<'_>, input: Input<'_>) -> ConnectorResult<()> {
     if param.is_empty() {
-        return Err(build_error(input, "invalid parameter: could not parse any information"));
+        return Err(build_error(
+            input,
+            "invalid parameter: could not parse any information",
+        ));
     }
 
     if param.position.is_none() && param.alias().is_none() {
-        return Err(build_error(input, "missing position or alias (eg: $1:alias)"));
+        return Err(build_error(
+            input,
+            "missing position or alias (eg: $1:alias)",
+        ));
     }
 
     Ok(())
 }
 
-fn parse_param<'a>(param_input: Input<'a>, enum_names: &'a [String]) -> ConnectorResult<ParsedParameterDoc<'a>> {
+fn parse_param<'a>(
+    param_input: Input<'a>,
+    enum_names: &'a [String],
+) -> ConnectorResult<ParsedParameterDoc<'a>> {
     let input = param_input.strip_prefix_str("@param").unwrap().trim_start();
 
     let (input, typ) = parse_typ_opt(input, enum_names)?;
@@ -326,7 +338,10 @@ fn parse_description(input: Input<'_>) -> ConnectorResult<Option<&str>> {
     parse_rest(input)
 }
 
-pub(crate) fn parse_sql_doc<'a>(sql: &'a str, enum_names: &'a [String]) -> ConnectorResult<ParsedSqlDoc<'a>> {
+pub(crate) fn parse_sql_doc<'a>(
+    sql: &'a str,
+    enum_names: &'a [String],
+) -> ConnectorResult<ParsedSqlDoc<'a>> {
     let mut parsed_sql = ParsedSqlDoc::default();
 
     let lines = sql.lines();
@@ -684,7 +699,10 @@ mod tests {
     fn parse_param_13() {
         use expect_test::expect;
 
-        let res = parse_param(Input("@param      {Int}        $1     some    documentation"), &[]);
+        let res = parse_param(
+            Input("@param      {Int}        $1     some    documentation"),
+            &[],
+        );
 
         let expected = expect![[r#"
             Ok(
@@ -942,7 +960,10 @@ mod tests {
     fn parse_sql_1() {
         use expect_test::expect;
 
-        let res = parse_sql_doc("--   @param      {Int}        $1     some    documentation    ", &[]);
+        let res = parse_sql_doc(
+            "--   @param      {Int}        $1     some    documentation    ",
+            &[],
+        );
 
         let expected = expect![[r#"
             Ok(

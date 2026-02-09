@@ -1,7 +1,12 @@
-use crate::{CoreResult, SchemaContainerExt, migration_schema_cache::MigrationSchemaCache};
-use json_rpc::types::{MigrationList, SchemasContainer};
+use json_rpc::types::MigrationList;
+use json_rpc::types::SchemasContainer;
 use psl::parser_database::ExtensionTypes;
-use schema_connector::{SchemaConnector, migrations_directory::*};
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory::*;
+
+use crate::CoreResult;
+use crate::SchemaContainerExt;
+use crate::migration_schema_cache::MigrationSchemaCache;
 
 /// Development command for migrations. Evaluate the data loss induced by the next
 /// migration the engine would generate on the main database.
@@ -63,21 +68,30 @@ pub async fn evaluate_data_loss(
     let migrations = Migrations::from_migration_list(&input.migrations_list);
     let dialect = connector.schema_dialect();
 
-    let to = dialect.schema_from_datamodel(sources, connector.default_runtime_namespace(), extension_types)?;
+    let to = dialect.schema_from_datamodel(
+        sources,
+        connector.default_runtime_namespace(),
+        extension_types,
+    )?;
 
     let from = migration_schema_cache
         .get_or_insert(&input.migrations_list.migration_directories, || async {
             // We only consider the namespaces present in the "to" schema aka the PSL file for the introspection of the "from" schema.
             // So when the user removes a previously existing namespace from their PSL file we will not introspect that namespace in the database.
             let namespaces = dialect.extract_namespaces(&to);
-            connector.schema_from_migrations(&migrations, namespaces).await
+            connector
+                .schema_from_migrations(&migrations, namespaces)
+                .await
         })
         .await?;
 
     let migration = dialect.diff(from, to);
 
     let migration_steps = dialect.migration_len(&migration) as u32;
-    let diagnostics = connector.destructive_change_checker().check(&migration).await?;
+    let diagnostics = connector
+        .destructive_change_checker()
+        .check(&migration)
+        .await?;
 
     let warnings = diagnostics
         .warnings

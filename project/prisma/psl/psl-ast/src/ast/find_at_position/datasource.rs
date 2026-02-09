@@ -1,4 +1,5 @@
-use super::{PropertyPosition, WithName};
+use super::PropertyPosition;
+use super::WithName;
 use crate::ast::{self};
 
 #[derive(Debug)]
@@ -35,7 +36,10 @@ impl<'ast> SourcePosition<'ast> {
 
         for property in &source.properties {
             if property.span.contains(position) {
-                return SourcePosition::Property(&property.name.name, PropertyPosition::new(property, position));
+                return SourcePosition::Property(
+                    &property.name.name,
+                    PropertyPosition::new(property, position),
+                );
             }
         }
 

@@ -1,10 +1,11 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_expression::parse_expression,
-};
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_expression::parse_expression;
 use crate::ast;
-use diagnostics::{Diagnostics, FileId};
 
 pub(crate) fn parse_arguments_list(
     token: Pair<'_>,
@@ -17,7 +18,11 @@ pub(crate) fn parse_arguments_list(
         let current_span = current.as_span();
         match current.as_rule() {
             // This is a named arg.
-            Rule::named_argument => arguments.arguments.push(parse_named_arg(current, diagnostics, file_id)),
+            Rule::named_argument => {
+                arguments
+                    .arguments
+                    .push(parse_named_arg(current, diagnostics, file_id))
+            }
             // This is an unnamed arg.
             Rule::expression => arguments.arguments.push(ast::Argument {
                 name: None,
@@ -43,7 +48,11 @@ pub(crate) fn parse_arguments_list(
     }
 }
 
-fn parse_named_arg(pair: Pair<'_>, diagnostics: &mut Diagnostics, file_id: FileId) -> ast::Argument {
+fn parse_named_arg(
+    pair: Pair<'_>,
+    diagnostics: &mut Diagnostics,
+    file_id: FileId,
+) -> ast::Argument {
     debug_assert_eq!(pair.as_rule(), Rule::named_argument);
     let mut name: Option<ast::Identifier> = None;
     let mut argument: Option<ast::Expression> = None;

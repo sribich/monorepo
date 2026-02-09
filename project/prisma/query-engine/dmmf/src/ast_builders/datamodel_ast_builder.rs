@@ -1,14 +1,26 @@
-use crate::serialization_ast::{
-    Index, IndexField, IndexType,
-    datamodel_ast::{Datamodel, Enum, EnumValue, Field, Function, Model, PrimaryKey, UniqueIndex},
-};
 use bigdecimal::ToPrimitive;
-use itertools::{Either, Itertools};
-use psl::{
-    parser_database::{ScalarFieldType, walkers},
-    psl_ast::ast::WithDocumentation,
-};
-use query_structure::{DefaultKind, FieldArity, PrismaValue, dml_default_kind, encode_bytes};
+use itertools::Either;
+use itertools::Itertools;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::walkers;
+use psl::psl_ast::ast::WithDocumentation;
+use query_structure::DefaultKind;
+use query_structure::FieldArity;
+use query_structure::PrismaValue;
+use query_structure::dml_default_kind;
+use query_structure::encode_bytes;
+
+use crate::serialization_ast::Index;
+use crate::serialization_ast::IndexField;
+use crate::serialization_ast::IndexType;
+use crate::serialization_ast::datamodel_ast::Datamodel;
+use crate::serialization_ast::datamodel_ast::Enum;
+use crate::serialization_ast::datamodel_ast::EnumValue;
+use crate::serialization_ast::datamodel_ast::Field;
+use crate::serialization_ast::datamodel_ast::Function;
+use crate::serialization_ast::datamodel_ast::Model;
+use crate::serialization_ast::datamodel_ast::PrimaryKey;
+use crate::serialization_ast::datamodel_ast::UniqueIndex;
 
 pub(crate) fn schema_to_dmmf(schema: &psl::ValidatedSchema) -> Datamodel {
     let mut datamodel = Datamodel {
@@ -265,7 +277,9 @@ fn prisma_value_to_serde(value: &PrismaValue) -> serde_json::Value {
         PrismaValue::Null => serde_json::Value::Null,
         PrismaValue::Uuid(val) => serde_json::Value::String(val.to_string()),
         PrismaValue::Json(val) => serde_json::Value::String(val.to_string()),
-        PrismaValue::List(value_vec) => serde_json::Value::Array(value_vec.iter().map(prisma_value_to_serde).collect()),
+        PrismaValue::List(value_vec) => {
+            serde_json::Value::Array(value_vec.iter().map(prisma_value_to_serde).collect())
+        }
         PrismaValue::Bytes(b) => serde_json::Value::String(encode_bytes(b)),
         PrismaValue::Object(pairs) => {
             let mut map = serde_json::Map::with_capacity(pairs.len());
@@ -290,9 +304,11 @@ fn function_to_serde(name: &str, args: &[PrismaValue]) -> serde_json::Value {
 
 #[cfg(test)]
 mod tests {
-    use super::schema_to_dmmf;
-    use pretty_assertions::assert_eq;
     use std::fs;
+
+    use pretty_assertions::assert_eq;
+
+    use super::schema_to_dmmf;
 
     fn render_to_dmmf(schema: &str) -> String {
         let schema = psl::parse_schema_without_extensions(schema).unwrap();
@@ -329,8 +345,10 @@ mod tests {
 
     #[track_caller]
     fn assert_eq_json(a: &str, b: &str, msg: &str) {
-        let json_a: serde_json::Value = serde_json::from_str(a).expect("The String a was not valid JSON.");
-        let json_b: serde_json::Value = serde_json::from_str(b).expect("The String b was not valid JSON.");
+        let json_a: serde_json::Value =
+            serde_json::from_str(a).expect("The String a was not valid JSON.");
+        let json_b: serde_json::Value =
+            serde_json::from_str(b).expect("The String b was not valid JSON.");
 
         assert_eq!(json_a, json_b, "{}", msg);
     }

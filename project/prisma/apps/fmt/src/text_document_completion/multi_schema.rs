@@ -1,4 +1,6 @@
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList};
+use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
+use lsp_types::CompletionList;
 
 pub(super) fn schema_namespace_completion(
     completion_list: &mut CompletionList,

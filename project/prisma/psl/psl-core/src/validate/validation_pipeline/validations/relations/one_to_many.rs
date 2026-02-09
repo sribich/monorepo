@@ -1,9 +1,10 @@
+use parser_database::ast::WithSpan;
+use parser_database::walkers::InlineRelationWalker;
+use parser_database::walkers::RelationFieldWalker;
+
 use super::*;
-use crate::{diagnostics::DatamodelError, validate::validation_pipeline::context::Context};
-use parser_database::{
-    ast::WithSpan,
-    walkers::{InlineRelationWalker, RelationFieldWalker},
-};
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 /// A relation must be defined from both sides, one defining the fields, references and possible
 /// referential actions, the other side just as a list.
@@ -31,7 +32,10 @@ pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &m
         ));
     };
 
-    match (relation.forward_relation_field(), relation.back_relation_field()) {
+    match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward_relation_field), None) => error_fn(forward_relation_field),
         (None, Some(back_relation_field)) => error_fn(back_relation_field),
         _ => (),
@@ -39,8 +43,14 @@ pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &m
 }
 
 /// The singular side must define `fields` and `references` attributes.
-pub(crate) fn fields_and_references_are_defined(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+pub(crate) fn fields_and_references_are_defined(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) => (forward, back),
         _ => return,
     };
@@ -96,7 +106,10 @@ pub(crate) fn fields_and_references_are_defined(relation: InlineRelationWalker<'
 
 /// The referential actions, if defined, must be on the singular side only.
 pub(crate) fn referential_actions(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) => (forward, back),
         _ => return,
     };

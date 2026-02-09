@@ -1,13 +1,30 @@
-use crate::{error::SqlError, value::to_prisma_value};
-use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
-use chrono::{DateTime, NaiveDate, Utc};
-use connector_interface::{AggregationResult, coerce_null_to_zero_value};
-use core::{f32, f64};
-use quaint::{Value, ValueType, connector::ResultRow};
-use query_structure::{AggregationSelection, ConversionFailure, FieldArity, PrismaValue, Record, TypeIdentifier};
+use core::f32;
+use core::f64;
+use std::io;
+use std::str::FromStr;
+
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use bigdecimal::ToPrimitive;
+use chrono::DateTime;
+use chrono::NaiveDate;
+use chrono::Utc;
+use connector_interface::AggregationResult;
+use connector_interface::coerce_null_to_zero_value;
+use quaint::Value;
+use quaint::ValueType;
+use quaint::connector::ResultRow;
+use query_structure::AggregationSelection;
+use query_structure::ConversionFailure;
+use query_structure::FieldArity;
+use query_structure::PrismaValue;
+use query_structure::Record;
+use query_structure::TypeIdentifier;
 use sql_query_builder::ColumnMetadata;
-use std::{io, str::FromStr};
 use uuid::Uuid;
+
+use crate::error::SqlError;
+use crate::value::to_prisma_value;
 
 /// An allocated representation of a `Row` returned from the database.
 #[derive(Debug, Clone, Default)]
@@ -16,7 +33,10 @@ pub(crate) struct SqlRow {
 }
 
 impl SqlRow {
-    pub fn into_aggregation_results(mut self, selections: &[AggregationSelection]) -> Vec<AggregationResult> {
+    pub fn into_aggregation_results(
+        mut self,
+        selections: &[AggregationSelection],
+    ) -> Vec<AggregationResult> {
         selections
             .iter()
             .flat_map(|selection| match selection {
@@ -118,7 +138,10 @@ impl ToSqlRow for ResultRow {
     }
 }
 
-fn row_value_to_prisma_value(p_value: Value, meta: ColumnMetadata<'_>) -> Result<PrismaValue, SqlError> {
+fn row_value_to_prisma_value(
+    p_value: Value,
+    meta: ColumnMetadata<'_>,
+) -> Result<PrismaValue, SqlError> {
     let create_error = |value: &Value| {
         let message = match meta.name() {
             Some(name) => {
@@ -130,7 +153,11 @@ fn row_value_to_prisma_value(p_value: Value, meta: ColumnMetadata<'_>) -> Result
                 )
             }
             None => {
-                format!("Could not convert value {} to type `{:?}`.", value, meta.identifier())
+                format!(
+                    "Could not convert value {} to type `{:?}`.",
+                    value,
+                    meta.identifier()
+                )
             }
         };
 
@@ -198,7 +225,10 @@ fn row_value_to_prisma_value(p_value: Value, meta: ColumnMetadata<'_>) -> Result
                 PrismaValue::DateTime(dt.with_timezone(&Utc).into())
             }
             ValueType::Date(Some(d)) => {
-                let dt = DateTime::<Utc>::from_naive_utc_and_offset(d.and_hms_opt(0, 0, 0).unwrap(), Utc);
+                let dt = DateTime::<Utc>::from_naive_utc_and_offset(
+                    d.and_hms_opt(0, 0, 0).unwrap(),
+                    Utc,
+                );
                 PrismaValue::DateTime(dt.into())
             }
             ValueType::Time(Some(t)) => {
@@ -245,9 +275,9 @@ fn row_value_to_prisma_value(p_value: Value, meta: ColumnMetadata<'_>) -> Result
             ValueType::Int32(Some(i)) => PrismaValue::Int(i as i64),
             ValueType::Int64(Some(i)) => PrismaValue::Int(i),
             ValueType::Bytes(Some(bytes)) => PrismaValue::Int(interpret_bytes_as_i64(&bytes)),
-            ValueType::Text(Some(ref txt)) => {
-                PrismaValue::Int(i64::from_str(txt.trim_start_matches('\0')).map_err(|_| create_error(&p_value))?)
-            }
+            ValueType::Text(Some(ref txt)) => PrismaValue::Int(
+                i64::from_str(txt.trim_start_matches('\0')).map_err(|_| create_error(&p_value))?,
+            ),
             ValueType::Float(Some(f)) => {
                 sanitize_f32(f, "Int")?;
 
@@ -267,29 +297,37 @@ fn row_value_to_prisma_value(p_value: Value, meta: ColumnMetadata<'_>) -> Result
             ValueType::Int32(Some(i)) => PrismaValue::BigInt(i as i64),
             ValueType::Int64(Some(i)) => PrismaValue::BigInt(i),
             ValueType::Bytes(Some(bytes)) => PrismaValue::BigInt(interpret_bytes_as_i64(&bytes)),
-            ValueType::Text(Some(ref txt)) => {
-                PrismaValue::BigInt(i64::from_str(txt.trim_start_matches('\0')).map_err(|_| create_error(&p_value))?)
-            }
+            ValueType::Text(Some(ref txt)) => PrismaValue::BigInt(
+                i64::from_str(txt.trim_start_matches('\0')).map_err(|_| create_error(&p_value))?,
+            ),
             ValueType::Float(Some(f)) => {
                 sanitize_f32(f, "BigInt")?;
 
-                PrismaValue::BigInt(big_decimal_to_i64(BigDecimal::from_f32(f).unwrap(), "BigInt")?)
+                PrismaValue::BigInt(big_decimal_to_i64(
+                    BigDecimal::from_f32(f).unwrap(),
+                    "BigInt",
+                )?)
             }
             ValueType::Double(Some(f)) => {
                 sanitize_f64(f, "BigInt")?;
 
-                PrismaValue::BigInt(big_decimal_to_i64(BigDecimal::from_f64(f).unwrap(), "BigInt")?)
+                PrismaValue::BigInt(big_decimal_to_i64(
+                    BigDecimal::from_f64(f).unwrap(),
+                    "BigInt",
+                )?)
             }
-            ValueType::Numeric(Some(dec)) => PrismaValue::BigInt(big_decimal_to_i64(dec, "BigInt")?),
+            ValueType::Numeric(Some(dec)) => {
+                PrismaValue::BigInt(big_decimal_to_i64(dec, "BigInt")?)
+            }
             ValueType::Boolean(Some(bool)) => PrismaValue::BigInt(bool as i64),
             other => to_prisma_value(other)?,
         },
         TypeIdentifier::String => match p_value.typed {
             value if value.is_null() => PrismaValue::Null,
             ValueType::Uuid(Some(uuid)) => PrismaValue::String(uuid.to_string()),
-            ValueType::Json(Some(ref json_value)) => {
-                PrismaValue::String(serde_json::to_string(json_value).map_err(|_| create_error(&p_value))?)
-            }
+            ValueType::Json(Some(ref json_value)) => PrismaValue::String(
+                serde_json::to_string(json_value).map_err(|_| create_error(&p_value))?,
+            ),
             other => to_prisma_value(other)?,
         },
         TypeIdentifier::Bytes => match p_value.typed {
@@ -313,7 +351,11 @@ fn interpret_bytes_as_i64(bytes: &[u8]) -> i64 {
             let sign_bit_mask: u8 = 0b10000000;
             // The first byte will only contain the sign bit.
             let most_significant_bit_byte = bytes[0] & sign_bit_mask;
-            let padding = if most_significant_bit_byte == 0 { 0 } else { 0b11111111 };
+            let padding = if most_significant_bit_byte == 0 {
+                0
+            } else {
+                0b11111111
+            };
             let mut i64_bytes = [padding; 8];
 
             for (target_byte, source_byte) in i64_bytes.iter_mut().rev().zip(bytes.iter().rev()) {

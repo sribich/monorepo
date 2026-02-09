@@ -1,9 +1,14 @@
 mod c_style_scalar_lists;
 mod tokenize;
 
-use crate::{ColumnType, ColumnTypeFamily, DefaultKind, DefaultValue};
 use prisma_value::PrismaValue;
-use tokenize::{Token, tokenize};
+use tokenize::Token;
+use tokenize::tokenize;
+
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
+use crate::DefaultKind;
+use crate::DefaultValue;
 
 #[derive(Debug)]
 struct Parser<'a> {
@@ -25,7 +30,9 @@ impl<'a> Parser<'a> {
         match (self.tokens.get(offset), self.tokens.get(offset + 1)) {
             (None, _) => None,
             (Some((tok, start)), None) => Some((*tok, &self.input[(*start as usize)..])),
-            (Some((tok, start)), Some((_, end))) => Some((*tok, &self.input[(*start as usize)..*end as usize])),
+            (Some((tok, start)), Some((_, end))) => {
+                Some((*tok, &self.input[(*start as usize)..*end as usize]))
+            }
         }
     }
 
@@ -92,7 +99,9 @@ pub(super) fn get_default_value(default_string: &str, tpe: &ColumnType) -> Optio
     })
 }
 
-fn parser_for_family(family: &ColumnTypeFamily) -> &'static dyn Fn(&mut Parser<'_>) -> Option<DefaultValue> {
+fn parser_for_family(
+    family: &ColumnTypeFamily,
+) -> &'static dyn Fn(&mut Parser<'_>) -> Option<DefaultValue> {
     match family {
         ColumnTypeFamily::String | ColumnTypeFamily::Json => &parse_string_default,
         ColumnTypeFamily::Int | ColumnTypeFamily::BigInt => &parse_int_default,
@@ -101,7 +110,9 @@ fn parser_for_family(family: &ColumnTypeFamily) -> &'static dyn Fn(&mut Parser<'
         ColumnTypeFamily::Boolean => &parse_bool_default,
         ColumnTypeFamily::DateTime => &parse_datetime_default,
         ColumnTypeFamily::Binary => &parse_binary_default,
-        ColumnTypeFamily::Udt(_) | ColumnTypeFamily::Unsupported(_) | ColumnTypeFamily::Uuid => &parse_unsupported,
+        ColumnTypeFamily::Udt(_) | ColumnTypeFamily::Unsupported(_) | ColumnTypeFamily::Uuid => {
+            &parse_unsupported
+        }
     }
 }
 
@@ -121,7 +132,9 @@ fn parse_datetime_default(parser: &mut Parser<'_>) -> Option<DefaultValue> {
             eat_cast(parser)?;
 
             match func_name {
-                name if name.eq_ignore_ascii_case("now") || name.eq_ignore_ascii_case("current_timestamp") => {
+                name if name.eq_ignore_ascii_case("now")
+                    || name.eq_ignore_ascii_case("current_timestamp") =>
+                {
                     Some(DefaultValue::now())
                 }
                 _ => None,
@@ -317,7 +330,9 @@ fn parse_int_default(parser: &mut Parser<'_>) -> Option<DefaultValue> {
                 }
 
                 let sequence_name_string = match parser.peek_token() {
-                    Some(Token::StringLiteral) | Some(Token::CStyleStringLiteral) => parse_string_value(parser)?,
+                    Some(Token::StringLiteral) | Some(Token::CStyleStringLiteral) => {
+                        parse_string_value(parser)?
+                    }
                     _ => return None,
                 };
 
@@ -436,8 +451,10 @@ fn parse_binary_default(parser: &mut Parser<'_>) -> Option<DefaultValue> {
     for nibbles in &mut bytes {
         let high_nibble = &nibbles[0];
         let low_nibble = &nibbles[1];
-        let high_nibble: u8 = u8::from_str_radix(std::str::from_utf8(&[*high_nibble]).unwrap(), 16).unwrap() << 4;
-        let low_nibble: u8 = u8::from_str_radix(std::str::from_utf8(&[*low_nibble]).unwrap(), 16).unwrap();
+        let high_nibble: u8 =
+            u8::from_str_radix(std::str::from_utf8(&[*high_nibble]).unwrap(), 16).unwrap() << 4;
+        let low_nibble: u8 =
+            u8::from_str_radix(std::str::from_utf8(&[*low_nibble]).unwrap(), 16).unwrap();
         decoded_bytes.push(high_nibble | low_nibble);
     }
 
@@ -448,7 +465,10 @@ fn parse_binary_default(parser: &mut Parser<'_>) -> Option<DefaultValue> {
     Some(DefaultValue::value(PrismaValue::Bytes(decoded_bytes)))
 }
 
-fn parse_array_constructor(parser: &mut Parser<'_>, tpe: &ColumnTypeFamily) -> Option<Vec<PrismaValue>> {
+fn parse_array_constructor(
+    parser: &mut Parser<'_>,
+    tpe: &ColumnTypeFamily,
+) -> Option<Vec<PrismaValue>> {
     let mut values = Vec::new();
     let parse_fn = parser_for_family(tpe);
 
@@ -496,10 +516,11 @@ fn parse_array_constructor(parser: &mut Parser<'_>, tpe: &ColumnTypeFamily) -> O
 
 fn get_list_default_value(parser: &mut Parser<'_>, tpe: &ColumnType) -> DefaultValue {
     let values = match parser.peek_token() {
-        Some(Token::CStyleStringLiteral) | Some(Token::StringLiteral) => {
-            parse_string_value(parser).and_then(|value| c_style_scalar_lists::parse_array_literal(&value, tpe))
+        Some(Token::CStyleStringLiteral) | Some(Token::StringLiteral) => parse_string_value(parser)
+            .and_then(|value| c_style_scalar_lists::parse_array_literal(&value, tpe)),
+        Some(Token::Identifier) | Some(Token::OpeningBrace) => {
+            parse_array_constructor(parser, &tpe.family)
         }
-        Some(Token::Identifier) | Some(Token::OpeningBrace) => parse_array_constructor(parser, &tpe.family),
         _ => None,
     };
 
@@ -567,8 +588,9 @@ fn eat_cast(parser: &mut Parser<'_>) -> Option<()> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use expect_test::expect;
+
+    use super::*;
 
     #[test]
     fn parse_string_array_default() {
@@ -600,7 +622,8 @@ mod tests {
         let tokens = tokenize(input);
         let mut parser = Parser::new(input, &tokens);
 
-        let out = parse_array_constructor(&mut parser, &ColumnTypeFamily::Enum(crate::EnumId(0))).unwrap();
+        let out = parse_array_constructor(&mut parser, &ColumnTypeFamily::Enum(crate::EnumId(0)))
+            .unwrap();
 
         let expected = expect![[r#"
             [
@@ -622,7 +645,8 @@ mod tests {
         let tokens = tokenize(input);
         let mut parser = Parser::new(input, &tokens);
 
-        let out = parse_array_constructor(&mut parser, &ColumnTypeFamily::Enum(crate::EnumId(0))).unwrap();
+        let out = parse_array_constructor(&mut parser, &ColumnTypeFamily::Enum(crate::EnumId(0)))
+            .unwrap();
 
         let expected = expect![[r#"
             [
@@ -727,7 +751,10 @@ mod tests {
 
         assert_is_sequence(r#"nextval('first_sequence'::regclass)"#, "first_sequence");
 
-        assert_is_sequence(r#"nextval('schema_name.second_sequence'::regclass)"#, "second_sequence");
+        assert_is_sequence(
+            r#"nextval('schema_name.second_sequence'::regclass)"#,
+            "second_sequence",
+        );
 
         assert_is_sequence(r#"nextval('"third_Sequence"'::regclass)"#, "third_Sequence");
         assert_is_sequence(
@@ -735,7 +762,10 @@ mod tests {
             "fourth_Sequence",
         );
 
-        assert_is_sequence(r#"nextval(('fifth_sequence'::text)::regclass)"#, "fifth_sequence");
+        assert_is_sequence(
+            r#"nextval(('fifth_sequence'::text)::regclass)"#,
+            "fifth_sequence",
+        );
         let non_autoincrement = r#"string_default_named_seq"#;
         assert!(
             get_default_value(

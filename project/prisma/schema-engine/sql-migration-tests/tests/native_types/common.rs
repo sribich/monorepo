@@ -25,8 +25,14 @@ fn typescript_starter_schema_is_idempotent_without_native_type_annotations(api: 
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres, Mysql))]

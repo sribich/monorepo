@@ -81,7 +81,11 @@ mod scalar_relations {
         create_child(&runner, r#"{ childId: 2, json: "{}" }"#).await?;
         create_child(&runner, r#"{ childId: 3, json: "{\"a\": \"b\"}" }"#).await?;
         create_child(&runner, r#"{ childId: 4, json: "[]" }"#).await?;
-        create_child(&runner, r#"{ childId: 5, json: "[1, -1, true, {\"a\": \"b\"}]" }"#).await?;
+        create_child(
+            &runner,
+            r#"{ childId: 5, json: "[1, -1, true, {\"a\": \"b\"}]" }"#,
+        )
+        .await?;
         create_parent(
             &runner,
             r#"{ id: 1, children: { connect: [{ childId: 1 }, { childId: 2 }, { childId: 3 }, { childId: 4 }, { childId: 5 }] } }"#,
@@ -241,10 +245,7 @@ mod scalar_relations {
     }
 
     // TODO: fix https://github.com/prisma/team-orm/issues/684 and unexclude DAs
-    #[connector_test(
-        schema(schema_scalar_lists),
-        capabilities(ScalarLists)
-    )]
+    #[connector_test(schema(schema_scalar_lists), capabilities(ScalarLists))]
     async fn scalar_lists(runner: Runner) -> TestResult<()> {
         create_child(
             &runner,
@@ -261,7 +262,11 @@ mod scalar_relations {
           }"#,
         )
         .await?;
-        create_parent(&runner, r#"{ id: 1, children: { connect: [{ childId: 1 }] } }"#).await?;
+        create_parent(
+            &runner,
+            r#"{ id: 1, children: { connect: [{ childId: 1 }] } }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"{ findManyParent { id children { childId string int bInt float bytes bool dt empty unset } } }"#),
@@ -360,7 +365,9 @@ mod scalar_relations {
 
     async fn create_child(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneChild(data: {data}) {{ childId }} }}"))
+            .query(format!(
+                "mutation {{ createOneChild(data: {data}) {{ childId }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -368,7 +375,9 @@ mod scalar_relations {
 
     async fn create_parent(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

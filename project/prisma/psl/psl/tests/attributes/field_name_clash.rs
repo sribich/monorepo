@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn naming_a_scalar_field_same_as_generated_id_name_should_error() {

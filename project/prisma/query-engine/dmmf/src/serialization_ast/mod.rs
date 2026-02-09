@@ -5,7 +5,6 @@ pub mod schema_ast;
 pub use datamodel_ast::*;
 pub use mappings_ast::*;
 pub use schema_ast::*;
-
 use serde::Serialize;
 
 /// The main DMMF serialization struct.

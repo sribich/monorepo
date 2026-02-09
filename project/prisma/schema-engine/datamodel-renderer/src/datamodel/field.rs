@@ -1,10 +1,15 @@
-use crate::{
-    datamodel::{
-        DefaultValue, FieldType, IdFieldDefinition, Relation, attributes::FieldAttribute, index::UniqueFieldAttribute,
-    },
-    value::{Constant, Documentation, Function},
-};
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
+
+use crate::datamodel::DefaultValue;
+use crate::datamodel::FieldType;
+use crate::datamodel::IdFieldDefinition;
+use crate::datamodel::Relation;
+use crate::datamodel::attributes::FieldAttribute;
+use crate::datamodel::index::UniqueFieldAttribute;
+use crate::value::Constant;
+use crate::value::Documentation;
+use crate::value::Function;
 
 /// A field in a model block.
 #[derive(Debug)]

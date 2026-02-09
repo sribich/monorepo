@@ -1,9 +1,13 @@
 //! Scalar list defaults of the form `'{}'`.
 //! Reference: <https://www.postgresql.org/docs/current/arrays.html>
 
-use super::{Parser, Token, tokenize};
-use crate::{ColumnType, ColumnTypeFamily};
 use prisma_value::PrismaValue;
+
+use super::Parser;
+use super::Token;
+use super::tokenize;
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
 
 pub(super) fn parse_array_literal(input: &str, tpe: &ColumnType) -> Option<Vec<PrismaValue>> {
     let mut values = Vec::new();
@@ -64,12 +68,21 @@ pub(super) fn parse_array_literal(input: &str, tpe: &ColumnType) -> Option<Vec<P
 
 fn parse_literal(s: &str, tpe: &ColumnType) -> Option<PrismaValue> {
     match tpe.family {
-        ColumnTypeFamily::Int | ColumnTypeFamily::BigInt => Some(PrismaValue::BigInt(s.parse().ok()?)),
-        ColumnTypeFamily::Float | ColumnTypeFamily::Decimal => Some(PrismaValue::Float(s.parse().ok()?)),
+        ColumnTypeFamily::Int | ColumnTypeFamily::BigInt => {
+            Some(PrismaValue::BigInt(s.parse().ok()?))
+        }
+        ColumnTypeFamily::Float | ColumnTypeFamily::Decimal => {
+            Some(PrismaValue::Float(s.parse().ok()?))
+        }
         ColumnTypeFamily::String => Some(PrismaValue::String(s.to_owned())),
         ColumnTypeFamily::Boolean => match s {
-            s if s.eq_ignore_ascii_case("t") || s.eq_ignore_ascii_case("true") => Some(PrismaValue::Boolean(true)),
-            s if s.eq_ignore_ascii_case("f") || s.eq_ignore_ascii_case("false") || s.eq_ignore_ascii_case("false") => {
+            s if s.eq_ignore_ascii_case("t") || s.eq_ignore_ascii_case("true") => {
+                Some(PrismaValue::Boolean(true))
+            }
+            s if s.eq_ignore_ascii_case("f")
+                || s.eq_ignore_ascii_case("false")
+                || s.eq_ignore_ascii_case("false") =>
+            {
                 Some(PrismaValue::Boolean(false))
             }
             _ => None,

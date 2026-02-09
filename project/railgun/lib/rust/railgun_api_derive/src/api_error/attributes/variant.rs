@@ -1,4 +1,5 @@
-use darling::{FromAttributes, FromMeta};
+use darling::FromAttributes;
+use darling::FromMeta;
 use macro_util::ast::Attributes;
 
 #[derive(Debug, FromMeta)]

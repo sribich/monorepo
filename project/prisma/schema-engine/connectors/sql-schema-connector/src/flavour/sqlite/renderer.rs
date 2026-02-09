@@ -1,13 +1,23 @@
-use crate::sql_renderer::{IteratorJoin, Quoted, QuotedWithPrefix, SqlRenderer, format_hex, render_step};
-use crate::{
-    migration_pair::MigrationPair,
-    sql_migration::{AlterEnum, AlterTable, RedefineTable, TableChange},
-};
+use std::borrow::Cow;
+use std::sync::LazyLock;
+
 use indoc::formatdoc;
 use regex::Regex;
 use sql_ddl::sqlite as ddl;
-use sql_schema_describer::{walkers::*, *};
-use std::{borrow::Cow, sync::LazyLock};
+use sql_schema_describer::walkers::*;
+use sql_schema_describer::*;
+
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::AlterEnum;
+use crate::sql_migration::AlterTable;
+use crate::sql_migration::RedefineTable;
+use crate::sql_migration::TableChange;
+use crate::sql_renderer::IteratorJoin;
+use crate::sql_renderer::Quoted;
+use crate::sql_renderer::QuotedWithPrefix;
+use crate::sql_renderer::SqlRenderer;
+use crate::sql_renderer::format_hex;
+use crate::sql_renderer::render_step;
 
 #[derive(Debug)]
 pub struct SqliteRenderer;
@@ -17,7 +27,11 @@ impl SqlRenderer for SqliteRenderer {
         Quoted::Double(name)
     }
 
-    fn render_alter_enum(&self, _alter_enum: &AlterEnum, _schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_alter_enum(
+        &self,
+        _alter_enum: &AlterEnum,
+        _schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         unreachable!("render_alter_enum on sqlite")
     }
 
@@ -61,7 +75,11 @@ impl SqlRenderer for SqliteRenderer {
         unreachable!("AddForeignKey on SQLite")
     }
 
-    fn render_alter_table(&self, alter_table: &AlterTable, schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_alter_table(
+        &self,
+        alter_table: &AlterTable,
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         let AlterTable { changes, table_ids } = alter_table;
         let tables = schemas.walk(*table_ids);
         let mut statements = Vec::new();
@@ -86,7 +104,9 @@ impl SqlRenderer for SqliteRenderer {
                 }
                 TableChange::AddPrimaryKey => unreachable!("AddPrimaryKey on SQLite"),
                 TableChange::AlterColumn(_) => unreachable!("AlterColumn on SQLite"),
-                TableChange::DropAndRecreateColumn { .. } => unreachable!("DropAndRecreateColumn on SQLite"),
+                TableChange::DropAndRecreateColumn { .. } => {
+                    unreachable!("DropAndRecreateColumn on SQLite")
+                }
                 TableChange::DropColumn { .. } => unreachable!("DropColumn on SQLite"),
                 TableChange::DropPrimaryKey => unreachable!("DropPrimaryKey on SQLite"),
                 TableChange::RenamePrimaryKey => unreachable!("AddPrimaryKey on SQLite"),
@@ -101,10 +121,17 @@ impl SqlRenderer for SqliteRenderer {
     }
 
     fn render_create_table(&self, table: TableWalker<'_>) -> String {
-        self.render_create_table_as(table, QuotedWithPrefix(None, Quoted::sqlite_ident(table.name())))
+        self.render_create_table_as(
+            table,
+            QuotedWithPrefix(None, Quoted::sqlite_ident(table.name())),
+        )
     }
 
-    fn render_create_table_as(&self, table: TableWalker<'_>, table_name: QuotedWithPrefix<&str>) -> String {
+    fn render_create_table_as(
+        &self,
+        table: TableWalker<'_>,
+        table_name: QuotedWithPrefix<&str>,
+    ) -> String {
         let mut create_table = sql_ddl::sqlite::CreateTable {
             table_name: &table_name,
             columns: table.columns().map(|col| render_column(&col)).collect(),
@@ -112,10 +139,15 @@ impl SqlRenderer for SqliteRenderer {
             foreign_keys: table
                 .foreign_keys()
                 .map(move |fk| sql_ddl::sqlite::ForeignKey {
-                    constrains: fk.constrained_columns().map(|col| col.name().into()).collect(),
+                    constrains: fk
+                        .constrained_columns()
+                        .map(|col| col.name().into())
+                        .collect(),
                     references: (
                         fk.referenced_table().name().into(),
-                        fk.referenced_columns().map(|col| col.name().into()).collect(),
+                        fk.referenced_columns()
+                            .map(|col| col.name().into())
+                            .collect(),
                     ),
                     constraint_name: fk.constraint_name().map(From::from),
                     on_delete: Some(match fk.on_delete_action() {
@@ -123,14 +155,18 @@ impl SqlRenderer for SqliteRenderer {
                         ForeignKeyAction::Restrict => sql_ddl::sqlite::ForeignKeyAction::Restrict,
                         ForeignKeyAction::Cascade => sql_ddl::sqlite::ForeignKeyAction::Cascade,
                         ForeignKeyAction::SetNull => sql_ddl::sqlite::ForeignKeyAction::SetNull,
-                        ForeignKeyAction::SetDefault => sql_ddl::sqlite::ForeignKeyAction::SetDefault,
+                        ForeignKeyAction::SetDefault => {
+                            sql_ddl::sqlite::ForeignKeyAction::SetDefault
+                        }
                     }),
                     on_update: Some(match fk.on_update_action() {
                         ForeignKeyAction::NoAction => sql_ddl::sqlite::ForeignKeyAction::NoAction,
                         ForeignKeyAction::Restrict => sql_ddl::sqlite::ForeignKeyAction::Restrict,
                         ForeignKeyAction::Cascade => sql_ddl::sqlite::ForeignKeyAction::Cascade,
                         ForeignKeyAction::SetNull => sql_ddl::sqlite::ForeignKeyAction::SetNull,
-                        ForeignKeyAction::SetDefault => sql_ddl::sqlite::ForeignKeyAction::SetDefault,
+                        ForeignKeyAction::SetDefault => {
+                            sql_ddl::sqlite::ForeignKeyAction::SetDefault
+                        }
                     }),
                 })
                 .collect(),
@@ -149,7 +185,11 @@ impl SqlRenderer for SqliteRenderer {
         unreachable!("Unreachable render_drop_enum() on SQLite. SQLite does not have enums.")
     }
 
-    fn render_drop_foreign_key(&self, _namespace: Option<&str>, _foreign_key: ForeignKeyWalker<'_>) -> String {
+    fn render_drop_foreign_key(
+        &self,
+        _namespace: Option<&str>,
+        _foreign_key: ForeignKeyWalker<'_>,
+    ) -> String {
         unreachable!("render_drop_foreign_key on SQLite")
     }
 
@@ -157,7 +197,10 @@ impl SqlRenderer for SqliteRenderer {
         format!("DROP INDEX {}", self.quote(index.name()))
     }
 
-    fn render_drop_and_recreate_index(&self, indexes: MigrationPair<IndexWalker<'_>>) -> Vec<String> {
+    fn render_drop_and_recreate_index(
+        &self,
+        indexes: MigrationPair<IndexWalker<'_>>,
+    ) -> Vec<String> {
         vec![
             self.render_drop_index(None, indexes.previous),
             self.render_create_index(indexes.next),
@@ -183,7 +226,11 @@ impl SqlRenderer for SqliteRenderer {
         })
     }
 
-    fn render_redefine_tables(&self, tables: &[RedefineTable], schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_redefine_tables(
+        &self,
+        tables: &[RedefineTable],
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         // Based on 'Making Other Kinds Of Table Schema Changes' from https://www.sqlite.org/lang_altertable.html,
         // and on https://developers.cloudflare.com/d1/reference/database-commands/#pragma-defer_foreign_keys--onoff.
         let mut result: Vec<String> = vec![];
@@ -204,7 +251,12 @@ impl SqlRenderer for SqliteRenderer {
                 QuotedWithPrefix(None, Quoted::sqlite_ident(&temporary_table_name)),
             ));
 
-            copy_current_table_into_new_table(&mut result, redefine_table, tables, &temporary_table_name);
+            copy_current_table_into_new_table(
+                &mut result,
+                redefine_table,
+                tables,
+                &temporary_table_name,
+            );
 
             result.push(format!(r#"DROP TABLE "{}""#, tables.previous.name()));
 
@@ -245,7 +297,11 @@ impl SqlRenderer for SqliteRenderer {
         format!(r#"DROP VIEW "{}""#, view.name())
     }
 
-    fn render_drop_user_defined_type(&self, _namespace: Option<&str>, _: &UserDefinedTypeWalker<'_>) -> String {
+    fn render_drop_user_defined_type(
+        &self,
+        _namespace: Option<&str>,
+        _: &UserDefinedTypeWalker<'_>,
+    ) -> String {
         unreachable!("render_drop_user_defined_type on SQLite")
     }
 
@@ -273,7 +329,8 @@ fn render_column_type(t: &ColumnType) -> &str {
 }
 
 fn escape_quotes(s: &str) -> Cow<'_, str> {
-    static STRING_LITERAL_CHARACTER_TO_ESCAPE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"'"#).unwrap());
+    static STRING_LITERAL_CHARACTER_TO_ESCAPE_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r#"'"#).unwrap());
 
     STRING_LITERAL_CHARACTER_TO_ESCAPE_RE.replace_all(s, "'$0")
 }
@@ -298,28 +355,32 @@ fn copy_current_table_into_new_table(
         .iter()
         .map(|(column_ids, _, _)| tables.next.walk(column_ids.next).name());
 
-    let source_columns = redefine_table.column_pairs.iter().map(|(column_ides, changes, _)| {
-        let columns = tables.map(|t| t.schema).walk(*column_ides);
+    let source_columns = redefine_table
+        .column_pairs
+        .iter()
+        .map(|(column_ides, changes, _)| {
+            let columns = tables.map(|t| t.schema).walk(*column_ides);
 
-        let col_became_required_with_a_default =
-            changes.arity_changed() && columns.next.arity().is_required() && columns.next.default().is_some();
+            let col_became_required_with_a_default = changes.arity_changed()
+                && columns.next.arity().is_required()
+                && columns.next.default().is_some();
 
-        if col_became_required_with_a_default {
-            format!(
-                "coalesce({column_name}, {default_value}) AS {column_name}",
-                column_name = Quoted::sqlite_ident(columns.previous.name()),
-                default_value = render_default(
-                    columns
-                        .next
-                        .default()
-                        .expect("default on required column with default")
-                        .inner()
+            if col_became_required_with_a_default {
+                format!(
+                    "coalesce({column_name}, {default_value}) AS {column_name}",
+                    column_name = Quoted::sqlite_ident(columns.previous.name()),
+                    default_value = render_default(
+                        columns
+                            .next
+                            .default()
+                            .expect("default on required column with default")
+                            .inner()
+                    )
                 )
-            )
-        } else {
-            Quoted::sqlite_ident(columns.previous.name()).to_string()
-        }
-    });
+            } else {
+                Quoted::sqlite_ident(columns.previous.name()).to_string()
+            }
+        });
 
     let query = format!(
         r#"INSERT INTO "{temporary_table_name}" ({destination_columns}) SELECT {source_columns} FROM "{previous_table_name}""#,
@@ -355,7 +416,8 @@ fn render_column<'a>(column: &TableColumnWalker<'a>) -> ddl::Column<'a> {
 fn render_default(default: &DefaultValue) -> Cow<'_, str> {
     match default.kind() {
         DefaultKind::DbGenerated(Some(val)) => val.as_str().into(),
-        DefaultKind::Value(PrismaValue::String(val)) | DefaultKind::Value(PrismaValue::Enum(val)) => {
+        DefaultKind::Value(PrismaValue::String(val))
+        | DefaultKind::Value(PrismaValue::Enum(val)) => {
             Quoted::sqlite_string(escape_quotes(val)).to_string().into()
         }
         DefaultKind::Value(PrismaValue::Bytes(b)) => {
@@ -364,8 +426,12 @@ fn render_default(default: &DefaultValue) -> Cow<'_, str> {
             Quoted::sqlite_string(out).to_string().into()
         }
         DefaultKind::Now => "CURRENT_TIMESTAMP".into(),
-        DefaultKind::Value(PrismaValue::DateTime(val)) => Quoted::sqlite_string(val).to_string().into(),
+        DefaultKind::Value(PrismaValue::DateTime(val)) => {
+            Quoted::sqlite_string(val).to_string().into()
+        }
         DefaultKind::Value(val) => val.to_string().into(),
-        DefaultKind::DbGenerated(None) | DefaultKind::Sequence(_) | DefaultKind::UniqueRowid => unreachable!(),
+        DefaultKind::DbGenerated(None) | DefaultKind::Sequence(_) | DefaultKind::UniqueRowid => {
+            unreachable!()
+        }
     }
 }

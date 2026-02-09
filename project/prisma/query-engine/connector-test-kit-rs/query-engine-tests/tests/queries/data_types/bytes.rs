@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite(schema(common_nullable_types))]
 mod bytes {
-    use query_engine_tests::{EngineProtocol, Runner, run_query};
+    use query_engine_tests::EngineProtocol;
+    use query_engine_tests::Runner;
+    use query_engine_tests::run_query;
 
     #[test_suite]
     mod issue_687 {
@@ -70,7 +72,9 @@ mod bytes {
 
         async fn create_child(runner: &Runner, data: &str) -> TestResult<()> {
             runner
-                .query(format!("mutation {{ createOneChild(data: {data}) {{ childId }} }}"))
+                .query(format!(
+                    "mutation {{ createOneChild(data: {data}) {{ childId }} }}"
+                ))
                 .await?
                 .assert_success();
             Ok(())
@@ -78,7 +82,9 @@ mod bytes {
 
         async fn create_parent(runner: &Runner, data: &str) -> TestResult<()> {
             runner
-                .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+                .query(format!(
+                    "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+                ))
                 .await?
                 .assert_success();
             Ok(())
@@ -91,7 +97,10 @@ mod bytes {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { bytes } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { bytes } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -174,7 +183,9 @@ mod bytes {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

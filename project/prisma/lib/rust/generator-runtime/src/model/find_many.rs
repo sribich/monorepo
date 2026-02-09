@@ -1,13 +1,21 @@
 use std::ops::Not;
 
-use query_core::{ArgumentValue, Operation, Selection};
+use query_core::ArgumentValue;
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{ModelOperation, ModelReadOperation, Query, QueryConvert, QueryResult, SelectionQuery, query},
-};
+use super::Model;
+use super::WhereInput;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::ModelOperation;
+use crate::query::ModelReadOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct FindMany<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -241,8 +249,10 @@ impl<TModel: Model> FindManyParams<TModel> {
                     .into(),
                 )
             }),
-            self.skip.map(|skip| ("skip".to_owned(), PrismaValue::Int(skip).into())),
-            self.take.map(|take| ("take".to_owned(), PrismaValue::Int(take).into())),
+            self.skip
+                .map(|skip| ("skip".to_owned(), PrismaValue::Int(skip).into())),
+            self.take
+                .map(|take| ("take".to_owned(), PrismaValue::Int(take).into())),
         ]
         .into_iter()
         .flatten()

@@ -1,6 +1,13 @@
-use crate::{DomainError, FieldSelection, PrismaValue, ScalarFieldRef, SelectedField};
+use std::borrow::Cow;
+use std::convert::TryFrom;
+
 use itertools::Itertools;
-use std::{borrow::Cow, convert::TryFrom};
+
+use crate::DomainError;
+use crate::FieldSelection;
+use crate::PrismaValue;
+use crate::ScalarFieldRef;
+use crate::SelectedField;
 
 /// Represents a set of results.
 #[derive(Default, Clone, PartialEq, Eq, Hash)]
@@ -27,7 +34,10 @@ impl SelectionResult {
         T: Into<SelectedField>,
     {
         Self {
-            pairs: pairs.into_iter().map(|(rt, value)| (rt.into(), value)).collect(),
+            pairs: pairs
+                .into_iter()
+                .map(|(rt, value)| (rt.into(), value))
+                .collect(),
         }
     }
 
@@ -79,7 +89,9 @@ impl SelectionResult {
                     .map(|selected_field| {
                         self.get(selected_field)
                             .map(|value| (selected_field.clone(), value.clone()))
-                            .expect("Error splitting `ReturnValues`: `FieldSelection` doesn't match.")
+                            .expect(
+                                "Error splitting `ReturnValues`: `FieldSelection` doesn't match.",
+                            )
                     })
                     .collect();
 
@@ -162,8 +174,8 @@ impl TryFrom<SelectionResult> for PrismaValue {
 }
 
 impl IntoIterator for SelectionResult {
-    type Item = (SelectedField, PrismaValue);
     type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = (SelectedField, PrismaValue);
 
     fn into_iter(self) -> Self::IntoIter {
         self.pairs.into_iter()
@@ -184,7 +196,12 @@ where
     T: Into<SelectedField>,
 {
     fn from(tuples: Vec<(T, PrismaValue)>) -> Self {
-        Self::new(tuples.into_iter().map(|(x, value)| (x.into(), value)).collect())
+        Self::new(
+            tuples
+                .into_iter()
+                .map(|(x, value)| (x.into(), value))
+                .collect(),
+        )
     }
 }
 

@@ -6,7 +6,10 @@ pub fn enclose_all<T>(input: Vec<T>, with: &str) -> Vec<String>
 where
     T: AsRef<str>,
 {
-    input.into_iter().map(|el| enclose(el.as_ref(), with)).collect()
+    input
+        .into_iter()
+        .map(|el| enclose(el.as_ref(), with))
+        .collect()
 }
 
 pub fn stringify<T>(input: Vec<T>) -> Vec<String>

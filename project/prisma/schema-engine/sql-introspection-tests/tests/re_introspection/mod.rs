@@ -6,7 +6,8 @@ mod sqlite;
 mod vitess;
 
 use barrel::types;
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 
@@ -46,7 +47,8 @@ async fn mapped_model_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expected).await;
+    api.expect_re_introspected_datamodel(input_dm, expected)
+        .await;
 
     let expected = expect![[r#"
         *** WARNING ***
@@ -96,7 +98,8 @@ async fn manually_overwritten_mapped_field_name(api: &mut TestApi) -> TestResult
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expected).await;
+    api.expect_re_introspected_datamodel(input_dm, expected)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -105,7 +108,8 @@ async fn manually_overwritten_mapped_field_name(api: &mut TestApi) -> TestResult
           - Model: "User", field: "custom_test"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -314,7 +318,8 @@ async fn mapped_field_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expected).await;
+    api.expect_re_introspected_datamodel(input_dm, expected)
+        .await;
 
     let expected = expect![[r#"
         *** WARNING ***
@@ -335,7 +340,8 @@ async fn mapped_enum_name(api: &mut TestApi) -> TestResult {
     let sql_family = api.sql_family();
 
     if sql_family.is_postgres() {
-        api.raw_cmd("CREATE TYPE color AS ENUM ( \'black\', \'white\')").await;
+        api.raw_cmd("CREATE TYPE color AS ENUM ( \'black\', \'white\')")
+            .await;
     }
 
     api.barrel()
@@ -424,7 +430,10 @@ async fn manually_remapped_enum_value_name(api: &mut TestApi) -> TestResult {
         .execute(|migration| {
             migration.create_table("User", |t| {
                 t.add_column("id", types::primary());
-                t.add_column("color", types::custom("color").nullable(false).default("_black"));
+                t.add_column(
+                    "color",
+                    types::custom("color").nullable(false).default("_black"),
+                );
             });
 
             migration.create_table("Unrelated", |t| {
@@ -462,7 +471,8 @@ async fn manually_remapped_enum_value_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -471,7 +481,8 @@ async fn manually_remapped_enum_value_name(api: &mut TestApi) -> TestResult {
           - Enum: "color", value: "BLACK"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -526,7 +537,8 @@ async fn manually_re_mapped_enum_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     let expected = expect![[r#"
         *** WARNING ***
@@ -542,7 +554,8 @@ async fn manually_re_mapped_enum_name(api: &mut TestApi) -> TestResult {
 
 #[test_connector(tags(Postgres))]
 async fn manually_re_mapped_invalid_enum_values(api: &mut TestApi) -> TestResult {
-    api.raw_cmd(r#"CREATE TYPE "invalid" as ENUM ('@', '-')"#).await;
+    api.raw_cmd(r#"CREATE TYPE "invalid" as ENUM ('@', '-')"#)
+        .await;
 
     api.barrel()
         .execute(move |migration| {
@@ -585,7 +598,8 @@ async fn manually_re_mapped_invalid_enum_values(api: &mut TestApi) -> TestResult
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     let expected = expect![[r#"
         *** WARNING ***
@@ -1110,7 +1124,8 @@ async fn comments_should_be_kept(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     Ok(())
 }
@@ -1237,7 +1252,8 @@ async fn multiple_many_to_many_on_same_model(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     Ok(())
 }
@@ -1284,7 +1300,8 @@ async fn re_introspecting_mysql_enum_names(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expected).await;
+    api.expect_re_introspected_datamodel(input_dm, expected)
+        .await;
 
     let expected = expect![[r#""#]];
     api.expect_re_introspect_warnings(input_dm, expected).await;
@@ -1336,7 +1353,8 @@ async fn re_introspecting_mysql_enum_names_if_enum_is_reused(api: &mut TestApi) 
           white
         }
     "#]];
-    api.expect_re_introspected_datamodel(input_dm, expected).await;
+    api.expect_re_introspected_datamodel(input_dm, expected)
+        .await;
     Ok(())
 }
 
@@ -1463,7 +1481,9 @@ async fn re_introspecting_ignore(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(exclude(Vitess, Sqlite))]
-async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(api: &mut TestApi) -> TestResult {
+async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(
+    api: &mut TestApi,
+) -> TestResult {
     // We do not have enough information to correctly assign which field should point to column A in the
     // join table and which one to B
     // Upon table creation this is dependant on lexicographic order of the names of the fields, but we
@@ -1506,7 +1526,8 @@ async fn do_not_try_to_keep_custom_many_to_many_self_relation_names(api: &mut Te
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, final_dm).await;
+    api.expect_re_introspected_datamodel(input_dm, final_dm)
+        .await;
 
     Ok(())
 }
@@ -1566,9 +1587,12 @@ async fn re_introspecting_custom_index_order(api: &mut TestApi) -> TestResult {
     let create_table = format!(
         "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, a jsonb not null, b jsonb not null, c jsonb not null)",
     );
-    let create_idx_a = format!("CREATE INDEX \"aaaaaa\" ON \"{schema_name}\".\"A\" USING GIN (b);",);
-    let create_idx_b = format!("CREATE INDEX \"bbbbbb\" ON \"{schema_name}\".\"A\" USING GIN (a);",);
-    let create_idx_c = format!("CREATE INDEX \"cccccc\" ON \"{schema_name}\".\"A\" USING GIN (c);",);
+    let create_idx_a =
+        format!("CREATE INDEX \"aaaaaa\" ON \"{schema_name}\".\"A\" USING GIN (b);",);
+    let create_idx_b =
+        format!("CREATE INDEX \"bbbbbb\" ON \"{schema_name}\".\"A\" USING GIN (a);",);
+    let create_idx_c =
+        format!("CREATE INDEX \"cccccc\" ON \"{schema_name}\".\"A\" USING GIN (c);",);
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx_a).await?;

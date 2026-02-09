@@ -1,14 +1,28 @@
-use psl::parser_database::{ExtensionTypes, ast::FieldArity, walkers::*};
-use sql_schema_describer::{self as sql, ColumnArity, ColumnType, ColumnTypeFamily};
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::ast::FieldArity;
+use psl::parser_database::walkers::*;
+use sql_schema_describer::ColumnArity;
+use sql_schema_describer::ColumnType;
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::{self as sql};
 
 pub(crate) trait SqlSchemaCalculatorFlavour {
     fn datamodel_connector(&self) -> &dyn psl::datamodel_connector::Connector;
 
     fn calculate_enums(&self, _ctx: &mut super::Context<'_>) {}
 
-    fn calculate_extension_types(&self, _ctx: &mut super::Context<'_>, _extension_types: &dyn ExtensionTypes) {}
+    fn calculate_extension_types(
+        &self,
+        _ctx: &mut super::Context<'_>,
+        _extension_types: &dyn ExtensionTypes,
+    ) {
+    }
 
-    fn column_type_for_enum(&self, _enm: EnumWalker<'_>, _ctx: &super::Context<'_>) -> Option<sql::ColumnTypeFamily> {
+    fn column_type_for_enum(
+        &self,
+        _enm: EnumWalker<'_>,
+        _ctx: &super::Context<'_>,
+    ) -> Option<sql::ColumnTypeFamily> {
         None
     }
 
@@ -16,7 +30,11 @@ pub(crate) trait SqlSchemaCalculatorFlavour {
         None
     }
 
-    fn column_type_for_unsupported_type(&self, field: ScalarFieldWalker<'_>, description: String) -> sql::ColumnType {
+    fn column_type_for_unsupported_type(
+        &self,
+        field: ScalarFieldWalker<'_>,
+        description: String,
+    ) -> sql::ColumnType {
         ColumnType {
             full_data_type: description.clone(),
             family: ColumnTypeFamily::Unsupported(description),
@@ -37,7 +55,11 @@ pub(crate) trait SqlSchemaCalculatorFlavour {
         false
     }
 
-    fn m2m_foreign_key_action(&self, _model_a: ModelWalker<'_>, _model_b: ModelWalker<'_>) -> sql::ForeignKeyAction {
+    fn m2m_foreign_key_action(
+        &self,
+        _model_a: ModelWalker<'_>,
+        _model_b: ModelWalker<'_>,
+    ) -> sql::ForeignKeyAction {
         sql::ForeignKeyAction::Cascade
     }
 

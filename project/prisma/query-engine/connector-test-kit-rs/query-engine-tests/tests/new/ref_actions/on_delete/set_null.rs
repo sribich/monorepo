@@ -3,7 +3,11 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(suite = "setnull_onD_1to1_opt", schema(optional), relation_mode = "prisma")]
+#[test_suite(
+    suite = "setnull_onD_1to1_opt",
+    schema(optional),
+    relation_mode = "prisma"
+)]
 mod one2one_opt {
     fn optional() -> String {
         let schema = indoc! {
@@ -246,7 +250,10 @@ mod one2one_opt {
     }
 
     // SET_NULL should also apply to child relations sharing a common fk
-    #[connector_test(schema(one2one2one_opt_set_null_cascade), exclude_features("relationJoins"))]
+    #[connector_test(
+        schema(one2one2one_opt_set_null_cascade),
+        exclude_features("relationJoins")
+    )]
     async fn delete_parent_set_null_cascade(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(runner, r#"mutation {

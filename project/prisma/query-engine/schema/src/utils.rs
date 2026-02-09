@@ -36,6 +36,10 @@ pub(crate) fn scalar_filter_name(
     let list = if list { "List" } else { "" };
     let nullable = if nullable { "Nullable" } else { "" };
     let nested = if nested { "Nested" } else { "" };
-    let aggregates = if include_aggregates { "WithAggregates" } else { "" };
+    let aggregates = if include_aggregates {
+        "WithAggregates"
+    } else {
+        ""
+    };
     format!("{nested}{typ}{nullable}{list}{aggregates}Filter")
 }

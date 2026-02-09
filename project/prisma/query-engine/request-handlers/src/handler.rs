@@ -1,19 +1,34 @@
-use super::GQLResponse;
-use crate::{GQLError, PrismaResponse, RequestBody};
+use std::collections::HashMap;
+use std::fmt;
+use std::panic::AssertUnwindSafe;
+use std::str::FromStr;
+
 use bigdecimal::BigDecimal;
 use futures::FutureExt;
 use indexmap::IndexMap;
-use query_core::{
-    ArgumentValue, ArgumentValueObject, BatchDocument, BatchDocumentTransaction, CompactedDocument, Operation,
-    QueryDocument, QueryExecutor, TxId,
-    constants::custom_types,
-    protocol::EngineProtocol,
-    response_ir::{Item, ResponseData},
-    schema::QuerySchemaRef,
-};
-use query_structure::{PrismaValue, parse_datetime, stringify_datetime};
-use std::{collections::HashMap, fmt, panic::AssertUnwindSafe, str::FromStr};
+use query_core::ArgumentValue;
+use query_core::ArgumentValueObject;
+use query_core::BatchDocument;
+use query_core::BatchDocumentTransaction;
+use query_core::CompactedDocument;
+use query_core::Operation;
+use query_core::QueryDocument;
+use query_core::QueryExecutor;
+use query_core::TxId;
+use query_core::constants::custom_types;
+use query_core::protocol::EngineProtocol;
+use query_core::response_ir::Item;
+use query_core::response_ir::ResponseData;
+use query_core::schema::QuerySchemaRef;
+use query_structure::PrismaValue;
+use query_structure::parse_datetime;
+use query_structure::stringify_datetime;
 use telemetry::TraceParent;
+
+use super::GQLResponse;
+use crate::GQLError;
+use crate::PrismaResponse;
+use crate::RequestBody;
 
 type ArgsToResult = (HashMap<String, ArgumentValue>, IndexMap<String, Item>);
 
@@ -54,9 +69,12 @@ impl<'a> RequestHandler<'a> {
             Ok(QueryDocument::Single(query)) => self.handle_single(query, tx_id, traceparent).await,
             Ok(QueryDocument::Multi(batch)) => match batch.compact(self.query_schema) {
                 BatchDocument::Multi(batch, transaction) => {
-                    self.handle_batch(batch, transaction, tx_id, traceparent).await
+                    self.handle_batch(batch, transaction, tx_id, traceparent)
+                        .await
                 }
-                BatchDocument::Compact(compacted) => self.handle_compacted(compacted, tx_id, traceparent).await,
+                BatchDocument::Compact(compacted) => {
+                    self.handle_compacted(compacted, tx_id, traceparent).await
+                }
             },
 
             Err(err) => PrismaResponse::Single(GQLError::from_handler_error(err).into()),
@@ -184,12 +202,14 @@ impl<'a> RequestHandler<'a> {
 
                                 responses.insert_data(&singular_name, Item::Map(result));
                             }
-                            None if throw_on_empty => responses.insert_error(GQLError::from_user_facing_error(
-                                user_facing_errors::query_engine::RecordRequiredButNotFound {
-                                    cause: "No record was found for a query.".to_owned(),
-                                }
-                                .into(),
-                            )),
+                            None if throw_on_empty => {
+                                responses.insert_error(GQLError::from_user_facing_error(
+                                    user_facing_errors::query_engine::RecordRequiredButNotFound {
+                                        cause: "No record was found for a query.".to_owned(),
+                                    }
+                                    .into(),
+                                ))
+                            }
                             None => responses.insert_data(&singular_name, Item::null()),
                         }
 
@@ -234,7 +254,10 @@ impl<'a> RequestHandler<'a> {
             .map(|(_, result)| result)
     }
 
-    fn compare_args(left: &HashMap<String, ArgumentValue>, right: &HashMap<String, ArgumentValue>) -> bool {
+    fn compare_args(
+        left: &HashMap<String, ArgumentValue>,
+        right: &HashMap<String, ArgumentValue>,
+    ) -> bool {
         let (large, small) = if left.len() > right.len() {
             (&left, &right)
         } else {
@@ -263,12 +286,16 @@ impl<'a> RequestHandler<'a> {
     /// This should likely _not_ be used outside of this specific context.
     fn compare_values(left: &ArgumentValue, right: &ArgumentValue) -> bool {
         match (left, right) {
-            (ArgumentValue::Scalar(PrismaValue::String(t1)), ArgumentValue::Scalar(PrismaValue::DateTime(t2)))
-            | (ArgumentValue::Scalar(PrismaValue::DateTime(t2)), ArgumentValue::Scalar(PrismaValue::String(t1))) => {
-                parse_datetime(t1)
-                    .map(|t1| &t1 == t2)
-                    .unwrap_or_else(|_| t1 == stringify_datetime(t2).as_str())
-            }
+            (
+                ArgumentValue::Scalar(PrismaValue::String(t1)),
+                ArgumentValue::Scalar(PrismaValue::DateTime(t2)),
+            )
+            | (
+                ArgumentValue::Scalar(PrismaValue::DateTime(t2)),
+                ArgumentValue::Scalar(PrismaValue::String(t1)),
+            ) => parse_datetime(t1)
+                .map(|t1| &t1 == t2)
+                .unwrap_or_else(|_| t1 == stringify_datetime(t2).as_str()),
             (
                 ArgumentValue::Scalar(PrismaValue::Int(i1) | PrismaValue::BigInt(i1)),
                 ArgumentValue::Scalar(PrismaValue::Float(i2)),
@@ -277,18 +304,28 @@ impl<'a> RequestHandler<'a> {
                 ArgumentValue::Scalar(PrismaValue::Float(i2)),
                 ArgumentValue::Scalar(PrismaValue::Int(i1) | PrismaValue::BigInt(i1)),
             ) => BigDecimal::from(*i1) == *i2,
-            (ArgumentValue::Scalar(PrismaValue::Int(i1)), ArgumentValue::Scalar(PrismaValue::BigInt(i2)))
-            | (ArgumentValue::Scalar(PrismaValue::BigInt(i2)), ArgumentValue::Scalar(PrismaValue::Int(i1))) => {
-                *i1 == *i2
+            (
+                ArgumentValue::Scalar(PrismaValue::Int(i1)),
+                ArgumentValue::Scalar(PrismaValue::BigInt(i2)),
+            )
+            | (
+                ArgumentValue::Scalar(PrismaValue::BigInt(i2)),
+                ArgumentValue::Scalar(PrismaValue::Int(i1)),
+            ) => *i1 == *i2,
+            (
+                ArgumentValue::Scalar(PrismaValue::Enum(s1)),
+                ArgumentValue::Scalar(PrismaValue::String(s2)),
+            )
+            | (
+                ArgumentValue::Scalar(PrismaValue::String(s1)),
+                ArgumentValue::Scalar(PrismaValue::Enum(s2)),
+            ) => *s1 == *s2,
+            (ArgumentValue::Object(t1), t2) | (t2, ArgumentValue::Object(t1)) => {
+                match Self::unwrap_value(t1) {
+                    Some(t1) => Self::compare_values(t1, t2),
+                    None => left == right,
+                }
             }
-            (ArgumentValue::Scalar(PrismaValue::Enum(s1)), ArgumentValue::Scalar(PrismaValue::String(s2)))
-            | (ArgumentValue::Scalar(PrismaValue::String(s1)), ArgumentValue::Scalar(PrismaValue::Enum(s2))) => {
-                *s1 == *s2
-            }
-            (ArgumentValue::Object(t1), t2) | (t2, ArgumentValue::Object(t1)) => match Self::unwrap_value(t1) {
-                Some(t1) => Self::compare_values(t1, t2),
-                None => left == right,
-            },
             (
                 ArgumentValue::Scalar(PrismaValue::Int(s1) | PrismaValue::BigInt(s1)),
                 ArgumentValue::Scalar(PrismaValue::String(s2)),
@@ -299,10 +336,16 @@ impl<'a> RequestHandler<'a> {
             ) => BigDecimal::from_str(s2)
                 .map(|s2| s2 == BigDecimal::from(*s1))
                 .unwrap_or(false),
-            (ArgumentValue::Scalar(PrismaValue::Float(s1)), ArgumentValue::Scalar(PrismaValue::String(s2)))
-            | (ArgumentValue::Scalar(PrismaValue::String(s2)), ArgumentValue::Scalar(PrismaValue::Float(s1))) => {
-                BigDecimal::from_str(s2).map(|s2| s2 == *s1).unwrap_or(false)
-            }
+            (
+                ArgumentValue::Scalar(PrismaValue::Float(s1)),
+                ArgumentValue::Scalar(PrismaValue::String(s2)),
+            )
+            | (
+                ArgumentValue::Scalar(PrismaValue::String(s2)),
+                ArgumentValue::Scalar(PrismaValue::Float(s1)),
+            ) => BigDecimal::from_str(s2)
+                .map(|s2| s2 == *s1)
+                .unwrap_or(false),
             (left, right) => left == right,
         }
     }

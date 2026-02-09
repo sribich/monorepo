@@ -2,11 +2,15 @@ mod implicit_many_to_many;
 mod inline;
 mod two_way_embedded_many_to_many;
 
-pub use implicit_many_to_many::{ImplicitManyToManyRelationTableName, ImplicitManyToManyRelationWalker};
-pub use inline::{CompleteInlineRelationWalker, InlineRelationWalker};
+pub use implicit_many_to_many::ImplicitManyToManyRelationTableName;
+pub use implicit_many_to_many::ImplicitManyToManyRelationWalker;
+pub use inline::CompleteInlineRelationWalker;
+pub use inline::InlineRelationWalker;
 pub use two_way_embedded_many_to_many::TwoWayEmbeddedManyToManyRelationWalker;
 
-use crate::{ast, relations::*, walkers::*};
+use crate::ast;
+use crate::relations::*;
+use crate::walkers::*;
 
 /// A relation that has the minimal amount of information for us to create one. Useful for
 /// validation purposes. Holds all possible relation types.
@@ -22,7 +26,10 @@ impl<'db> RelationWalker<'db> {
     /// The relation fields that define the relation. A then B.
     pub fn relation_fields(self) -> impl Iterator<Item = RelationFieldWalker<'db>> {
         let (a, b) = self.ast_relation().attributes.fields();
-        [a, b].into_iter().flatten().map(move |field| self.walk(field))
+        [a, b]
+            .into_iter()
+            .flatten()
+            .map(move |field| self.walk(field))
     }
 
     /// Is any field part of the relation ignored (`@ignore`) or unsupported?
@@ -60,7 +67,9 @@ impl<'db> RelationWalker<'db> {
         if self.ast_relation().is_implicit_many_to_many() {
             RefinedRelationWalker::ImplicitManyToMany(self.walk(ManyToManyRelationId(self.id)))
         } else if self.ast_relation().is_two_way_embedded_many_to_many() {
-            RefinedRelationWalker::TwoWayEmbeddedManyToMany(TwoWayEmbeddedManyToManyRelationWalker(self))
+            RefinedRelationWalker::TwoWayEmbeddedManyToMany(TwoWayEmbeddedManyToManyRelationWalker(
+                self,
+            ))
         } else {
             RefinedRelationWalker::Inline(InlineRelationWalker(self))
         }
@@ -73,7 +82,9 @@ impl<'db> RelationWalker<'db> {
     /// //                           ^^^^^^^^^^^^^^^^^^^^^^^
     /// ```
     pub fn explicit_relation_name(self) -> Option<&'db str> {
-        self.ast_relation().relation_name.map(|string_id| &self.db[string_id])
+        self.ast_relation()
+            .relation_name
+            .map(|string_id| &self.db[string_id])
     }
 
     /// The relation name, explicit or inferred.
@@ -88,7 +99,10 @@ impl<'db> RelationWalker<'db> {
             .relation_name
             .map(|s| RelationName::Explicit(&self.db[s]))
             .unwrap_or_else(|| {
-                RelationName::generated(self.walk(relation.model_a).name(), self.walk(relation.model_b).name())
+                RelationName::generated(
+                    self.walk(relation.model_a).name(),
+                    self.walk(relation.model_b).name(),
+                )
             })
     }
 

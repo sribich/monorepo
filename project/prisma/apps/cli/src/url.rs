@@ -27,7 +27,11 @@ pub fn parse_connection_string(url: &str) -> DatabaseConnectionParams {
 
     DatabaseConnectionParams {
         connector: connector.to_owned(),
-        user: if user.is_empty() { None } else { Some(user.to_owned()) },
+        user: if user.is_empty() {
+            None
+        } else {
+            Some(user.to_owned())
+        },
         password: uri.password().map(str::to_owned),
         host: uri.host().map(|it| it.to_string()),
         port: uri.port(),

@@ -1,8 +1,7 @@
 //! API type definitions used by the JSON-RPC methods.
 
-pub use crate::{
-    migration_directory::{MigrationDirectory, MigrationFile},
-};
+pub use crate::migration_directory::MigrationDirectory;
+pub use crate::migration_directory::MigrationFile;
 
 // ---- Common type definitions ----
 

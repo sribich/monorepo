@@ -1,6 +1,6 @@
+use super::ExpressionPosition;
+use super::WithSpan;
 use crate::ast::{self};
-
-use super::{ExpressionPosition, WithSpan};
 
 /// In an model attribute definition
 #[derive(Debug)]
@@ -43,8 +43,14 @@ impl<'ast> AttributePosition<'ast> {
             arg_name = None;
         }
 
-        if let Some(arg) = attr.arguments.iter().find(|arg| arg.span().contains(position)) {
-            if let ExpressionPosition::FunctionArgument(fun, name) = ExpressionPosition::new(&arg.value, position) {
+        if let Some(arg) = attr
+            .arguments
+            .iter()
+            .find(|arg| arg.span().contains(position))
+        {
+            if let ExpressionPosition::FunctionArgument(fun, name) =
+                ExpressionPosition::new(&arg.value, position)
+            {
                 return Self::FunctionArgument(fun, name, arg.value.to_string());
             }
 

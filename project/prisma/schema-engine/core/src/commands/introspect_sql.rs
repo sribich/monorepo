@@ -1,5 +1,9 @@
 /// TODO(sr): Fix this `as` use
-use schema_connector::{IntrospectSqlQueryInput, IntrospectSqlResult as ConnectorIntrospectSqlResult, SchemaConnector};
+use schema_connector::IntrospectSqlQueryInput;
+/// TODO(sr): Fix this `as` use
+use schema_connector::IntrospectSqlResult as ConnectorIntrospectSqlResult;
+/// TODO(sr): Fix this `as` use
+use schema_connector::SchemaConnector;
 
 /// Params type for the introspectSql method.
 #[derive(Debug)]
@@ -24,8 +28,6 @@ pub struct IntrospectSqlResult {
     /// The introspected queries.
     pub queries: Vec<SqlQueryOutput>,
 }
-
-
 
 /// Output for a single SQL query.
 #[derive(Debug)]

@@ -8,9 +8,10 @@ use query_engine_tests::*;
 
 #[test_suite(schema(schema))]
 mod prisma_4146 {
+    use std::time::Duration;
+
     use indoc::indoc;
     use query_engine_tests::run_query;
-    use std::time::Duration;
     use tokio::time::sleep;
 
     fn schema() -> String {

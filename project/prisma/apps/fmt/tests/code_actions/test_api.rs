@@ -1,8 +1,13 @@
-use lsp_types::{Diagnostic, DiagnosticSeverity};
+use std::fmt::Write as _;
+use std::io::Write as _;
+use std::path::PathBuf;
+use std::sync::LazyLock;
 
+use lsp_types::Diagnostic;
+use lsp_types::DiagnosticSeverity;
 use prisma_fmt::offsets::span_to_range;
-use psl::{SourceFile, diagnostics::Span};
-use std::{fmt::Write as _, io::Write as _, path::PathBuf, sync::LazyLock};
+use psl::SourceFile;
+use psl::diagnostics::Span;
 
 use crate::helpers::load_schema_files;
 
@@ -14,7 +19,10 @@ const SCENARIOS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/code_ac
 const TARGET_SCHEMA_FILE: &str = "_target.prisma";
 static UPDATE_EXPECT: LazyLock<bool> = LazyLock::new(|| std::env::var("UPDATE_EXPECT").is_ok());
 
-fn parse_schema_diagnostics(files: &[(String, String)], initiating_file_name: &str) -> Option<Vec<Diagnostic>> {
+fn parse_schema_diagnostics(
+    files: &[(String, String)],
+    initiating_file_name: &str,
+) -> Option<Vec<Diagnostic>> {
     let sources: Vec<_> = files
         .iter()
         .map(|(name, content)| (name.to_owned(), SourceFile::from(content)))
@@ -54,7 +62,12 @@ fn parse_schema_diagnostics(files: &[(String, String)], initiating_file_name: &s
     }
 }
 
-fn create_diagnostic(severity: DiagnosticSeverity, message: &str, span: Span, source: &str) -> Diagnostic {
+fn create_diagnostic(
+    severity: DiagnosticSeverity,
+    message: &str,
+    span: Span,
+    source: &str,
+) -> Diagnostic {
     Diagnostic {
         severity: Some(severity),
         message: message.to_owned(),
@@ -85,11 +98,14 @@ pub(crate) fn test_scenario(scenario_name: &str) {
                     None
                 }
             })
-            .unwrap_or_else(|| panic!("Expected to have {TARGET_SCHEMA_FILE} in when multi-file schema are used"))
+            .unwrap_or_else(|| {
+                panic!("Expected to have {TARGET_SCHEMA_FILE} in when multi-file schema are used")
+            })
             .as_str()
     };
 
-    let diagnostics = parse_schema_diagnostics(&schema_files, initiating_file_name).unwrap_or_default();
+    let diagnostics =
+        parse_schema_diagnostics(&schema_files, initiating_file_name).unwrap_or_default();
 
     path.clear();
     write!(path, "{SCENARIOS_PATH}/{scenario_name}/result.json").unwrap();
@@ -104,7 +120,9 @@ pub(crate) fn test_scenario(scenario_name: &str) {
             diagnostics,
             ..Default::default()
         },
-        work_done_progress_params: lsp_types::WorkDoneProgressParams { work_done_token: None },
+        work_done_progress_params: lsp_types::WorkDoneProgressParams {
+            work_done_token: None,
+        },
         partial_result_params: lsp_types::PartialResultParams {
             partial_result_token: None,
         },
@@ -115,9 +133,10 @@ pub(crate) fn test_scenario(scenario_name: &str) {
         &serde_json::to_string_pretty(&params).unwrap(),
     );
     // Prettify the JSON
-    let result =
-        serde_json::to_string_pretty(&serde_json::from_str::<Vec<lsp_types::CodeActionOrCommand>>(&result).unwrap())
-            .unwrap();
+    let result = serde_json::to_string_pretty(
+        &serde_json::from_str::<Vec<lsp_types::CodeActionOrCommand>>(&result).unwrap(),
+    )
+    .unwrap();
 
     if *UPDATE_EXPECT {
         let mut file = std::fs::File::create(&path).unwrap(); // truncate

@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
-use super::{
-    field::{Field, NamedFields, UnnamedFields},
-    generic::GenericType,
-};
+use super::field::Field;
+use super::field::NamedFields;
+use super::field::UnnamedFields;
+use super::generic::GenericType;
 use crate::id::TypeId;
 
 #[derive(Clone, Debug)]

@@ -1,10 +1,14 @@
+use darling::FromMeta;
+use darling::ast::NestedMeta;
+use proc_macro::TokenStream;
+use proc_macro2::Ident;
+use proc_macro2::Span;
+use quote::quote;
+use syn::ItemFn;
+use syn::parse_macro_input;
+
 use super::*;
 use crate::ensure_db_names::UNIQUE_TEST_DATABASE_NAMES;
-use darling::{FromMeta, ast::NestedMeta};
-use proc_macro::TokenStream;
-use proc_macro2::{Ident, Span};
-use quote::quote;
-use syn::{ItemFn, parse_macro_input};
 
 pub fn connector_test_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
     let attributes_meta = match NestedMeta::parse_meta_list(attr.into()) {
@@ -42,9 +46,12 @@ pub fn connector_test_impl(attr: TokenStream, input: TokenStream) -> TokenStream
     }
 
     if test_function.sig.asyncness.is_none() {
-        return syn::Error::new_spanned(test_function.sig, "connector test functions must be async")
-            .to_compile_error()
-            .into();
+        return syn::Error::new_spanned(
+            test_function.sig,
+            "connector test functions must be async",
+        )
+        .to_compile_error()
+        .into();
     }
 
     // The shell function retains the name of the original test definition.

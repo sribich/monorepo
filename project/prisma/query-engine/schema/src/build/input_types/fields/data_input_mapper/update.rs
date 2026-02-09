@@ -1,5 +1,6 @@
-use super::*;
 use constants::*;
+
+use super::*;
 
 pub(crate) struct UpdateDataInputFieldMapper {
     unchecked: bool,
@@ -18,16 +19,39 @@ impl UpdateDataInputFieldMapper {
 impl DataInputFieldMapper for UpdateDataInputFieldMapper {
     fn map_scalar<'a>(&self, ctx: &'a QuerySchema, sf: ScalarFieldRef) -> InputField<'a> {
         let base_update_type = match sf.type_identifier() {
-            TypeIdentifier::Float => InputType::object(update_operations_object_type(ctx, "Float", sf.clone(), true)),
-            TypeIdentifier::Decimal => {
-                InputType::object(update_operations_object_type(ctx, "Decimal", sf.clone(), true))
+            TypeIdentifier::Float => InputType::object(update_operations_object_type(
+                ctx,
+                "Float",
+                sf.clone(),
+                true,
+            )),
+            TypeIdentifier::Decimal => InputType::object(update_operations_object_type(
+                ctx,
+                "Decimal",
+                sf.clone(),
+                true,
+            )),
+            TypeIdentifier::Int => {
+                InputType::object(update_operations_object_type(ctx, "Int", sf.clone(), true))
             }
-            TypeIdentifier::Int => InputType::object(update_operations_object_type(ctx, "Int", sf.clone(), true)),
-            TypeIdentifier::BigInt => InputType::object(update_operations_object_type(ctx, "BigInt", sf.clone(), true)),
-            TypeIdentifier::String => {
-                InputType::object(update_operations_object_type(ctx, "String", sf.clone(), false))
-            }
-            TypeIdentifier::Boolean => InputType::object(update_operations_object_type(ctx, "Bool", sf.clone(), false)),
+            TypeIdentifier::BigInt => InputType::object(update_operations_object_type(
+                ctx,
+                "BigInt",
+                sf.clone(),
+                true,
+            )),
+            TypeIdentifier::String => InputType::object(update_operations_object_type(
+                ctx,
+                "String",
+                sf.clone(),
+                false,
+            )),
+            TypeIdentifier::Boolean => InputType::object(update_operations_object_type(
+                ctx,
+                "Bool",
+                sf.clone(),
+                false,
+            )),
             TypeIdentifier::Enum(enum_id) => {
                 let enum_name = ctx.internal_data_model.walk(enum_id).name();
                 InputType::object(update_operations_object_type(
@@ -37,22 +61,43 @@ impl DataInputFieldMapper for UpdateDataInputFieldMapper {
                     false,
                 ))
             }
-            TypeIdentifier::Extension(_) => unreachable!("No extension field should reach this path"),
-            TypeIdentifier::Json => map_scalar_input_type_for_field(ctx, &sf),
-            TypeIdentifier::DateTime => {
-                InputType::object(update_operations_object_type(ctx, "DateTime", sf.clone(), false))
+            TypeIdentifier::Extension(_) => {
+                unreachable!("No extension field should reach this path")
             }
-            TypeIdentifier::UUID => InputType::object(update_operations_object_type(ctx, "Uuid", sf.clone(), false)),
-            TypeIdentifier::Bytes => InputType::object(update_operations_object_type(ctx, "Bytes", sf.clone(), false)),
+            TypeIdentifier::Json => map_scalar_input_type_for_field(ctx, &sf),
+            TypeIdentifier::DateTime => InputType::object(update_operations_object_type(
+                ctx,
+                "DateTime",
+                sf.clone(),
+                false,
+            )),
+            TypeIdentifier::UUID => InputType::object(update_operations_object_type(
+                ctx,
+                "Uuid",
+                sf.clone(),
+                false,
+            )),
+            TypeIdentifier::Bytes => InputType::object(update_operations_object_type(
+                ctx,
+                "Bytes",
+                sf.clone(),
+                false,
+            )),
 
-            TypeIdentifier::Unsupported => unreachable!("No unsupported field should reach this path"),
+            TypeIdentifier::Unsupported => {
+                unreachable!("No unsupported field should reach this path")
+            }
         };
 
         let has_adv_json = ctx.has_capability(ConnectorCapability::AdvancedJsonNullability);
         match sf.type_identifier() {
             TypeIdentifier::Json if has_adv_json => {
                 let enum_type = InputType::enum_type(json_null_input_enum(!sf.is_required()));
-                let input_field = input_field(sf.name().to_owned(), vec![enum_type, base_update_type], None);
+                let input_field = input_field(
+                    sf.name().to_owned(),
+                    vec![enum_type, base_update_type],
+                    None,
+                );
 
                 input_field.optional()
             }
@@ -75,14 +120,21 @@ impl DataInputFieldMapper for UpdateDataInputFieldMapper {
         let mut input_object = init_input_object_type(ident);
         input_object.set_container(sf.container());
         input_object.set_fields(move || {
-            let mut object_fields = vec![simple_input_field(operations::SET, list_input_type.clone(), None).optional()];
+            let mut object_fields =
+                vec![simple_input_field(operations::SET, list_input_type.clone(), None).optional()];
 
             if ctx.has_capability(ConnectorCapability::ScalarLists)
-                && (ctx.has_capability(ConnectorCapability::EnumArrayPush) || !type_identifier.is_enum())
+                && (ctx.has_capability(ConnectorCapability::EnumArrayPush)
+                    || !type_identifier.is_enum())
             {
                 let map_scalar_type = map_scalar_input_type(ctx, type_identifier, false);
                 object_fields.push(
-                    input_field(operations::PUSH, vec![map_scalar_type, list_input_type.clone()], None).optional(),
+                    input_field(
+                        operations::PUSH,
+                        vec![map_scalar_type, list_input_type.clone()],
+                        None,
+                    )
+                    .optional(),
                 )
             }
 
@@ -91,7 +143,12 @@ impl DataInputFieldMapper for UpdateDataInputFieldMapper {
         input_object.require_exactly_one_field();
 
         let input_type = InputType::object(input_object);
-        input_field(sf.name().to_owned(), vec![input_type, cloned_list_input_type], None).optional()
+        input_field(
+            sf.name().to_owned(),
+            vec![input_type, cloned_list_input_type],
+            None,
+        )
+        .optional()
     }
 
     fn map_relation<'a>(&self, ctx: &'a QuerySchema, rf: RelationFieldRef) -> InputField<'a> {
@@ -114,7 +171,10 @@ impl DataInputFieldMapper for UpdateDataInputFieldMapper {
                     &mut fields,
                     input_fields::nested_connect_or_create_field(ctx, rf.clone()),
                 );
-                append_opt(&mut fields, input_fields::nested_upsert_field(ctx, rf.clone()));
+                append_opt(
+                    &mut fields,
+                    input_fields::nested_upsert_field(ctx, rf.clone()),
+                );
                 append_opt(
                     &mut fields,
                     input_fields::nested_create_many_input_field(ctx, rf.clone()),
@@ -122,14 +182,26 @@ impl DataInputFieldMapper for UpdateDataInputFieldMapper {
             }
 
             append_opt(&mut fields, input_fields::nested_set_input_field(ctx, &rf));
-            append_opt(&mut fields, input_fields::nested_disconnect_input_field(ctx, &rf));
-            append_opt(&mut fields, input_fields::nested_delete_input_field(ctx, &rf));
+            append_opt(
+                &mut fields,
+                input_fields::nested_disconnect_input_field(ctx, &rf),
+            );
+            append_opt(
+                &mut fields,
+                input_fields::nested_delete_input_field(ctx, &rf),
+            );
 
             fields.push(input_fields::nested_connect_input_field(ctx, &rf));
             fields.push(input_fields::nested_update_input_field(ctx, rf.clone()));
 
-            append_opt(&mut fields, input_fields::nested_update_many_field(ctx, rf.clone()));
-            append_opt(&mut fields, input_fields::nested_delete_many_field(ctx, &rf));
+            append_opt(
+                &mut fields,
+                input_fields::nested_update_many_field(ctx, rf.clone()),
+            );
+            append_opt(
+                &mut fields,
+                input_fields::nested_delete_many_field(ctx, &rf),
+            );
             fields
         });
 
@@ -167,7 +239,8 @@ fn update_operations_object_type<'a>(
         }
 
         if ctx.has_capability(ConnectorCapability::UndefinedType) && !sf.is_required() {
-            fields.push(simple_input_field(operations::UNSET, InputType::boolean(), None).optional());
+            fields
+                .push(simple_input_field(operations::UNSET, InputType::boolean(), None).optional());
         }
 
         fields

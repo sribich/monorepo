@@ -16,7 +16,11 @@ impl Renderer for GqlObjectRenderer<'_> {
 }
 
 impl<'a> GqlObjectRenderer<'a> {
-    fn render_input_object(&self, input_object: &InputObjectType<'a>, ctx: &mut RenderContext) -> String {
+    fn render_input_object(
+        &self,
+        input_object: &InputObjectType<'a>,
+        ctx: &mut RenderContext,
+    ) -> String {
         if ctx.already_rendered(&input_object.identifier.name()) {
             return "".into();
         } else {
@@ -47,7 +51,11 @@ impl<'a> GqlObjectRenderer<'a> {
         rendered
     }
 
-    fn render_output_object(&self, output_object: &ObjectType<'a>, ctx: &mut RenderContext) -> String {
+    fn render_output_object(
+        &self,
+        output_object: &ObjectType<'a>,
+        ctx: &mut RenderContext,
+    ) -> String {
         if ctx.already_rendered(&output_object.name()) {
             return "".into();
         } else {
@@ -67,7 +75,11 @@ impl<'a> GqlObjectRenderer<'a> {
             .map(|f| format!("{}{}", ctx.indent(), f))
             .collect();
 
-        let rendered = format!("type {} {{\n{}\n}}", output_object.name(), indented.join("\n"));
+        let rendered = format!(
+            "type {} {{\n{}\n}}",
+            output_object.name(),
+            indented.join("\n")
+        );
 
         ctx.add_output(rendered.clone());
 

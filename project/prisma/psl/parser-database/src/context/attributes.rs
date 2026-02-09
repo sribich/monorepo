@@ -13,10 +13,18 @@ pub(super) struct AttributesValidationState {
 }
 
 impl AttributesValidationState {
-    pub(super) fn set_attributes(&mut self, attributes: crate::AttributeContainer, ast: &ast::SchemaAst) {
+    pub(super) fn set_attributes(
+        &mut self,
+        attributes: crate::AttributeContainer,
+        ast: &ast::SchemaAst,
+    ) {
         let file_id = attributes.0;
-        let attribute_ids =
-            (0..ast[attributes.1].len()).map(|idx| (file_id, ast::AttributeId::new_in_container(attributes.1, idx)));
+        let attribute_ids = (0..ast[attributes.1].len()).map(|idx| {
+            (
+                file_id,
+                ast::AttributeId::new_in_container(attributes.1, idx),
+            )
+        });
         self.unused_attributes.clear();
         self.unused_attributes.extend(attribute_ids);
 

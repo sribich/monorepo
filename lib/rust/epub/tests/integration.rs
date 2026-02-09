@@ -18,24 +18,31 @@ fn test_thing() -> Result<()> {
     let path = PathBuf::from("~/Japanese/TMW eBook Collection Pt. 1");
     let entries = gather_epubs(path);
 
-
-
     let (mut good, mut bad) = (AtomicU16::new(0), AtomicU16::new(0));
     let len = entries.len();
 
-    rayon::ThreadPoolBuilder::new().num_threads(8).build_global().unwrap();
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(8)
+        .build_global()
+        .unwrap();
 
     entries.par_iter().enumerate().for_each(|(idx, entry)| {
         let archive = EpubArchive::opennew(entry);
 
         let (good_count, bad_count) = if archive.is_ok() {
-            (good.fetch_add(1, Ordering::Relaxed), bad.load(Ordering::Relaxed))
+            (
+                good.fetch_add(1, Ordering::Relaxed),
+                bad.load(Ordering::Relaxed),
+            )
         } else {
             dbg!(archive);
             dbg!(entry);
             panic!();
 
-            (good.load(Ordering::Relaxed), bad.fetch_add(1, Ordering::Relaxed))
+            (
+                good.load(Ordering::Relaxed),
+                bad.fetch_add(1, Ordering::Relaxed),
+            )
         };
 
         println!(

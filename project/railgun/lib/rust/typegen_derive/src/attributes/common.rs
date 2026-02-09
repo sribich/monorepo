@@ -1,6 +1,9 @@
 use darling::FromAttributes;
-use macro_util::attribute::{parse_attributes, Attribute, AttributeValue};
-use quote::{quote, ToTokens};
+use macro_util::attribute::Attribute;
+use macro_util::attribute::AttributeValue;
+use macro_util::attribute::parse_attributes;
+use quote::ToTokens;
+use quote::quote;
 use syn::Result;
 
 use crate::util::get_crate_name;
@@ -24,13 +27,13 @@ impl DocAttribute {
                     }
 
                     result.push_str(&doc);
-                },
+                }
                 _ => {
                     return Err(syn::Error::new(
                         attribute.key.span(),
                         r#"Invalid doc attribute. Expected format `#[doc = "value"]`"#,
                     ));
-                },
+                }
             }
         }
 
@@ -72,7 +75,7 @@ impl Deprecation {
                             since: None,
                         },
                     )));
-                },
+                }
                 Some(AttributeValue::Nested { attributes, .. }) => {
                     let note = attributes
                         .iter()
@@ -88,14 +91,14 @@ impl Deprecation {
                     return Ok(Some(Deprecation::DeprecatedWithMeta(
                         DeprecationAttributes { note, since },
                     )));
-                },
+                }
                 None => return Ok(Some(Deprecation::Deprecated)),
                 _ => {
                     return Err(syn::Error::new(
                         attribute.key.span(),
                         "Invalid deprecation attribute",
                     ));
-                },
+                }
             }
         }
 
@@ -124,7 +127,7 @@ impl Deprecation {
                         }
                     )
                 }
-            },
+            }
         }
     }
 }

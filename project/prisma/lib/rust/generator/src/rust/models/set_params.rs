@@ -1,22 +1,22 @@
 use std::collections::HashMap;
 
 use convert_case::Case;
-use generator_shared::{
-    casing::cased_ident,
-    extensions::{DmmfInputFieldExt, FieldExtension},
-};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::DmmfInputFieldExt;
+use generator_shared::extensions::FieldExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
-use query_structure::{
-    FieldArity,
-    walkers::{FieldWalker, ModelWalker, RefinedFieldWalker, RelationFieldWalker},
-};
-use quote::{format_ident, quote};
+use query_structure::FieldArity;
+use query_structure::walkers::FieldWalker;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::RefinedFieldWalker;
+use query_structure::walkers::RelationFieldWalker;
+use quote::format_ident;
+use quote::quote;
 
-use crate::{
-    args::GeneratorArgs,
-    rust::{module::FieldModule, prisma::write_param_name},
-};
+use crate::args::GeneratorArgs;
+use crate::rust::module::FieldModule;
+use crate::rust::prisma::write_param_name;
 
 pub fn generate_field_module(model: ModelWalker, args: &GeneratorArgs) -> FieldModule {
     let (variants, arms, field_data) = model
@@ -121,11 +121,13 @@ pub fn generate_field_module(model: ModelWalker, args: &GeneratorArgs) -> FieldM
 
             #unchecked_enum
         },
-        field_data: unchecked_fields.into_iter().fold(field_data, |mut acc, (k, v)| {
-            let entry = acc.entry(k).or_insert_with(|| quote!());
-            entry.extend(v);
-            acc
-        }),
+        field_data: unchecked_fields
+            .into_iter()
+            .fold(field_data, |mut acc, (k, v)| {
+                let entry = acc.entry(k).or_insert_with(|| quote!());
+                entry.extend(v);
+                acc
+            }),
     }
 }
 
@@ -150,7 +152,8 @@ fn generate_field_params(
                 | ScalarFieldType::BuiltInScalar(_)
                 | ScalarFieldType::Unsupported(_) => {
                     // Enums exist in the global scope, let's use super
-                    let prefix = if let ScalarFieldType::Enum(_) = scalar_field.scalar_field_type() {
+                    let prefix = if let ScalarFieldType::Enum(_) = scalar_field.scalar_field_type()
+                    {
                         quote!(super::super::super::)
                     } else {
                         quote!()
@@ -292,7 +295,8 @@ fn generate_field_params(
                 }
                 }).unzip();
 
-            let relation_model_name_snake = cased_ident(relation_field.related_model().name(), Case::Snake);
+            let relation_model_name_snake =
+                cased_ident(relation_field.related_model().name(), Case::Snake);
 
             let connect_variant = format_ident!("Connect{field_name_pascal}");
             let disconnect_variant = format_ident!("Disconnect{field_name_pascal}");

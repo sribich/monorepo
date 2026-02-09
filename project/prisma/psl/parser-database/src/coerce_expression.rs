@@ -1,4 +1,6 @@
-use crate::{DatamodelError, Diagnostics, ast};
+use crate::DatamodelError;
+use crate::Diagnostics;
+use crate::ast;
 
 macro_rules! impl_coercions {
     ($lt:lifetime; $($name:ident : $expected_type:expr => $out:ty;)*) => {
@@ -55,15 +57,18 @@ pub mod coerce_opt {
     }
 
     pub fn boolean<'a>(expr: &'a ast::Expression) -> Option<bool> {
-        expr.as_constant_value().and_then(|(constant, _)| constant.parse().ok())
+        expr.as_constant_value()
+            .and_then(|(constant, _)| constant.parse().ok())
     }
 
     pub fn integer<'a>(expr: &'a ast::Expression) -> Option<i64> {
-        expr.as_numeric_value().and_then(|(num, _)| num.parse().ok())
+        expr.as_numeric_value()
+            .and_then(|(num, _)| num.parse().ok())
     }
 
     pub fn float<'a>(expr: &'a ast::Expression) -> Option<f64> {
-        expr.as_numeric_value().and_then(|(num, _)| num.parse().ok())
+        expr.as_numeric_value()
+            .and_then(|(num, _)| num.parse().ok())
     }
 
     pub fn function_or_constant_with_span<'a>(
@@ -71,7 +76,9 @@ pub mod coerce_opt {
     ) -> Option<(&'a str, &'a [ast::Argument], ast::Span)> {
         match function_with_span(expr) {
             Some((name, params, span)) => Some((name, params, span)),
-            None => constant_with_span(expr).map(|(name, span)| (name, &[] as &[ast::Argument], span)),
+            None => {
+                constant_with_span(expr).map(|(name, span)| (name, &[] as &[ast::Argument], span))
+            }
         }
     }
 
@@ -79,7 +86,9 @@ pub mod coerce_opt {
         function_with_span(expr).map(|(name, args, _)| (name, args))
     }
 
-    pub fn function_with_span<'a>(expr: &'a ast::Expression) -> Option<(&'a str, &'a [ast::Argument], ast::Span)> {
+    pub fn function_with_span<'a>(
+        expr: &'a ast::Expression,
+    ) -> Option<(&'a str, &'a [ast::Argument], ast::Span)> {
         expr.as_function()
             .map(|(name, args, span)| (name, args.arguments.as_slice(), span))
     }

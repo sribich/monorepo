@@ -1,4 +1,5 @@
-use json_rpc::types::{SchemasWithConfigDir, UrlContainer};
+use json_rpc::types::SchemasWithConfigDir;
+use json_rpc::types::UrlContainer;
 
 /// The type of params accepted by dbExecute.
 #[derive(Debug)]

@@ -6,7 +6,9 @@ mod spgist;
 
 use psl::parser_database::IndexAlgorithm;
 
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn hash_index() {

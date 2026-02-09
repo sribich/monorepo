@@ -1,8 +1,13 @@
-use telemetry::{Exporter, filter};
-use tracing::{dispatcher::SetGlobalDefaultError, subscriber};
-use tracing_subscriber::{Layer, filter::FilterExt, layer::SubscriberExt};
+use telemetry::Exporter;
+use telemetry::filter;
+use tracing::dispatcher::SetGlobalDefaultError;
+use tracing::subscriber;
+use tracing_subscriber::Layer;
+use tracing_subscriber::filter::FilterExt;
+use tracing_subscriber::layer::SubscriberExt;
 
-use crate::{LogFormat, opt::PrismaOpt};
+use crate::LogFormat;
+use crate::opt::PrismaOpt;
 
 type LoggerResult<T> = Result<T, SetGlobalDefaultError>;
 
@@ -59,7 +64,9 @@ impl Logger {
     /// Install logger as a global. Can be called only once per application
     /// instance.
     pub fn install(self) -> LoggerResult<Self> {
-        let filter = filter::EnvFilterBuilder::new().log_queries(self.log_queries).build();
+        let filter = filter::EnvFilterBuilder::new()
+            .log_queries(self.log_queries)
+            .build();
 
         let fmt_layer = match self.log_format {
             LogFormat::Text => {
@@ -78,15 +85,17 @@ impl Logger {
             TracingConfig::LogsAndTracesInResponse => {
                 let subscriber = subscriber.with(
                     telemetry::layer(self.exporter.clone()).with_filter(
-                        filter::user_facing_spans()
-                            .or(filter::events().and(filter::EnvFilterBuilder::new().log_queries(true).build())),
+                        filter::user_facing_spans().or(filter::events()
+                            .and(filter::EnvFilterBuilder::new().log_queries(true).build())),
                     ),
                 );
                 subscriber::set_global_default(subscriber)?;
             }
             TracingConfig::StdoutLogsAndTracesInResponse => {
-                let subscriber =
-                    subscriber.with(telemetry::layer(self.exporter.clone()).with_filter(filter::user_facing_spans()));
+                let subscriber = subscriber.with(
+                    telemetry::layer(self.exporter.clone())
+                        .with_filter(filter::user_facing_spans()),
+                );
                 subscriber::set_global_default(subscriber)?;
             }
             TracingConfig::StdoutLogsOnly => {

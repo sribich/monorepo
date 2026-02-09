@@ -1,10 +1,18 @@
-use crate::{PrismaResult, error::PrismaError};
+use std::env;
+use std::ffi::OsStr;
+use std::fs::File;
+use std::io::Read;
+use std::sync::Arc;
+
 use base64::prelude::*;
-use psl::{SourceFile, parser_database::Files};
+use psl::SourceFile;
+use psl::parser_database::Files;
 use query_core::protocol::EngineProtocol;
 use serde::Deserialize;
-use std::{env, ffi::OsStr, fs::File, io::Read, sync::Arc};
 use structopt::StructOpt;
+
+use crate::PrismaResult;
+use crate::error::PrismaError;
 
 #[derive(Debug, StructOpt, Clone)]
 pub enum Subcommand {
@@ -148,12 +156,16 @@ impl PrismaOpt {
             .to_result()
             .map_err(|errors| PrismaError::ConversionError(errors, datamodel_str.to_string()))?;
 
-        let datasource_url_overrides: Vec<(String, String)> = if let Some(ref json) = self.overwrite_datasources {
-            let datasource_url_overrides: Vec<SourceOverride> = serde_json::from_str(json)?;
-            datasource_url_overrides.into_iter().map(|x| (x.name, x.url)).collect()
-        } else {
-            Vec::new()
-        };
+        let datasource_url_overrides: Vec<(String, String)> =
+            if let Some(ref json) = self.overwrite_datasources {
+                let datasource_url_overrides: Vec<SourceOverride> = serde_json::from_str(json)?;
+                datasource_url_overrides
+                    .into_iter()
+                    .map(|x| (x.name, x.url))
+                    .collect()
+            } else {
+                Vec::new()
+            };
 
         schema
             .configuration
@@ -167,16 +179,24 @@ impl PrismaOpt {
         Ok(schema)
     }
 
-    pub(crate) fn configuration(&self, ignore_env_errors: bool) -> PrismaResult<(Files, psl::Configuration)> {
+    pub(crate) fn configuration(
+        &self,
+        ignore_env_errors: bool,
+    ) -> PrismaResult<(Files, psl::Configuration)> {
         let datamodel_str = self.datamodel_str()?;
-        let source_file = SourceFile::new_allocated(Arc::from(datamodel_str.to_owned().into_boxed_str()));
+        let source_file =
+            SourceFile::new_allocated(Arc::from(datamodel_str.to_owned().into_boxed_str()));
 
-        let datasource_url_overrides: Vec<(String, String)> = if let Some(ref json) = self.overwrite_datasources {
-            let datasource_url_overrides: Vec<SourceOverride> = serde_json::from_str(json)?;
-            datasource_url_overrides.into_iter().map(|x| (x.name, x.url)).collect()
-        } else {
-            Vec::new()
-        };
+        let datasource_url_overrides: Vec<(String, String)> =
+            if let Some(ref json) = self.overwrite_datasources {
+                let datasource_url_overrides: Vec<SourceOverride> = serde_json::from_str(json)?;
+                datasource_url_overrides
+                    .into_iter()
+                    .map(|x| (x.name, x.url))
+                    .collect()
+            } else {
+                Vec::new()
+            };
 
         let file_name = self
             .datamodel_path
@@ -185,7 +205,9 @@ impl PrismaOpt {
             .unwrap_or_else(|| "schema.prisma".to_owned());
 
         let (files, mut config) = psl::parse_configuration_multi_file(&[(file_name, source_file)])
-            .map_err(|(_, errors)| PrismaError::ConversionError(errors, datamodel_str.to_string()))?;
+            .map_err(|(_, errors)| {
+                PrismaError::ConversionError(errors, datamodel_str.to_string())
+            })?;
 
         config.resolve_datasource_urls_query_engine(
             &datasource_url_overrides,
@@ -205,7 +227,9 @@ impl PrismaOpt {
 
     /// Enable query logging
     pub(crate) fn log_queries(&self) -> bool {
-        std::env::var("LOG_QUERIES").map(|_| true).unwrap_or(self.log_queries)
+        std::env::var("LOG_QUERIES")
+            .map(|_| true)
+            .unwrap_or(self.log_queries)
     }
 
     /// The EngineProtocol to use for communication, it will be [EngineProtocol::Json] by
@@ -220,7 +244,6 @@ impl PrismaOpt {
     /// and  transform it into a [query_core::ParsedObject] require to know which protocol was used
     /// for submitting the query, this is due to the fact that DMMF is no longer used by the client
     /// to understand which types certain values are. See [query_core::QueryDocumentParser]
-    ///
     pub(crate) fn engine_protocol(&self) -> EngineProtocol {
         self.engine_protocol
             .as_ref()
@@ -250,7 +273,8 @@ fn parse_base64_string(s: &str) -> PrismaResult<String> {
 }
 
 fn load_datamodel_file(path: &OsStr) -> String {
-    let mut f = File::open(path).unwrap_or_else(|_| panic!("Could not open datamodel file {path:?}"));
+    let mut f =
+        File::open(path).unwrap_or_else(|_| panic!("Could not open datamodel file {path:?}"));
     let mut datamodel = String::new();
 
     f.read_to_string(&mut datamodel)

@@ -13,7 +13,9 @@ pub(crate) use many::*;
 pub(crate) use one::*;
 
 use super::*;
-use crate::{Query, QueryGraph, ReadQuery};
+use crate::Query;
+use crate::QueryGraph;
+use crate::ReadQuery;
 
 impl From<ReadQuery> for QueryGraph {
     fn from(query: ReadQuery) -> Self {

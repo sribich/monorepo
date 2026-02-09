@@ -1,8 +1,10 @@
 use std::collections::HashMap;
 
-use convert_case::{Case, Casing};
+use convert_case::Case;
+use convert_case::Casing;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::format_ident;
+use quote::quote;
 
 pub(crate) struct Module {
     pub name: String,

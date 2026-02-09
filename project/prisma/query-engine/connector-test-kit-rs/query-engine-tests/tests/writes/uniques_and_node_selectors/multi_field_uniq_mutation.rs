@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod multi_field_uniq_mut {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema_one2one() -> String {
         let schema = indoc! {
@@ -210,7 +211,11 @@ mod multi_field_uniq_mut {
     // "An update with a multi-field unique" should "work"
     #[connector_test(schema(schema_multi_uniq))]
     async fn update_multi_field_uniq(runner: Runner) -> TestResult<()> {
-        create_user(&runner, r#"{ id: 1, first_name: "Justin" last_name: "Case" }"#).await?;
+        create_user(
+            &runner,
+            r#"{ id: 1, first_name: "Justin" last_name: "Case" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -310,7 +315,11 @@ mod multi_field_uniq_mut {
     //
     #[connector_test(schema(schema_multi_uniq))]
     async fn delete_multi_field_uniq(runner: Runner) -> TestResult<()> {
-        create_user(&runner, r#"{ id: 1, first_name: "Darth", last_name: "Llama" }"#).await?;
+        create_user(
+            &runner,
+            r#"{ id: 1, first_name: "Darth", last_name: "Llama" }"#,
+        )
+        .await?;
 
         let res = run_query_json!(
             &runner,
@@ -515,7 +524,9 @@ mod multi_field_uniq_mut {
 
     async fn create_user(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneUser(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneUser(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -523,7 +534,9 @@ mod multi_field_uniq_mut {
 
     async fn create_blog(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneBlog(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneBlog(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

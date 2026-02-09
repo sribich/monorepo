@@ -183,7 +183,8 @@ fn models_with_an_autoincrement_field_as_part_of_a_multi_field_id_can_be_created
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
 #[test_connector(exclude(Sqlite))]
 fn making_an_existing_id_field_autoincrement_works(api: TestApi) {
-    use quaint::ast::{Insert, Select};
+    use quaint::ast::Insert;
+    use quaint::ast::Select;
 
     let dm1 = r#"
         model Post {
@@ -256,7 +257,8 @@ fn making_an_existing_id_field_autoincrement_works(api: TestApi) {
 // Ignoring sqlite is OK, because sqlite integer primary keys are always auto-incrementing.
 #[test_connector(exclude(Sqlite))]
 fn removing_autoincrement_from_an_existing_field_works(api: TestApi) {
-    use quaint::ast::{Insert, Select};
+    use quaint::ast::Insert;
+    use quaint::ast::Select;
 
     let dm1 = r#"
         model Post {

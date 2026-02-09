@@ -4,12 +4,17 @@
 //! but would need to clutter their code with tons of matches and unwraps.
 //! The transformers in this file helps consumers to directly access the data in the shape they
 //! assume the data has to be because of the structural guarantees of the query schema validation.
-use super::*;
+use std::convert::TryInto;
+
 use bigdecimal::ToPrimitive;
 use chrono::prelude::*;
-use query_structure::{OrderBy, PrismaValue, RelationLoadStrategy, ScalarFieldRef};
-use std::convert::TryInto;
+use query_structure::OrderBy;
+use query_structure::PrismaValue;
+use query_structure::RelationLoadStrategy;
+use query_structure::ScalarFieldRef;
 use user_facing_errors::query_engine::validation::ValidationError;
+
+use super::*;
 
 impl<'a> TryFrom<ParsedInputValue<'a>> for PrismaValue {
     type Error = ValidationError;

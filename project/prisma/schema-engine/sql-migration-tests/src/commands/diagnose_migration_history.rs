@@ -1,6 +1,9 @@
-use schema_core::{
-    CoreError, CoreResult, commands::diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, diagnose_migration_history}, schema_connector::SchemaConnector
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryOutput;
+use schema_core::commands::diagnose_migration_history::diagnose_migration_history;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
 
 use crate::utils;

@@ -1,4 +1,12 @@
-use super::{Attribute, Comment, Field, Identifier, Span, WithAttributes, WithDocumentation, WithIdentifier, WithSpan};
+use super::Attribute;
+use super::Comment;
+use super::Field;
+use super::Identifier;
+use super::Span;
+use super::WithAttributes;
+use super::WithDocumentation;
+use super::WithIdentifier;
+use super::WithSpan;
 
 /// An opaque identifier for a field in an AST model. Use the
 /// `model[field_id]` syntax to resolve the id to an `ast::Field`.
@@ -7,9 +15,9 @@ pub struct FieldId(pub(super) u32);
 
 impl FieldId {
     /// Used for range bounds when iterating over BTreeMaps.
-    pub const MIN: FieldId = FieldId(0);
-    /// Used for range bounds when iterating over BTreeMaps.
     pub const MAX: FieldId = FieldId(u32::MAX);
+    /// Used for range bounds when iterating over BTreeMaps.
+    pub const MIN: FieldId = FieldId(0);
 }
 
 impl std::ops::Index<FieldId> for Model {

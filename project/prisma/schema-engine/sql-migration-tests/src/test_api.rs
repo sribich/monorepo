@@ -1,36 +1,45 @@
-pub use crate::assertions::{MigrationsAssertions, ResultSetExt, SchemaAssertion};
-pub use expect_test::expect;
-pub use schema_core::{
-    json_rpc::types::{
-        SchemaContainer, UrlContainer,
-    },
-    schema_connector::Namespaces,
-};
-pub use test_macros::test_connector;
-pub use test_setup::{BitFlags, Capabilities, Tags, runtime::run_with_thread_local_runtime as tok};
+use std::borrow::Cow;
+use std::fmt::Display;
+use std::fmt::Write;
+use std::time::Duration;
 
-use crate::{commands::*, multi_engine_test_api::TestApi as RootTestApi};
-use psl::{
-    datamodel_connector::NativeTypeInstance,
-    parser_database::{ExtensionTypes, NoExtensionTypes, ScalarFieldType, SourceFile},
-};
-use quaint::{
-    Value,
-    prelude::{ConnectionInfo, ResultSet},
-};
-use schema_core::{
-    commands::diff::{DiffParams, DiffResult, diff},
-    schema_connector::{BoxFuture, ConnectorHost, ConnectorResult, DiffTarget, MigrationPersistence, SchemaConnector},
-};
+pub use expect_test::expect;
+use psl::datamodel_connector::NativeTypeInstance;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::SourceFile;
+use quaint::Value;
+use quaint::prelude::ConnectionInfo;
+use quaint::prelude::ResultSet;
+use schema_core::commands::diff::DiffParams;
+use schema_core::commands::diff::DiffResult;
+use schema_core::commands::diff::diff;
+pub use schema_core::json_rpc::types::SchemaContainer;
+pub use schema_core::json_rpc::types::UrlContainer;
+use schema_core::schema_connector::BoxFuture;
+use schema_core::schema_connector::ConnectorHost;
+use schema_core::schema_connector::ConnectorResult;
+use schema_core::schema_connector::DiffTarget;
+use schema_core::schema_connector::MigrationPersistence;
+pub use schema_core::schema_connector::Namespaces;
+use schema_core::schema_connector::SchemaConnector;
 use sql_schema_connector::SqlSchemaConnector;
 use sql_schema_describer::SqlSchema;
-use std::time::Duration;
-use std::{
-    borrow::Cow,
-    fmt::{Display, Write},
-};
 use tempfile::TempDir;
-use test_setup::{DatasourceBlock, TestApiArgs};
+pub use test_macros::test_connector;
+pub use test_setup::BitFlags;
+pub use test_setup::Capabilities;
+use test_setup::DatasourceBlock;
+pub use test_setup::Tags;
+use test_setup::TestApiArgs;
+pub use test_setup::runtime::run_with_thread_local_runtime as tok;
+
+pub use crate::assertions::MigrationsAssertions;
+pub use crate::assertions::ResultSetExt;
+pub use crate::assertions::SchemaAssertion;
+use crate::commands::*;
+use crate::multi_engine_test_api::TestApi as RootTestApi;
 
 #[derive(Debug, Default)]
 pub struct TestConnectorHost {
@@ -41,7 +50,10 @@ impl ConnectorHost for TestConnectorHost {
     fn print(&self, message: &str) -> BoxFuture<'_, ConnectorResult<()>> {
         // https://github.com/prisma/prisma/issues/11761
         assert!(message.ends_with('\n'));
-        self.printed_messages.lock().unwrap().push(message.to_owned());
+        self.printed_messages
+            .lock()
+            .unwrap()
+            .push(message.to_owned());
         Box::pin(std::future::ready(Ok(())))
     }
 }
@@ -70,8 +82,16 @@ impl TestApi {
     }
 
     /// Plan an `applyMigrations` command
-    pub fn apply_migrations<'a>(&'a mut self, migrations_directory: &'a TempDir) -> ApplyMigrations<'a> {
-        let search_path = self.root.admin_conn.connection_info().schema_name().unwrap();
+    pub fn apply_migrations<'a>(
+        &'a mut self,
+        migrations_directory: &'a TempDir,
+    ) -> ApplyMigrations<'a> {
+        let search_path = self
+            .root
+            .admin_conn
+            .connection_info()
+            .schema_name()
+            .unwrap();
         let mut namespaces = vec![search_path.to_string()];
 
         for namespace in self.root.args.namespaces() {
@@ -119,13 +139,7 @@ impl TestApi {
         files: &[(&'a str, &'a str)],
         migrations_directory: &'a TempDir,
     ) -> CreateMigration<'a> {
-        CreateMigration::new(
-            &mut self.connector,
-            name,
-            files,
-            migrations_directory,
-            "",
-        )
+        CreateMigration::new(&mut self.connector, name, files, migrations_directory, "")
     }
 
     /// Create a temporary directory to serve as a test migrations directory.
@@ -134,7 +148,10 @@ impl TestApi {
     }
 
     /// Builder and assertions to call the `devDiagnostic` command.
-    pub fn dev_diagnostic<'a>(&'a mut self, migrations_directory: &'a TempDir) -> DevDiagnostic<'a> {
+    pub fn dev_diagnostic<'a>(
+        &'a mut self,
+        migrations_directory: &'a TempDir,
+    ) -> DevDiagnostic<'a> {
         DevDiagnostic::new(&mut self.connector, migrations_directory)
     }
 
@@ -154,8 +171,8 @@ impl TestApi {
     }
 
     pub fn dump_table(&mut self, table_name: &str) -> ResultSet {
-        let select_star =
-            quaint::ast::Select::from_table(self.render_table_name(table_name)).value(quaint::ast::asterisk());
+        let select_star = quaint::ast::Select::from_table(self.render_table_name(table_name))
+            .value(quaint::ast::asterisk());
 
         self.query(select_star.into())
     }
@@ -189,11 +206,7 @@ impl TestApi {
         migrations_directory: &'a TempDir,
         files: &[(&'a str, &'a str)],
     ) -> EvaluateDataLoss<'a> {
-        EvaluateDataLoss::new(
-            &mut self.connector,
-            migrations_directory,
-            files,
-        )
+        EvaluateDataLoss::new(&mut self.connector, migrations_directory, files)
     }
 
     pub fn introspect_sql<'a>(&'a mut self, name: &'a str, source: &'a str) -> IntrospectSql<'a> {
@@ -320,10 +333,17 @@ impl TestApi {
         migration_name: impl Into<String>,
         migrations_directory: &'a TempDir,
     ) -> MarkMigrationApplied<'a> {
-        MarkMigrationApplied::new(&mut self.connector, migration_name.into(), migrations_directory)
+        MarkMigrationApplied::new(
+            &mut self.connector,
+            migration_name.into(),
+            migrations_directory,
+        )
     }
 
-    pub fn mark_migration_rolled_back(&mut self, migration_name: impl Into<String>) -> MarkMigrationRolledBack<'_> {
+    pub fn mark_migration_rolled_back(
+        &mut self,
+        migration_name: impl Into<String>,
+    ) -> MarkMigrationRolledBack<'_> {
         MarkMigrationRolledBack::new(&mut self.connector, migration_name.into())
     }
 
@@ -339,7 +359,10 @@ impl TestApi {
     }
 
     #[track_caller]
-    pub fn assert_schema_with_namespaces(&mut self, namespaces: Option<Namespaces>) -> SchemaAssertion {
+    pub fn assert_schema_with_namespaces(
+        &mut self,
+        namespaces: Option<Namespaces>,
+    ) -> SchemaAssertion {
         let schema: SqlSchema = tok(self.connector.describe_schema(namespaces)).unwrap();
         SchemaAssertion::new(schema, self.root.args.tags())
     }
@@ -349,7 +372,10 @@ impl TestApi {
         self.root.datasource_block()
     }
 
-    pub fn datasource_block_with<'a>(&'a self, params: &'a [(&'a str, &'a str)]) -> DatasourceBlock<'a> {
+    pub fn datasource_block_with<'a>(
+        &'a self,
+        params: &'a [(&'a str, &'a str)],
+    ) -> DatasourceBlock<'a> {
         self.root
             .args
             .datasource_block(self.root.connection_string(), params, &[])
@@ -362,7 +388,10 @@ impl TestApi {
         to: DiffTarget<'_>,
         namespaces: Option<Namespaces>,
     ) -> String {
-        let default_namespace = self.connector.default_runtime_namespace().map(|s| s.to_string());
+        let default_namespace = self
+            .connector
+            .default_runtime_namespace()
+            .map(|s| s.to_string());
 
         let from = tok(self.connector.schema_from_diff_target(
             from,
@@ -378,7 +407,9 @@ impl TestApi {
         .unwrap();
         let dialect = self.connector.schema_dialect();
         let migration = dialect.diff(from, to);
-        dialect.render_script(&migration, &Default::default()).unwrap()
+        dialect
+            .render_script(&migration, &Default::default())
+            .unwrap()
     }
 
     pub fn normalize_identifier<'a>(&self, identifier: &'a str) -> Cow<'a, str> {
@@ -443,7 +474,10 @@ impl TestApi {
         self.schema_push(schema)
     }
 
-    pub fn schema_push_w_datasource_multi_file(&mut self, files: &[(&str, &str)]) -> SchemaPush<'_> {
+    pub fn schema_push_w_datasource_multi_file(
+        &mut self,
+        files: &[(&str, &str)],
+    ) -> SchemaPush<'_> {
         let (first, rest) = files.split_first().unwrap();
         let first_with_provider = self.datamodel_with_provider(first.1);
         let recombined = [&[(first.0, first_with_provider.as_str())], rest].concat();
@@ -465,11 +499,7 @@ impl TestApi {
 
     pub fn schema_push_multi_file(&mut self, files: &[(&str, &str)]) -> SchemaPush<'_> {
         let max_ddl_refresh_delay = self.max_ddl_refresh_delay();
-        SchemaPush::new(
-            &mut self.connector,
-            files,
-            max_ddl_refresh_delay,
-        )
+        SchemaPush::new(&mut self.connector, files, max_ddl_refresh_delay)
     }
 
     pub fn tags(&self) -> BitFlags<Tags> {
@@ -491,10 +521,11 @@ impl TestApi {
             params.to_vec()
         };
 
-        let ds_block = self
-            .root
-            .args
-            .datasource_block(self.root.args.database_url(), &used_params, preview_features);
+        let ds_block = self.root.args.datasource_block(
+            self.root.args.database_url(),
+            &used_params,
+            preview_features,
+        );
 
         write!(out, "{ds_block}").unwrap()
     }
@@ -553,7 +584,8 @@ impl TestApi {
         typ: &NativeTypeInstance,
         extension_types: &dyn ExtensionTypes,
     ) -> Option<ScalarFieldType> {
-        self.connector.scalar_type_for_native_type(typ, extension_types)
+        self.connector
+            .scalar_type_for_native_type(typ, extension_types)
     }
 }
 

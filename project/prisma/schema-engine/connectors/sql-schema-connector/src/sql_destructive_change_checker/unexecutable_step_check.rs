@@ -1,7 +1,7 @@
-use super::{
-    check::{Check, Column, Table},
-    database_inspection_results::DatabaseInspectionResults,
-};
+use super::check::Check;
+use super::check::Column;
+use super::check::Table;
+use super::database_inspection_results::DatabaseInspectionResults;
 
 #[derive(Debug)]
 pub(crate) enum UnexecutableStepCheck {
@@ -19,7 +19,9 @@ impl Check for UnexecutableStepCheck {
             | UnexecutableStepCheck::MadeOptionalFieldRequired(column)
             | UnexecutableStepCheck::MadeScalarFieldIntoArrayField(column)
             | UnexecutableStepCheck::AddedRequiredFieldToTable(column)
-            | UnexecutableStepCheck::DropAndRecreateRequiredColumn(column) => Some(Table::from_column(column)),
+            | UnexecutableStepCheck::DropAndRecreateRequiredColumn(column) => {
+                Some(Table::from_column(column))
+            }
         }
     }
 
@@ -50,7 +52,9 @@ impl Check for UnexecutableStepCheck {
                     Some(row_count) => message(format_args!(
                         "There are {row_count} rows in this table, it is not possible to execute this step."
                     )),
-                    None => message(format_args!("This is not possible if the table is not empty.")),
+                    None => message(format_args!(
+                        "This is not possible if the table is not empty."
+                    )),
                 };
 
                 Some(message)
@@ -70,7 +74,9 @@ impl Check for UnexecutableStepCheck {
                     Some(row_count) => message(format_args!(
                         "There are {row_count} rows in this table, it is not possible to execute this step."
                     )),
-                    None => message(format_args!("This is not possible if the table is not empty.")),
+                    None => message(format_args!(
+                        "This is not possible if the table is not empty."
+                    )),
                 };
 
                 Some(message)

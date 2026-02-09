@@ -11,20 +11,27 @@ mod index;
 mod model;
 mod view;
 
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 pub use default::DefaultValue;
-pub use enumerator::{Enum, EnumVariant};
+pub use enumerator::Enum;
+pub use enumerator::EnumVariant;
 pub use field::Field;
 pub use field_type::FieldType;
-pub use index::{IdDefinition, IdFieldDefinition, IndexDefinition, IndexFieldInput, IndexOps, UniqueFieldAttribute};
-pub use model::{Model, Relation};
+pub use index::IdDefinition;
+pub use index::IdFieldDefinition;
+pub use index::IndexDefinition;
+pub use index::IndexFieldInput;
+pub use index::IndexOps;
+pub use index::UniqueFieldAttribute;
+pub use model::Model;
+pub use model::Relation;
 use psl::SourceFile;
 pub use view::View;
 
 use crate::Configuration;
-use std::{
-    borrow::Cow,
-    collections::{HashMap, HashSet},
-};
 
 /// The PSL data model declaration.
 #[derive(Default, Debug)]
@@ -149,11 +156,11 @@ impl<'a> Datamodel<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::value::Function;
-
-    use super::*;
     use expect_test::expect;
     use itertools::Itertools as _;
+
+    use super::*;
+    use crate::value::Function;
 
     fn pretty_render(data_model: Datamodel) -> String {
         let sources = data_model.render();

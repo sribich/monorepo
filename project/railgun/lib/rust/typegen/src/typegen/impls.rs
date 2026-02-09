@@ -1,19 +1,26 @@
-use std::{
-    cell::{Cell, RefCell},
-    collections::{BTreeSet, BinaryHeap, HashSet, LinkedList, VecDeque},
-    rc::Rc,
-    sync::{Arc, Mutex, RwLock},
-};
+use std::cell::Cell;
+use std::cell::RefCell;
+use std::collections::BTreeSet;
+use std::collections::BinaryHeap;
+use std::collections::HashSet;
+use std::collections::LinkedList;
+use std::collections::VecDeque;
+use std::rc::Rc;
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::sync::RwLock;
 
-use crate::{
-    Generics, NamedType, Type,
-    cache::TypeCache,
-    datatype::{
-        DataType, NamedDataType, list::ListMeta, primitive::PrimitiveMeta, reference::Reference,
-        tuple::TupleMeta,
-    },
-    id::TypeId,
-};
+use crate::Generics;
+use crate::NamedType;
+use crate::Type;
+use crate::cache::TypeCache;
+use crate::datatype::DataType;
+use crate::datatype::NamedDataType;
+use crate::datatype::list::ListMeta;
+use crate::datatype::primitive::PrimitiveMeta;
+use crate::datatype::reference::Reference;
+use crate::datatype::tuple::TupleMeta;
+use crate::id::TypeId;
 
 // macro_rules! impl_inner {}
 

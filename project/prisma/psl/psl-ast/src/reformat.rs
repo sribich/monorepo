@@ -1,9 +1,12 @@
-use crate::{
-    parser::{PrismaDatamodelParser, Rule},
-    renderer::{LineWriteable, Renderer, TableFormat},
-};
-use pest::Parser;
 use std::iter::Peekable;
+
+use pest::Parser;
+
+use crate::parser::PrismaDatamodelParser;
+use crate::parser::Rule;
+use crate::renderer::LineWriteable;
+use crate::renderer::Renderer;
+use crate::renderer::TableFormat;
 
 type Pair<'a> = pest::iterators::Pair<'a, Rule>;
 
@@ -200,7 +203,9 @@ fn reformat_block_attribute(pair: Pair<'_>, table: &mut TableFormat) {
                 writer.write("@@");
                 writer.write(current.as_str());
             }
-            Rule::arguments_list => reformat_arguments_list(current, &mut table.column_locked_writer_for(0)),
+            Rule::arguments_list => {
+                reformat_arguments_list(current, &mut table.column_locked_writer_for(0))
+            }
             Rule::trailing_comment => table.append_suffix_to_current_row(current.as_str()),
             _ => unreachable(&current),
         }

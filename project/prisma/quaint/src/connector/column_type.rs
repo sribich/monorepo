@@ -1,8 +1,4 @@
-#[cfg(any(
-    feature = "sqlite-native",
-    feature = "mysql-native",
-    feature = "postgresql-native",
-))]
+#[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
 use super::TypeIdentifier;
 
 use crate::{Value, ValueType, ast::OpaqueType};
@@ -187,11 +183,7 @@ impl From<&ValueType<'_>> for ColumnType {
 }
 
 impl ColumnType {
-    #[cfg(any(
-        feature = "sqlite-native",
-        feature = "mysql-native",
-        feature = "postgresql-native",
-    ))]
+    #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
     pub(crate) fn from_type_identifier<T>(value: T) -> Self
     where
         T: TypeIdentifier,

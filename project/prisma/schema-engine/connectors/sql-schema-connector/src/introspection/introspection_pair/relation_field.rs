@@ -1,10 +1,12 @@
-use crate::introspection::{datamodel_calculator::DatamodelCalculatorContext, introspection_pair::ModelPair};
-use psl::{
-    datamodel_connector::constraint_names::ConstraintNames,
-    parser_database::walkers::{self, RelationName},
-};
-use sql_schema_describer as sql;
 use std::borrow::Cow;
+
+use psl::datamodel_connector::constraint_names::ConstraintNames;
+use psl::parser_database::walkers::RelationName;
+use psl::parser_database::walkers::{self};
+use sql_schema_describer as sql;
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use crate::introspection::introspection_pair::ModelPair;
 
 /// Defines the direction a relation field is pointing at.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -35,11 +37,15 @@ struct InlineRelationField<'a> {
 
 impl<'a> InlineRelationField<'a> {
     fn any_field_required(self) -> bool {
-        self.next.constrained_columns().any(|col| col.arity().is_required())
+        self.next
+            .constrained_columns()
+            .any(|col| col.arity().is_required())
     }
 
     fn any_field_optional(self) -> bool {
-        self.next.constrained_columns().any(|col| !col.arity().is_required())
+        self.next
+            .constrained_columns()
+            .any(|col| !col.arity().is_required())
     }
 
     fn model(self, context: &'a DatamodelCalculatorContext<'a>) -> ModelPair<'a> {
@@ -154,14 +160,18 @@ impl<'a> RelationFieldPair<'a> {
         use RelationType::*;
 
         match self.relation_type {
-            Inline(field) if field.direction.is_forward() => {
-                self.context.forward_inline_relation_field_prisma_name(field.next.id)
-            }
-            Inline(field) => self.context.back_inline_relation_field_prisma_name(field.next.id),
+            Inline(field) if field.direction.is_forward() => self
+                .context
+                .forward_inline_relation_field_prisma_name(field.next.id),
+            Inline(field) => self
+                .context
+                .back_inline_relation_field_prisma_name(field.next.id),
             Many2Many(field) if field.direction.is_forward() => self
                 .context
                 .forward_m2m_relation_field_prisma_name(field.next.table().id),
-            Many2Many(field) => self.context.back_m2m_relation_field_prisma_name(field.next.table().id),
+            Many2Many(field) => self
+                .context
+                .back_m2m_relation_field_prisma_name(field.next.table().id),
             Emulated(field) => field.previous.name(),
         }
     }
@@ -200,7 +210,10 @@ impl<'a> RelationFieldPair<'a> {
                 }
 
                 let default_name = field.default_constraint_name(self.context);
-                field.next.constraint_name().filter(|name| name != &default_name)
+                field
+                    .next
+                    .constraint_name()
+                    .filter(|name| name != &default_name)
             }
             RelationType::Emulated(field) => field.previous.mapped_name(),
             _ => None,
@@ -211,7 +224,9 @@ impl<'a> RelationFieldPair<'a> {
     pub(crate) fn relation_name(self) -> Option<Cow<'a, str>> {
         let name = match self.relation_type {
             RelationType::Inline(field) => self.context.inline_relation_prisma_name(field.next.id),
-            RelationType::Many2Many(field) => self.context.m2m_relation_prisma_name(field.next.table().id),
+            RelationType::Many2Many(field) => {
+                self.context.m2m_relation_prisma_name(field.next.table().id)
+            }
             RelationType::Emulated(field) => match field.previous.relation_name() {
                 RelationName::Explicit(name) => Cow::Borrowed(name),
                 RelationName::Generated(_) => Cow::Borrowed(""),
@@ -277,7 +292,9 @@ impl<'a> RelationFieldPair<'a> {
                     (false, Restrict) => Some("Restrict"),
                 }
             }
-            RelationType::Emulated(field) => field.previous.explicit_on_delete().map(|act| act.as_str()),
+            RelationType::Emulated(field) => {
+                field.previous.explicit_on_delete().map(|act| act.as_str())
+            }
             _ => None,
         }
     }
@@ -296,7 +313,9 @@ impl<'a> RelationFieldPair<'a> {
                     SetDefault => Some("SetDefault"),
                 }
             }
-            RelationType::Emulated(field) => field.previous.explicit_on_update().map(|act| act.as_str()),
+            RelationType::Emulated(field) => {
+                field.previous.explicit_on_update().map(|act| act.as_str())
+            }
             _ => None,
         }
     }
@@ -334,7 +353,9 @@ impl<'a> RelationFieldPair<'a> {
     /// Is the relation field optional.
     pub(crate) fn is_optional(self) -> bool {
         match self.relation_type {
-            RelationType::Inline(field) if field.direction.is_forward() => field.any_field_optional(),
+            RelationType::Inline(field) if field.direction.is_forward() => {
+                field.any_field_optional()
+            }
             RelationType::Inline(field) => forward_relation_field_is_unique(field.next),
             RelationType::Emulated(field) => field.previous.ast_field().arity.is_optional(),
             RelationType::Many2Many(_) => false,

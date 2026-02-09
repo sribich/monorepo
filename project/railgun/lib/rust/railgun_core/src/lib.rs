@@ -1,7 +1,8 @@
 pub mod bootstrap;
 
 pub mod _internal_for_macros_ {
-    pub use const_str::{convert_ascii_case, replace};
+    pub use const_str::convert_ascii_case;
+    pub use const_str::replace;
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -34,7 +35,8 @@ pub struct ServiceInfo {
 #[macro_export]
 macro_rules! service_info {
     () => {{
-        use $crate::_internal_for_macros_::{convert_ascii_case, replace};
+        use $crate::_internal_for_macros_::convert_ascii_case;
+        use $crate::_internal_for_macros_::replace;
 
         $crate::ServiceInfo {
             name: env!("CARGO_PKG_NAME"),

@@ -28,7 +28,10 @@ mod enum_type {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { my_enum } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { my_enum } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -113,7 +116,10 @@ mod enum_type {
                 let res = runner
                     .query(r#"{ findUniqueTestModel(where: { id: 1 }) { my_enum } }"#)
                     .await?;
-                res.assert_failure(None, Some("Value 'D' not found in enum 'MyEnum'".to_owned()));
+                res.assert_failure(
+                    None,
+                    Some("Value 'D' not found in enum 'MyEnum'".to_owned()),
+                );
             }
             EngineProtocol::Json => {
                 let res = runner
@@ -133,7 +139,10 @@ mod enum_type {
                     )
                     .await?;
 
-                res.assert_failure(None, Some("Value 'D' not found in enum 'MyEnum'".to_owned()));
+                res.assert_failure(
+                    None,
+                    Some("Value 'D' not found in enum 'MyEnum'".to_owned()),
+                );
             }
         }
 
@@ -150,7 +159,9 @@ mod enum_type {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

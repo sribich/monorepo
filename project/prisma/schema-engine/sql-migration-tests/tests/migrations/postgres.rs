@@ -2,11 +2,13 @@ mod extensions;
 mod introspection;
 mod multi_schema;
 
-use psl::parser_database::{NoExtensionTypes, SourceFile};
+use std::fmt::Write;
+
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::SourceFile;
 use quaint::Value;
 use schema_core::schema_connector::DiffTarget;
 use sql_migration_tests::test_api::*;
-use std::fmt::Write;
 
 #[test_connector(tags(Postgres))]
 fn enums_can_be_dropped_on_postgres(api: TestApi) {
@@ -25,8 +27,9 @@ fn enums_can_be_dropped_on_postgres(api: TestApi) {
     "#;
 
     api.schema_push_w_datasource(dm1).send().assert_green();
-    api.assert_schema()
-        .assert_enum("CatMood", |r#enum| r#enum.assert_values(&["ANGRY", "HUNGRY", "CUDDLY"]));
+    api.assert_schema().assert_enum("CatMood", |r#enum| {
+        r#enum.assert_values(&["ANGRY", "HUNGRY", "CUDDLY"])
+    });
 
     let dm2 = r#"
         model Cat {
@@ -52,7 +55,10 @@ fn existing_postgis_tables_must_not_be_migrated(api: TestApi) {
     "#;
 
     api.raw_cmd(create_tables);
-    api.schema_push_w_datasource("").send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource("")
+        .send()
+        .assert_green()
+        .assert_no_steps();
 
     api.assert_schema()
         .assert_has_table("spatial_ref_sys")
@@ -73,7 +79,10 @@ fn existing_postgis_views_must_not_be_migrated(api: TestApi) {
     "#;
 
     api.raw_cmd(create_views);
-    api.schema_push_w_datasource("").send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource("")
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -133,7 +142,10 @@ fn native_type_columns_can_be_created(api: TestApi) {
         )
     });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -181,7 +193,10 @@ fn functions_with_schema_prefix_in_dbgenerated_are_idempotent(api: TestApi) {
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -379,7 +394,10 @@ fn foreign_key_renaming_to_default_works(api: TestApi) {
     let migration = api.connector_diff(
         DiffTarget::Database,
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(target_schema))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(target_schema),
+            )],
             &NoExtensionTypes,
         ),
         None,
@@ -395,7 +413,10 @@ fn foreign_key_renaming_to_default_works(api: TestApi) {
     api.raw_cmd(&migration);
 
     // Check that the migration is idempotent.
-    api.schema_push(target_schema).send().assert_green().assert_no_steps();
+    api.schema_push(target_schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -418,9 +439,10 @@ fn failing_enum_migrations_should_not_be_partially_applied(api: TestApi) {
         .assert_green();
 
     {
-        let cat_inserts = quaint::ast::Insert::multi_into(api.render_table_name("Cat"), ["id", "mood"])
-            .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
-            .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
+        let cat_inserts =
+            quaint::ast::Insert::multi_into(api.render_table_name("Cat"), ["id", "mood"])
+                .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
+                .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
 
         api.query(cat_inserts.into());
     }
@@ -446,8 +468,10 @@ fn failing_enum_migrations_should_not_be_partially_applied(api: TestApi) {
         api.raw_cmd("ROLLBACK");
 
         let cat_data = api.dump_table("Cat");
-        let cat_data: Vec<Vec<quaint::ast::Value>> =
-            cat_data.into_iter().map(|row| row.into_iter().collect()).collect();
+        let cat_data: Vec<Vec<quaint::ast::Value>> = cat_data
+            .into_iter()
+            .map(|row| row.into_iter().collect())
+            .collect();
 
         let expected_cat_data = vec![
             vec![Value::text("felix"), Value::enum_variant("HUNGRY")],
@@ -500,7 +524,10 @@ fn scalar_list_defaults_work(api: TestApi) {
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 
     let expected_sql = expect![[r#"
         -- CreateEnum
@@ -588,11 +615,17 @@ fn scalar_list_default_diffing(api: TestApi) {
 
     let migration = api.connector_diff(
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_1))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_1),
+            )],
             &NoExtensionTypes,
         ),
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_2))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_2),
+            )],
             &NoExtensionTypes,
         ),
         None,
@@ -613,12 +646,18 @@ fn scalar_list_default_diffing(api: TestApi) {
     expected_migration.assert_eq(&migration);
 
     api.schema_push(schema_1).send().assert_green();
-    api.schema_push(schema_1).send().assert_green().assert_no_steps();
+    api.schema_push(schema_1)
+        .send()
+        .assert_green()
+        .assert_no_steps();
     api.schema_push(schema_2)
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push(schema_2).send().assert_green().assert_no_steps();
+    api.schema_push(schema_2)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 // https://github.com/prisma/prisma/issues/12095
@@ -640,7 +679,10 @@ fn json_defaults_with_escaped_quotes_work(api: TestApi) {
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 
     let sql = expect![[r#"
         -- CreateTable
@@ -680,7 +722,10 @@ fn bigint_defaults_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &sql);
 
     api.schema_push(schema).send().assert_green();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 // https://github.com/prisma/prisma/issues/14799
@@ -709,7 +754,10 @@ fn dbgenerated_on_generated_columns_is_idempotent(api: TestApi) {
         }
     "#;
 
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 // https://github.com/prisma/prisma/issues/15654
@@ -741,7 +789,10 @@ fn dbgenerated_on_generated_unsupported_columns_is_idempotent(api: TestApi) {
         }
     "#;
 
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres), preview_features("views"))]
@@ -789,7 +840,10 @@ fn default_schema_not_included_when_dropping_items(api: TestApi) {
         .send()
         .assert_green()
         .assert_has_executed_steps();
-    api.schema_push(full_schema).send().assert_green().assert_no_steps();
+    api.schema_push(full_schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 
     let schema_wo_index = r#"
         generator client {
@@ -829,11 +883,17 @@ fn default_schema_not_included_when_dropping_items(api: TestApi) {
 
     let migration = api.connector_diff(
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(full_schema))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(full_schema),
+            )],
             &NoExtensionTypes,
         ),
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_wo_index))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_wo_index),
+            )],
             &NoExtensionTypes,
         ),
         None,
@@ -855,11 +915,17 @@ fn default_schema_not_included_when_dropping_items(api: TestApi) {
 
     let migration = api.connector_diff(
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(full_schema))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(full_schema),
+            )],
             &NoExtensionTypes,
         ),
         DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(empty_schema))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(empty_schema),
+            )],
             &NoExtensionTypes,
         ),
         None,

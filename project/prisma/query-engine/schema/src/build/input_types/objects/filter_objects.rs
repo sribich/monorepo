@@ -1,19 +1,29 @@
-use super::*;
 use constants::filters;
-use query_structure::{prelude::ParentContainer};
+use query_structure::prelude::ParentContainer;
+
+use super::*;
 
 pub(crate) fn scalar_filter_object_type(
     ctx: &'_ QuerySchema,
     model: Model,
     include_aggregates: bool,
 ) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::ScalarFilterInput(model.clone(), include_aggregates));
+    let ident = Identifier::new_prisma(IdentifierType::ScalarFilterInput(
+        model.clone(),
+        include_aggregates,
+    ));
 
     let mut input_object = init_input_object_type(ident);
     input_object.set_container(model.clone());
-    input_object.set_tag(ObjectTag::WhereInputType(ParentContainer::Model(model.clone())));
+    input_object.set_tag(ObjectTag::WhereInputType(ParentContainer::Model(
+        model.clone(),
+    )));
     input_object.set_fields(move || {
-        let object_type = InputType::object(scalar_filter_object_type(ctx, model.clone(), include_aggregates));
+        let object_type = InputType::object(scalar_filter_object_type(
+            ctx,
+            model.clone(),
+            include_aggregates,
+        ));
 
         let mut input_fields = vec![
             input_field(
@@ -22,7 +32,12 @@ pub(crate) fn scalar_filter_object_type(
                 None,
             )
             .optional(),
-            input_field(filters::OR, vec![InputType::list(object_type.clone())], None).optional(),
+            input_field(
+                filters::OR,
+                vec![InputType::list(object_type.clone())],
+                None,
+            )
+            .optional(),
             input_field(
                 filters::NOT,
                 vec![object_type.clone(), InputType::list(object_type)],
@@ -32,7 +47,9 @@ pub(crate) fn scalar_filter_object_type(
         ];
 
         input_fields.extend(model.fields().all().filter_map(|f| match f {
-            ModelField::Scalar(_) => Some(input_fields::filter_input_field(ctx, f, include_aggregates)),
+            ModelField::Scalar(_) => {
+                Some(input_fields::filter_input_field(ctx, f, include_aggregates))
+            }
             ModelField::Relation(_) => None,
         }));
         input_fields
@@ -41,7 +58,10 @@ pub(crate) fn scalar_filter_object_type(
     input_object
 }
 
-pub(crate) fn where_object_type(ctx: &'_ QuerySchema, container: ParentContainer) -> InputObjectType<'_> {
+pub(crate) fn where_object_type(
+    ctx: &'_ QuerySchema,
+    container: ParentContainer,
+) -> InputObjectType<'_> {
     let ident = Identifier::new_prisma(IdentifierType::WhereInput(container.clone()));
 
     let mut input_object = init_input_object_type(ident);
@@ -57,7 +77,12 @@ pub(crate) fn where_object_type(ctx: &'_ QuerySchema, container: ParentContainer
                 None,
             )
             .optional(),
-            input_field(filters::OR, vec![InputType::list(object_type.clone())], None).optional(),
+            input_field(
+                filters::OR,
+                vec![InputType::list(object_type.clone())],
+                None,
+            )
+            .optional(),
             input_field(
                 filters::NOT,
                 vec![object_type.clone(), InputType::list(object_type)],
@@ -82,7 +107,9 @@ pub(crate) fn where_unique_object_type(ctx: &'_ QuerySchema, model: Model) -> In
 
     let mut input_object = init_input_object_type(ident);
     input_object.set_container(model.clone());
-    input_object.set_tag(ObjectTag::WhereInputType(ParentContainer::Model(model.clone())));
+    input_object.set_tag(ObjectTag::WhereInputType(ParentContainer::Model(
+        model.clone(),
+    )));
 
     // Concatenated list of uniques/@@unique/@@id fields on which the input type constraints should be applied (that at least one of them is set).
     let constrained_fields: Vec<_> = {
@@ -106,8 +133,10 @@ pub(crate) fn where_unique_object_type(ctx: &'_ QuerySchema, model: Model) -> In
 
     input_object.set_fields(move || {
         // Split unique & ID fields vs all the other fields
-        let (unique_fields, rest_fields): (Vec<_>, Vec<_>) =
-            model.fields().all().partition(|f| f.is_scalar() && f.is_unique());
+        let (unique_fields, rest_fields): (Vec<_>, Vec<_>) = model
+            .fields()
+            .all()
+            .partition(|f| f.is_scalar() && f.is_unique());
         // @@unique compound fields.
         let compound_uniques: Vec<_> = ctx
             .internal_data_model
@@ -153,20 +182,31 @@ pub(crate) fn where_unique_object_type(ctx: &'_ QuerySchema, model: Model) -> In
             .collect();
 
         // @@id compound field (there can be only one per model).
-        let compound_id_field = compound_id
-            .as_ref()
-            .map(|(name, typ)| simple_input_field(name.clone(), InputType::object(typ.clone()), None).optional());
+        let compound_id_field = compound_id.as_ref().map(|(name, typ)| {
+            simple_input_field(name.clone(), InputType::object(typ.clone()), None).optional()
+        });
 
         // Boolean operators AND/OR/NOT, which are _not_ where unique inputs
-        let where_input_type = InputType::object(where_object_type(ctx, ParentContainer::Model(model.clone())));
+        let where_input_type = InputType::object(where_object_type(
+            ctx,
+            ParentContainer::Model(model.clone()),
+        ));
         let boolean_operators = vec![
             input_field(
                 filters::AND,
-                vec![where_input_type.clone(), InputType::list(where_input_type.clone())],
+                vec![
+                    where_input_type.clone(),
+                    InputType::list(where_input_type.clone()),
+                ],
                 None,
             )
             .optional(),
-            input_field(filters::OR, vec![InputType::list(where_input_type.clone())], None).optional(),
+            input_field(
+                filters::OR,
+                vec![InputType::list(where_input_type.clone())],
+                None,
+            )
+            .optional(),
             input_field(
                 filters::NOT,
                 vec![where_input_type.clone(), InputType::list(where_input_type)],
@@ -176,11 +216,9 @@ pub(crate) fn where_unique_object_type(ctx: &'_ QuerySchema, model: Model) -> In
         ];
 
         // @@unique compound fields.
-        fields.extend(
-            compound_uniques
-                .iter()
-                .map(|(name, typ)| simple_input_field(name.clone(), InputType::object(typ.clone()), None).optional()),
-        );
+        fields.extend(compound_uniques.iter().map(|(name, typ)| {
+            simple_input_field(name.clone(), InputType::object(typ.clone()), None).optional()
+        }));
         fields.extend(compound_id_field);
 
         fields.extend(boolean_operators);

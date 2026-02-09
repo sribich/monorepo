@@ -1,8 +1,8 @@
-use crate::{
-    ParserDatabase, ast,
-    types::ShardKeyAttribute,
-    walkers::{ModelWalker, ScalarFieldWalker},
-};
+use crate::ParserDatabase;
+use crate::ast;
+use crate::types::ShardKeyAttribute;
+use crate::walkers::ModelWalker;
+use crate::walkers::ScalarFieldWalker;
 
 /// A `@shardKey`/`@@shardKey` attribute in the schema.
 #[derive(Copy, Clone)]
@@ -38,7 +38,12 @@ impl<'db> ShardKeyWalker<'db> {
     }
 
     /// The scalar fields used as the shard key.
-    pub fn fields(self) -> impl ExactSizeIterator<Item = ScalarFieldWalker<'db>> + Clone + use<'db> {
-        self.attribute.fields.iter().map(move |field| self.db.walk(*field))
+    pub fn fields(
+        self,
+    ) -> impl ExactSizeIterator<Item = ScalarFieldWalker<'db>> + Clone + use<'db> {
+        self.attribute
+            .fields
+            .iter()
+            .map(move |field| self.db.walk(*field))
     }
 }

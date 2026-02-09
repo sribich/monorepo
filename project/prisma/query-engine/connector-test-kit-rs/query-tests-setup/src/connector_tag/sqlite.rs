@@ -1,14 +1,21 @@
 use std::fmt::Display;
 
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+
 use super::*;
-use crate::{BoxFuture, SqlDatamodelRenderer};
-use quaint::{prelude::Queryable, single::Quaint};
+use crate::BoxFuture;
+use crate::SqlDatamodelRenderer;
 
 #[derive(Debug, Default)]
 pub struct SqliteConnectorTag;
 
 impl ConnectorTagInterface for SqliteConnectorTag {
-    fn raw_execute<'a>(&'a self, query: &'a str, connection_url: &'a str) -> BoxFuture<'a, Result<(), TestError>> {
+    fn raw_execute<'a>(
+        &'a self,
+        query: &'a str,
+        connection_url: &'a str,
+    ) -> BoxFuture<'a, Result<(), TestError>> {
         Box::pin(async move {
             let conn = Quaint::new(connection_url).await?;
             Ok(conn.raw_cmd(query).await?)
@@ -50,7 +57,11 @@ impl TryFrom<&str> for SqliteVersion {
         let version = match s {
             "3" => Self::V3,
             "react-native" => Self::ReactNative,
-            _ => return Err(TestError::parse_error(format!("Unknown SQLite version `{s}`"))),
+            _ => {
+                return Err(TestError::parse_error(format!(
+                    "Unknown SQLite version `{s}`"
+                )));
+            }
         };
         Ok(version)
     }

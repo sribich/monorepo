@@ -1,5 +1,9 @@
-use super::{Constant, Text, Value};
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
+
+use super::Constant;
+use super::Text;
+use super::Value;
 
 /// Represents a function parameter in the PSL.
 #[derive(Debug)]

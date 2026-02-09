@@ -7,7 +7,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod chunking {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[test_suite(schema(schema))]
     mod reproductions {
@@ -53,7 +54,9 @@ mod chunking {
 
         async fn create_user(runner: &Runner, data: &str) -> TestResult<()> {
             runner
-                .query(format!("mutation {{ createOneUser(data: {data}) {{ id }} }}"))
+                .query(format!(
+                    "mutation {{ createOneUser(data: {data}) {{ id }} }}"
+                ))
                 .await?
                 .assert_success();
 
@@ -97,17 +100,25 @@ mod chunking {
                 "#
             );
             let posts_as_json = serde_json::from_str::<serde_json::Value>(&posts_as_str).unwrap();
-            let ids_vec = posts_as_json.as_object().unwrap()["data"].as_object().unwrap()["findManyPost"]
+            let ids_vec = posts_as_json.as_object().unwrap()["data"]
+                .as_object()
+                .unwrap()["findManyPost"]
                 .as_array()
                 .unwrap()
                 .iter()
                 .map(|x| x["id"].as_i64().unwrap())
                 .collect::<Vec<i64>>();
 
-            let posts_as_graphql: Vec<String> = ids_vec.into_iter().map(|id| format!("{{ id: {id} }}")).collect();
+            let posts_as_graphql: Vec<String> = ids_vec
+                .into_iter()
+                .map(|id| format!("{{ id: {id} }}"))
+                .collect();
             assert_eq!(posts_as_graphql.len(), 400);
 
-            let query = format!("{{ id: 201, posts: {{ connect: [{}] }} }}", posts_as_graphql.join(", "));
+            let query = format!(
+                "{{ id: 201, posts: {{ connect: [{}] }} }}",
+                posts_as_graphql.join(", ")
+            );
 
             create_user(&runner, &query).await?;
 

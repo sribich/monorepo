@@ -7,7 +7,8 @@
 // exposed for tests
 pub mod commands;
 
-pub use core_error::{CoreError, CoreResult};
+pub use core_error::CoreError;
+pub use core_error::CoreResult;
 pub use json_rpc;
 
 mod core_error;
@@ -16,25 +17,36 @@ mod migration_schema_cache;
 pub mod state;
 mod timings;
 
-use crate::state::EngineState;
-
-pub use self::timings::TimingsLayer;
-pub use extensions::{ExtensionType, ExtensionTypeConfig};
-use json_rpc::types::{SchemaContainer, SchemasContainer, SchemasWithConfigDir};
-pub use schema_connector;
+use std::env;
+use std::path::Path;
+use std::sync::Arc;
 
 use enumflags2::BitFlags;
-use psl::{
-    Datasource, PreviewFeature, ValidatedSchema, builtin_connectors::*, datamodel_connector::Flavour, parser_database::{ExtensionTypes, SourceFile}
-};
+pub use extensions::ExtensionType;
+pub use extensions::ExtensionTypeConfig;
+use json_rpc::types::SchemaContainer;
+use json_rpc::types::SchemasContainer;
+use json_rpc::types::SchemasWithConfigDir;
+use psl::Datasource;
+use psl::PreviewFeature;
+use psl::ValidatedSchema;
+use psl::builtin_connectors::*;
+use psl::datamodel_connector::Flavour;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::SourceFile;
+pub use schema_connector;
 use schema_connector::ConnectorParams;
-use sql_schema_connector::{SqlSchemaConnector, SqlSchemaDialect};
-use std::{env, path::Path, sync::Arc};
+use sql_schema_connector::SqlSchemaConnector;
+use sql_schema_connector::SqlSchemaDialect;
 use user_facing_errors::common::InvalidConnectionString;
 
+pub use self::timings::TimingsLayer;
+use crate::state::EngineState;
 
 /// Creates the [`SqlSchemaDialect`](SqlSchemaDialect) matching the given provider.
-pub fn dialect_for_provider(provider: &str) -> CoreResult<Box<dyn schema_connector::SchemaDialect>> {
+pub fn dialect_for_provider(
+    provider: &str,
+) -> CoreResult<Box<dyn schema_connector::SchemaDialect>> {
     let error = || {
         Err(CoreError::from_msg(format!(
             "`{provider}` is not a supported connector."
@@ -115,9 +127,13 @@ fn connector_for_connection_string(
 
 /// Same as schema_to_connector, but it will only read the provider, not the connector params.
 /// This uses `schema_files` to read `preview_features` and the `datasource` block.
-fn schema_to_dialect(schema_files: &[(String, SourceFile)]) -> CoreResult<Box<dyn schema_connector::SchemaDialect>> {
-    let (_, config) = psl::parse_configuration_multi_file(schema_files)
-        .map_err(|(files, err)| CoreError::new_schema_parser_error(files.render_diagnostics(&err)))?;
+fn schema_to_dialect(
+    schema_files: &[(String, SourceFile)],
+) -> CoreResult<Box<dyn schema_connector::SchemaDialect>> {
+    let (_, config) =
+        psl::parse_configuration_multi_file(schema_files).map_err(|(files, err)| {
+            CoreError::new_schema_parser_error(files.render_diagnostics(&err))
+        })?;
 
     let preview_features = config.preview_features();
     let datasource = config
@@ -145,10 +161,14 @@ fn schema_to_connector(
     files: &[(String, SourceFile)],
     config_dir: Option<&Path>,
 ) -> CoreResult<Box<dyn schema_connector::SchemaConnector>> {
-    let (datasource, url, preview_features, shadow_database_url) = parse_configuration_multi(files)?;
+    let (datasource, url, preview_features, shadow_database_url) =
+        parse_configuration_multi(files)?;
 
     let url = config_dir
-        .map(|config_dir| psl::set_config_dir(datasource.active_connector.flavour(), config_dir, &url).into_owned())
+        .map(|config_dir| {
+            psl::set_config_dir(datasource.active_connector.flavour(), config_dir, &url)
+                .into_owned()
+        })
         .unwrap_or(url);
 
     let params = ConnectorParams {
@@ -164,9 +184,10 @@ fn initial_datamodel_to_connector(
     initial_datamodel: &psl::ValidatedSchema,
 ) -> CoreResult<Box<dyn schema_connector::SchemaConnector>> {
     let configuration = &initial_datamodel.configuration;
-    let (datasource, url, preview_features, shadow_database_url) = extract_configuration_ref(configuration, |_| {
-        CoreError::new_schema_parser_error(initial_datamodel.render_own_diagnostics())
-    })?;
+    let (datasource, url, preview_features, shadow_database_url) =
+        extract_configuration_ref(configuration, |_| {
+            CoreError::new_schema_parser_error(initial_datamodel.render_own_diagnostics())
+        })?;
 
     let params = ConnectorParams {
         connection_string: url,
@@ -214,15 +235,19 @@ pub fn schema_api(
         parse_configuration(datamodel)?;
     }
 
-    let datamodel = datamodel.map(|datamodel| vec![("schema.prisma".to_owned(), SourceFile::from(datamodel))]);
+    let datamodel =
+        datamodel.map(|datamodel| vec![("schema.prisma".to_owned(), SourceFile::from(datamodel))]);
 
     let state = state::EngineState::new(datamodel, host, extension_config);
     Ok(Box::new(state))
 }
 
-fn parse_configuration(datamodel: &str) -> CoreResult<(Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
-    let config = psl::parse_configuration(datamodel)
-        .map_err(|err| CoreError::new_schema_parser_error(err.to_pretty_string("schema.prisma", datamodel)))?;
+fn parse_configuration(
+    datamodel: &str,
+) -> CoreResult<(Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
+    let config = psl::parse_configuration(datamodel).map_err(|err| {
+        CoreError::new_schema_parser_error(err.to_pretty_string("schema.prisma", datamodel))
+    })?;
 
     extract_configuration(config, |err| {
         CoreError::new_schema_parser_error(err.to_pretty_string("schema.prisma", datamodel))
@@ -232,8 +257,10 @@ fn parse_configuration(datamodel: &str) -> CoreResult<(Datasource, String, BitFl
 fn parse_configuration_multi(
     files: &[(String, SourceFile)],
 ) -> CoreResult<(Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
-    let (files, mut config) = psl::parse_configuration_multi_file(files)
-        .map_err(|(files, err)| CoreError::new_schema_parser_error(files.render_diagnostics(&err)))?;
+    let (files, mut config) =
+        psl::parse_configuration_multi_file(files).map_err(|(files, err)| {
+            CoreError::new_schema_parser_error(files.render_diagnostics(&err))
+        })?;
 
     extract_configuration(config, |err| {
         CoreError::new_schema_parser_error(files.render_diagnostics(&err))
@@ -271,7 +298,12 @@ fn extract_configuration(
 fn extract_configuration_ref(
     config: &psl::Configuration,
     mut err_handler: impl Fn(psl::Diagnostics) -> CoreError,
-) -> CoreResult<(&Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
+) -> CoreResult<(
+    &Datasource,
+    String,
+    BitFlags<PreviewFeature>,
+    Option<String>,
+)> {
     let preview_features = config.preview_features();
 
     let source = config

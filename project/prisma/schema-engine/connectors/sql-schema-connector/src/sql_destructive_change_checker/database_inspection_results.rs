@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
-use super::check::{Column, Table};
+use super::check::Column;
+use super::check::Table;
 
 /// The information about the current state of the database gathered by the destructive change checker.
 #[derive(Debug, Default)]

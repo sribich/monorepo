@@ -1,4 +1,6 @@
-use crate::{UdtId, UserDefinedType, Walker};
+use crate::UdtId;
+use crate::UserDefinedType;
+use crate::Walker;
 
 /// Traverse a user-defined type
 pub type UserDefinedTypeWalker<'a> = Walker<'a, UdtId>;

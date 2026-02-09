@@ -1,8 +1,10 @@
-use crate::TemplatingError;
-use quaint::error::Error as QuaintError;
 use std::env::VarError;
+
+use quaint::error::Error as QuaintError;
 use thiserror::Error;
 use user_facing_errors::query_engine::validation::ValidationError;
+
+use crate::TemplatingError;
 
 #[allow(clippy::large_enum_variant)]
 #[derive(Debug, Error)]

@@ -107,7 +107,11 @@ async fn create_test_data(runner: &Runner) -> TestResult<()> {
         r#"{ id: 1, fieldA: "Chicken Masala", fieldB: "Chicken, Rice, Masala Sauce"}"#,
     )
     .await?;
-    create_row(runner, r#"{ id: 2, fieldA: "Chicken Curry", fieldB: "Chicken, Curry"}"#).await?;
+    create_row(
+        runner,
+        r#"{ id: 2, fieldA: "Chicken Curry", fieldB: "Chicken, Curry"}"#,
+    )
+    .await?;
     create_row(
         runner,
         r#"{ id: 3, fieldA: "Caesar Salad", fieldB: "Salad, Chicken, Caesar Sauce", fieldC: "Chicken"}"#,
@@ -124,7 +128,9 @@ async fn create_test_data(runner: &Runner) -> TestResult<()> {
 
 async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
     runner
-        .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+        .query(format!(
+            "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+        ))
         .await?
         .assert_success();
     Ok(())

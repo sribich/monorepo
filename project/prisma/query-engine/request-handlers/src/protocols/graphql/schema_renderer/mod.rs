@@ -3,11 +3,12 @@ mod field_renderer;
 mod object_renderer;
 mod type_renderer;
 
+use std::collections::HashMap;
+
 use enum_renderer::*;
 use field_renderer::*;
 use object_renderer::*;
 use query_core::schema::*;
-use std::collections::HashMap;
 use type_renderer::*;
 
 /// Top level GraphQL schema renderer.

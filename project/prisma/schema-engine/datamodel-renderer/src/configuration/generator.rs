@@ -1,7 +1,14 @@
-use crate::value::{Array, Documentation, Env, Text, Value};
+use std::borrow::Cow;
+use std::fmt;
+
 use itertools::Itertools;
 use psl::PreviewFeature;
-use std::{borrow::Cow, fmt};
+
+use crate::value::Array;
+use crate::value::Documentation;
+use crate::value::Env;
+use crate::value::Text;
+use crate::value::Value;
 
 /// The generator block of the datasource.
 #[derive(Debug)]
@@ -93,14 +100,22 @@ impl<'a> Generator<'a> {
             .map(|f| f.iter().map(Text).collect::<Vec<Text<_>>>())
             .map(Array::from);
 
-        let config = psl_gen.config.iter().map(|(k, v)| (k.as_str(), v.into())).collect();
+        let config = psl_gen
+            .config
+            .iter()
+            .map(|(k, v)| (k.as_str(), v.into()))
+            .collect();
 
         Self {
             name: &psl_gen.name,
             provider: Env::from(&psl_gen.provider),
             output: psl_gen.output.as_ref().map(Env::from),
             preview_features,
-            documentation: psl_gen.documentation.as_deref().map(Cow::Borrowed).map(Documentation),
+            documentation: psl_gen
+                .documentation
+                .as_deref()
+                .map(Cow::Borrowed)
+                .map(Documentation),
             config,
         }
     }
@@ -135,9 +150,11 @@ impl fmt::Display for Generator<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{configuration::*, value::*};
     use expect_test::expect;
     use psl::PreviewFeature;
+
+    use crate::configuration::*;
+    use crate::value::*;
 
     #[test]
     fn kitchen_sink() {
@@ -152,7 +169,10 @@ mod tests {
         generator.push_config_value("customValue", "meow");
         generator.push_config_value("otherValue", "purr");
 
-        generator.push_config_value("customFeatures", vec![Value::from("enums"), Value::from("models")]);
+        generator.push_config_value(
+            "customFeatures",
+            vec![Value::from("enums"), Value::from("models")],
+        );
         generator.push_config_value(
             "afterGenerate",
             vec![

@@ -1,5 +1,6 @@
 use quaint::prelude::Insert;
-use schema_core::{commands::introspect::IntrospectParams, json_rpc::types::SchemasContainer};
+use schema_core::commands::introspect::IntrospectParams;
+use schema_core::json_rpc::types::SchemasContainer;
 use sql_migration_tests::test_api::*;
 
 #[test_connector(tags(Sqlite))]
@@ -82,7 +83,10 @@ fn creating_a_model_with_a_non_autoincrement_id_column_is_idempotent(api: TestAp
     "#;
 
     api.schema_push_w_datasource(dm).send().assert_green();
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Sqlite))]
@@ -96,7 +100,10 @@ fn treat_nullable_integer_primary_key_as_required(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Sqlite))]
@@ -122,7 +129,10 @@ fn bigint_defaults_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &sql);
 
     api.schema_push(schema).send().assert_green();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Sqlite))]
@@ -147,7 +157,10 @@ fn default_string_with_escaped_unicode(api: TestApi) {
 
     api.expect_sql_for_schema(dm, &expected);
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
     api.schema_push(dm).send().assert_green().assert_no_steps();
 }
 

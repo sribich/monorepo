@@ -1,13 +1,10 @@
 use query_engine_tests::test_suite;
 
-#[test_suite(
-    schema(generic),
-    exclude(
-        Sqlite("react-native"),
-    )
-)]
+#[test_suite(schema(generic), exclude(Sqlite("react-native"),))]
 mod metrics {
-    use prisma_metrics::{PRISMA_CLIENT_QUERIES_ACTIVE, PRISMA_CLIENT_QUERIES_TOTAL, PRISMA_DATASOURCE_QUERIES_TOTAL};
+    use prisma_metrics::PRISMA_CLIENT_QUERIES_ACTIVE;
+    use prisma_metrics::PRISMA_CLIENT_QUERIES_TOTAL;
+    use prisma_metrics::PRISMA_DATASOURCE_QUERIES_TOTAL;
     use query_engine_tests::ConnectorVersion::*;
     use query_engine_tests::*;
 

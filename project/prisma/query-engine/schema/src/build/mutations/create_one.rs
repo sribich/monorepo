@@ -1,11 +1,20 @@
-use super::*;
-use crate::{
-    Identifier, IdentifierType, InputField, InputObjectType, InputType, OutputField, OutputType, QueryInfo, QueryTag,
-};
 use constants::*;
-use input_types::fields::{arguments, data_input_mapper::*};
+use input_types::fields::arguments;
+use input_types::fields::data_input_mapper::*;
 use output_types::objects;
-use query_structure::{Model, RelationFieldRef};
+use query_structure::Model;
+use query_structure::RelationFieldRef;
+
+use super::*;
+use crate::Identifier;
+use crate::IdentifierType;
+use crate::InputField;
+use crate::InputObjectType;
+use crate::InputType;
+use crate::OutputField;
+use crate::OutputType;
+use crate::QueryInfo;
+use crate::QueryTag;
 
 /// Builds a create mutation field (e.g. createUser) for given model.
 pub(crate) fn create_one(ctx: &QuerySchema, model: Model) -> OutputField<'_> {
@@ -27,10 +36,12 @@ pub(crate) fn create_one(ctx: &QuerySchema, model: Model) -> OutputField<'_> {
 /// Builds "data" argument intended for the create field.
 /// The data argument is not present if no data can be created.
 pub(crate) fn create_one_arguments(ctx: &QuerySchema, model: Model) -> Vec<InputField<'_>> {
-    let any_field_required = model
-        .fields()
-        .all()
-        .any(|f| f.is_required() && f.as_scalar().map(|f| f.default_value().is_none()).unwrap_or(true));
+    let any_field_required = model.fields().all().any(|f| {
+        f.is_required()
+            && f.as_scalar()
+                .map(|f| f.default_value().is_none())
+                .unwrap_or(true)
+    });
 
     let create_types = create_one_input_types(ctx, model, None);
     let data_field = input_field(args::DATA, create_types, None).optional_if(!any_field_required);
@@ -45,7 +56,11 @@ pub(crate) fn create_one_input_types(
     model: Model,
     parent_field: Option<RelationFieldRef>,
 ) -> Vec<InputType<'_>> {
-    let checked_input = InputType::object(checked_create_input_type(ctx, model.clone(), parent_field.clone()));
+    let checked_input = InputType::object(checked_create_input_type(
+        ctx,
+        model.clone(),
+        parent_field.clone(),
+    ));
     let unchecked_input = InputType::object(unchecked_create_input_type(ctx, model, parent_field));
     vec![checked_input, unchecked_input]
 }

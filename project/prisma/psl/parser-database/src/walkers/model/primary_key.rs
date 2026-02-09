@@ -1,8 +1,10 @@
-use crate::{
-    ParserDatabase, ScalarFieldId, ast,
-    types::IdAttribute,
-    walkers::{ModelWalker, ScalarFieldAttributeWalker, ScalarFieldWalker},
-};
+use crate::ParserDatabase;
+use crate::ScalarFieldId;
+use crate::ast;
+use crate::types::IdAttribute;
+use crate::walkers::ModelWalker;
+use crate::walkers::ScalarFieldAttributeWalker;
+use crate::walkers::ScalarFieldWalker;
 
 /// An `@(@)id` attribute in the schema.
 #[derive(Copy, Clone)]
@@ -35,7 +37,11 @@ impl<'db> PrimaryKeyWalker<'db> {
 
     /// If defined on a specific field, returns `@id`. Otherwise `@@id`.
     pub fn attribute_name(self) -> &'static str {
-        if self.is_defined_on_field() { "@id" } else { "@@id" }
+        if self.is_defined_on_field() {
+            "@id"
+        } else {
+            "@@id"
+        }
     }
 
     /// If true, the index defines the storage and ordering of the row. Mostly
@@ -68,7 +74,9 @@ impl<'db> PrimaryKeyWalker<'db> {
     }
 
     /// The scalar fields covered by the id, and their arguments.
-    pub fn scalar_field_attributes(self) -> impl ExactSizeIterator<Item = ScalarFieldAttributeWalker<'db>> + 'db {
+    pub fn scalar_field_attributes(
+        self,
+    ) -> impl ExactSizeIterator<Item = ScalarFieldAttributeWalker<'db>> + 'db {
         self.attribute
             .fields
             .iter()
@@ -92,7 +100,11 @@ impl<'db> PrimaryKeyWalker<'db> {
     }
 
     /// Do the constrained fields match exactly these?
-    pub fn contains_exactly_fields(self, fields: impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>) -> bool {
-        self.attribute.fields.len() == fields.len() && self.fields().zip(fields).all(|(a, b)| a == b)
+    pub fn contains_exactly_fields(
+        self,
+        fields: impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>,
+    ) -> bool {
+        self.attribute.fields.len() == fields.len()
+            && self.fields().zip(fields).all(|(a, b)| a == b)
     }
 }

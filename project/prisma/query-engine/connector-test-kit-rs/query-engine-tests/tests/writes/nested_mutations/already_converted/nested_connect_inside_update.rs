@@ -2,12 +2,18 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod connect_inside_update {
-    use query_engine_tests::{DatamodelWithParams, assert_error, run_query, run_query_json};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "a P1 to C1  relation with the child already in a relation" should "be connectable through a nested mutation if the child is already in a relation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_child_in_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_child_in_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let loose_child = t.child().parse(
             run_query_json!(
                 runner,
@@ -120,7 +126,10 @@ mod connect_inside_update {
 
     // "a P1 to C1 relation with the child and the parent without a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_wo_parent_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_wo_parent_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child_1 = t.child().parse(
             run_query_json!(
                 runner,
@@ -167,7 +176,10 @@ mod connect_inside_update {
 
     // "a P1 to C1 relation with the child without a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_child_wo_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_child_wo_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -219,7 +231,10 @@ mod connect_inside_update {
 
     // "a P1 to C1  relation with the parent without a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_parnt_wo_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_parnt_wo_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -273,7 +288,10 @@ mod connect_inside_update {
 
     // "A PM to CM relation connecting two nodes twice" should "not error"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_rel_connect_twice_error(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_rel_connect_twice_error(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -343,7 +361,10 @@ mod connect_inside_update {
 
     // "a PM to C1! relation with the child already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1req_child_in_rel_connect(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1req_child_in_rel_connect(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let other_parent_with_child = t.parent().parse(
             run_query_json!(
                 runner,
@@ -441,7 +462,10 @@ mod connect_inside_update {
 
     // "a P1 to C1  relation with the child and the parent already in a relation" should "should error in a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1req_rel_child_parnt_error(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1req_rel_child_parnt_error(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -507,7 +531,10 @@ mod connect_inside_update {
 
     // "a P1 to C1!  relation with the child and the parent already in a relation" should not error if connected to the same record it's already connected to
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_rel_child_idempotent(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_rel_child_idempotent(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -548,7 +575,10 @@ mod connect_inside_update {
 
     // "a P1 to C1!  relation with the child and the parent already in a relation" should not error if connected to the same record it's already connected to
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1req_rel_child_idempotent(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1req_rel_child_idempotent(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -589,7 +619,10 @@ mod connect_inside_update {
 
     // "a P1 to C1! relation with the child already in a relation" should "should not error when switching to a different parent"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1req_child_in_rel_no_error(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1req_child_in_rel_no_error(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -648,7 +681,10 @@ mod connect_inside_update {
 
     // "a PM to C1  relation with the child already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_child_in_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_child_in_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         run_query!(
             runner,
             r#"mutation {
@@ -705,7 +741,10 @@ mod connect_inside_update {
 
     // "a PM to C1  relation with the child without a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_child_wo_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_child_wo_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -755,7 +794,10 @@ mod connect_inside_update {
 
     // "a P1! to CM  relation with the child already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneReq", on_child = "ToMany")]
-    async fn p1req_cm_child_inrel_connect(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1req_cm_child_inrel_connect(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -822,7 +864,10 @@ mod connect_inside_update {
 
     // "a P1! to CM  relation with the child not already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneReq", on_child = "ToMany")]
-    async fn p1req_cm_child_norel_connect(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1req_cm_child_norel_connect(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -882,7 +927,10 @@ mod connect_inside_update {
 
     // "a P1 to CM  relation with the child already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToMany")]
-    async fn p1_cm_child_in_rel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_cm_child_in_rel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -944,7 +992,10 @@ mod connect_inside_update {
 
     // "a P1 to CM  relation with the child not already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToMany")]
-    async fn p1_cm_child_norel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_cm_child_norel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -999,7 +1050,10 @@ mod connect_inside_update {
 
     // "a PM to CM  relation with the children already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_child_inrel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_child_inrel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let children = t.child().parse_many_all(
             run_query_json!(
                 runner,
@@ -1066,7 +1120,10 @@ mod connect_inside_update {
 
     // "a PM to CM  relation with the child not already in a relation" should "be connectable through a nested mutation"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_child_norel_connect_mut(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_child_norel_connect_mut(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child = t.child().parse(
             run_query_json!(
                 runner,
@@ -1144,7 +1201,10 @@ mod connect_inside_update {
     // Regression test for https://github.com/prisma/prisma/issues/18173
     #[connector_test(schema(p1_c1_child_compound_unique_schema))]
     async fn p1_c1_child_compound_unique(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneParent(data: { id: 1 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneParent(data: { id: 1 }) { id } }"#
+        );
         run_query!(
             &runner,
             r#"mutation { createOneChild(data: { id: 1, name: "Alice" }) { id } }"#

@@ -3,57 +3,83 @@
 //! Why this rather than using connectors directly? We must be able to use the schema engine
 //! without a valid schema or database connection for commands like createDatabase and diff.
 
-use std::{
-    collections::HashMap,
-    future::Future,
-    path::{Path, PathBuf},
-    pin::Pin,
-    sync::Arc,
-};
+use std::collections::HashMap;
+use std::future::Future;
+use std::path::Path;
+use std::path::PathBuf;
+use std::pin::Pin;
+use std::sync::Arc;
 
 use enumflags2::BitFlags;
-use futures::stream::{FuturesUnordered, StreamExt};
+use futures::stream::FuturesUnordered;
+use futures::stream::StreamExt;
 use json_rpc::types::*;
-use psl::{
-    Schema, Validated,
-    parser_database::{NoExtensionTypes, SourceFile},
-    validate,
-};
-use schema_connector::{ConnectorError, ConnectorHost, IntrospectionResult, Namespaces, SchemaConnector};
-use tokio::sync::{Mutex, mpsc, oneshot};
-use tracing_futures::{Instrument, WithSubscriber};
+use psl::Schema;
+use psl::Validated;
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::SourceFile;
+use psl::validate;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorHost;
+use schema_connector::IntrospectionResult;
+use schema_connector::Namespaces;
+use schema_connector::SchemaConnector;
+use tokio::sync::Mutex;
+use tokio::sync::mpsc;
+use tokio::sync::oneshot;
+use tracing_futures::Instrument;
+use tracing_futures::WithSubscriber;
 
-use crate::{
-    CoreError, CoreResult, SchemaContainerExt,
-    commands::{
-        apply_migrations::{ApplyMigrationsInput, ApplyMigrationsOutput, apply_migrations},
-        create_database::{CreateDatabaseParams, CreateDatabaseResult},
-        create_migration::{CreateMigrationInput, CreateMigrationOutput, create_migration},
-        db_execute::{DbExecuteDatasourceType, DbExecuteParams},
-        dev_diagnostic::{DevDiagnosticInput, DevDiagnosticOutput, dev_diagnostic},
-        diagnose_migration_history::{
-            DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, diagnose_migration_history,
-        },
-        diff::{DiffParams, DiffResult, diff},
-        ensure_connection_validity::{EnsureConnectionValidityParams, EnsureConnectionValidityResult},
-        evaluate_data_loss::{EvaluateDataLossInput, EvaluateDataLossOutput, evaluate_data_loss},
-        introspect::{IntrospectParams, IntrospectResult, IntrospectionView},
-        introspect_sql::{
-            IntrospectSqlParams, IntrospectSqlResult, SqlQueryColumnOutput, SqlQueryOutput, SqlQueryParameterOutput,
-            introspect_sql,
-        },
-        mark_migration_applied::{MarkMigrationAppliedInput, MarkMigrationAppliedOutput, mark_migration_applied},
-        mark_migration_rolled_back::{
-            MarkMigrationRolledBackInput, MarkMigrationRolledBackOutput, mark_migration_rolled_back,
-        },
-        reset::ResetInput,
-        schema_push::{SchemaPushInput, SchemaPushOutput, schema_push},
-        version::GetDatabaseVersionInput,
-    },
-    extensions::ExtensionTypeConfig,
-    migration_schema_cache::MigrationSchemaCache,
-    parse_configuration_multi,
-};
+use crate::CoreError;
+use crate::CoreResult;
+use crate::SchemaContainerExt;
+use crate::commands::apply_migrations::ApplyMigrationsInput;
+use crate::commands::apply_migrations::ApplyMigrationsOutput;
+use crate::commands::apply_migrations::apply_migrations;
+use crate::commands::create_database::CreateDatabaseParams;
+use crate::commands::create_database::CreateDatabaseResult;
+use crate::commands::create_migration::CreateMigrationInput;
+use crate::commands::create_migration::CreateMigrationOutput;
+use crate::commands::create_migration::create_migration;
+use crate::commands::db_execute::DbExecuteDatasourceType;
+use crate::commands::db_execute::DbExecuteParams;
+use crate::commands::dev_diagnostic::DevDiagnosticInput;
+use crate::commands::dev_diagnostic::DevDiagnosticOutput;
+use crate::commands::dev_diagnostic::dev_diagnostic;
+use crate::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
+use crate::commands::diagnose_migration_history::DiagnoseMigrationHistoryOutput;
+use crate::commands::diagnose_migration_history::diagnose_migration_history;
+use crate::commands::diff::DiffParams;
+use crate::commands::diff::DiffResult;
+use crate::commands::diff::diff;
+use crate::commands::ensure_connection_validity::EnsureConnectionValidityParams;
+use crate::commands::ensure_connection_validity::EnsureConnectionValidityResult;
+use crate::commands::evaluate_data_loss::EvaluateDataLossInput;
+use crate::commands::evaluate_data_loss::EvaluateDataLossOutput;
+use crate::commands::evaluate_data_loss::evaluate_data_loss;
+use crate::commands::introspect::IntrospectParams;
+use crate::commands::introspect::IntrospectResult;
+use crate::commands::introspect::IntrospectionView;
+use crate::commands::introspect_sql::IntrospectSqlParams;
+use crate::commands::introspect_sql::IntrospectSqlResult;
+use crate::commands::introspect_sql::SqlQueryColumnOutput;
+use crate::commands::introspect_sql::SqlQueryOutput;
+use crate::commands::introspect_sql::SqlQueryParameterOutput;
+use crate::commands::introspect_sql::introspect_sql;
+use crate::commands::mark_migration_applied::MarkMigrationAppliedInput;
+use crate::commands::mark_migration_applied::MarkMigrationAppliedOutput;
+use crate::commands::mark_migration_applied::mark_migration_applied;
+use crate::commands::mark_migration_rolled_back::MarkMigrationRolledBackInput;
+use crate::commands::mark_migration_rolled_back::MarkMigrationRolledBackOutput;
+use crate::commands::mark_migration_rolled_back::mark_migration_rolled_back;
+use crate::commands::reset::ResetInput;
+use crate::commands::schema_push::SchemaPushInput;
+use crate::commands::schema_push::SchemaPushOutput;
+use crate::commands::schema_push::schema_push;
+use crate::commands::version::GetDatabaseVersionInput;
+use crate::extensions::ExtensionTypeConfig;
+use crate::migration_schema_cache::MigrationSchemaCache;
+use crate::parse_configuration_multi;
 
 /// The container for the state of the schema engine. It can contain one or more connectors
 /// corresponding to a database to be reached or that we are already connected to.
@@ -107,7 +133,9 @@ impl ConnectorRequestType {
     ) -> CoreResult<Box<dyn SchemaConnector>> {
         match self {
             Self::Schema(schemas) => crate::schema_to_connector(&schemas, config_dir),
-            Self::Url(url) => crate::connector_for_connection_string(url, None, BitFlags::default()),
+            Self::Url(url) => {
+                crate::connector_for_connection_string(url, None, BitFlags::default())
+            }
             Self::InitialDatamodel => {
                 if let Some(initial_datamodel) = initial_datamodel {
                     Ok(crate::initial_datamodel_to_connector(initial_datamodel)?)
@@ -121,12 +149,17 @@ impl ConnectorRequestType {
 
 /// A request from the core to a connector, in the form of an async closure.
 type ConnectorRequest<O> = Box<
-    dyn for<'c> FnOnce(&'c mut dyn SchemaConnector) -> Pin<Box<dyn Future<Output = CoreResult<O>> + Send + 'c>> + Send,
+    dyn for<'c> FnOnce(
+            &'c mut dyn SchemaConnector,
+        ) -> Pin<Box<dyn Future<Output = CoreResult<O>> + Send + 'c>>
+        + Send,
 >;
 
 /// Same as ConnectorRequest, but with the return type erased with a channel.
 type ErasedConnectorRequest = Box<
-    dyn for<'c> FnOnce(&'c mut dyn SchemaConnector) -> Pin<Box<dyn Future<Output = ()> + Send + 'c>> + Send + 'static,
+    dyn for<'c> FnOnce(&'c mut dyn SchemaConnector) -> Pin<Box<dyn Future<Output = ()> + Send + 'c>>
+        + Send
+        + 'static,
 >;
 
 pub trait EngineExt {
@@ -233,10 +266,12 @@ impl EngineState {
             },
             None => {
                 let request_key = request.clone();
-                let mut connector = request.into_connector(self.initial_datamodel.as_ref(), config_dir)?;
+                let mut connector =
+                    request.into_connector(self.initial_datamodel.as_ref(), config_dir)?;
 
                 connector.set_host(self.host.clone());
-                let (erased_sender, mut erased_receiver) = mpsc::channel::<ErasedConnectorRequest>(12);
+                let (erased_sender, mut erased_receiver) =
+                    mpsc::channel::<ErasedConnectorRequest>(12);
                 tokio::spawn(
                     async move {
                         while let Some(req) = erased_receiver.recv().await {
@@ -248,7 +283,9 @@ impl EngineState {
                 match erased_sender.send(erased).await {
                     Ok(()) => (),
                     Err(_) => {
-                        return Err(ConnectorError::from_msg("erased sender send error".to_owned()));
+                        return Err(ConnectorError::from_msg(
+                            "erased sender send error".to_owned(),
+                        ));
                     }
                 };
                 connectors.insert(request_key, erased_sender);
@@ -264,8 +301,12 @@ impl EngineState {
         config_dir: Option<&Path>,
         f: ConnectorRequest<O>,
     ) -> CoreResult<O> {
-        self.with_connector_for_request::<O>(ConnectorRequestType::Schema(schemas.clone()), config_dir, f)
-            .await
+        self.with_connector_for_request::<O>(
+            ConnectorRequestType::Schema(schemas.clone()),
+            config_dir,
+            f,
+        )
+        .await
     }
 
     /// Note: this method is used by:
@@ -287,8 +328,13 @@ impl EngineState {
         f: ConnectorRequest<O>,
     ) -> CoreResult<O> {
         match param {
-            DatasourceParam::ConnectionString(UrlContainer { url }) => self.with_connector_for_url(url, f).await,
-            DatasourceParam::Schema(schemas) => self.with_connector_for_schema(schemas.to_psl_input(), None, f).await,
+            DatasourceParam::ConnectionString(UrlContainer { url }) => {
+                self.with_connector_for_url(url, f).await
+            }
+            DatasourceParam::Schema(schemas) => {
+                self.with_connector_for_schema(schemas.to_psl_input(), None, f)
+                    .await
+            }
         }
     }
 
@@ -302,11 +348,17 @@ impl EngineState {
 }
 
 impl EngineState {
-    pub async fn apply_migrations(&self, input: ApplyMigrationsInput) -> CoreResult<ApplyMigrationsOutput> {
+    pub async fn apply_migrations(
+        &self,
+        input: ApplyMigrationsInput,
+    ) -> CoreResult<ApplyMigrationsOutput> {
         let namespaces = self.namespaces();
 
         self.with_default_connector(Box::new(move |connector| {
-            Box::pin(apply_migrations(input, connector, namespaces).instrument(tracing::info_span!("ApplyMigrations")))
+            Box::pin(
+                apply_migrations(input, connector, namespaces)
+                    .instrument(tracing::info_span!("ApplyMigrations")),
+            )
         }))
         .await
     }
@@ -315,7 +367,10 @@ impl EngineState {
     ///
     /// TODO(sr): this currently has no tests
     /// TODO(sr): Move logic into commands dir
-    pub async fn create_database(&self, params: CreateDatabaseParams) -> CoreResult<CreateDatabaseResult> {
+    pub async fn create_database(
+        &self,
+        params: CreateDatabaseParams,
+    ) -> CoreResult<CreateDatabaseResult> {
         self.with_connector_from_datasource_param(
             params.datasource,
             Box::new(|connector| {
@@ -328,8 +383,12 @@ impl EngineState {
         .await
     }
 
-    pub async fn create_migration(&self, input: CreateMigrationInput) -> CoreResult<CreateMigrationOutput> {
-        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();
+    pub async fn create_migration(
+        &self,
+        input: CreateMigrationInput,
+    ) -> CoreResult<CreateMigrationOutput> {
+        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> =
+            self.migration_schema_cache.clone();
         let extensions = Arc::clone(&self.extensions);
         self.with_default_connector(Box::new(move |connector| {
             let span = tracing::info_span!(
@@ -353,13 +412,20 @@ impl EngineState {
             DbExecuteDatasourceType::Schema(schemas) => self.get_url_from_schemas(schemas)?,
         };
 
-        self.with_connector_for_url(url, Box::new(move |connector| connector.db_execute(params.script)))
-            .await
+        self.with_connector_for_url(
+            url,
+            Box::new(move |connector| connector.db_execute(params.script)),
+        )
+        .await
     }
 
-    pub async fn dev_diagnostic(&self, input: DevDiagnosticInput) -> CoreResult<DevDiagnosticOutput> {
+    pub async fn dev_diagnostic(
+        &self,
+        input: DevDiagnosticInput,
+    ) -> CoreResult<DevDiagnosticOutput> {
         let namespaces = self.namespaces();
-        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();
+        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> =
+            self.migration_schema_cache.clone();
         self.with_default_connector(Box::new(move |connector| {
             Box::pin(async move {
                 let mut migration_schema_cache = migration_schema_cache.lock().await;
@@ -376,13 +442,19 @@ impl EngineState {
         input: DiagnoseMigrationHistoryInput,
     ) -> CoreResult<DiagnoseMigrationHistoryOutput> {
         let namespaces = self.namespaces();
-        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();
+        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> =
+            self.migration_schema_cache.clone();
         self.with_default_connector(Box::new(move |connector| {
             Box::pin(async move {
                 let mut migration_schema_cache = migration_schema_cache.lock().await;
-                diagnose_migration_history(input, namespaces, connector, &mut migration_schema_cache)
-                    .instrument(tracing::info_span!("DiagnoseMigrationHistory"))
-                    .await
+                diagnose_migration_history(
+                    input,
+                    namespaces,
+                    connector,
+                    &mut migration_schema_cache,
+                )
+                .instrument(tracing::info_span!("DiagnoseMigrationHistory"))
+                .await
             })
         }))
         .await
@@ -393,8 +465,11 @@ impl EngineState {
     }
 
     pub async fn drop_database(&self, url: String) -> CoreResult<()> {
-        self.with_connector_for_url(url, Box::new(|connector| SchemaConnector::drop_database(connector)))
-            .await
+        self.with_connector_for_url(
+            url,
+            Box::new(|connector| SchemaConnector::drop_database(connector)),
+        )
+        .await
     }
 
     pub async fn ensure_connection_validity(
@@ -413,8 +488,12 @@ impl EngineState {
         .await
     }
 
-    pub async fn evaluate_data_loss(&self, input: EvaluateDataLossInput) -> CoreResult<EvaluateDataLossOutput> {
-        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> = self.migration_schema_cache.clone();
+    pub async fn evaluate_data_loss(
+        &self,
+        input: EvaluateDataLossInput,
+    ) -> CoreResult<EvaluateDataLossOutput> {
+        let migration_schema_cache: Arc<Mutex<MigrationSchemaCache>> =
+            self.migration_schema_cache.clone();
         let extensions = Arc::clone(&self.extensions);
         self.with_default_connector(Box::new(|connector| {
             Box::pin(async move {
@@ -427,7 +506,10 @@ impl EngineState {
         .await
     }
 
-    pub async fn introspect_sql(&self, params: IntrospectSqlParams) -> CoreResult<IntrospectSqlResult> {
+    pub async fn introspect_sql(
+        &self,
+        params: IntrospectSqlParams,
+    ) -> CoreResult<IntrospectSqlResult> {
         self.with_connector_for_url(
             params.url.clone(),
             Box::new(move |conn| {
@@ -541,7 +623,10 @@ impl EngineState {
         input: MarkMigrationAppliedInput,
     ) -> CoreResult<MarkMigrationAppliedOutput> {
         self.with_default_connector(Box::new(move |connector| {
-            let span = tracing::info_span!("MarkMigrationApplied", migration_name = input.migration_name.as_str());
+            let span = tracing::info_span!(
+                "MarkMigrationApplied",
+                migration_name = input.migration_name.as_str()
+            );
             Box::pin(mark_migration_applied(input, connector).instrument(span))
         }))
         .await
@@ -591,7 +676,10 @@ impl EngineState {
         let f: ConnectorRequest<String> = Box::new(|connector| connector.version());
 
         match params {
-            Some(params) => self.with_connector_from_datasource_param(params.datasource, f).await,
+            Some(params) => {
+                self.with_connector_from_datasource_param(params.datasource, f)
+                    .await
+            }
             None => self.with_default_connector(f).await,
         }
     }
@@ -612,10 +700,16 @@ impl EngineState {
                     })
                 })
                 .await
-                .map_err(|err| CoreError::from_msg(format!("Failed to send dispose command to connector: {err}")))?;
+                .map_err(|err| {
+                    CoreError::from_msg(format!(
+                        "Failed to send dispose command to connector: {err}"
+                    ))
+                })?;
 
                 rx.await.map_err(|err| {
-                    CoreError::from_msg(format!("Connector did not respond to dispose command: {err}"))
+                    CoreError::from_msg(format!(
+                        "Connector did not respond to dispose command: {err}"
+                    ))
                 })?
             })
             .collect::<FuturesUnordered<_>>()

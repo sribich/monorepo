@@ -1,16 +1,23 @@
-use super::KnownPostgresType;
-use crate::{
-    PreviewFeature,
-    builtin_connectors::PostgresType,
-    datamodel_connector::{Connector, walker_ext_traits::*},
-    diagnostics::{DatamodelError, Diagnostics},
-    parser_database::{IndexAlgorithm, OperatorClass, ast::WithSpan, walkers::IndexWalker},
-};
 use enumflags2::BitFlags;
 
+use super::KnownPostgresType;
 use super::PostgresDatasourceProperties;
+use crate::PreviewFeature;
+use crate::builtin_connectors::PostgresType;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::walker_ext_traits::*;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
+use crate::parser_database::IndexAlgorithm;
+use crate::parser_database::OperatorClass;
+use crate::parser_database::ast::WithSpan;
+use crate::parser_database::walkers::IndexWalker;
 
-pub(super) fn compatible_native_types(index: IndexWalker<'_>, connector: &dyn Connector, errors: &mut Diagnostics) {
+pub(super) fn compatible_native_types(
+    index: IndexWalker<'_>,
+    connector: &dyn Connector,
+    errors: &mut Diagnostics,
+) {
     for field in index.fields() {
         if let Some(native_type) = field.native_type_instance(connector) {
             let span = field.ast_field().span();
@@ -61,7 +68,11 @@ pub(super) fn generalized_index_validations(
 
     for field in index.scalar_field_attributes() {
         // No validation for `raw` needed.
-        if field.operator_class().map(|c| c.get().is_right()).unwrap_or(false) {
+        if field
+            .operator_class()
+            .map(|c| c.get().is_right())
+            .unwrap_or(false)
+        {
             continue;
         }
 
@@ -79,8 +90,9 @@ pub(super) fn generalized_index_validations(
 
         match opclass {
             Some(opclass) if !opclass.supports_index_type(algo) => {
-                let msg =
-                    format!("The given operator class `{opclass}` is not supported with the `{algo}` index type.");
+                let msg = format!(
+                    "The given operator class `{opclass}` is not supported with the `{algo}` index type."
+                );
 
                 errors.push_error(DatamodelError::new_attribute_validation_error(
                     &msg,
@@ -93,7 +105,8 @@ pub(super) fn generalized_index_validations(
             _ => (),
         }
 
-        let mut err_f = |native_type_name: Option<&str>, opclass| match (native_type_name, opclass) {
+        let mut err_f = |native_type_name: Option<&str>, opclass| match (native_type_name, opclass)
+        {
             (Some(native_type), Some(opclass)) => {
                 let name = field.as_index_field().name();
 
@@ -108,7 +121,9 @@ pub(super) fn generalized_index_validations(
                 ));
             }
             (Some(native_type), None) => {
-                let msg = format!("The {algo} index field type `{native_type}` has no default operator class.");
+                let msg = format!(
+                    "The {algo} index field type `{native_type}` has no default operator class."
+                );
 
                 errors.push_error(DatamodelError::new_attribute_validation_error(
                     &msg,
@@ -131,7 +146,9 @@ pub(super) fn generalized_index_validations(
             _ => {
                 if !algo.supports_field_type(field.as_index_field()) {
                     let name = field.as_index_field().name();
-                    let msg = format!("The {algo} index type does not support the type of the field `{name}`.");
+                    let msg = format!(
+                        "The {algo} index type does not support the type of the field `{name}`."
+                    );
 
                     errors.push_error(DatamodelError::new_attribute_validation_error(
                         &msg,

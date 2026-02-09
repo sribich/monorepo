@@ -1,4 +1,6 @@
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList};
+use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
+use lsp_types::CompletionList;
 use psl::parser_database::ReferentialAction;
 
 pub(super) fn referential_action_completion(

@@ -1,13 +1,16 @@
 mod context;
 mod validations;
 
-use crate::{
-    PreviewFeature, configuration,
-    datamodel_connector::{Connector, EmptyDatamodelConnector, RelationMode},
-    diagnostics::Diagnostics,
-};
 use enumflags2::BitFlags;
-use parser_database::{ExtensionTypes, ParserDatabase};
+use parser_database::ExtensionTypes;
+use parser_database::ParserDatabase;
+
+use crate::PreviewFeature;
+use crate::configuration;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::EmptyDatamodelConnector;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::Diagnostics;
 
 pub struct ParseOutput {
     pub(crate) db: ParserDatabase,
@@ -16,9 +19,14 @@ pub struct ParseOutput {
 }
 
 /// Parse a Prisma schema, but skip validations.
-pub(crate) fn parse_without_validation(db: ParserDatabase, sources: &[configuration::Datasource]) -> ParseOutput {
+pub(crate) fn parse_without_validation(
+    db: ParserDatabase,
+    sources: &[configuration::Datasource],
+) -> ParseOutput {
     let source = sources.first();
-    let connector = source.map(|s| s.active_connector).unwrap_or(&EmptyDatamodelConnector);
+    let connector = source
+        .map(|s| s.active_connector)
+        .unwrap_or(&EmptyDatamodelConnector);
     let relation_mode = source.map(|s| s.relation_mode()).unwrap_or_default();
 
     ParseOutput {

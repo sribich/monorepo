@@ -1,13 +1,18 @@
 use query_core::Operation;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{
-        BatchResult, ModelOperation, ModelWriteOperation, Query, QueryConvert, QueryResult, SelectionQuery, query,
-    },
-};
+use super::Model;
+use super::WhereInput;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::BatchResult;
+use crate::query::ModelOperation;
+use crate::query::ModelWriteOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct DeleteMany<'db, TModel: Model> {
     client: &'db InternalClient,

@@ -1,19 +1,39 @@
-use crate::sql_renderer::{IteratorJoin, Quoted, QuotedWithPrefix, SqlRenderer, render_step};
-use crate::{
-    migration_pair::MigrationPair,
-    sql_migration::{AlterColumn, AlterEnum, AlterTable, RedefineTable, TableChange},
-    sql_schema_differ::ColumnChanges,
-};
+use std::borrow::Cow;
+use std::fmt::Write as _;
+use std::sync::LazyLock;
+
 use psl::builtin_connectors::MySqlType;
 use regex::Regex;
-use sql_ddl::{IndexColumn, SortOrder, mysql as ddl};
-use sql_schema_describer::{
-    ColumnTypeFamily, DefaultKind, DefaultValue, ForeignKeyAction, PrismaValue, SQLSortOrder, SqlSchema,
-    walkers::{
-        EnumWalker, ForeignKeyWalker, IndexWalker, TableColumnWalker, TableWalker, UserDefinedTypeWalker, ViewWalker,
-    },
-};
-use std::{borrow::Cow, fmt::Write as _, sync::LazyLock};
+use sql_ddl::IndexColumn;
+use sql_ddl::SortOrder;
+use sql_ddl::mysql as ddl;
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::DefaultKind;
+use sql_schema_describer::DefaultValue;
+use sql_schema_describer::ForeignKeyAction;
+use sql_schema_describer::PrismaValue;
+use sql_schema_describer::SQLSortOrder;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::walkers::EnumWalker;
+use sql_schema_describer::walkers::ForeignKeyWalker;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+use sql_schema_describer::walkers::UserDefinedTypeWalker;
+use sql_schema_describer::walkers::ViewWalker;
+
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::AlterColumn;
+use crate::sql_migration::AlterEnum;
+use crate::sql_migration::AlterTable;
+use crate::sql_migration::RedefineTable;
+use crate::sql_migration::TableChange;
+use crate::sql_renderer::IteratorJoin;
+use crate::sql_renderer::Quoted;
+use crate::sql_renderer::QuotedWithPrefix;
+use crate::sql_renderer::SqlRenderer;
+use crate::sql_renderer::render_step;
+use crate::sql_schema_differ::ColumnChanges;
 
 #[derive(Debug)]
 pub struct MysqlRenderer;
@@ -82,7 +102,11 @@ impl SqlRenderer for MysqlRenderer {
         .to_string()
     }
 
-    fn render_alter_enum(&self, _alter_enum: &AlterEnum, _differ: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_alter_enum(
+        &self,
+        _alter_enum: &AlterEnum,
+        _differ: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         unreachable!("render_alter_enum on MySQL")
     }
 
@@ -100,7 +124,11 @@ impl SqlRenderer for MysqlRenderer {
         })
     }
 
-    fn render_alter_table(&self, alter_table: &AlterTable, schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_alter_table(
+        &self,
+        alter_table: &AlterTable,
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         let AlterTable {
             table_ids: table_index,
             changes,
@@ -112,7 +140,9 @@ impl SqlRenderer for MysqlRenderer {
 
         for change in changes {
             match change {
-                TableChange::DropPrimaryKey => lines.push(sql_ddl::mysql::AlterTableClause::DropPrimaryKey.to_string()),
+                TableChange::DropPrimaryKey => {
+                    lines.push(sql_ddl::mysql::AlterTableClause::DropPrimaryKey.to_string())
+                }
                 TableChange::RenamePrimaryKey => unreachable!("No Renaming Primary Keys on Mysql"),
                 TableChange::AddPrimaryKey => lines.push(format!(
                     "ADD PRIMARY KEY ({})",
@@ -164,12 +194,20 @@ impl SqlRenderer for MysqlRenderer {
                             "ALTER COLUMN {column} DROP DEFAULT",
                             column = Quoted::mysql_ident(columns.previous.name())
                         )),
-                        MysqlAlterColumn::Modify { new_default, changes } => {
-                            lines.push(render_mysql_modify(&changes, new_default.as_ref(), columns.next))
-                        }
+                        MysqlAlterColumn::Modify {
+                            new_default,
+                            changes,
+                        } => lines.push(render_mysql_modify(
+                            &changes,
+                            new_default.as_ref(),
+                            columns.next,
+                        )),
                     };
                 }
-                TableChange::DropAndRecreateColumn { column_id, changes: _ } => {
+                TableChange::DropAndRecreateColumn {
+                    column_id,
+                    changes: _,
+                } => {
                     let columns = schemas.walk(*column_id);
                     lines.push(format!("DROP COLUMN `{}`", columns.previous.name()));
                     lines.push(format!("ADD COLUMN {}", self.render_column(columns.next)));
@@ -222,7 +260,11 @@ impl SqlRenderer for MysqlRenderer {
         .to_string()
     }
 
-    fn render_create_table_as(&self, table: TableWalker<'_>, table_name: QuotedWithPrefix<&str>) -> String {
+    fn render_create_table_as(
+        &self,
+        table: TableWalker<'_>,
+        table_name: QuotedWithPrefix<&str>,
+    ) -> String {
         ddl::CreateTable {
             table_name: &table_name,
             columns: table.columns().map(|col| self.render_column(col)).collect(),
@@ -271,7 +313,10 @@ impl SqlRenderer for MysqlRenderer {
         .to_string()
     }
 
-    fn render_drop_and_recreate_index(&self, indexes: MigrationPair<IndexWalker<'_>>) -> Vec<String> {
+    fn render_drop_and_recreate_index(
+        &self,
+        indexes: MigrationPair<IndexWalker<'_>>,
+    ) -> Vec<String> {
         // Order matters: dropping the old index first wouldn't work when foreign key constraints are still relying on it.
         vec![
             self.render_create_index(indexes.next),
@@ -289,7 +334,11 @@ impl SqlRenderer for MysqlRenderer {
         )
     }
 
-    fn render_drop_foreign_key(&self, _namespace: Option<&str>, foreign_key: ForeignKeyWalker<'_>) -> String {
+    fn render_drop_foreign_key(
+        &self,
+        _namespace: Option<&str>,
+        foreign_key: ForeignKeyWalker<'_>,
+    ) -> String {
         format!(
             "ALTER TABLE {table} DROP FOREIGN KEY {constraint_name}",
             table = self.quote(foreign_key.table().name()),
@@ -315,7 +364,11 @@ impl SqlRenderer for MysqlRenderer {
         })
     }
 
-    fn render_redefine_tables(&self, _names: &[RedefineTable], _schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_redefine_tables(
+        &self,
+        _names: &[RedefineTable],
+        _schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         unreachable!("render_redefine_table on MySQL")
     }
 
@@ -330,7 +383,10 @@ impl SqlRenderer for MysqlRenderer {
     }
 
     fn render_create_table(&self, table: TableWalker<'_>) -> String {
-        self.render_create_table_as(table, QuotedWithPrefix(None, Quoted::mysql_ident(table.name())))
+        self.render_create_table_as(
+            table,
+            QuotedWithPrefix(None, Quoted::mysql_ident(table.name())),
+        )
     }
 
     fn render_drop_view(&self, _namespace: Option<&str>, view: ViewWalker<'_>) -> String {
@@ -344,7 +400,11 @@ impl SqlRenderer for MysqlRenderer {
         vec![]
     }
 
-    fn render_drop_user_defined_type(&self, _namespace: Option<&str>, _: &UserDefinedTypeWalker<'_>) -> String {
+    fn render_drop_user_defined_type(
+        &self,
+        _namespace: Option<&str>,
+        _: &UserDefinedTypeWalker<'_>,
+    ) -> String {
         unreachable!("render_drop_user_defined_type on MySQL")
     }
 
@@ -359,7 +419,8 @@ fn render_mysql_modify(
     next_column: TableColumnWalker<'_>,
 ) -> String {
     let column_type: Option<String> = if changes.type_changed() {
-        Some(next_column.column_type().full_data_type.clone()).filter(|r| !r.is_empty() || r.contains("datetime"))
+        Some(next_column.column_type().full_data_type.clone())
+            .filter(|r| !r.is_empty() || r.contains("datetime"))
     // @default(now()) does not work with datetimes of certain sizes
     } else {
         Some(next_column.column_type().full_data_type.clone()).filter(|r| !r.is_empty())
@@ -396,7 +457,11 @@ fn render_mysql_modify(
 
 fn render_column_type(column: TableColumnWalker<'_>) -> Cow<'static, str> {
     if let ColumnTypeFamily::Enum(enum_id) = column.column_type_family() {
-        let variants: String = column.walk(*enum_id).values().map(Quoted::mysql_string).join(", ");
+        let variants: String = column
+            .walk(*enum_id)
+            .values()
+            .map(Quoted::mysql_string)
+            .join(", ");
 
         return format!("ENUM({variants})").into();
     }
@@ -461,7 +526,8 @@ fn render_column_type(column: TableColumnWalker<'_>) -> Cow<'static, str> {
 }
 
 fn escape_string_literal(s: &str) -> Cow<'_, str> {
-    static STRING_LITERAL_CHARACTER_TO_ESCAPE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"'"#).unwrap());
+    static STRING_LITERAL_CHARACTER_TO_ESCAPE_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r#"'"#).unwrap());
 
     STRING_LITERAL_CHARACTER_TO_ESCAPE_RE.replace_all(s, "'$0")
 }
@@ -493,23 +559,30 @@ impl MysqlAlterColumn {
         // @default(dbgenerated()) does not give us the information in the prisma schema, so we have to
         // transfer it from the introspected current state of the database.
         let new_default = match defaults {
-            (Some(DefaultKind::DbGenerated(Some(previous))), Some(DefaultKind::DbGenerated(next)))
-                if (next.is_none() || next.as_deref() == Some("")) && !previous.is_empty() =>
-            {
+            (
+                Some(DefaultKind::DbGenerated(Some(previous))),
+                Some(DefaultKind::DbGenerated(next)),
+            ) if (next.is_none() || next.as_deref() == Some("")) && !previous.is_empty() => {
                 Some(DefaultValue::db_generated(previous.clone()))
             }
             _ => columns.next.default().map(|d| d.inner()).cloned(),
         };
 
-        MysqlAlterColumn::Modify { changes, new_default }
+        MysqlAlterColumn::Modify {
+            changes,
+            new_default,
+        }
     }
 }
 
 fn render_default<'a>(column: TableColumnWalker<'a>, default: &'a DefaultValue) -> Cow<'a, str> {
     match default.kind() {
         DefaultKind::DbGenerated(Some(val)) => val.as_str().into(),
-        DefaultKind::Value(PrismaValue::String(val)) | DefaultKind::Value(PrismaValue::Enum(val)) => {
-            Quoted::mysql_string(escape_string_literal(val)).to_string().into()
+        DefaultKind::Value(PrismaValue::String(val))
+        | DefaultKind::Value(PrismaValue::Enum(val)) => {
+            Quoted::mysql_string(escape_string_literal(val))
+                .to_string()
+                .into()
         }
         DefaultKind::Now => {
             let precision = column
@@ -519,10 +592,14 @@ fn render_default<'a>(column: TableColumnWalker<'a>, default: &'a DefaultValue) 
 
             format!("CURRENT_TIMESTAMP({precision})").into()
         }
-        DefaultKind::Value(PrismaValue::DateTime(dt)) if column.column_type_family().is_datetime() => {
+        DefaultKind::Value(PrismaValue::DateTime(dt))
+            if column.column_type_family().is_datetime() =>
+        {
             Quoted::mysql_string(dt.to_rfc3339()).to_string().into()
         }
         DefaultKind::Value(val) => val.to_string().into(),
-        DefaultKind::DbGenerated(None) | DefaultKind::Sequence(_) | DefaultKind::UniqueRowid => unreachable!(),
+        DefaultKind::DbGenerated(None) | DefaultKind::Sequence(_) | DefaultKind::UniqueRowid => {
+            unreachable!()
+        }
     }
 }

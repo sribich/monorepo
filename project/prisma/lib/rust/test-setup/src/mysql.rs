@@ -1,7 +1,11 @@
-use crate::{AnyError, Tags, runtime::run_with_thread_local_runtime as tok};
 use enumflags2::BitFlags;
-use quaint::{prelude::Queryable, single::Quaint};
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
 use url::Url;
+
+use crate::AnyError;
+use crate::Tags;
+use crate::runtime::run_with_thread_local_runtime as tok;
 
 /// The maximum length of identifiers on mysql is 64 bytes.
 ///
@@ -16,7 +20,9 @@ pub fn mysql_safe_identifier(identifier: &str) -> &str {
 
 pub(crate) fn get_mysql_tags(database_url: &str) -> Result<BitFlags<Tags>, String> {
     let fut = async {
-        let quaint = Quaint::new(database_url).await.map_err(|err| err.to_string())?;
+        let quaint = Quaint::new(database_url)
+            .await
+            .map_err(|err| err.to_string())?;
         let mut tags: BitFlags<Tags> = Tags::Mysql.into();
 
         let metadata = quaint
@@ -38,7 +44,10 @@ pub(crate) fn get_mysql_tags(database_url: &str) -> Result<BitFlags<Tags>, Strin
             tags |= Tags::LowerCasesTableNames;
         }
 
-        match first_row.get("version").and_then(|version| version.to_string()) {
+        match first_row
+            .get("version")
+            .and_then(|version| version.to_string())
+        {
             None => Ok(tags),
             Some(version) => {
                 eprintln!("Version: {version:?}");
@@ -78,7 +87,10 @@ pub(crate) fn get_mysql_tags(database_url: &str) -> Result<BitFlags<Tags>, Strin
 /// Returns a connection to the new database, as well as the corresponding
 /// complete connection string.
 #[allow(clippy::needless_lifetimes)] // clippy is wrong
-pub async fn create_mysql_database<'a>(database_url: &str, db_name: &'a str) -> Result<(&'a str, String), AnyError> {
+pub async fn create_mysql_database<'a>(
+    database_url: &str,
+    db_name: &'a str,
+) -> Result<(&'a str, String), AnyError> {
     let mut url: Url = database_url.parse()?;
     let mut mysql_db_url = url.clone();
     let db_name = mysql_safe_identifier(db_name);

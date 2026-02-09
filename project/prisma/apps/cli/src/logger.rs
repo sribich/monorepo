@@ -2,7 +2,9 @@
 use tracing_error::ErrorLayer;
 
 pub fn init_logger() {
-    use tracing_subscriber::{EnvFilter, FmtSubscriber, prelude::*};
+    use tracing_subscriber::EnvFilter;
+    use tracing_subscriber::FmtSubscriber;
+    use tracing_subscriber::prelude::*;
 
     let subscriber = FmtSubscriber::builder()
         .with_env_filter(EnvFilter::from_default_env())
@@ -10,7 +12,7 @@ pub fn init_logger() {
         .with_writer(std::io::stderr)
         .finish()
         .with(ErrorLayer::default());
-        // .with(TimingsLayer);
+    // .with(TimingsLayer);
 
     tracing::subscriber::set_global_default(subscriber)
         .map_err(|err| eprintln!("Error initializing the global logger: {err}"))

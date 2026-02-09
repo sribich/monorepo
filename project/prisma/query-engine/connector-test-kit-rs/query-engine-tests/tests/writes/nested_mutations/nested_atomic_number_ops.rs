@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod atomic_number_ops {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -339,7 +340,9 @@ mod atomic_number_ops {
         opt_float: Option<&str>,
     ) -> TestResult<()> {
         let f = opt_float.unwrap_or("null");
-        let i = opt_int.map(|i| i.to_string()).unwrap_or_else(|| "null".to_string());
+        let i = opt_int
+            .map(|i| i.to_string())
+            .unwrap_or_else(|| "null".to_string());
 
         run_query!(
             runner,

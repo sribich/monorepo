@@ -1,15 +1,15 @@
-use std::{
-    cmp::Reverse,
-    ffi::{CString, OsString},
-    fmt::Debug,
-    marker::PhantomData,
-    num::Wrapping,
-    ops::Range,
-    path::PathBuf,
-    time::Duration,
-};
+use std::cmp::Reverse;
+use std::ffi::CString;
+use std::ffi::OsString;
+use std::fmt::Debug;
+use std::marker::PhantomData;
+use std::num::Wrapping;
+use std::ops::Range;
+use std::path::PathBuf;
+use std::time::Duration;
 
-use serde::{de::DeserializeOwned, Serialize};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use super::Settings;
 

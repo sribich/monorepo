@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn must_error_on_model_without_unique_criteria() {
@@ -115,7 +117,8 @@ fn multi_field_unique_indexes_on_relation_fields_must_error_and_give_nice_error_
 }
 
 #[test]
-fn multi_field_unique_indexes_on_relation_fields_must_error_and_give_nice_error_on_non_inline_side() {
+fn multi_field_unique_indexes_on_relation_fields_must_error_and_give_nice_error_on_non_inline_side()
+{
     let dml = indoc! {r#"
         model User {
           id               Int @id

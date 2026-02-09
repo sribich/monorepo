@@ -1,10 +1,10 @@
 mod cycle_detection;
 
+use psl::datamodel_connector::RelationMode;
+use psl::parser_database::ReferentialAction::*;
+use psl::parser_database::ReferentialAction::{self};
+
 use crate::common::*;
-use psl::{
-    datamodel_connector::RelationMode,
-    parser_database::ReferentialAction::{self, *},
-};
 
 #[test]
 fn on_delete_actions() {

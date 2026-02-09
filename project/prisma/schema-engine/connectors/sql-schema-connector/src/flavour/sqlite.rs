@@ -4,21 +4,28 @@ mod renderer;
 mod schema_calculator;
 mod schema_differ;
 
-use crate::{flavour::SqlConnector, sql_renderer::SqlRenderer};
+use std::future::Future;
+
 use connector as imp;
 use destructive_change_checker::SqliteDestructiveChangeCheckerFlavour;
 use indoc::indoc;
-use quaint::connector::{DEFAULT_SQLITE_DATABASE};
+use quaint::connector::DEFAULT_SQLITE_DATABASE;
 use renderer::SqliteRenderer;
 use schema_calculator::SqliteSchemaCalculatorFlavour;
-use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, Namespaces, migrations_directory::Migrations,
-};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use schema_connector::Namespaces;
+use schema_connector::migrations_directory::Migrations;
 use schema_differ::SqliteSchemaDifferFlavour;
-use sql_schema_describer::{DescriberErrorKind, SqlSchema, sqlite::SqlSchemaDescriber};
-use std::future::Future;
+use sql_schema_describer::DescriberErrorKind;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::sqlite::SqlSchemaDescriber;
 
-use super::{SqlDialect, UsingExternalShadowDb};
+use super::SqlDialect;
+use super::UsingExternalShadowDb;
+use crate::flavour::SqlConnector;
+use crate::sql_renderer::SqlRenderer;
 
 type State = imp::State;
 
@@ -34,7 +41,9 @@ impl SqlDialect for SqliteDialect {
         Box::new(SqliteSchemaDifferFlavour)
     }
 
-    fn schema_calculator(&self) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
+    fn schema_calculator(
+        &self,
+    ) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
         Box::new(SqliteSchemaCalculatorFlavour)
     }
 
@@ -55,7 +64,9 @@ impl SqlDialect for SqliteDialect {
         preview_features: psl::PreviewFeatures,
     ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
         let params = schema_connector::ConnectorParams::new(url, preview_features, None);
-        Box::pin(async move { Ok(Box::new(SqliteConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
+        Box::pin(async move {
+            Ok(Box::new(SqliteConnector::new_with_params(params)?) as Box<dyn SqlConnector>)
+        })
     }
 }
 
@@ -80,7 +91,9 @@ impl SqliteConnector {
 #[cfg(feature = "sqlite-native")]
 impl Default for SqliteConnector {
     fn default() -> Self {
-        Self { state: State::Initial }
+        Self {
+            state: State::Initial,
+        }
     }
 }
 
@@ -179,7 +192,10 @@ impl SqlConnector for SqliteConnector {
         self.raw_cmd(sql)
     }
 
-    fn describe_schema(&mut self, _namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
+    fn describe_schema(
+        &mut self,
+        _namespaces: Option<Namespaces>,
+    ) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
         self.with_connection(|conn, _| describe_schema(conn))
     }
 
@@ -192,7 +208,10 @@ impl SqlConnector for SqliteConnector {
     ) -> BoxFuture<
         '_,
         ConnectorResult<
-            Result<Vec<schema_connector::MigrationRecord>, schema_connector::PersistenceNotInitializedError>,
+            Result<
+                Vec<schema_connector::MigrationRecord>,
+                schema_connector::PersistenceNotInitializedError,
+            >,
         >,
     > {
         const SQL: &str = indoc! {r#"
@@ -312,7 +331,10 @@ impl SqlConnector for SqliteConnector {
         self.with_connection(|conn, params| conn.reset(params))
     }
 
-    fn set_preview_features(&mut self, preview_features: enumflags2::BitFlags<psl::PreviewFeature>) {
+    fn set_preview_features(
+        &mut self,
+        preview_features: enumflags2::BitFlags<psl::PreviewFeature>,
+    ) {
         imp::set_preview_features(&mut self.state, preview_features)
     }
 
@@ -332,7 +354,9 @@ impl SqlConnector for SqliteConnector {
             migrations: &Migrations,
         ) -> ConnectorResult<SqlSchema> {
             if !migrations.shadow_db_init_script.trim().is_empty() {
-                connection.raw_cmd(&migrations.shadow_db_init_script).await?;
+                connection
+                    .raw_cmd(&migrations.shadow_db_init_script)
+                    .await?;
             }
 
             for migration in migrations.migration_directories.iter() {
@@ -343,9 +367,14 @@ impl SqlConnector for SqliteConnector {
                     migration.migration_name()
                 );
 
-                connection.raw_cmd(&script).await.map_err(|connector_error| {
-                    connector_error.into_migration_does_not_apply_cleanly(migration.migration_name().to_owned())
-                })?;
+                connection
+                    .raw_cmd(&script)
+                    .await
+                    .map_err(|connector_error| {
+                        connector_error.into_migration_does_not_apply_cleanly(
+                            migration.migration_name().to_owned(),
+                        )
+                    })?;
             }
 
             describe_schema(connection).await
@@ -398,7 +427,9 @@ async fn describe_schema(connection: &imp::Connection) -> ConnectorResult<SqlSch
         .describe_impl()
         .await
         .map_err(|err| match err.into_kind() {
-            DescriberErrorKind::QuaintError(err) => ConnectorError::from_source(err, "Error describing the database."),
+            DescriberErrorKind::QuaintError(err) => {
+                ConnectorError::from_source(err, "Error describing the database.")
+            }
             DescriberErrorKind::CrossSchemaReference { .. } => {
                 unreachable!("No schemas on SQLite")
             }

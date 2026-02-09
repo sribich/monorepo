@@ -1,9 +1,19 @@
 //! Write query AST
-use super::{FilteredNestedMutation, FilteredQuery};
-use crate::{ReadQuery, RecordQuery, ToGraphviz};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::slice;
+
 use connector::NativeUpsert;
-use query_structure::{Filter, RecordFilter, WriteArgs, prelude::*};
-use std::{borrow::Cow, collections::HashMap, slice};
+use query_structure::Filter;
+use query_structure::RecordFilter;
+use query_structure::WriteArgs;
+use query_structure::prelude::*;
+
+use super::FilteredNestedMutation;
+use super::FilteredQuery;
+use crate::ReadQuery;
+use crate::RecordQuery;
+use crate::ToGraphviz;
 
 #[derive(Debug, Clone)]
 pub enum WriteQuery {
@@ -24,7 +34,10 @@ impl WriteQuery {
     /// Returns true if the query is expected to return a single record.
     pub fn is_unique(&self) -> bool {
         match self {
-            Self::CreateRecord(_) | Self::UpdateRecord(_) | Self::DeleteRecord(_) | Self::Upsert(_) => true,
+            Self::CreateRecord(_)
+            | Self::UpdateRecord(_)
+            | Self::DeleteRecord(_)
+            | Self::Upsert(_) => true,
             Self::CreateManyRecords(_)
             | Self::UpdateManyRecords(_)
             | Self::DeleteManyRecords(_)
@@ -66,17 +79,19 @@ impl WriteQuery {
     pub fn returns(&self) -> Option<Cow<'_, FieldSelection>> {
         let borrowed_fs = match self {
             Self::CreateRecord(cr) => Some(&cr.selected_fields),
-            Self::CreateManyRecords(CreateManyRecords { selected_fields, .. }) => {
-                selected_fields.as_ref().map(|sf| &sf.fields)
-            }
+            Self::CreateManyRecords(CreateManyRecords {
+                selected_fields, ..
+            }) => selected_fields.as_ref().map(|sf| &sf.fields),
             Self::UpdateRecord(UpdateRecord::WithSelection(ur)) => Some(&ur.selected_fields),
             Self::UpdateRecord(UpdateRecord::WithoutSelection(_)) => {
                 return Some(Cow::Owned(self.model().shard_aware_primary_identifier()));
             }
-            Self::DeleteRecord(DeleteRecord { selected_fields, .. }) => selected_fields.as_ref().map(|sf| &sf.fields),
-            Self::UpdateManyRecords(UpdateManyRecords { selected_fields, .. }) => {
-                selected_fields.as_ref().map(|sf| &sf.fields)
-            }
+            Self::DeleteRecord(DeleteRecord {
+                selected_fields, ..
+            }) => selected_fields.as_ref().map(|sf| &sf.fields),
+            Self::UpdateManyRecords(UpdateManyRecords {
+                selected_fields, ..
+            }) => selected_fields.as_ref().map(|sf| &sf.fields),
             Self::DeleteManyRecords(_) => None,
             Self::ConnectRecords(_) => None,
             Self::DisconnectRecords(_) => None,
@@ -91,21 +106,25 @@ impl WriteQuery {
     pub fn satisfy_dependency(&mut self, fields: FieldSelection) {
         match self {
             Self::CreateRecord(cr) => cr.selected_fields.merge_in_place(fields),
-            Self::UpdateRecord(UpdateRecord::WithSelection(ur)) => ur.selected_fields.merge_in_place(fields),
+            Self::UpdateRecord(UpdateRecord::WithSelection(ur)) => {
+                ur.selected_fields.merge_in_place(fields)
+            }
             Self::UpdateRecord(UpdateRecord::WithoutSelection(_)) => (),
             Self::CreateManyRecords(CreateManyRecords {
                 selected_fields: Some(selected_fields),
                 ..
             }) => selected_fields.fields.merge_in_place(fields),
             Self::CreateManyRecords(CreateManyRecords {
-                selected_fields: None, ..
+                selected_fields: None,
+                ..
             }) => (),
             Self::DeleteRecord(DeleteRecord {
                 selected_fields: Some(selected_fields),
                 ..
             }) => selected_fields.fields.merge_in_place(fields),
             Self::DeleteRecord(DeleteRecord {
-                selected_fields: None, ..
+                selected_fields: None,
+                ..
             }) => (),
             Self::UpdateManyRecords(_) => (),
             Self::DeleteManyRecords(_) => (),
@@ -194,8 +213,15 @@ impl std::fmt::Display for WriteQuery {
                 q.args(),
                 q.selected_fields().map(|field| field.to_string()),
             ),
-            Self::DeleteRecord(q) => write!(f, "DeleteRecord: {}, {:?}", q.model.name(), q.record_filter),
-            Self::UpdateManyRecords(q) => write!(f, "UpdateManyRecords(model: {}, args: {:?})", q.model.name(), q.args),
+            Self::DeleteRecord(q) => {
+                write!(f, "DeleteRecord: {}, {:?}", q.model.name(), q.record_filter)
+            }
+            Self::UpdateManyRecords(q) => write!(
+                f,
+                "UpdateManyRecords(model: {}, args: {:?})",
+                q.model.name(),
+                q.args
+            ),
             Self::DeleteManyRecords(q) => write!(f, "DeleteManyRecords: {}", q.model.name()),
             Self::ConnectRecords(_) => write!(f, "ConnectRecords"),
             Self::DisconnectRecords(_) => write!(f, "DisconnectRecords"),
@@ -216,7 +242,11 @@ impl std::fmt::Display for WriteQuery {
 impl ToGraphviz for WriteQuery {
     fn to_graphviz(&self) -> String {
         match self {
-            Self::CreateRecord(q) => format!("CreateRecord(model: {}, args: {:#?})", q.model.name(), q.args),
+            Self::CreateRecord(q) => format!(
+                "CreateRecord(model: {}, args: {:#?})",
+                q.model.name(),
+                q.args
+            ),
             Self::CreateManyRecords(q) => format!(
                 "CreateManyRecord(model: {}, selected_fields: {:#?})",
                 q.model.name(),
@@ -233,7 +263,11 @@ impl ToGraphviz for WriteQuery {
                 q.record_filter,
                 q.selected_fields
             ),
-            Self::UpdateManyRecords(q) => format!("UpdateManyRecords(model: {}, args: {:#?})", q.model.name(), q.args),
+            Self::UpdateManyRecords(q) => format!(
+                "UpdateManyRecords(model: {}, args: {:#?})",
+                q.model.name(),
+                q.args
+            ),
             Self::DeleteManyRecords(q) => format!("DeleteManyRecords: {}", q.model.name()),
             Self::ConnectRecords(_) => "ConnectRecords".to_string(),
             Self::DisconnectRecords(_) => "DisconnectRecords".to_string(),

@@ -1,24 +1,21 @@
-use std::{
-    fs::{File, create_dir_all},
-    io::Write,
-};
+use std::fs::File;
+use std::fs::create_dir_all;
+use std::io::Write;
 
-use axum::{
-    handler::Handler,
-    routing::{get, post},
-};
-use typegen::{
-    Generics, NamedType,
-    cache::TypeCache,
-    datatype::NamedDataType,
-    export::{ExportError, config::ExportConfig},
-};
+use axum::handler::Handler;
+use axum::routing::get;
+use axum::routing::post;
+use typegen::Generics;
+use typegen::NamedType;
+use typegen::cache::TypeCache;
+use typegen::datatype::NamedDataType;
+use typegen::export::ExportError;
+use typegen::export::config::ExportConfig;
 
-use crate::{
-    RpcHandler,
-    export::clients::ClientExporter,
-    procedure::{Procedure, Resolved},
-};
+use crate::RpcHandler;
+use crate::export::clients::ClientExporter;
+use crate::procedure::Procedure;
+use crate::procedure::Resolved;
 
 #[derive(Debug)]
 pub struct Router<S>
@@ -93,7 +90,7 @@ where
                     response: Res::named_datatype(&mut self.cache, &Generics::Impl),
                 });
                 self.router = self.router.route(key.as_str(), post(handler));
-            },
+            }
             crate::procedure::ProcedureKind::Mutation => {
                 self.procedures.push(Route {
                     path: key.clone(),
@@ -104,10 +101,10 @@ where
                     response: Res::named_datatype(&mut self.cache, &Generics::Impl),
                 });
                 self.router = self.router.route(key.as_str(), post(handler));
-            },
+            }
             crate::procedure::ProcedureKind::Subscription => {
                 panic!("Please use Router::subscription for subscriptions over Router::procedure.");
-            },
+            }
         }
 
         self

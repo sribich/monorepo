@@ -243,7 +243,8 @@ async fn index_sort_order_stopgap(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
@@ -348,7 +349,8 @@ async fn deferrable_stopgap(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
@@ -462,7 +464,8 @@ async fn commenting_stopgap(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }

@@ -1,11 +1,17 @@
 use either::Either;
 
-use crate::{
-    Column, ColumnArity, ColumnType, ColumnTypeFamily, EnumWalker, ViewColumnId, ViewDefaultValueId,
-    ViewDefaultValueWalker, ViewId, ViewWalker, Walker,
-};
-
 use super::ColumnWalker;
+use crate::Column;
+use crate::ColumnArity;
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
+use crate::EnumWalker;
+use crate::ViewColumnId;
+use crate::ViewDefaultValueId;
+use crate::ViewDefaultValueWalker;
+use crate::ViewId;
+use crate::ViewWalker;
+use crate::Walker;
 
 /// Traverse a view column.
 pub type ViewColumnWalker<'a> = Walker<'a, ViewColumnId>;
@@ -32,7 +38,8 @@ impl<'a> ViewColumnWalker<'a> {
 
     /// Returns whether the column has the enum default value of the given enum type.
     pub fn column_has_enum_default_value(self, enum_name: &str, value: &str) -> bool {
-        self.coarsen().column_has_enum_default_value(enum_name, value)
+        self.coarsen()
+            .column_has_enum_default_value(enum_name, value)
     }
 
     /// Returns whether the type of the column matches the provided enum name.

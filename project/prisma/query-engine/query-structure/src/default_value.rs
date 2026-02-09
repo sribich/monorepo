@@ -1,5 +1,7 @@
-use prisma_value::{PrismaValue, PrismaValueType};
 use std::fmt;
+
+use prisma_value::PrismaValue;
+use prisma_value::PrismaValueType;
 
 /// Represents a default specified on a field.
 #[derive(Clone, PartialEq, Debug)]
@@ -64,7 +66,9 @@ impl DefaultKind {
     // intended for primary key values!
     pub fn to_dbgenerated_func(&self) -> Option<String> {
         match self {
-            DefaultKind::Expression(expr) if expr.is_dbgenerated() => expr.args.first().map(|val| val.to_string()),
+            DefaultKind::Expression(expr) if expr.is_dbgenerated() => {
+                expr.args.first().map(|val| val.to_string())
+            }
             _ => None,
         }
     }
@@ -146,13 +150,19 @@ impl DefaultValue {
     pub fn new_expression(generator: ValueGenerator) -> Self {
         let kind = DefaultKind::Expression(generator);
 
-        Self { kind, db_name: None }
+        Self {
+            kind,
+            db_name: None,
+        }
     }
 
     pub fn new_single(value: PrismaValue) -> Self {
         let kind = DefaultKind::Single(value);
 
-        Self { kind, db_name: None }
+        Self {
+            kind,
+            db_name: None,
+        }
     }
 
     pub fn set_db_name(&mut self, name: impl ToString) {
@@ -176,7 +186,11 @@ impl ValueGenerator {
     pub fn new(name: String, args: Vec<PrismaValue>) -> Result<Self, String> {
         let generator = ValueGeneratorFn::new(name.as_ref(), args.as_ref())?;
 
-        Ok(ValueGenerator { name, args, generator })
+        Ok(ValueGenerator {
+            name,
+            args,
+            generator,
+        })
     }
 
     pub fn new_autoincrement() -> Self {
@@ -374,18 +388,22 @@ impl fmt::Debug for DefaultKind {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self {
             DefaultKind::Single(v) => write!(f, "DefaultValue::Single({v:?})"),
-            DefaultKind::Expression(g) => write!(f, "DefaultValue::Expression({}(){:?})", g.name(), g.args),
+            DefaultKind::Expression(g) => {
+                write!(f, "DefaultValue::Expression({}(){:?})", g.name(), g.args)
+            }
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DefaultValue, ValueGenerator};
+    use super::DefaultValue;
+    use super::ValueGenerator;
 
     #[test]
     fn default_value_is_autoincrement() {
-        let auto_increment_default = DefaultValue::new_expression(ValueGenerator::new_autoincrement());
+        let auto_increment_default =
+            DefaultValue::new_expression(ValueGenerator::new_autoincrement());
 
         assert!(auto_increment_default.is_autoincrement());
     }
@@ -448,7 +466,8 @@ mod tests {
 
     #[test]
     fn default_value_is_dbgenerated() {
-        let db_generated_default = DefaultValue::new_expression(ValueGenerator::new_dbgenerated("test".to_string()));
+        let db_generated_default =
+            DefaultValue::new_expression(ValueGenerator::new_dbgenerated("test".to_string()));
 
         assert!(db_generated_default.is_dbgenerated());
         assert!(!db_generated_default.is_now());

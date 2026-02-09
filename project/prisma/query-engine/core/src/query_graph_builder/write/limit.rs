@@ -1,8 +1,13 @@
-use crate::query_document::{ParsedArgument, ParsedInputValue};
-use crate::query_graph_builder::{QueryGraphBuilderError, QueryGraphBuilderResult};
 use query_structure::PrismaValue;
 
-pub(crate) fn validate_limit(limit_arg: Option<ParsedArgument<'_>>) -> QueryGraphBuilderResult<Option<usize>> {
+use crate::query_document::ParsedArgument;
+use crate::query_document::ParsedInputValue;
+use crate::query_graph_builder::QueryGraphBuilderError;
+use crate::query_graph_builder::QueryGraphBuilderResult;
+
+pub(crate) fn validate_limit(
+    limit_arg: Option<ParsedArgument<'_>>,
+) -> QueryGraphBuilderResult<Option<usize>> {
     let limit = limit_arg.and_then(|limit_arg| match limit_arg.value {
         ParsedInputValue::Single(PrismaValue::Int(i)) => Some(i),
         _ => None,

@@ -2,7 +2,8 @@ use query_engine_tests::*;
 
 #[test_suite(schema(schemas::numeric_text_optional_one2m))]
 mod aggregation_group_by {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test]
     async fn group_by_no_records(runner: Runner) -> TestResult<()> {
@@ -25,8 +26,16 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_some_records(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, float: 10, int: 5, string: "group3" }"#).await?;
 
@@ -43,8 +52,16 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_rev_ordering(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, float: 10, int: 5, string: "group3" }"#).await?;
 
@@ -61,8 +78,16 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_multiple_ordering(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, float: 10, int: 5, string: "group3" }"#).await?;
         create_row(&runner, r#"{ id: 5, float: 15, int: 5, string: "group3" }"#).await?;
@@ -87,7 +112,11 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_take_skip(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, float: 10, int: 5, string: "group3" }"#).await?;
         create_row(&runner, r#"{ id: 5, float: 15, int: 5, string: "group3" }"#).await?;
@@ -150,8 +179,16 @@ mod aggregation_group_by {
     async fn group_by_scalar_filters(runner: Runner) -> TestResult<()> {
         // What this test checks: Scalar filters apply before the grouping is done,
         // changing the aggregations of the groups, not the groups directly.
-        create_row(&runner, r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10.1, int: 5, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, float: 10, int: 5, string: "group3" }"#).await?;
         create_row(&runner, r#"{ id: 5, float: 15, int: 5, string: "group3" }"#).await?;
@@ -188,7 +225,11 @@ mod aggregation_group_by {
             r#"{ id: 1, float: 10.1, int: 5, string: "group1", b: { create: { id: 1, field: "a" } } }"#,
         )
         .await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 3, float: 10, int: 5, string: "group2" }"#).await?;
         create_row(
             &runner,
@@ -246,10 +287,26 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_count_aggregation(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -286,10 +343,26 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_sum_aggregation(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
 
         let result = runner
             .query(
@@ -340,10 +413,26 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_avg_aggregation(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -380,10 +469,26 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_min_aggregation(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -420,10 +525,26 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_max_aggregation(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 2, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 3, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 4.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -460,11 +581,31 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_aggr_multiple_fields(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 3.0, int: 3, string: "group3" }"#).await?;
-        create_row(&runner, r#"{ id: 5, float: 4.0, int: 4, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 3.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 5, float: 4.0, int: 4, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -485,11 +626,31 @@ mod aggregation_group_by {
 
     #[connector_test]
     async fn group_by_ordering_aggr_and_having(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 3.0, int: 3, string: "group3" }"#).await?;
-        create_row(&runner, r#"{ id: 5, float: 4.0, int: 4, string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 3.0, int: 3, string: "group3" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 5, float: 4.0, int: 4, string: "group3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -510,9 +671,21 @@ mod aggregation_group_by {
     /// Order by aggregation without selection the aggregated field
     #[connector_test]
     async fn group_by_ordering_aggr_without_selecting(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 1.1, int: 1, string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.1, int: 1, string: "group2" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(

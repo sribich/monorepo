@@ -1,12 +1,18 @@
-use crate::database::{catch, connection::SqlConnection};
-use crate::{FromSource, SqlError};
-use async_trait::async_trait;
-use connector_interface::{
-    Connection, Connector,
-    error::{ConnectorError, ErrorKind},
-};
-use quaint::{connector::PostgresFlavour, pooled::Quaint, prelude::ConnectionInfo};
 use std::time::Duration;
+
+use async_trait::async_trait;
+use connector_interface::Connection;
+use connector_interface::Connector;
+use connector_interface::error::ConnectorError;
+use connector_interface::error::ErrorKind;
+use quaint::connector::PostgresFlavour;
+use quaint::pooled::Quaint;
+use quaint::prelude::ConnectionInfo;
+
+use crate::FromSource;
+use crate::SqlError;
+use crate::database::catch;
+use crate::database::connection::SqlConnection;
 
 pub struct PostgreSql {
     pool: Quaint,
@@ -64,7 +70,9 @@ impl FromSource for PostgreSql {
 
 #[async_trait]
 impl Connector for PostgreSql {
-    async fn get_connection<'a>(&'a self) -> connector_interface::Result<Box<dyn Connection + Send + Sync + 'static>> {
+    async fn get_connection<'a>(
+        &'a self,
+    ) -> connector_interface::Result<Box<dyn Connection + Send + Sync + 'static>> {
         catch(&self.connection_info, async move {
             let conn = self.pool.check_out().await.map_err(SqlError::from)?;
             let conn = SqlConnection::new(conn, self.connection_info.clone(), self.features);

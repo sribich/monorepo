@@ -1,11 +1,21 @@
-use crate::{IdentifierType, ObjectType, OutputField};
-use psl::{
-    PreviewFeature, PreviewFeatures, can_support_relation_load_strategy,
-    datamodel_connector::{Connector, ConnectorCapabilities, ConnectorCapability, JoinStrategySupport, RelationMode},
-    has_capability, parser_database as db,
-};
+use std::collections::HashMap;
+use std::fmt;
+
+use psl::PreviewFeature;
+use psl::PreviewFeatures;
+use psl::can_support_relation_load_strategy;
+use psl::datamodel_connector::Connector;
+use psl::datamodel_connector::ConnectorCapabilities;
+use psl::datamodel_connector::ConnectorCapability;
+use psl::datamodel_connector::JoinStrategySupport;
+use psl::datamodel_connector::RelationMode;
+use psl::has_capability;
+use psl::parser_database as db;
 use query_structure::InternalDataModel;
-use std::{collections::HashMap, fmt};
+
+use crate::IdentifierType;
+use crate::ObjectType;
+use crate::OutputField;
 
 #[derive(Clone, Debug, Hash, Eq, PartialEq)]
 enum Operation {
@@ -101,7 +111,9 @@ impl QuerySchema {
     }
 
     pub(crate) fn supports_any(&self, capabilities: &[ConnectorCapability]) -> bool {
-        capabilities.iter().any(|c| has_capability(self.connector, *c))
+        capabilities
+            .iter()
+            .any(|c| has_capability(self.connector, *c))
     }
 
     pub(crate) fn can_full_text_search(&self) -> bool {
@@ -127,7 +139,10 @@ impl QuerySchema {
 
     /// Augments the join strategy support with the runtime database version knowledge.
     /// This is specifically designed for the MySQL connector, which does not support the join strategy for versions < 8.0.14 and MariaDB.
-    pub fn with_db_version_supports_join_strategy(self, db_version_supports_joins_strategy: bool) -> Self {
+    pub fn with_db_version_supports_join_strategy(
+        self,
+        db_version_supports_joins_strategy: bool,
+    ) -> Self {
         let augmented_support = match self.join_strategy_support {
             JoinStrategySupport::UnknownYet => match db_version_supports_joins_strategy {
                 true => JoinStrategySupport::Yes,

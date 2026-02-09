@@ -1,11 +1,18 @@
-use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand, TextEdit, WorkspaceEdit};
-use psl::parser_database::{
-    ast::WithSpan,
-    walkers::{CompleteInlineRelationWalker, InlineRelationWalker, RelationFieldWalker},
-};
 use std::collections::HashMap;
 
-use super::{CodeActionsContext, format_block_attribute, parse_url};
+use lsp_types::CodeAction;
+use lsp_types::CodeActionKind;
+use lsp_types::CodeActionOrCommand;
+use lsp_types::TextEdit;
+use lsp_types::WorkspaceEdit;
+use psl::parser_database::ast::WithSpan;
+use psl::parser_database::walkers::CompleteInlineRelationWalker;
+use psl::parser_database::walkers::InlineRelationWalker;
+use psl::parser_database::walkers::RelationFieldWalker;
+
+use super::CodeActionsContext;
+use super::format_block_attribute;
+use super::parse_url;
 
 /// If the referencing side of the one-to-one relation does not point
 /// to a unique constraint, the action adds the attribute.
@@ -60,7 +67,10 @@ pub(super) fn add_referencing_side_unique(
         return;
     }
 
-    match (relation.referencing_fields().len(), relation.referenced_fields().len()) {
+    match (
+        relation.referencing_fields().len(),
+        relation.referenced_fields().len(),
+    ) {
         (0, 0) => return,
         (a, b) if a != b => return,
         _ => (),
@@ -154,7 +164,10 @@ pub(super) fn add_referenced_side_unique(
     let file_uri = relation.db.file_name(file_id);
     let file_content = relation.db.source(file_id);
 
-    match (relation.referencing_fields().len(), relation.referenced_fields().len()) {
+    match (
+        relation.referencing_fields().len(),
+        relation.referenced_fields().len(),
+    ) {
         (0, 0) => return,
         (a, b) if a != b => return,
         _ => (),
@@ -223,7 +236,7 @@ pub(super) fn add_referenced_side_unique(
 /// ```
 ///
 /// ```prisma
-///
+/// 
 /// model Forum {
 ///     id   Int    @id
 ///     name String
@@ -316,7 +329,10 @@ pub(super) fn add_referencing_side_relation(
                 references,
                 initiating_field.model().newline()
             );
-            let range = super::range_after_span(initiating_field.ast_field().span(), ctx.initiating_file_source());
+            let range = super::range_after_span(
+                initiating_field.ast_field().span(),
+                ctx.initiating_file_source(),
+            );
 
             (range, new_text)
         }
@@ -328,7 +344,10 @@ pub(super) fn add_referencing_side_relation(
         vec![
             TextEdit { range, new_text },
             TextEdit {
-                range: super::range_after_span(initiating_field.ast_field().span(), ctx.initiating_file_source()),
+                range: super::range_after_span(
+                    initiating_field.ast_field().span(),
+                    ctx.initiating_file_source(),
+                ),
                 new_text: fields,
             },
         ],
@@ -375,7 +394,10 @@ pub(super) fn make_referencing_side_many(
         Some(_) => return,
         None => {
             let new_text = format!("[]{}", initiating_field.model().newline());
-            let range = super::range_after_span(initiating_field.ast_field().span(), ctx.initiating_file_source());
+            let range = super::range_after_span(
+                initiating_field.ast_field().span(),
+                ctx.initiating_file_source(),
+            );
 
             TextEdit { range, new_text }
         }
@@ -458,7 +480,9 @@ pub(super) fn add_index_for_relation_fields(
         index
             .fields()
             .zip(fields.clone())
-            .all(|(index_field, relation_field)| index_field.field_id() == relation_field.field_id())
+            .all(|(index_field, relation_field)| {
+                index_field.field_id() == relation_field.field_id()
+            })
     }) {
         return;
     }
@@ -474,7 +498,10 @@ pub(super) fn add_index_for_relation_fields(
         &relation.model().ast_model().attributes,
     );
 
-    let range = super::range_after_span(relation.model().ast_model().span(), context.initiating_file_source());
+    let range = super::range_after_span(
+        relation.model().ast_model().span(),
+        context.initiating_file_source(),
+    );
     let text = TextEdit {
         range,
         new_text: formatted_attribute,

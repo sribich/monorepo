@@ -1,9 +1,14 @@
-use std::{borrow::Cow, slice};
+use std::borrow::Cow;
+use std::slice;
 
 use itertools::Either;
 use psl::psl_ast::ast::FieldArity;
 
-use crate::{InternalDataModelRef, ScalarFieldRef, Type, TypeIdentifier, Zipper};
+use crate::InternalDataModelRef;
+use crate::ScalarFieldRef;
+use crate::Type;
+use crate::TypeIdentifier;
+use crate::Zipper;
 
 /// Selections for aggregation queries.
 #[derive(Debug, Clone)]
@@ -141,7 +146,10 @@ impl<'a> SelectionIdentifier<'a> {
         const FIELD_SEPARATOR: &str = "$";
         self.aggregation_name
             .map_or(Cow::Borrowed(self.field.db_name()), |aggregation| {
-                Cow::Owned(format!("{aggregation}{FIELD_SEPARATOR}{}", self.field.db_name()))
+                Cow::Owned(format!(
+                    "{aggregation}{FIELD_SEPARATOR}{}",
+                    self.field.db_name()
+                ))
             })
     }
 }

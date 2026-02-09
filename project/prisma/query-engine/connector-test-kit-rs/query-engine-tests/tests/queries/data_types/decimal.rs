@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite(schema(schema), capabilities(DecimalType))]
 mod decimal {
-    use query_engine_tests::{EngineProtocol, Runner, run_query};
+    use query_engine_tests::EngineProtocol;
+    use query_engine_tests::Runner;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -21,7 +23,10 @@ mod decimal {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { decimal } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { decimal } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -104,7 +109,9 @@ mod decimal {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

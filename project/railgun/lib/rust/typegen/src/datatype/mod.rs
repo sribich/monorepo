@@ -2,10 +2,12 @@ use std::borrow::Cow;
 
 use r#enum::EnumType;
 
-use self::{
-    generic::GenericType, list::ListMeta, primitive::PrimitiveMeta, reference::ReferenceType,
-    r#struct::StructType, tuple::TupleMeta,
-};
+use self::generic::GenericType;
+use self::list::ListMeta;
+use self::primitive::PrimitiveMeta;
+use self::reference::ReferenceType;
+use self::r#struct::StructType;
+use self::tuple::TupleMeta;
 use crate::id::TypeId;
 
 pub mod r#enum;

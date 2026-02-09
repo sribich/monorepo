@@ -4,7 +4,10 @@ use query_engine_tests::*;
 // TODO(dom): All failing except one
 #[test_suite]
 mod create_inside_update {
-    use query_engine_tests::{DatamodelWithParams, assert_error, run_query, run_query_json};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "a P1! to C1 relation" should "work"
@@ -138,7 +141,10 @@ mod create_inside_update {
 
     // "a P1 to C1!  relation with the parent and a child already in a relation" should "error in a nested mutation by unique"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1_req_par_child_in_rel_fail(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_req_par_child_in_rel_fail(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -382,7 +388,10 @@ mod create_inside_update {
 
     // "a PM to CM  relation with the children already in a relation" should "be disconnectable through a nested mutation by unique"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_child_in_rel_disconnect(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_child_in_rel_disconnect(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,

@@ -1,9 +1,16 @@
-use crate::validate::validation_pipeline::{context::Context, validations::relations::RELATION_ATTRIBUTE_NAME};
-use crate::{datamodel_connector::ConnectorCapability, diagnostics::DatamodelError};
-use parser_database::{ast::WithSpan, walkers::ImplicitManyToManyRelationWalker};
+use parser_database::ast::WithSpan;
+use parser_database::walkers::ImplicitManyToManyRelationWalker;
+
+use crate::datamodel_connector::ConnectorCapability;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
+use crate::validate::validation_pipeline::validations::relations::RELATION_ATTRIBUTE_NAME;
 
 /// Our weird many-to-many requirement.
-pub(crate) fn validate_singular_id(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn validate_singular_id(
+    relation: ImplicitManyToManyRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     for relation_field in [relation.field_a(), relation.field_b()].iter() {
         if !relation_field.related_model().has_single_id_field() {
             let container = if relation_field.related_model().ast_model().is_view() {
@@ -44,13 +51,18 @@ pub(crate) fn validate_singular_id(relation: ImplicitManyToManyRelationWalker<'_
 }
 
 /// M:N relations cannot have referential actions defined (yet).
-pub(crate) fn validate_no_referential_actions(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let referential_action_spans = [relation.field_a(), relation.field_b()].into_iter().flat_map(|field| {
-        field
-            .explicit_on_delete_span()
-            .into_iter()
-            .chain(field.explicit_on_update_span())
-    });
+pub(crate) fn validate_no_referential_actions(
+    relation: ImplicitManyToManyRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let referential_action_spans = [relation.field_a(), relation.field_b()]
+        .into_iter()
+        .flat_map(|field| {
+            field
+                .explicit_on_delete_span()
+                .into_iter()
+                .chain(field.explicit_on_update_span())
+        });
 
     for span in referential_action_spans {
         let msg = "Referential actions on implicit many-to-many relations are not supported";
@@ -59,7 +71,10 @@ pub(crate) fn validate_no_referential_actions(relation: ImplicitManyToManyRelati
 }
 
 /// We do not support implicit m:n relations on MongoDB and views.
-pub(crate) fn supports_implicit_relations(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn supports_implicit_relations(
+    relation: ImplicitManyToManyRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if relation.one_side_is_view() {
         push_error_for_both_sides(
             relation,
@@ -78,7 +93,11 @@ pub(crate) fn supports_implicit_relations(relation: ImplicitManyToManyRelationWa
     }
 }
 
-fn push_error_for_both_sides(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>, msg: &str) {
+fn push_error_for_both_sides(
+    relation: ImplicitManyToManyRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+    msg: &str,
+) {
     let spans = [relation.field_a(), relation.field_b()]
         .into_iter()
         .map(|r| r.ast_field().span());
@@ -88,7 +107,10 @@ fn push_error_for_both_sides(relation: ImplicitManyToManyRelationWalker<'_>, ctx
     }
 }
 
-pub(crate) fn cannot_define_references_argument(relation: ImplicitManyToManyRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn cannot_define_references_argument(
+    relation: ImplicitManyToManyRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     let msg = "Implicit many-to-many relation should not have references argument defined. Either remove it, or change the relation to one-to-many.";
 
     if relation.field_a().referenced_fields().is_some() {

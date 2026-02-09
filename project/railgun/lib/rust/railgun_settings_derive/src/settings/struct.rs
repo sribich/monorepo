@@ -1,10 +1,22 @@
 use darling::ast::NestedMeta;
 use proc_macro_error2::abort;
-use quote::{TokenStreamExt, quote, quote_spanned};
-use syn::{
-    Attribute, Expr, ExprLit, Field, Fields, Ident, ItemStruct, Lit, LitStr, Meta, MetaNameValue,
-    Path, parse_quote, spanned::Spanned,
-};
+use quote::TokenStreamExt;
+use quote::quote;
+use quote::quote_spanned;
+use syn::Attribute;
+use syn::Expr;
+use syn::ExprLit;
+use syn::Field;
+use syn::Fields;
+use syn::Ident;
+use syn::ItemStruct;
+use syn::Lit;
+use syn::LitStr;
+use syn::Meta;
+use syn::MetaNameValue;
+use syn::Path;
+use syn::parse_quote;
+use syn::spanned::Spanned;
 
 use super::options::Options;
 use crate::get_crate_path;
@@ -40,12 +52,12 @@ pub fn impl_struct(
                 #impl_settings
                 #impl_default
             }
-        },
+        }
         Fields::Unnamed(_) => {
             quote! {
                 #input
             }
-        },
+        }
         Fields::Unit => abort!(input, "Unit structs are not valid settings objects"),
     })
 }

@@ -1,6 +1,9 @@
-use schema_core::{
-    CoreError, CoreResult, commands::mark_migration_applied::{MarkMigrationAppliedInput, MarkMigrationAppliedOutput, mark_migration_applied}, schema_connector::SchemaConnector,
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::mark_migration_applied::MarkMigrationAppliedInput;
+use schema_core::commands::mark_migration_applied::MarkMigrationAppliedOutput;
+use schema_core::commands::mark_migration_applied::mark_migration_applied;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
 
 use crate::utils;

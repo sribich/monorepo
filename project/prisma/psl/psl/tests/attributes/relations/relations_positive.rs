@@ -1,5 +1,8 @@
-use crate::{Provider, common::*, with_header};
 use psl::parser_database::ScalarType;
+
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn settings_must_be_deteced() {
@@ -201,8 +204,12 @@ fn allow_explicit_fk_name_definition() {
 
     let schema = parse_schema(&with_header(dml, Provider::Postgres, &[]));
 
-    schema.assert_has_model("User").assert_has_relation_field("posts");
-    schema.assert_has_model("Post").assert_has_relation_field("user");
+    schema
+        .assert_has_model("User")
+        .assert_has_relation_field("posts");
+    schema
+        .assert_has_model("Post")
+        .assert_has_relation_field("user");
 }
 
 #[test]

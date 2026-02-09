@@ -2,9 +2,11 @@ pub mod cache;
 pub mod id;
 pub mod impls;
 
-
-use self::{cache::TypeCache, id::TypeId};
-use crate::datatype::{reference::Reference, DataType, NamedDataType};
+use self::cache::TypeCache;
+use self::id::TypeId;
+use crate::datatype::DataType;
+use crate::datatype::NamedDataType;
+use crate::datatype::reference::Reference;
 
 #[derive(Debug)]
 pub enum Generics<'a> {

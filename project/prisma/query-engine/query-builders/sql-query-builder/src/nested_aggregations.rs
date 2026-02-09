@@ -1,9 +1,10 @@
-use crate::{
-    Context,
-    join_utils::{AggregationType, AliasedJoin, compute_aggr_join},
-};
 use quaint::prelude::*;
 use query_structure::VirtualSelection;
+
+use crate::Context;
+use crate::join_utils::AggregationType;
+use crate::join_utils::AliasedJoin;
+use crate::join_utils::compute_aggr_join;
 
 #[derive(Debug)]
 pub(crate) struct RelAggregationJoins {

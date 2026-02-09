@@ -1,5 +1,9 @@
-use crate::datamodel_connector::{ConstraintScope, walker_ext_traits::*};
-use std::{borrow::Cow, collections::HashMap, ops::Deref};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::ops::Deref;
+
+use crate::datamodel_connector::ConstraintScope;
+use crate::datamodel_connector::walker_ext_traits::*;
 
 /// A constraint namespace consists of two kinds of namespaces:
 ///
@@ -33,7 +37,10 @@ impl<'db> ConstraintNamespace<'db> {
         name: ConstraintName<'db>,
     ) -> impl Iterator<Item = &'db ConstraintScope> + '_ {
         name.possible_scopes().filter(move |scope| {
-            match self.global.get(&(**scope, schema_name, Cow::from(name.as_ref()))) {
+            match self
+                .global
+                .get(&(**scope, schema_name, Cow::from(name.as_ref())))
+            {
                 Some(count) => *count > 1,
                 None => false,
             }
@@ -46,7 +53,10 @@ impl<'db> ConstraintNamespace<'db> {
         name: ConstraintName<'db>,
     ) -> impl Iterator<Item = &'db ConstraintScope> + '_ {
         name.possible_scopes().filter(move |scope| {
-            match self.local.get(&(model_id, **scope, Cow::from(name.as_ref()))) {
+            match self
+                .local
+                .get(&(model_id, **scope, Cow::from(name.as_ref())))
+            {
                 Some(count) => *count > 1,
                 None => false,
             }
@@ -74,15 +84,27 @@ impl<'db> ConstraintNamespace<'db> {
         {
             let counter = self
                 .global
-                .entry((scope, index.model().schema_name(), index.constraint_name(ctx.connector)))
+                .entry((
+                    scope,
+                    index.model().schema_name(),
+                    index.constraint_name(ctx.connector),
+                ))
                 .or_default();
             *counter += 1;
         }
     }
 
     /// Add all foreign key constraints from the data model to a global validation scope.
-    pub(super) fn add_global_relations(&mut self, scope: ConstraintScope, ctx: &super::Context<'db>) {
-        for relation in ctx.db.walk_relations().filter_map(|r| r.refine().as_inline()) {
+    pub(super) fn add_global_relations(
+        &mut self,
+        scope: ConstraintScope,
+        ctx: &super::Context<'db>,
+    ) {
+        for relation in ctx
+            .db
+            .walk_relations()
+            .filter_map(|r| r.refine().as_inline())
+        {
             let name = relation.constraint_name(ctx.connector);
             let schema = relation.referencing_model().schema_name();
             let counter = self.global.entry((scope, schema, name)).or_default();
@@ -91,9 +113,16 @@ impl<'db> ConstraintNamespace<'db> {
     }
 
     /// Add all primary key constraints from the data model to a global validation scope.
-    pub(super) fn add_global_primary_keys(&mut self, scope: ConstraintScope, ctx: &super::Context<'db>) {
+    pub(super) fn add_global_primary_keys(
+        &mut self,
+        scope: ConstraintScope,
+        ctx: &super::Context<'db>,
+    ) {
         for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
-            if let Some(name) = model.primary_key().and_then(|k| k.constraint_name(ctx.connector)) {
+            if let Some(name) = model
+                .primary_key()
+                .and_then(|k| k.constraint_name(ctx.connector))
+            {
                 let schema_name = model.schema_name();
                 let counter = self.global.entry((scope, schema_name, name)).or_default();
                 *counter += 1;
@@ -102,14 +131,21 @@ impl<'db> ConstraintNamespace<'db> {
     }
 
     /// Add all default constraints from the data model to a global validation scope.
-    pub(super) fn add_global_default_constraints(&mut self, scope: ConstraintScope, ctx: &super::Context<'db>) {
+    pub(super) fn add_global_default_constraints(
+        &mut self,
+        scope: ConstraintScope,
+        ctx: &super::Context<'db>,
+    ) {
         for field in ctx
             .db
             .walk_models()
             .chain(ctx.db.walk_views())
             .flat_map(|m| m.scalar_fields())
         {
-            if let Some(name) = field.default_value().map(|d| d.constraint_name(ctx.connector)) {
+            if let Some(name) = field
+                .default_value()
+                .map(|d| d.constraint_name(ctx.connector))
+            {
                 let name = match name {
                     Cow::Borrowed(bor) => Cow::Owned(bor.to_string()),
                     Cow::Owned(own) => Cow::Owned(own),
@@ -139,9 +175,16 @@ impl<'db> ConstraintNamespace<'db> {
     }
 
     /// Add all primary key constraints to separate namespaces per model.
-    pub(super) fn add_local_primary_keys(&mut self, scope: ConstraintScope, ctx: &super::Context<'db>) {
+    pub(super) fn add_local_primary_keys(
+        &mut self,
+        scope: ConstraintScope,
+        ctx: &super::Context<'db>,
+    ) {
         for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
-            if let Some(name) = model.primary_key().and_then(|pk| pk.constraint_name(ctx.connector)) {
+            if let Some(name) = model
+                .primary_key()
+                .and_then(|pk| pk.constraint_name(ctx.connector))
+            {
                 let counter = self.local.entry((model.id, scope, name)).or_default();
                 *counter += 1;
             }
@@ -149,15 +192,24 @@ impl<'db> ConstraintNamespace<'db> {
     }
 
     /// Add all primary key and unique index custom names to separate namespaces per model.
-    pub(super) fn add_local_custom_names_for_primary_keys_and_uniques(&mut self, ctx: &super::Context<'db>) {
+    pub(super) fn add_local_custom_names_for_primary_keys_and_uniques(
+        &mut self,
+        ctx: &super::Context<'db>,
+    ) {
         for model in ctx.db.walk_models().chain(ctx.db.walk_views()) {
             if let Some(name) = model.primary_key().and_then(|pk| pk.name()) {
-                let counter = self.local_custom_name.entry((model.id, Cow::from(name))).or_default();
+                let counter = self
+                    .local_custom_name
+                    .entry((model.id, Cow::from(name)))
+                    .or_default();
                 *counter += 1;
             }
             for index in model.indexes() {
                 if let Some(name) = index.name() {
-                    let counter = self.local_custom_name.entry((model.id, Cow::from(name))).or_default();
+                    let counter = self
+                        .local_custom_name
+                        .entry((model.id, Cow::from(name)))
+                        .or_default();
                     *counter += 1;
                 }
             }
@@ -165,7 +217,11 @@ impl<'db> ConstraintNamespace<'db> {
     }
 
     /// Add all foreign key constraints to separate namespaces per model.
-    pub(super) fn add_local_relations(&mut self, scope: ConstraintScope, ctx: &super::Context<'db>) {
+    pub(super) fn add_local_relations(
+        &mut self,
+        scope: ConstraintScope,
+        ctx: &super::Context<'db>,
+    ) {
         for model in ctx.db.walk_models() {
             for name in model
                 .relations_from()

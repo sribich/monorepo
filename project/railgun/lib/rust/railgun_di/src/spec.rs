@@ -1,12 +1,12 @@
-use core::{
-    any::{TypeId, type_name},
-    marker::PhantomData,
-};
+use core::any::TypeId;
+use core::any::type_name;
+use core::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::{
-    InjectionError, Injector, error::CalledGetOnCollectionContext, typecast_builder::BuilderList,
-};
+use crate::InjectionError;
+use crate::Injector;
+use crate::error::CalledGetOnCollectionContext;
+use crate::typecast_builder::BuilderList;
 
 pub trait Spec {
     type Out;
@@ -41,7 +41,7 @@ where
                     type_name: type_name::<T>(),
                 }
                 .fail();
-            },
+            }
         };
 
         builder.get(injector)

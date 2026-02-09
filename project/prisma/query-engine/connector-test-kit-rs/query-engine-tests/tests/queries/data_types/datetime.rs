@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite(schema(common_nullable_types))]
 mod datetime {
-    use query_engine_tests::{EngineProtocol, Runner, run_query};
+    use query_engine_tests::EngineProtocol;
+    use query_engine_tests::Runner;
+    use query_engine_tests::run_query;
 
     #[connector_test]
     async fn read_one(runner: Runner) -> TestResult<()> {
@@ -10,7 +12,10 @@ mod datetime {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { dt } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { dt } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -93,7 +98,9 @@ mod datetime {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

@@ -1,16 +1,21 @@
 use std::borrow::Cow;
 
-use crate::{
-    ValidatedSchema,
-    datamodel_connector::{
-        Connector, ConnectorCapabilities, ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor,
-        NativeTypeInstance,
-    },
-    diagnostics::{DatamodelError, Diagnostics, Span},
-    parser_database::ReferentialAction,
-};
 use enumflags2::BitFlags;
-use parser_database::{ExtensionTypes, ScalarFieldType};
+use parser_database::ExtensionTypes;
+use parser_database::ScalarFieldType;
+
+use crate::ValidatedSchema;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapabilities;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::ConstraintScope;
+use crate::datamodel_connector::Flavour;
+use crate::datamodel_connector::NativeTypeConstructor;
+use crate::datamodel_connector::NativeTypeInstance;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
+use crate::diagnostics::Span;
+use crate::parser_database::ReferentialAction;
 
 const NATIVE_TYPE_CONSTRUCTORS: &[NativeTypeConstructor] = &[];
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[ConstraintScope::GlobalKeyIndex];
@@ -88,7 +93,10 @@ impl Connector for SqliteDatamodelConnector {
         None
     }
 
-    fn native_type_to_parts<'t>(&self, _native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>) {
+    fn native_type_to_parts<'t>(
+        &self,
+        _native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, Cow<'t, [String]>) {
         unreachable!()
     }
 

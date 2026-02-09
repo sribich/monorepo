@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(capabilities(CreateMany))]
 mod create_many {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -64,10 +65,7 @@ mod create_many {
     }
 
     // Covers: AutoIncrement ID working with basic autonincrement functionality.
-    #[connector_test(
-        schema(schema_2),
-        capabilities(CreateManyWriteableAutoIncId)
-    )]
+    #[connector_test(schema(schema_2), capabilities(CreateManyWriteableAutoIncId))]
     async fn basic_create_many_autoincrement(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -302,7 +300,10 @@ mod create_many {
             let data = sets
                 .into_iter()
                 .map(|set| {
-                    let res = set.into_iter().map(|field| format!("{field}: {id}")).join(", ");
+                    let res = set
+                        .into_iter()
+                        .map(|field| format!("{field}: {id}"))
+                        .join(", ");
 
                     id += 1;
 
@@ -497,7 +498,8 @@ mod create_many {
 
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(CreateMany, Json))]
 mod json_create_many {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn create_many_json_adv(runner: Runner) -> TestResult<()> {

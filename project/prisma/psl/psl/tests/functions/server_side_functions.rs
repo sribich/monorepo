@@ -1,5 +1,6 @@
-use crate::common::*;
 use psl::parser_database::ScalarType;
+
+use crate::common::*;
 
 #[test]
 fn correctly_handle_server_side_now_function() {

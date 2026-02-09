@@ -1,4 +1,11 @@
-use super::{Attribute, Comment, Identifier, Span, WithAttributes, WithDocumentation, WithIdentifier, WithSpan};
+use super::Attribute;
+use super::Comment;
+use super::Identifier;
+use super::Span;
+use super::WithAttributes;
+use super::WithDocumentation;
+use super::WithIdentifier;
+use super::WithSpan;
 
 /// An opaque identifier for a value in an AST enum. Use the
 /// `r#enum[enum_value_id]` syntax to resolve the id to an `ast::EnumValue`.
@@ -7,9 +14,9 @@ pub struct EnumValueId(pub(super) u32);
 
 impl EnumValueId {
     /// Used for range bounds when iterating over BTreeMaps.
-    pub const MIN: EnumValueId = EnumValueId(0);
-    /// Used for range bounds when iterating over BTreeMaps.
     pub const MAX: EnumValueId = EnumValueId(u32::MAX);
+    /// Used for range bounds when iterating over BTreeMaps.
+    pub const MIN: EnumValueId = EnumValueId(0);
 }
 
 impl std::ops::Index<EnumValueId> for Enum {

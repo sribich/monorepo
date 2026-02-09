@@ -1,6 +1,11 @@
-use psl::{Diagnostics, diagnostics::DatamodelError, error_tolerant_parse_configuration, parser_database::Files};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use psl::Diagnostics;
+use psl::diagnostics::DatamodelError;
+use psl::error_tolerant_parse_configuration;
+use psl::parser_database::Files;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::schema_file_input::SchemaFileInput;
 
@@ -44,8 +49,9 @@ pub(crate) fn get_config(params: &str) -> String {
         Diagnostics::default()
     } else {
         let overrides: Vec<(_, _)> = params.datasource_overrides.into_iter().collect();
-        let override_result =
-            configuration.resolve_datasource_urls_prisma_fmt(&overrides, |key| params.env.get(key).map(String::from));
+        let override_result = configuration.resolve_datasource_urls_prisma_fmt(&overrides, |key| {
+            params.env.get(key).map(String::from)
+        });
 
         match override_result {
             Err(diagnostics) => diagnostics,
@@ -54,7 +60,10 @@ pub(crate) fn get_config(params: &str) -> String {
     };
 
     let config = psl::get_config(&configuration, &files);
-    let all_errors = diagnostics.errors().iter().chain(override_diagnostics.errors().iter());
+    let all_errors = diagnostics
+        .errors()
+        .iter()
+        .chain(override_diagnostics.errors().iter());
 
     let result = GetConfigResult {
         config,
@@ -91,9 +100,10 @@ fn serialize_errors<'a>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use expect_test::expect;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn invalid_schema() {

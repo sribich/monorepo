@@ -1,10 +1,12 @@
-use super::setup;
 use query_engine_tests::*;
+
+use super::setup;
 
 #[test_suite(schema(setup::common_types))]
 mod string_filter {
-    use super::setup;
     use query_engine_tests::run_query;
+
+    use super::setup;
 
     #[connector_test]
     async fn basic_where_sensitive(runner: Runner) -> TestResult<()> {
@@ -412,7 +414,10 @@ mod string_filter {
         Ok(())
     }
 
-    #[connector_test(schema(setup::common_mixed_types), capabilities(ScalarLists, InsensitiveFilters))]
+    #[connector_test(
+        schema(setup::common_mixed_types),
+        capabilities(ScalarLists, InsensitiveFilters)
+    )]
     async fn inclusion_filter_insensitive(runner: Runner) -> TestResult<()> {
         test_data_mixed_types_insensitive(&runner).await?;
 

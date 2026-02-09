@@ -1,6 +1,11 @@
-use super::attributes::{BlockAttribute, FieldAttribute};
-use crate::value::{Constant, Documentation, Function};
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
+
+use super::attributes::BlockAttribute;
+use super::attributes::FieldAttribute;
+use crate::value::Constant;
+use crate::value::Documentation;
+use crate::value::Function;
 
 /// A variant declaration in an enum block.
 #[derive(Debug)]
@@ -212,14 +217,17 @@ impl fmt::Display for Enum<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use expect_test::expect;
+
+    use super::*;
 
     #[test]
     fn kitchen_sink() {
         let mut r#enum = Enum::new("TrafficLight");
         r#enum.map("1TrafficLight");
-        r#enum.documentation("Cat's foot, iron claw\nNeuro-surgeons scream for more\nAt paranoia's poison door...");
+        r#enum.documentation(
+            "Cat's foot, iron claw\nNeuro-surgeons scream for more\nAt paranoia's poison door...",
+        );
 
         r#enum.push_variant("Red");
         {

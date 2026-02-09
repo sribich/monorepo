@@ -1,14 +1,14 @@
-use crate::{
-    flavour::mysql::Circumstances,
-    migration_pair::MigrationPair,
-    sql_schema_differ::{SqlSchemaDifferFlavour, all_match, column::ColumnTypeChange},
-};
 use enumflags2::BitFlags;
 use psl::builtin_connectors::MySqlType;
-use sql_schema_describer::{
-    ColumnTypeFamily,
-    walkers::{IndexWalker, TableColumnWalker},
-};
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+
+use crate::flavour::mysql::Circumstances;
+use crate::migration_pair::MigrationPair;
+use crate::sql_schema_differ::SqlSchemaDifferFlavour;
+use crate::sql_schema_differ::all_match;
+use crate::sql_schema_differ::column::ColumnTypeChange;
 
 #[derive(Debug)]
 pub struct MysqlSchemaDifferFlavour {
@@ -27,14 +27,18 @@ impl SqlSchemaDifferFlavour for MysqlSchemaDifferFlavour {
     }
 
     fn can_rename_index(&self) -> bool {
-        !self.circumstances.contains(Circumstances::IsMariadb) && !self.circumstances.contains(Circumstances::IsMysql56)
+        !self.circumstances.contains(Circumstances::IsMariadb)
+            && !self.circumstances.contains(Circumstances::IsMysql56)
     }
 
     fn can_cope_with_foreign_key_column_becoming_non_nullable(&self) -> bool {
         false
     }
 
-    fn column_type_change(&self, differ: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange> {
+    fn column_type_change(
+        &self,
+        differ: MigrationPair<TableColumnWalker<'_>>,
+    ) -> Option<ColumnTypeChange> {
         // On MariaDB, JSON is an alias for LONGTEXT. https://mariadb.com/kb/en/json-data-type/
         if self.circumstances.contains(Circumstances::IsMariadb) {
             match (
@@ -59,10 +63,11 @@ impl SqlSchemaDifferFlavour for MysqlSchemaDifferFlavour {
                     return None;
                 }
 
-                return if previous_enum
-                    .values()
-                    .all(|previous_value| next_enum.values().any(|next_value| previous_value == next_value))
-                {
+                return if previous_enum.values().all(|previous_value| {
+                    next_enum
+                        .values()
+                        .any(|next_value| previous_value == next_value)
+                }) {
                     Some(ColumnTypeChange::SafeCast)
                 } else {
                     Some(ColumnTypeChange::RiskyCast)
@@ -91,7 +96,8 @@ impl SqlSchemaDifferFlavour for MysqlSchemaDifferFlavour {
     }
 
     fn lower_cases_table_names(&self) -> bool {
-        self.circumstances.contains(Circumstances::LowerCasesTableNames)
+        self.circumstances
+            .contains(Circumstances::LowerCasesTableNames)
     }
 
     fn should_create_indexes_from_created_tables(&self) -> bool {
@@ -206,7 +212,10 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
             | MySqlType::UnsignedTinyInt
             | MySqlType::Year => risky(),
 
-            MySqlType::Date | MySqlType::DateTime(_) | MySqlType::Json | MySqlType::Timestamp(_) => not_castable(),
+            MySqlType::Date
+            | MySqlType::DateTime(_)
+            | MySqlType::Json
+            | MySqlType::Timestamp(_) => not_castable(),
         },
         MySqlType::Bit(n) => match next {
             MySqlType::Bit(m) if n == m => return None,
@@ -286,10 +295,18 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
         MySqlType::Char(n) => match next {
             MySqlType::Char(m) if m == n => return None,
             MySqlType::VarChar(m) if m == n => safe(),
-            MySqlType::VarChar(m) | MySqlType::Char(m) | MySqlType::VarBinary(m) | MySqlType::Binary(m) if m >= n => {
+            MySqlType::VarChar(m)
+            | MySqlType::Char(m)
+            | MySqlType::VarBinary(m)
+            | MySqlType::Binary(m)
+                if m >= n =>
+            {
                 safe()
             }
-            MySqlType::VarChar(_) | MySqlType::Char(_) | MySqlType::Binary(_) | MySqlType::VarBinary(_) => risky(),
+            MySqlType::VarChar(_)
+            | MySqlType::Char(_)
+            | MySqlType::Binary(_)
+            | MySqlType::VarBinary(_) => risky(),
 
             // To string
             MySqlType::Blob
@@ -460,8 +477,15 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
                 | MySqlType::UnsignedMediumInt
                 | MySqlType::Year => safe(),
 
-                MySqlType::Binary(n) | MySqlType::Char(n) | MySqlType::VarBinary(n) | MySqlType::VarChar(n) => {
-                    if *n >= 32 { risky() } else { not_castable() }
+                MySqlType::Binary(n)
+                | MySqlType::Char(n)
+                | MySqlType::VarBinary(n)
+                | MySqlType::VarChar(n) => {
+                    if *n >= 32 {
+                        risky()
+                    } else {
+                        not_castable()
+                    }
                 }
 
                 // To string
@@ -476,7 +500,9 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
 
                 MySqlType::Time(_) => safe(),
 
-                MySqlType::Timestamp(_) | MySqlType::DateTime(_) | MySqlType::Date => not_castable(),
+                MySqlType::Timestamp(_) | MySqlType::DateTime(_) | MySqlType::Date => {
+                    not_castable()
+                }
             }
         }
         MySqlType::Float => {
@@ -503,8 +529,15 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
                 | MySqlType::UnsignedMediumInt
                 | MySqlType::Year => safe(),
 
-                MySqlType::Binary(n) | MySqlType::Char(n) | MySqlType::VarBinary(n) | MySqlType::VarChar(n) => {
-                    if *n >= 32 { risky() } else { not_castable() }
+                MySqlType::Binary(n)
+                | MySqlType::Char(n)
+                | MySqlType::VarBinary(n)
+                | MySqlType::VarChar(n) => {
+                    if *n >= 32 {
+                        risky()
+                    } else {
+                        not_castable()
+                    }
                 }
 
                 // To string
@@ -519,7 +552,9 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
 
                 MySqlType::Time(_) => safe(),
 
-                MySqlType::Timestamp(_) | MySqlType::DateTime(_) | MySqlType::Date => not_castable(),
+                MySqlType::Timestamp(_) | MySqlType::DateTime(_) | MySqlType::Date => {
+                    not_castable()
+                }
             }
         }
         MySqlType::Int => match next {
@@ -811,7 +846,9 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
             | MySqlType::VarChar(_) => risky(),
 
             // Larger int types
-            MySqlType::MediumInt | MySqlType::Int | MySqlType::BigInt | MySqlType::Time(_) => safe(),
+            MySqlType::MediumInt | MySqlType::Int | MySqlType::BigInt | MySqlType::Time(_) => {
+                safe()
+            }
 
             MySqlType::TinyInt | MySqlType::Float | MySqlType::Double | MySqlType::Year => risky(),
 
@@ -1002,9 +1039,11 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
             | MySqlType::VarChar(_) => risky(),
 
             // Larger int types
-            MySqlType::SmallInt | MySqlType::MediumInt | MySqlType::Int | MySqlType::BigInt | MySqlType::Time(_) => {
-                safe()
-            }
+            MySqlType::SmallInt
+            | MySqlType::MediumInt
+            | MySqlType::Int
+            | MySqlType::BigInt
+            | MySqlType::Time(_) => safe(),
 
             MySqlType::Float | MySqlType::Double | MySqlType::Year => risky(),
 
@@ -1198,7 +1237,9 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
             | MySqlType::VarBinary(_)
             | MySqlType::VarChar(_) => risky(),
 
-            MySqlType::UnsignedInt | MySqlType::UnsignedMediumInt | MySqlType::UnsignedBigInt => safe(),
+            MySqlType::UnsignedInt | MySqlType::UnsignedMediumInt | MySqlType::UnsignedBigInt => {
+                safe()
+            }
 
             // Numeric types
             MySqlType::BigInt
@@ -1300,10 +1341,18 @@ fn native_type_change(types: MigrationPair<&MySqlType>) -> Option<ColumnTypeChan
         MySqlType::VarChar(n) => match next {
             MySqlType::VarChar(m) if m == n => return None,
             MySqlType::Char(m) if m == n => safe(),
-            MySqlType::VarChar(m) | MySqlType::Char(m) | MySqlType::VarBinary(m) | MySqlType::Binary(m) if m >= n => {
+            MySqlType::VarChar(m)
+            | MySqlType::Char(m)
+            | MySqlType::VarBinary(m)
+            | MySqlType::Binary(m)
+                if m >= n =>
+            {
                 safe()
             }
-            MySqlType::VarChar(_) | MySqlType::Char(_) | MySqlType::Binary(_) | MySqlType::VarBinary(_) => risky(),
+            MySqlType::VarChar(_)
+            | MySqlType::Char(_)
+            | MySqlType::Binary(_)
+            | MySqlType::VarBinary(_) => risky(),
 
             // To string
             MySqlType::Blob

@@ -1,17 +1,25 @@
 #![allow(unused_imports)]
 
-use psl::{Datasource, PreviewFeatures, builtin_connectors::*};
-use query_core::{Connector, QueryExecutor, executor::InterpretingExecutor};
-#[cfg(feature = "sql")]
-use sql_query_connector::*;
 use std::collections::HashMap;
 use std::env;
 use std::marker::PhantomData;
 use std::sync::Arc;
+
+use psl::Datasource;
+use psl::PreviewFeatures;
+use psl::builtin_connectors::*;
+use query_core::Connector;
+use query_core::QueryExecutor;
+use query_core::executor::InterpretingExecutor;
+#[cfg(feature = "sql")]
+use sql_query_connector::*;
 use url::Url;
 
 pub enum ConnectorKind<'a> {
-    Rust { url: String, datasource: &'a Datasource },
+    Rust {
+        url: String,
+        datasource: &'a Datasource,
+    },
 }
 
 /// Loads a query executor based on the parsed Prisma schema (datasource).
@@ -25,17 +33,25 @@ pub async fn load(
             if let Ok(value) = env::var("PRISMA_DISABLE_QUAINT_EXECUTORS") {
                 let disable = value.to_uppercase();
                 if disable == "TRUE" || disable == "1" {
-                    panic!("Quaint executors are disabled, as per env var PRISMA_DISABLE_QUAINT_EXECUTORS.");
+                    panic!(
+                        "Quaint executors are disabled, as per env var PRISMA_DISABLE_QUAINT_EXECUTORS."
+                    );
                 }
             }
 
             match datasource.active_provider {
                 #[cfg(feature = "sqlite-native")]
-                p if SQLITE.is_provider(p) => native::sqlite(datasource, &url, features, tracing_enabled).await,
+                p if SQLITE.is_provider(p) => {
+                    native::sqlite(datasource, &url, features, tracing_enabled).await
+                }
                 #[cfg(feature = "mysql-native")]
-                p if MYSQL.is_provider(p) => native::mysql(datasource, &url, features, tracing_enabled).await,
+                p if MYSQL.is_provider(p) => {
+                    native::mysql(datasource, &url, features, tracing_enabled).await
+                }
                 #[cfg(feature = "postgresql-native")]
-                p if POSTGRES.is_provider(p) => native::postgres(datasource, &url, features, tracing_enabled).await,
+                p if POSTGRES.is_provider(p) => {
+                    native::postgres(datasource, &url, features, tracing_enabled).await
+                }
                 x => Err(query_core::CoreError::ConfigurationError(format!(
                     "Unsupported connector type: {x}"
                 ))),
@@ -45,8 +61,9 @@ pub async fn load(
 }
 
 mod native {
-    use super::*;
     use tracing::trace;
+
+    use super::*;
 
     #[cfg(feature = "sqlite-native")]
     pub(crate) async fn sqlite(
@@ -73,7 +90,9 @@ mod native {
         let psql = PostgreSql::from_source(source, url, features, tracing_enabled).await?;
 
         let url = Url::parse(database_str).map_err(|err| {
-            query_core::CoreError::ConfigurationError(format!("Error parsing connection string: {err}"))
+            query_core::CoreError::ConfigurationError(format!(
+                "Error parsing connection string: {err}"
+            ))
         })?;
         let params: HashMap<String, String> = url.query_pairs().into_owned().collect();
 

@@ -1,10 +1,13 @@
 use either::Either;
 
-use crate::{
-    ParserDatabase, ScalarFieldType, ast,
-    types::{IndexAlgorithm, IndexAttribute},
-    walkers::{ModelWalker, ScalarFieldAttributeWalker, ScalarFieldWalker},
-};
+use crate::ParserDatabase;
+use crate::ScalarFieldType;
+use crate::ast;
+use crate::types::IndexAlgorithm;
+use crate::types::IndexAttribute;
+use crate::walkers::ModelWalker;
+use crate::walkers::ScalarFieldAttributeWalker;
+use crate::walkers::ScalarFieldWalker;
 
 /// An index, unique or fulltext attribute.
 #[derive(Copy, Clone)]
@@ -105,14 +108,15 @@ impl<'db> IndexWalker<'db> {
 
     /// The scalar fields covered by the index.
     pub fn fields(self) -> impl ExactSizeIterator<Item = IndexFieldWalker<'db>> {
-        self.index_attribute
-            .fields
-            .iter()
-            .map(move |attributes| IndexFieldWalker::new(self.db.walk(attributes.path.field_in_index())))
+        self.index_attribute.fields.iter().map(move |attributes| {
+            IndexFieldWalker::new(self.db.walk(attributes.path.field_in_index()))
+        })
     }
 
     /// The scalar fields covered by the index, and their arguments.
-    pub fn scalar_field_attributes(self) -> impl ExactSizeIterator<Item = ScalarFieldAttributeWalker<'db>> {
+    pub fn scalar_field_attributes(
+        self,
+    ) -> impl ExactSizeIterator<Item = ScalarFieldAttributeWalker<'db>> {
         self.attribute()
             .fields
             .iter()
@@ -126,7 +130,9 @@ impl<'db> IndexWalker<'db> {
 
     /// True, if given field is a part of the indexed fields.
     pub fn contains_field(self, field: ScalarFieldWalker<'db>) -> bool {
-        self.fields().filter_map(|f| f.as_scalar_field()).any(|f| f == field)
+        self.fields()
+            .filter_map(|f| f.as_scalar_field())
+            .any(|f| f == field)
     }
 
     /// True if the field contains exactly the same fields in the same order,
@@ -180,7 +186,9 @@ impl<'db> IndexWalker<'db> {
 
     /// The field the model was defined on, if any.
     pub fn source_field(self) -> Option<ScalarFieldWalker<'db>> {
-        self.index_attribute.source_field.map(|field_id| self.db.walk(field_id))
+        self.index_attribute
+            .source_field
+            .map(|field_id| self.db.walk(field_id))
     }
 }
 

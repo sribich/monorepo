@@ -1,5 +1,8 @@
-use crate::datamodel_connector::{Connector, ConnectorCapabilities, ConnectorCapability};
 use cfg_if::cfg_if;
+
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapabilities;
+use crate::datamodel_connector::ConnectorCapability;
 
 cfg_if! {
     // if built only for mysql
@@ -82,7 +85,10 @@ macro_rules! reachable_only_with_capability {
 
 #[inline(always)]
 #[allow(dead_code)] // not used if more than one connector is built
-const fn check_comptime_capability(capabilities: ConnectorCapabilities, cap: ConnectorCapability) -> bool {
+const fn check_comptime_capability(
+    capabilities: ConnectorCapabilities,
+    cap: ConnectorCapability,
+) -> bool {
     (capabilities.bits_c() & (cap as u64)) > 0
 }
 

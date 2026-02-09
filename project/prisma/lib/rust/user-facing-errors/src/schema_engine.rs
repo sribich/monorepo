@@ -3,7 +3,10 @@ use user_facing_error_macros::*;
 
 /// [spec](https://github.com/prisma/specs/tree/master/errors#p3000-database-creation-failed)
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P3000", message = "Failed to create database: {database_error}")]
+#[user_facing(
+    code = "P3000",
+    message = "Failed to create database: {database_error}"
+)]
 pub struct DatabaseCreationFailed {
     pub database_error: String,
 }

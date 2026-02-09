@@ -1,17 +1,21 @@
-use crate::{
-    ast::WithSpan,
-    common::{FeatureMapWithProvider, PreviewFeature, RenamedFeature},
-    configuration::{Generator, GeneratorConfigValue, StringFromEnvVar},
-    diagnostics::*,
-};
+use std::collections::HashMap;
+
 use enumflags2::BitFlags;
 use itertools::Itertools;
-use parser_database::{
-    ast::{self, WithDocumentation},
-    coerce, coerce_array,
-};
+use parser_database::ast::WithDocumentation;
+use parser_database::ast::{self};
+use parser_database::coerce;
+use parser_database::coerce_array;
 use psl_ast::ast::WithName;
-use std::collections::HashMap;
+
+use crate::ast::WithSpan;
+use crate::common::FeatureMapWithProvider;
+use crate::common::PreviewFeature;
+use crate::common::RenamedFeature;
+use crate::configuration::Generator;
+use crate::configuration::GeneratorConfigValue;
+use crate::configuration::StringFromEnvVar;
+use crate::diagnostics::*;
 
 const PROVIDER_KEY: &str = "provider";
 const OUTPUT_KEY: &str = "output";
@@ -78,7 +82,9 @@ fn lift_generator(
     let preview_features = args
         .remove(PREVIEW_FEATURES_KEY)
         .and_then(|v| coerce_array(v, &coerce::string, diagnostics).map(|arr| (arr, v.span())))
-        .map(|(arr, span)| parse_and_validate_preview_features(arr, feature_map_with_provider, span, diagnostics));
+        .map(|(arr, span)| {
+            parse_and_validate_preview_features(arr, feature_map_with_provider, span, diagnostics)
+        });
 
     let config = args
         .into_iter()
@@ -114,7 +120,10 @@ fn parse_and_validate_preview_features(
         match feature_opt {
             Some(feature) if feature_map_with_provider.is_deprecated(feature) => {
                 features |= feature;
-                diagnostics.push_warning(DatamodelWarning::new_preview_feature_deprecated(feature_str, span));
+                diagnostics.push_warning(DatamodelWarning::new_preview_feature_deprecated(
+                    feature_str,
+                    span,
+                ));
             }
             Some(feature) if feature_map_with_provider.is_stabilized(feature) => {
                 match feature_map_with_provider.is_renamed(feature) {
@@ -131,24 +140,27 @@ fn parse_and_validate_preview_features(
                     Some(RenamedFeature::ForProvider((provider, renamed_feature))) => {
                         features |= renamed_feature.to;
 
-                        diagnostics.push_warning(DatamodelWarning::new_preview_feature_renamed_for_provider(
-                            provider,
-                            feature_str,
-                            renamed_feature.to,
-                            renamed_feature.prisly_link_endpoint,
-                            span,
-                        ));
+                        diagnostics.push_warning(
+                            DatamodelWarning::new_preview_feature_renamed_for_provider(
+                                provider,
+                                feature_str,
+                                renamed_feature.to,
+                                renamed_feature.prisly_link_endpoint,
+                                span,
+                            ),
+                        );
                     }
                     None => {
                         features |= feature;
-                        diagnostics
-                            .push_warning(DatamodelWarning::new_preview_feature_is_stabilized(feature_str, span));
+                        diagnostics.push_warning(
+                            DatamodelWarning::new_preview_feature_is_stabilized(feature_str, span),
+                        );
                     }
                 }
             }
 
-            Some(feature) if !feature_map_with_provider.is_valid(feature) => {
-                diagnostics.push_error(DatamodelError::new_preview_feature_not_known_error(
+            Some(feature) if !feature_map_with_provider.is_valid(feature) => diagnostics
+                .push_error(DatamodelError::new_preview_feature_not_known_error(
                     feature_str,
                     feature_map_with_provider
                         .active_features()
@@ -156,8 +168,7 @@ fn parse_and_validate_preview_features(
                         .map(|pf| pf.to_string())
                         .join(", "),
                     span,
-                ))
-            }
+                )),
 
             Some(feature) => features |= feature,
 

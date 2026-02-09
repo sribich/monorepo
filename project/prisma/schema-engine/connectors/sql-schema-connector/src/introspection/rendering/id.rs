@@ -1,5 +1,6 @@
-use crate::introspection::introspection_pair::IdPair;
 use datamodel_renderer::datamodel as renderer;
+
+use crate::introspection::introspection_pair::IdPair;
 
 /// Render a model/view level `@@id` definition.
 pub(super) fn render(id: IdPair<'_>) -> renderer::IdDefinition<'_> {

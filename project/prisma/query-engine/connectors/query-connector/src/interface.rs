@@ -1,9 +1,11 @@
-use crate::NativeUpsert;
+use std::collections::HashMap;
+
 use async_trait::async_trait;
 use prisma_value::PrismaValue;
 use query_structure::*;
-use std::collections::HashMap;
 use telemetry::TraceParent;
+
+use crate::NativeUpsert;
 
 #[async_trait]
 pub trait Connector {

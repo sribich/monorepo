@@ -747,11 +747,7 @@ async fn re_intro_keeps_the_field_map(api: &mut TestApi) -> TestResult {
     Ok(())
 }
 
-#[test_connector(
-    tags(Postgres),
-    preview_features("views"),
-    namespaces("public")
-)]
+#[test_connector(tags(Postgres), preview_features("views"), namespaces("public"))]
 async fn schema_is_introspected(api: &mut TestApi) -> TestResult {
     let setup = indoc! {r#"
         CREATE VIEW public."A" AS SELECT 1 AS id;
@@ -784,7 +780,8 @@ async fn schema_is_introspected(api: &mut TestApi) -> TestResult {
         SELECT
           1 AS id;"#]];
 
-    api.expect_view_definition_in_schema("public", "A", &expected).await;
+    api.expect_view_definition_in_schema("public", "A", &expected)
+        .await;
 
     Ok(())
 }
@@ -973,10 +970,12 @@ async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![""];
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -1009,7 +1008,8 @@ async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -1018,7 +1018,8 @@ async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult
           - "Renamedif"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }

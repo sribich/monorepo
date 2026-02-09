@@ -3,22 +3,30 @@ mod validations;
 
 use std::borrow::Cow;
 
-use chrono::FixedOffset;
-pub use native_types::MySqlType;
-use parser_database::{ExtensionTypes, ScalarFieldType};
-use prisma_value::{PrismaValueResult, decode_bytes};
-
-use crate::{
-    ValidatedSchema,
-    datamodel_connector::{
-        Connector, ConnectorCapabilities, ConnectorCapability, ConstraintScope, Flavour, JoinStrategySupport,
-        NativeTypeConstructor, NativeTypeInstance, RelationMode,
-    },
-    diagnostics::{Diagnostics, Span},
-    parser_database::{ReferentialAction, ScalarType, walkers},
-};
 use MySqlType::*;
+use chrono::FixedOffset;
 use enumflags2::BitFlags;
+pub use native_types::MySqlType;
+use parser_database::ExtensionTypes;
+use parser_database::ScalarFieldType;
+use prisma_value::PrismaValueResult;
+use prisma_value::decode_bytes;
+
+use crate::ValidatedSchema;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapabilities;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::ConstraintScope;
+use crate::datamodel_connector::Flavour;
+use crate::datamodel_connector::JoinStrategySupport;
+use crate::datamodel_connector::NativeTypeConstructor;
+use crate::datamodel_connector::NativeTypeInstance;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::Diagnostics;
+use crate::diagnostics::Span;
+use crate::parser_database::ReferentialAction;
+use crate::parser_database::ScalarType;
+use crate::parser_database::walkers;
 
 const TINY_BLOB_TYPE_NAME: &str = "TinyBlob";
 const BLOB_TYPE_NAME: &str = "Blob";
@@ -68,7 +76,10 @@ pub const CAPABILITIES: ConnectorCapabilities = enumflags2::make_bitflags!(Conne
     SupportsDefaultInInsert
 });
 
-const CONSTRAINT_SCOPES: &[ConstraintScope] = &[ConstraintScope::GlobalForeignKey, ConstraintScope::ModelKeyIndex];
+const CONSTRAINT_SCOPES: &[ConstraintScope] = &[
+    ConstraintScope::GlobalForeignKey,
+    ConstraintScope::ModelKeyIndex,
+];
 
 pub struct MySqlDatamodelConnector;
 
@@ -177,7 +188,9 @@ impl Connector for MySqlDatamodelConnector {
             .iter()
             .find(|(st, _)| st == &scalar_type)
             .map(|(_, native_type)| native_type)
-            .ok_or_else(|| format!("Could not find scalar type {scalar_type:?} in SCALAR_TYPE_DEFAULTS"))
+            .ok_or_else(|| {
+                format!("Could not find scalar type {scalar_type:?} in SCALAR_TYPE_DEFAULTS")
+            })
             .unwrap();
 
         Some(NativeTypeInstance::new::<MySqlType>(*native_type))
@@ -197,29 +210,36 @@ impl Connector for MySqlDatamodelConnector {
             Decimal(Some((precision, scale))) if scale > precision => {
                 errors.push_error(error.new_scale_larger_than_precision_error(span))
             }
-            Decimal(Some((precision, _))) if *precision > 65 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("Precision can range from 1 to 65.", span))
-            }
-            Decimal(Some((_, scale))) if *scale > 30 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("Scale can range from 0 to 30.", span))
-            }
-            Bit(length) if *length == 0 || *length > 64 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("M can range from 1 to 64.", span))
-            }
-            Char(length) if *length > 255 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("M can range from 0 to 255.", span))
-            }
-            VarChar(length) if *length > 65535 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("M can range from 0 to 65,535.", span))
-            }
-            Bit(n) if *n > 1 && matches!(scalar_type, Some(ScalarType::Boolean)) => {
-                errors.push_error(error.new_argument_m_out_of_range_error("only Bit(1) can be used as Boolean.", span))
-            }
+            Decimal(Some((precision, _))) if *precision > 65 => errors.push_error(
+                error.new_argument_m_out_of_range_error("Precision can range from 1 to 65.", span),
+            ),
+            Decimal(Some((_, scale))) if *scale > 30 => errors.push_error(
+                error.new_argument_m_out_of_range_error("Scale can range from 0 to 30.", span),
+            ),
+            Bit(length) if *length == 0 || *length > 64 => errors.push_error(
+                error.new_argument_m_out_of_range_error("M can range from 1 to 64.", span),
+            ),
+            Char(length) if *length > 255 => errors.push_error(
+                error.new_argument_m_out_of_range_error("M can range from 0 to 255.", span),
+            ),
+            VarChar(length) if *length > 65535 => errors.push_error(
+                error.new_argument_m_out_of_range_error("M can range from 0 to 65,535.", span),
+            ),
+            Bit(n) if *n > 1 && matches!(scalar_type, Some(ScalarType::Boolean)) => errors
+                .push_error(error.new_argument_m_out_of_range_error(
+                    "only Bit(1) can be used as Boolean.",
+                    span,
+                )),
             _ => (),
         }
     }
 
-    fn validate_model(&self, model: walkers::ModelWalker<'_>, relation_mode: RelationMode, errors: &mut Diagnostics) {
+    fn validate_model(
+        &self,
+        model: walkers::ModelWalker<'_>,
+        relation_mode: RelationMode,
+        errors: &mut Diagnostics,
+    ) {
         for index in model.indexes() {
             validations::field_types_can_be_used_in_an_index(self, index, errors);
         }
@@ -259,7 +279,10 @@ impl Connector for MySqlDatamodelConnector {
         }
     }
 
-    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>) {
+    fn native_type_to_parts<'t>(
+        &self,
+        native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, Cow<'t, [String]>) {
         native_type.downcast_ref::<MySqlType>().to_parts()
     }
 
@@ -290,12 +313,19 @@ impl Connector for MySqlDatamodelConnector {
                 Timestamp(_) => super::utils::mysql::parse_timestamp(str),
                 _ => unreachable!(),
             },
-            None => self.parse_json_datetime(str, Some(NativeTypeInstance::new::<MySqlType>(DATE_TIME_DEFAULT))),
+            None => self.parse_json_datetime(
+                str,
+                Some(NativeTypeInstance::new::<MySqlType>(DATE_TIME_DEFAULT)),
+            ),
         }
     }
 
     // On MySQL, bytes are encoded as base64 in the database directly.
-    fn parse_json_bytes(&self, str: &str, _nt: Option<NativeTypeInstance>) -> PrismaValueResult<Vec<u8>> {
+    fn parse_json_bytes(
+        &self,
+        str: &str,
+        _nt: Option<NativeTypeInstance>,
+    ) -> PrismaValueResult<Vec<u8>> {
         let mut buf = vec![0; str.len()];
 
         // MySQL base64 encodes bytes with newlines every 76 characters.

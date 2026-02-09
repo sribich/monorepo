@@ -11,18 +11,21 @@ mod interpreting_executor;
 mod pipeline;
 mod request_context;
 
-pub use self::{execute_operation::*, interpreting_executor::InterpretingExecutor};
-
-pub use request_context::*;
-pub use telemetry::TraceParent;
-
-use crate::{
-    BatchDocumentTransaction, TxId, protocol::EngineProtocol, query_document::Operation, response_ir::ResponseData,
-    schema::QuerySchemaRef,
-};
 use async_trait::async_trait;
 use connector::Connector;
-use serde::{Deserialize, Serialize};
+pub use request_context::*;
+use serde::Deserialize;
+use serde::Serialize;
+pub use telemetry::TraceParent;
+
+pub use self::execute_operation::*;
+pub use self::interpreting_executor::InterpretingExecutor;
+use crate::BatchDocumentTransaction;
+use crate::TxId;
+use crate::protocol::EngineProtocol;
+use crate::query_document::Operation;
+use crate::response_ir::ResponseData;
+use crate::schema::QuerySchemaRef;
 
 #[async_trait]
 pub trait QueryExecutor: TransactionManager {
@@ -77,7 +80,11 @@ pub struct TransactionOptions {
 }
 
 impl TransactionOptions {
-    pub fn new(max_acquisition_millis: u64, valid_for_millis: u64, isolation_level: Option<String>) -> Self {
+    pub fn new(
+        max_acquisition_millis: u64,
+        valid_for_millis: u64,
+        isolation_level: Option<String>,
+    ) -> Self {
         Self {
             max_acquisition_millis,
             valid_for_millis,

@@ -1,20 +1,22 @@
-use convert_case::{Case, Casing};
-use generator_shared::{
-    casing::cased_ident,
-    extensions::{DmmfInputFieldExt, FieldExtension, ScalarFieldTypeExtension},
-};
+use convert_case::Case;
+use convert_case::Casing;
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::DmmfInputFieldExt;
+use generator_shared::extensions::FieldExtension;
+use generator_shared::extensions::ScalarFieldTypeExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
-use query_structure::{
-    FieldArity,
-    walkers::{FieldWalker, IndexFieldWalker, ModelWalker, ScalarFieldWalker},
-};
-use quote::{format_ident, quote};
+use query_structure::FieldArity;
+use query_structure::walkers::FieldWalker;
+use query_structure::walkers::IndexFieldWalker;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::ScalarFieldWalker;
+use quote::format_ident;
+use quote::quote;
 
-use crate::{
-    args::{Filter, GeneratorArgs},
-    rust::module::FieldModule,
-};
+use crate::args::Filter;
+use crate::args::GeneratorArgs;
+use crate::rust::module::FieldModule;
 
 pub struct Operator {
     pub name: &'static str,
@@ -178,7 +180,11 @@ enum Variant {
 }
 
 impl Variant {
-    pub fn unique(field: ScalarFieldWalker, read_filter: &Filter, module_path: &TokenStream) -> Self {
+    pub fn unique(
+        field: ScalarFieldWalker,
+        read_filter: &Filter,
+        module_path: &TokenStream,
+    ) -> Self {
         Self::Unique {
             field_name: field.name().to_owned(),
             field_required_type: field
@@ -219,7 +225,11 @@ fn unique_field_combos(model: ModelWalker) -> Vec<Vec<ScalarFieldWalker>> {
         .map(|unique| {
             unique
                 .fields()
-                .filter_map(|field| model.scalar_fields().find(|mf| mf.field_id() == field.field_id()))
+                .filter_map(|field| {
+                    model
+                        .scalar_fields()
+                        .find(|mf| mf.field_id() == field.field_id())
+                })
                 .collect()
         })
         .collect::<Vec<_>>();
@@ -238,7 +248,11 @@ fn unique_field_combos(model: ModelWalker) -> Vec<Vec<ScalarFieldWalker>> {
             combos.push(
                 primary_key
                     .fields()
-                    .filter_map(|field| model.scalar_fields().find(|mf| mf.field_id() == field.field_id()))
+                    .filter_map(|field| {
+                        model
+                            .scalar_fields()
+                            .find(|mf| mf.field_id() == field.field_id())
+                    })
                     .collect(),
             );
         }
@@ -251,7 +265,10 @@ fn generate_variants(variants: &[Variant]) -> TokenStream {
     let (where_variants, to_serialized_where): (Vec<_>, Vec<_>) = variants
         .iter()
         .filter_map(|variant| match variant {
-            Variant::Base { definition, match_arm } => Some((definition.clone(), Some(match_arm))),
+            Variant::Base {
+                definition,
+                match_arm,
+            } => Some((definition.clone(), Some(match_arm))),
             Variant::Unique { .. } | Variant::CompoundUnique { .. } => None,
         })
         .unzip();
@@ -367,7 +384,10 @@ fn generate_variants(variants: &[Variant]) -> TokenStream {
     }
 }
 
-fn generate_field(field: FieldWalker, args: &GeneratorArgs) -> ((String, TokenStream), Vec<Variant>) {
+fn generate_field(
+    field: FieldWalker,
+    args: &GeneratorArgs,
+) -> ((String, TokenStream), Vec<Variant>) {
     let mut variants = vec![];
 
     let field_name_raw = field.name();
@@ -390,11 +410,12 @@ fn generate_field(field: FieldWalker, args: &GeneratorArgs) -> ((String, TokenSt
                     | ScalarFieldType::BuiltInScalar(_)
                     | ScalarFieldType::Unsupported(_) => {
                         // Enums exist in the global scope, let's use super
-                        let prefix = if let ScalarFieldType::Enum(_) = scalar_field.scalar_field_type() {
-                            quote!(super::super::super::)
-                        } else {
-                            quote!()
-                        };
+                        let prefix =
+                            if let ScalarFieldType::Enum(_) = scalar_field.scalar_field_type() {
+                                quote!(super::super::super::)
+                            } else {
+                                quote!()
+                            };
 
                         let read_fns = args.read_filter(scalar_field).map(|read_filter| {
                         let filter_name = format_ident!("{}Filter", &read_filter.name);
@@ -490,7 +511,8 @@ fn generate_field(field: FieldWalker, args: &GeneratorArgs) -> ((String, TokenSt
                 }
             }
             query_structure::walkers::RefinedFieldWalker::Relation(relation_field) => {
-                let relation_model_name = cased_ident(relation_field.related_model().name(), Case::Snake);
+                let relation_model_name =
+                    cased_ident(relation_field.related_model().name(), Case::Snake);
 
                 if arity == FieldArity::Optional {
                     variants.push(Variant::Base {

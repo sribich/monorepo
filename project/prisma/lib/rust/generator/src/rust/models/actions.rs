@@ -1,11 +1,14 @@
 use convert_case::Case;
-use generator_shared::{casing::cased_ident, extensions::FieldExtension};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::FieldExtension;
 use proc_macro2::TokenStream;
-use psl::{datamodel_connector::ConnectorCapability, parser_database::ScalarFieldType};
+use psl::datamodel_connector::ConnectorCapability;
+use psl::parser_database::ScalarFieldType;
 use query_structure::walkers::ModelWalker;
 use quote::quote;
 
-use super::{RequiredField, get_required_model_fields};
+use super::RequiredField;
+use super::get_required_model_fields;
 use crate::args::GeneratorArgs;
 
 pub(super) fn generate_model_actions(model: ModelWalker, args: &GeneratorArgs) -> TokenStream {

@@ -1,12 +1,15 @@
-use crate::{
-    QueryResult, RecordSelection,
-    interpreter::{InterpretationResult, InterpreterError},
-    query_ast::*,
-};
-use connector::{ConnectionLike, NativeUpsert};
-use query_structure::{ManyRecords, RawJson};
+use connector::ConnectionLike;
+use connector::NativeUpsert;
+use query_structure::ManyRecords;
+use query_structure::RawJson;
 use sql_query_builder::write::split_write_args_by_shape;
 use telemetry::TraceParent;
+
+use crate::QueryResult;
+use crate::RecordSelection;
+use crate::interpreter::InterpretationResult;
+use crate::interpreter::InterpreterError;
+use crate::query_ast::*;
 
 pub(crate) async fn execute(
     tx: &mut dyn ConnectionLike,
@@ -29,18 +32,23 @@ pub(crate) async fn execute(
 }
 
 async fn query_raw(tx: &mut dyn ConnectionLike, q: RawQuery) -> InterpretationResult<QueryResult> {
-    let res = tx.query_raw(q.model.as_ref(), q.inputs, q.query_type).await?;
+    let res = tx
+        .query_raw(q.model.as_ref(), q.inputs, q.query_type)
+        .await?;
 
     Ok(QueryResult::RawJson(res))
 }
 
-async fn execute_raw(tx: &mut dyn ConnectionLike, q: RawQuery) -> InterpretationResult<QueryResult> {
+async fn execute_raw(
+    tx: &mut dyn ConnectionLike,
+    q: RawQuery,
+) -> InterpretationResult<QueryResult> {
     let res = tx.execute_raw(q.inputs).await?;
     let num = serde_json::Value::Number(serde_json::Number::from(res));
 
-    Ok(QueryResult::RawJson(
-        RawJson::try_new(num).map_err(|err| InterpreterError::Generic(err.to_string()))?,
-    ))
+    Ok(QueryResult::RawJson(RawJson::try_new(num).map_err(
+        |err| InterpreterError::Generic(err.to_string()),
+    )?))
 }
 
 async fn create_one(
@@ -52,14 +60,16 @@ async fn create_one(
         .create_record(&q.model, q.args, q.selected_fields, traceparent)
         .await?;
 
-    Ok(QueryResult::RecordSelection(Some(Box::new(RecordSelection {
-        name: q.name,
-        fields: q.selection_order,
-        model: q.model,
-        records: res.into(),
-        nested: vec![],
-        virtual_fields: vec![],
-    }))))
+    Ok(QueryResult::RecordSelection(Some(Box::new(
+        RecordSelection {
+            name: q.name,
+            fields: q.selection_order,
+            model: q.model,
+            records: res.into(),
+            nested: vec![],
+            virtual_fields: vec![],
+        },
+    ))))
 }
 
 async fn create_many(
@@ -73,11 +83,18 @@ async fn create_many(
 
     if let Some(selected_fields) = q.selected_fields {
         let records = tx
-            .create_records_returning(&q.model, q.args, q.skip_duplicates, selected_fields.fields, traceparent)
+            .create_records_returning(
+                &q.model,
+                q.args,
+                q.skip_duplicates,
+                selected_fields.fields,
+                traceparent,
+            )
             .await?;
 
         let nested: Vec<QueryResult> =
-            super::read::process_nested(tx, selected_fields.nested, Some(&records), traceparent).await?;
+            super::read::process_nested(tx, selected_fields.nested, Some(&records), traceparent)
+                .await?;
 
         let selection = RecordSelection {
             name: q.name,
@@ -135,12 +152,23 @@ async fn create_many_split_by_shape(
             result
         } else {
             // Empty result means that the list of arguments was empty as well.
-            tx.create_records_returning(&q.model, vec![], q.skip_duplicates, selected_fields.fields, traceparent)
-                .await?
+            tx.create_records_returning(
+                &q.model,
+                vec![],
+                q.skip_duplicates,
+                selected_fields.fields,
+                traceparent,
+            )
+            .await?
         };
 
-        let nested: Vec<QueryResult> =
-            super::read::process_nested(tx, selected_fields.nested.clone(), Some(&records), traceparent).await?;
+        let nested: Vec<QueryResult> = super::read::process_nested(
+            tx,
+            selected_fields.nested.clone(),
+            Some(&records),
+            traceparent,
+        )
+        .await?;
 
         let selection = RecordSelection {
             name: q.name,
@@ -198,7 +226,9 @@ async fn update_one(
         }
         UpdateRecord::WithoutSelection(_) => {
             let res = res
-                .map(|record| record.extract_selection_result(&q.model().shard_aware_primary_identifier()))
+                .map(|record| {
+                    record.extract_selection_result(&q.model().shard_aware_primary_identifier())
+                })
                 .transpose()?;
 
             Ok(QueryResult::Id(res))
@@ -247,7 +277,9 @@ async fn delete_one(
 
         Ok(QueryResult::RecordSelection(Some(Box::new(selection))))
     } else {
-        let result = tx.delete_records(&q.model, filter, None, traceparent).await?;
+        let result = tx
+            .delete_records(&q.model, filter, None, traceparent)
+            .await?;
         Ok(QueryResult::Count(result))
     }
 }
@@ -270,7 +302,8 @@ async fn update_many(
             .await?;
 
         let nested: Vec<QueryResult> =
-            super::read::process_nested(tx, selected_fields.nested, Some(&records), traceparent).await?;
+            super::read::process_nested(tx, selected_fields.nested, Some(&records), traceparent)
+                .await?;
 
         let selection = RecordSelection {
             name: q.name,
@@ -310,7 +343,8 @@ async fn connect(
 ) -> InterpretationResult<QueryResult> {
     tx.m2m_connect(
         &q.relation_field,
-        &q.parent_id.expect("Expected parent record ID to be set for connect"),
+        &q.parent_id
+            .expect("Expected parent record ID to be set for connect"),
         &q.child_ids,
         traceparent,
     )
@@ -326,7 +360,8 @@ async fn disconnect(
 ) -> InterpretationResult<QueryResult> {
     tx.m2m_disconnect(
         &q.relation_field,
-        &q.parent_id.expect("Expected parent record ID to be set for disconnect"),
+        &q.parent_id
+            .expect("Expected parent record ID to be set for disconnect"),
         &q.child_ids,
         traceparent,
     )

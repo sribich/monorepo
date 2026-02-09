@@ -1,11 +1,12 @@
-use super::*;
-
-use crate::{context::Context, filter::alias::Alias, model_extensions::AsColumn};
-
 use std::collections::HashMap;
 
 use quaint::ast::*;
 use query_structure::*;
+
+use super::*;
+use crate::context::Context;
+use crate::filter::alias::Alias;
+use crate::model_extensions::AsColumn;
 
 /// Represents a projection of a virtual field that is cheap to clone and compare but still has
 /// enough information to determine whether it refers to the same field.
@@ -40,7 +41,12 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
     ///   SELECT JSON_OBJECT(<...>) FROM "Post" WHERE "Post"."authorId" = "User"."id
     /// ) as "post" ON TRUE
     /// ```
-    fn build(&mut self, args: QueryArguments, selected_fields: &FieldSelection, ctx: &Context<'_>) -> Select<'static> {
+    fn build(
+        &mut self,
+        args: QueryArguments,
+        selected_fields: &FieldSelection,
+        ctx: &Context<'_>,
+    ) -> Select<'static> {
         let (select, parent_alias) = self.build_default_select(&args, ctx);
         let select = self.with_relations(
             select,
@@ -49,7 +55,8 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
             parent_alias,
             ctx,
         );
-        let select = self.with_virtual_selections(select, selected_fields.virtuals(), parent_alias, ctx);
+        let select =
+            self.with_virtual_selections(select, selected_fields.virtuals(), parent_alias, ctx);
 
         // Build selection as the last step utilizing the information we collected in
         // `with_relations` and `with_virtual_selections`.
@@ -64,14 +71,18 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
         ctx: &Context<'_>,
     ) -> Select<'a> {
         match field {
-            SelectedField::Scalar(sf) => select.column(aliased_scalar_column(sf, parent_alias, ctx)),
+            SelectedField::Scalar(sf) => {
+                select.column(aliased_scalar_column(sf, parent_alias, ctx))
+            }
             SelectedField::Relation(rs) => {
                 let table_name = match rs.field.relation().is_many_to_many() {
                     true => m2m_join_alias_name(&rs.field),
                     false => join_alias_name(&rs.field),
                 };
 
-                select.value(Column::from((table_name, JSON_AGG_IDENT)).alias(rs.field.name().to_owned()))
+                select.value(
+                    Column::from((table_name, JSON_AGG_IDENT)).alias(rs.field.name().to_owned()),
+                )
             }
             _ => select,
         }
@@ -86,12 +97,16 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
     ) -> Select<'a> {
         let (subselect, child_alias) = self.build_to_one_select(rs, parent_alias, ctx);
 
-        let subselect = self.with_relations(subselect, rs.relations(), rs.virtuals(), child_alias, ctx);
+        let subselect =
+            self.with_relations(subselect, rs.relations(), rs.virtuals(), child_alias, ctx);
         let subselect = self.with_virtual_selections(subselect, rs.virtuals(), child_alias, ctx);
 
         // Build the JSON object using the information we collected before in `with_relations` and
         // `with_virtual_selections`.
-        let subselect = subselect.value(self.build_json_obj_fn(rs, child_alias, ctx).alias(JSON_AGG_IDENT));
+        let subselect = subselect.value(
+            self.build_json_obj_fn(rs, child_alias, ctx)
+                .alias(JSON_AGG_IDENT),
+        );
 
         let join_table = Table::from(subselect).alias(join_alias_name(&rs.field));
 
@@ -111,7 +126,8 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
         let mut to_many_select = self.build_to_many_select(rs, parent_alias, ctx);
 
         if let Some(vs) = self.find_compatible_virtual_for_relation(rs, parent_virtuals) {
-            self.visited_virtuals.insert(vs.into(), join_table_alias.clone());
+            self.visited_virtuals
+                .insert(vs.into(), join_table_alias.clone());
             to_many_select = to_many_select.value(build_inline_virtual_selection(vs));
         }
 
@@ -160,7 +176,10 @@ impl JoinSelectBuilder for LateralJoinSelectBuilder {
             .filter_map(|field| match field {
                 SelectedField::Scalar(sf) => Some((
                     Cow::from(sf.name().to_owned()),
-                    Expression::from(sf.as_column(ctx).table(parent_alias.to_table_alias().to_string())),
+                    Expression::from(
+                        sf.as_column(ctx)
+                            .table(parent_alias.to_table_alias().to_string()),
+                    ),
                 )),
                 SelectedField::Relation(rs) => {
                     let table_name = match rs.field.relation().is_many_to_many() {
@@ -241,7 +260,8 @@ impl LateralJoinSelectBuilder {
             .comment("outer");
 
         if let Some(vs) = self.find_compatible_virtual_for_relation(rs, parent_virtuals) {
-            self.visited_virtuals.insert(vs.into(), json_data_alias.clone());
+            self.visited_virtuals
+                .insert(vs.into(), json_data_alias.clone());
             outer = outer.value(build_inline_virtual_selection(vs));
         }
 
@@ -254,6 +274,8 @@ impl LateralJoinSelectBuilder {
 
 fn build_inline_virtual_selection<'a>(vs: &VirtualSelection) -> Expression<'a> {
     match vs {
-        VirtualSelection::RelationCount(..) => count(Column::from(JSON_AGG_IDENT)).alias(vs.db_alias()).into(),
+        VirtualSelection::RelationCount(..) => count(Column::from(JSON_AGG_IDENT))
+            .alias(vs.db_alias())
+            .into(),
     }
 }

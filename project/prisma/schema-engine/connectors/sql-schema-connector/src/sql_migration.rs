@@ -1,15 +1,24 @@
-use crate::{
-    migration_pair::MigrationPair,
-    sql_renderer::IteratorJoin,
-    sql_schema_differ::{ColumnChange, ColumnChanges},
-};
+use std::collections::BTreeSet;
+use std::fmt::Write as _;
+
 use enumflags2::BitFlags;
-use sql_schema_describer::{
-    EnumId, ForeignKeyId, IndexId, SqlSchema, TableColumnId, TableId, UdtId, ViewId,
-    postgres::{self, PostgresSchemaExt},
-    walkers::{TableColumnWalker, TableWalker},
-};
-use std::{collections::BTreeSet, fmt::Write as _};
+use sql_schema_describer::EnumId;
+use sql_schema_describer::ForeignKeyId;
+use sql_schema_describer::IndexId;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::TableColumnId;
+use sql_schema_describer::TableId;
+use sql_schema_describer::UdtId;
+use sql_schema_describer::ViewId;
+use sql_schema_describer::postgres::PostgresSchemaExt;
+use sql_schema_describer::postgres::{self};
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+
+use crate::migration_pair::MigrationPair;
+use crate::sql_renderer::IteratorJoin;
+use crate::sql_schema_differ::ColumnChange;
+use crate::sql_schema_differ::ColumnChanges;
 
 /// The database migration type for SqlMigrationConnector.
 #[derive(Debug)]
@@ -97,7 +106,11 @@ impl SqlMigration {
                     ));
                 }
                 SqlMigrationStep::AlterPrimaryKey(table_id) => {
-                    drift_items.insert((DriftType::ChangedTable, self.before.walk(table_id.previous).name(), idx));
+                    drift_items.insert((
+                        DriftType::ChangedTable,
+                        self.before.walk(table_id.previous).name(),
+                        idx,
+                    ));
                 }
                 SqlMigrationStep::DropIndex { index_id } => {
                     drift_items.insert((
@@ -142,7 +155,11 @@ impl SqlMigration {
                     table_id: (_, table_id),
                     ..
                 } => {
-                    drift_items.insert((DriftType::ChangedTable, self.schemas().next.walk(*table_id).name(), idx));
+                    drift_items.insert((
+                        DriftType::ChangedTable,
+                        self.schemas().next.walk(*table_id).name(),
+                        idx,
+                    ));
                 }
                 SqlMigrationStep::AddForeignKey { foreign_key_id: id } => {
                     drift_items.insert((
@@ -151,7 +168,8 @@ impl SqlMigration {
                         idx,
                     ));
                 }
-                SqlMigrationStep::RenameIndex { index } | SqlMigrationStep::RedefineIndex { index } => {
+                SqlMigrationStep::RenameIndex { index }
+                | SqlMigrationStep::RedefineIndex { index } => {
                     drift_items.insert((
                         DriftType::ChangedTable,
                         self.schemas().walk(*index).previous.table().name(),
@@ -312,7 +330,11 @@ impl SqlMigration {
                                 out.push_str("  [*] Column `");
                                 out.push_str(self.schemas().next.walk(column_id.next).name());
                                 out.push_str("` would be dropped and recreated ");
-                                render_column_changes(self.schemas().walk(*column_id), changes, &mut out);
+                                render_column_changes(
+                                    self.schemas().walk(*column_id),
+                                    changes,
+                                    &mut out,
+                                );
                                 out.push('\n');
                             }
                             TableChange::DropPrimaryKey => {
@@ -378,7 +400,12 @@ impl SqlMigration {
                 SqlMigrationStep::AddForeignKey { foreign_key_id } => {
                     let foreign_key = self.schemas().next.walk(*foreign_key_id);
                     out.push_str("  [+] Added foreign key on columns (");
-                    out.push_str(&foreign_key.constrained_columns().map(|c| c.name()).join(", "));
+                    out.push_str(
+                        &foreign_key
+                            .constrained_columns()
+                            .map(|c| c.name())
+                            .join(", "),
+                    );
                     out.push_str(")\n")
                 }
                 SqlMigrationStep::RenameIndex { index } => {
@@ -412,7 +439,11 @@ impl SqlMigration {
     }
 }
 
-fn render_column_changes(columns: MigrationPair<TableColumnWalker<'_>>, changes: &ColumnChanges, sink: &mut String) {
+fn render_column_changes(
+    columns: MigrationPair<TableColumnWalker<'_>>,
+    changes: &ColumnChanges,
+    sink: &mut String,
+) {
     let readable_changes = changes
         .iter()
         .map(|change| match change {
@@ -642,7 +673,11 @@ pub(crate) struct RedefineTable {
     pub added_columns_with_virtual_defaults: Vec<TableColumnId>,
     pub dropped_columns: Vec<TableColumnId>,
     pub dropped_primary_key: bool,
-    pub column_pairs: Vec<(MigrationPair<TableColumnId>, ColumnChanges, Option<ColumnTypeChange>)>,
+    pub column_pairs: Vec<(
+        MigrationPair<TableColumnId>,
+        ColumnChanges,
+        Option<ColumnTypeChange>,
+    )>,
     pub table_ids: MigrationPair<TableId>,
 }
 

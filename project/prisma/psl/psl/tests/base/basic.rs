@@ -1,5 +1,6 @@
-use crate::common::*;
 use psl::parser_database::ScalarType;
+
+use crate::common::*;
 
 #[test]
 fn parse_basic_model() {
@@ -43,7 +44,15 @@ fn parse_basic_enum() {
 
     assert_eq!(
         values,
-        &["Admin", "User", "USER", "ADMIN", "ADMIN_USER", "Admin_User", "HHorse99"]
+        &[
+            "Admin",
+            "User",
+            "USER",
+            "ADMIN",
+            "ADMIN_USER",
+            "Admin_User",
+            "HHorse99"
+        ]
     );
 }
 

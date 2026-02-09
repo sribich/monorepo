@@ -1,8 +1,12 @@
 use diagnostics::DatamodelError;
 
-use crate::{Datasource, validate::validation_pipeline::context::Context};
+use crate::Datasource;
+use crate::validate::validation_pipeline::context::Context;
 
-pub(super) fn schemas_property_with_no_connector_support(datasource: &Datasource, ctx: &mut Context<'_>) {
+pub(super) fn schemas_property_with_no_connector_support(
+    datasource: &Datasource,
+    ctx: &mut Context<'_>,
+) {
     if ctx.has_capability(crate::datamodel_connector::ConnectorCapability::MultiSchema) {
         return;
     }

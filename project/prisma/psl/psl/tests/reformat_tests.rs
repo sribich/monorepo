@@ -1,6 +1,8 @@
 mod panic_with_diff;
 
-use std::{fs, io::Write as _, path};
+use std::fs;
+use std::io::Write as _;
+use std::path;
 
 const TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/reformatter");
 
@@ -41,18 +43,24 @@ fn reformat(s: &str) -> String {
 }
 
 mod reformat_multi_file {
-    use std::{collections::HashMap, fs, io::Write, path};
+    use std::collections::HashMap;
+    use std::fs;
+    use std::io::Write;
+    use std::path;
 
-    use psl::{SourceFile, reformat_multiple};
+    use psl::SourceFile;
+    use psl::reformat_multiple;
 
     use crate::panic_with_diff;
 
-    const MULTIFILE_TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/reformatter_multi_file");
+    const MULTIFILE_TESTS_ROOT: &str =
+        concat!(env!("CARGO_MANIFEST_DIR"), "/tests/reformatter_multi_file");
 
     #[inline(never)]
     fn run_reformat_multi_file_test(test_dir_name: &str) {
         let dir_path = path::Path::new(MULTIFILE_TESTS_ROOT).join(test_dir_name);
-        let snapshot_dir_path = path::Path::new(MULTIFILE_TESTS_ROOT).join(format!("{test_dir_name}.reformatted"));
+        let snapshot_dir_path =
+            path::Path::new(MULTIFILE_TESTS_ROOT).join(format!("{test_dir_name}.reformatted"));
 
         fs::create_dir_all(&snapshot_dir_path).unwrap();
         let schemas: Vec<_> = read_schemas_from_dir(dir_path).collect();
@@ -60,7 +68,8 @@ mod reformat_multi_file {
         let result = reformat_multiple(schemas, 2);
 
         let should_update = std::env::var("UPDATE_EXPECT").is_ok();
-        let mut snapshot_schemas: HashMap<_, _> = read_schemas_from_dir(&snapshot_dir_path).collect();
+        let mut snapshot_schemas: HashMap<_, _> =
+            read_schemas_from_dir(&snapshot_dir_path).collect();
         for (path, content) in result {
             let content = content.as_str();
             let snapshot_content = snapshot_schemas.remove(&path).unwrap_or_default();
@@ -83,12 +92,16 @@ mod reformat_multi_file {
             if should_update {
                 fs::remove_file(path::Path::new(&snapshot_dir_path).join(missing_file)).unwrap()
             } else {
-                panic!("{missing_file} is present in the snapshot directory, but missing from formatting results")
+                panic!(
+                    "{missing_file} is present in the snapshot directory, but missing from formatting results"
+                )
             }
         }
     }
 
-    fn read_schemas_from_dir(root_dir_path: impl AsRef<path::Path>) -> impl Iterator<Item = (String, SourceFile)> {
+    fn read_schemas_from_dir(
+        root_dir_path: impl AsRef<path::Path>,
+    ) -> impl Iterator<Item = (String, SourceFile)> {
         let root_dir_path = root_dir_path.as_ref().to_owned();
         fs::read_dir(&root_dir_path)
             .unwrap()

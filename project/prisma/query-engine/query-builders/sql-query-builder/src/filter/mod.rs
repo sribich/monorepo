@@ -5,7 +5,8 @@ use quaint::prelude::*;
 use query_structure::Filter;
 pub use visitor::*;
 
-use crate::{context::Context, join_utils::AliasedJoin};
+use crate::context::Context;
+use crate::join_utils::AliasedJoin;
 
 pub struct FilterBuilder {}
 pub(crate) struct FilterBuilderWithJoins {}

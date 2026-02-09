@@ -1,9 +1,17 @@
 use std::ops::Range;
 
-use crate::{
-    ForeignKeyId, ForeignKeyWalker, IndexColumnWalker, IndexId, IndexWalker, NamespaceId, Table, TableColumnId,
-    TableColumnWalker, TableId, TableProperties, Walker,
-};
+use crate::ForeignKeyId;
+use crate::ForeignKeyWalker;
+use crate::IndexColumnWalker;
+use crate::IndexId;
+use crate::IndexWalker;
+use crate::NamespaceId;
+use crate::Table;
+use crate::TableColumnId;
+use crate::TableColumnWalker;
+use crate::TableId;
+use crate::TableProperties;
+use crate::Walker;
 
 /// Traverse a table.
 pub type TableWalker<'a> = Walker<'a, TableId>;
@@ -56,7 +64,9 @@ impl<'a> TableWalker<'a> {
     }
 
     fn foreign_keys_range(self) -> Range<usize> {
-        super::range_for_key(&self.schema.foreign_keys, self.id, |fk| fk.constrained_table)
+        super::range_for_key(&self.schema.foreign_keys, self.id, |fk| {
+            fk.constrained_table
+        })
     }
 
     /// Try to traverse a foreign key for a single column.
@@ -78,7 +88,8 @@ impl<'a> TableWalker<'a> {
     /// The namespace the table belongs to, if defined.
     /// If not, falls back to the default runtime namespace, if one is set.
     pub fn namespace(self) -> Option<&'a str> {
-        self.explicit_namespace().or(self.schema.runtime_namespace.as_deref())
+        self.explicit_namespace()
+            .or(self.schema.runtime_namespace.as_deref())
     }
 
     /// The namespace the table belongs to.
@@ -92,28 +103,38 @@ impl<'a> TableWalker<'a> {
     }
 
     /// The columns that are part of the primary keys.
-    pub fn primary_key_columns(self) -> Option<impl ExactSizeIterator<Item = IndexColumnWalker<'a>>> {
+    pub fn primary_key_columns(
+        self,
+    ) -> Option<impl ExactSizeIterator<Item = IndexColumnWalker<'a>>> {
         self.primary_key().map(|pk| pk.columns())
     }
 
     /// How many columns are in the primary key? Returns 0 in the absence of a pk.
     pub fn primary_key_columns_count(self) -> usize {
-        self.primary_key_columns().map(|cols| cols.len()).unwrap_or(0)
+        self.primary_key_columns()
+            .map(|cols| cols.len())
+            .unwrap_or(0)
     }
 
     /// Is the table a partition table?
     pub fn is_partition(self) -> bool {
-        self.table().properties.contains(TableProperties::IsPartition)
+        self.table()
+            .properties
+            .contains(TableProperties::IsPartition)
     }
 
     /// Does the table have subclasses?
     pub fn has_subclass(self) -> bool {
-        self.table().properties.contains(TableProperties::HasSubclass)
+        self.table()
+            .properties
+            .contains(TableProperties::HasSubclass)
     }
 
     /// Does the table have row level security enabled?
     pub fn has_row_level_security(self) -> bool {
-        self.table().properties.contains(TableProperties::HasRowLevelSecurity)
+        self.table()
+            .properties
+            .contains(TableProperties::HasRowLevelSecurity)
     }
 
     /// Does the table have check constraints?
@@ -126,7 +147,10 @@ impl<'a> TableWalker<'a> {
 
     /// The check constraint names for the table.
     pub fn check_constraints(self) -> impl ExactSizeIterator<Item = &'a str> {
-        let low = self.schema.check_constraints.partition_point(|(id, _)| *id < self.id);
+        let low = self
+            .schema
+            .check_constraints
+            .partition_point(|(id, _)| *id < self.id);
         let high = self.schema.check_constraints[low..].partition_point(|(id, _)| *id <= self.id);
 
         self.schema.check_constraints[low..low + high]

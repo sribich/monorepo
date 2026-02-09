@@ -1,20 +1,38 @@
-use crate::{
-    Computation, DataExpectation, DataOperation, MissingRelatedRecord, ParsedInputValue, QueryGraphBuilderResult,
-    RelationViolation, RowSink,
-    inputs::{
-        DeleteManyRecordsSelectorsInput, IfInput, LeftSideDiffInput, RelatedRecordsSelectorsInput, ReturnInput,
-        RightSideDiffInput, UpdateManyRecordsSelectorsInput,
-    },
-    query_ast::*,
-    query_graph::{Flow, Node, NodeRef, QueryGraph, QueryGraphDependency},
-};
 use indexmap::IndexMap;
 use psl::parser_database::ReferentialAction;
-use query_structure::{
-    DatasourceFieldName, FieldSelection, Filter, Model, PrismaValue, RecordFilter, RelationFieldRef, SelectionResult,
-    WriteArgs, WriteOperation,
-};
+use query_structure::DatasourceFieldName;
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::PrismaValue;
+use query_structure::RecordFilter;
+use query_structure::RelationFieldRef;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use query_structure::WriteOperation;
 use schema::QuerySchema;
+
+use crate::Computation;
+use crate::DataExpectation;
+use crate::DataOperation;
+use crate::MissingRelatedRecord;
+use crate::ParsedInputValue;
+use crate::QueryGraphBuilderResult;
+use crate::RelationViolation;
+use crate::RowSink;
+use crate::inputs::DeleteManyRecordsSelectorsInput;
+use crate::inputs::IfInput;
+use crate::inputs::LeftSideDiffInput;
+use crate::inputs::RelatedRecordsSelectorsInput;
+use crate::inputs::ReturnInput;
+use crate::inputs::RightSideDiffInput;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::query_ast::*;
+use crate::query_graph::Flow;
+use crate::query_graph::Node;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Coerces single values (`ParsedInputValue::Single` and `ParsedInputValue::Map`) into a vector.
 /// Simply unpacks `ParsedInputValue::List`.
@@ -107,7 +125,7 @@ fn get_selected_fields(model: &Model, selection: FieldSelection) -> FieldSelecti
 /// ┌─────────────────┐
 /// │  Read Children  │
 /// └─────────────────┘
-///```
+/// ```
 ///
 /// ## Example
 /// Given two models, `Blog` and `Post`, where a blog has many posts, and a post has one block.
@@ -125,7 +143,9 @@ pub(crate) fn insert_find_children_by_parent_node<T>(
 where
     T: Into<Filter>,
 {
-    let parent_model_id = parent_relation_field.model().shard_aware_primary_identifier();
+    let parent_model_id = parent_relation_field
+        .model()
+        .shard_aware_primary_identifier();
     let parent_linking_fields = parent_relation_field.linking_fields();
     let selection = parent_model_id.merge(parent_linking_fields);
     let child_model = parent_relation_field.related_model();
@@ -135,21 +155,27 @@ where
         parent_relation_field.related_field().linking_fields(),
     );
 
-    let read_children_node = graph.create_node(Query::Read(ReadQuery::RelatedRecordsQuery(RelatedRecordsQuery {
-        name: "find_children_by_parent".to_owned(),
-        alias: None,
-        parent_field: parent_relation_field.clone(),
-        parent_results: None,
-        args: (child_model, filter).into(),
-        selected_fields,
-        nested: vec![],
-        selection_order: vec![],
-    })));
+    let read_children_node = graph.create_node(Query::Read(ReadQuery::RelatedRecordsQuery(
+        RelatedRecordsQuery {
+            name: "find_children_by_parent".to_owned(),
+            alias: None,
+            parent_field: parent_relation_field.clone(),
+            parent_results: None,
+            args: (child_model, filter).into(),
+            selected_fields,
+            nested: vec![],
+            selection_order: vec![],
+        },
+    )));
 
     graph.create_edge(
         parent_node,
         &read_children_node,
-        QueryGraphDependency::ProjectedDataDependency(selection, RowSink::All(&RelatedRecordsSelectorsInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            selection,
+            RowSink::All(&RelatedRecordsSelectorsInput),
+            None,
+        ),
     )?;
 
     Ok(read_children_node)
@@ -185,8 +211,12 @@ pub fn insert_1to1_idempotent_connect_checks(
             )),
         ),
     )?;
-    let read_old_child_node =
-        insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, Filter::empty())?;
+    let read_old_child_node = insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        Filter::empty(),
+    )?;
 
     graph.create_edge(
         &read_old_child_node,
@@ -202,7 +232,11 @@ pub fn insert_1to1_idempotent_connect_checks(
     graph.create_edge(
         &diff_node,
         &if_node,
-        QueryGraphDependency::ProjectedDataDependency(child_model_identifier, RowSink::All(&IfInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            child_model_identifier,
+            RowSink::All(&IfInput),
+            None,
+        ),
     )?;
     let empty_node = graph.create_node(Node::Empty);
 
@@ -216,7 +250,11 @@ pub fn insert_1to1_idempotent_connect_checks(
 /// on available information.
 ///
 /// No edges are created.
-pub fn update_records_node_placeholder<T>(graph: &mut QueryGraph, filter: T, model: Model) -> NodeRef
+pub fn update_records_node_placeholder<T>(
+    graph: &mut QueryGraph,
+    filter: T,
+    model: Model,
+) -> NodeRef
 where
     T: Into<Filter>,
 {
@@ -291,7 +329,9 @@ pub fn insert_existing_1to1_related_model_checks(
     parent_node: &NodeRef,
     parent_relation_field: &RelationFieldRef,
 ) -> QueryGraphBuilderResult<NodeRef> {
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
     let child_linking_fields = parent_relation_field.related_field().linking_fields();
 
     let child_model = parent_relation_field.related_model();
@@ -300,8 +340,12 @@ pub fn insert_existing_1to1_related_model_checks(
     let rf = parent_relation_field.clone();
 
     // Note: Also creates the edge between `parent` and the new node.
-    let read_existing_children =
-        insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, Filter::empty())?;
+    let read_existing_children = insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let write_args = WriteArgs::from_result(
         SelectionResult::from(&child_linking_fields),
@@ -415,7 +459,8 @@ pub(crate) fn insert_emulated_on_delete(
                 leaf_nodes.push(node);
             }
             ReferentialAction::SetNull => {
-                let node = emulate_on_delete_set_null(graph, query_schema, &rf, node_providing_ids)?;
+                let node =
+                    emulate_on_delete_set_null(graph, query_schema, &rf, node_providing_ids)?;
                 if let Some(node) = node {
                     leaf_nodes.push(node);
                 }
@@ -462,8 +507,15 @@ pub fn emulate_on_delete_restrict(
 ) -> QueryGraphBuilderResult<NodeRef> {
     let noop_node = graph.create_node(Node::Empty);
     let relation_field = relation_field.related_field();
-    let child_model_identifier = relation_field.related_model().shard_aware_primary_identifier();
-    let read_node = insert_find_children_by_parent_node(graph, node_providing_ids, &relation_field, Filter::empty())?;
+    let child_model_identifier = relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
+    let read_node = insert_find_children_by_parent_node(
+        graph,
+        node_providing_ids,
+        &relation_field,
+        Filter::empty(),
+    )?;
 
     graph.create_edge(
         &read_node,
@@ -471,7 +523,9 @@ pub fn emulate_on_delete_restrict(
         QueryGraphDependency::ProjectedDataDependency(
             child_model_identifier,
             RowSink::Discard,
-            Some(DataExpectation::empty_rows(RelationViolation::from(relation_field))),
+            Some(DataExpectation::empty_rows(RelationViolation::from(
+                relation_field,
+            ))),
         ),
     )?;
 
@@ -519,11 +573,17 @@ pub fn emulate_on_delete_cascade(
 ) -> QueryGraphBuilderResult<NodeRef> {
     let dependent_model = relation_field.model();
     let parent_relation_field = relation_field.related_field();
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
 
     // Records that need to be deleted for the cascade.
-    let dependent_records_node =
-        insert_find_children_by_parent_node(graph, node_providing_ids, &parent_relation_field, Filter::empty())?;
+    let dependent_records_node = insert_find_children_by_parent_node(
+        graph,
+        node_providing_ids,
+        &parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let delete_query = WriteQuery::DeleteManyRecords(DeleteManyRecords {
         model: dependent_model.clone(),
@@ -533,7 +593,12 @@ pub fn emulate_on_delete_cascade(
 
     let delete_dependents_node = graph.create_node(Query::Write(delete_query));
 
-    let dependencies = insert_emulated_on_delete(graph, query_schema, &dependent_model, &dependent_records_node)?;
+    let dependencies = insert_emulated_on_delete(
+        graph,
+        query_schema,
+        &dependent_model,
+        &dependent_records_node,
+    )?;
     create_execution_order_edges(graph, dependencies, delete_dependents_node)?;
 
     graph.create_edge(
@@ -591,7 +656,9 @@ pub fn emulate_on_delete_set_null(
 ) -> QueryGraphBuilderResult<Option<NodeRef>> {
     let dependent_model = relation_field.model();
     let parent_relation_field = relation_field.related_field();
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
     let child_fks = relation_field.left_scalars();
 
     let child_update_args: IndexMap<_, _> = child_fks
@@ -611,8 +678,12 @@ pub fn emulate_on_delete_set_null(
     }
 
     // Records that need to be updated for the cascade.
-    let dependent_records_node =
-        insert_find_children_by_parent_node(graph, node_providing_ids, &parent_relation_field, Filter::empty())?;
+    let dependent_records_node = insert_find_children_by_parent_node(
+        graph,
+        node_providing_ids,
+        &parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let set_null_query = WriteQuery::UpdateManyRecords(UpdateManyRecords {
         name: String::new(),
@@ -636,13 +707,19 @@ pub fn emulate_on_delete_set_null(
     )?;
 
     // Collect other relation fields that share at least one common foreign key with the relation field we're dealing with
-    let overlapping_relation_fields = collect_overlapping_relation_fields(dependent_model, relation_field);
+    let overlapping_relation_fields =
+        collect_overlapping_relation_fields(dependent_model, relation_field);
 
     // For every relation fields sharing one common foreign key on the updated model, apply onUpdate emulations.
     for rf in overlapping_relation_fields {
         match rf.relation().on_update() {
             ReferentialAction::NoAction | ReferentialAction::Restrict => {
-                emulate_on_update_restrict(graph, &rf, &dependent_records_node, &set_null_dependents_node)?
+                emulate_on_update_restrict(
+                    graph,
+                    &rf,
+                    &dependent_records_node,
+                    &set_null_dependents_node,
+                )?
             }
             ReferentialAction::SetNull => emulate_on_update_set_null(
                 graph,
@@ -724,11 +801,16 @@ pub fn emulate_on_update_set_null(
 ) -> QueryGraphBuilderResult<()> {
     let dependent_model = relation_field.model();
     let parent_relation_field = relation_field.related_field();
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
 
     // Only the nullable fks should be updated to null
     let (parent_pks, child_fks) = if relation_field.is_inlined_on_enclosing_model() {
-        (relation_field.referenced_fields(), relation_field.scalar_fields())
+        (
+            relation_field.referenced_fields(),
+            relation_field.scalar_fields(),
+        )
     } else {
         (
             relation_field.related_field().scalar_fields(),
@@ -738,9 +820,11 @@ pub fn emulate_on_update_set_null(
 
     // Unwraps are safe as in this stage, no node content can be replaced.
     let parent_update_args = extract_update_args(graph.node_content(child_node).unwrap());
-    let parent_updates_pk = parent_pks
-        .into_iter()
-        .any(|parent_pk| parent_update_args.get_field_value(parent_pk.db_name()).is_some());
+    let parent_updates_pk = parent_pks.into_iter().any(|parent_pk| {
+        parent_update_args
+            .get_field_value(parent_pk.db_name())
+            .is_some()
+    });
 
     if !parent_updates_pk {
         return Ok(());
@@ -758,8 +842,12 @@ pub fn emulate_on_update_set_null(
         .collect();
 
     // Records that need to be updated for the cascade.
-    let dependent_records_node =
-        insert_find_children_by_parent_node(graph, parent_node, &parent_relation_field, Filter::empty())?;
+    let dependent_records_node = insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        &parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let set_null_query = WriteQuery::UpdateManyRecords(UpdateManyRecords {
         name: String::new(),
@@ -789,13 +877,19 @@ pub fn emulate_on_update_set_null(
     )?;
 
     // Collect other relation fields that share at least one common foreign key with the relation field we're dealing with
-    let overlapping_relation_fields = collect_overlapping_relation_fields(dependent_model, relation_field);
+    let overlapping_relation_fields =
+        collect_overlapping_relation_fields(dependent_model, relation_field);
 
     // For every relation fields sharing one common foreign key, recurse
     for rf in overlapping_relation_fields {
         match rf.relation().on_update() {
             ReferentialAction::NoAction | ReferentialAction::Restrict => {
-                emulate_on_update_restrict(graph, &rf, &dependent_records_node, &set_null_dependents_node)?
+                emulate_on_update_restrict(
+                    graph,
+                    &rf,
+                    &dependent_records_node,
+                    &set_null_dependents_node,
+                )?
             }
             ReferentialAction::SetNull => emulate_on_update_set_null(
                 graph,
@@ -826,17 +920,22 @@ pub fn emulate_on_update_restrict(
 ) -> QueryGraphBuilderResult<()> {
     let noop_node = graph.create_node(Node::Empty);
     let relation_field = relation_field.related_field();
-    let child_model_identifier = relation_field.related_model().shard_aware_primary_identifier();
-    let read_node = insert_find_children_by_parent_node(graph, parent_node, &relation_field, Filter::empty())?;
+    let child_model_identifier = relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
+    let read_node =
+        insert_find_children_by_parent_node(graph, parent_node, &relation_field, Filter::empty())?;
 
     let linking_fields = relation_field.linking_fields();
 
     // Unwraps are safe as in this stage, no node content can be replaced.
     let parent_update_args = extract_update_args(graph.node_content(child_node).unwrap());
 
-    let linking_fields_updated = linking_fields
-        .into_iter()
-        .any(|parent_pk| parent_update_args.get_field_value(&parent_pk.db_name()).is_some());
+    let linking_fields_updated = linking_fields.into_iter().any(|parent_pk| {
+        parent_update_args
+            .get_field_value(&parent_pk.db_name())
+            .is_some()
+    });
 
     graph.create_edge(
         &read_node,
@@ -846,7 +945,9 @@ pub fn emulate_on_update_restrict(
             RowSink::Discard,
             // If any linking fields are to be updated and there are already connected children, then fail
             if linking_fields_updated {
-                Some(DataExpectation::empty_rows(RelationViolation::from(relation_field)))
+                Some(DataExpectation::empty_rows(RelationViolation::from(
+                    relation_field,
+                )))
             } else {
                 None
             },
@@ -939,8 +1040,12 @@ pub fn insert_emulated_on_update_with_intermediary_node(
             ReferentialAction::NoAction | ReferentialAction::Restrict => {
                 emulate_on_update_restrict(graph, &rf, &join_node, child_node)?
             }
-            ReferentialAction::SetNull => emulate_on_update_set_null(graph, &rf, query_schema, &join_node, child_node)?,
-            ReferentialAction::Cascade => emulate_on_update_cascade(graph, &rf, query_schema, &join_node, child_node)?,
+            ReferentialAction::SetNull => {
+                emulate_on_update_set_null(graph, &rf, query_schema, &join_node, child_node)?
+            }
+            ReferentialAction::Cascade => {
+                emulate_on_update_cascade(graph, &rf, query_schema, &join_node, child_node)?
+            }
             x => panic!("Unsupported referential action emulation: {x}"),
         }
     }
@@ -972,7 +1077,9 @@ pub fn insert_emulated_on_update(
             ReferentialAction::SetNull => {
                 emulate_on_update_set_null(graph, &rf, query_schema, parent_node, child_node)?
             }
-            ReferentialAction::Cascade => emulate_on_update_cascade(graph, &rf, query_schema, parent_node, child_node)?,
+            ReferentialAction::Cascade => {
+                emulate_on_update_cascade(graph, &rf, query_schema, parent_node, child_node)?
+            }
             x => panic!("Unsupported referential action emulation: {x}"),
         }
     }
@@ -1039,9 +1146,14 @@ pub fn emulate_on_update_cascade(
 ) -> QueryGraphBuilderResult<()> {
     let dependent_model = relation_field.model();
     let parent_relation_field = relation_field.related_field();
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
     let (parent_pks, child_fks) = if relation_field.is_inlined_on_enclosing_model() {
-        (relation_field.referenced_fields(), relation_field.scalar_fields())
+        (
+            relation_field.referenced_fields(),
+            relation_field.scalar_fields(),
+        )
     } else {
         (
             relation_field.related_field().scalar_fields(),
@@ -1069,8 +1181,12 @@ pub fn emulate_on_update_cascade(
     }
 
     // Records that need to be updated for the cascade.
-    let dependent_records_node =
-        insert_find_children_by_parent_node(graph, parent_node, &parent_relation_field, Filter::empty())?;
+    let dependent_records_node = insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        &parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let update_query = WriteQuery::UpdateManyRecords(UpdateManyRecords {
         name: String::new(),

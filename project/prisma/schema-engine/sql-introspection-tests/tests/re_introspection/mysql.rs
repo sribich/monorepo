@@ -361,7 +361,8 @@ async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -370,7 +371,8 @@ async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
           - Enum: "color", value: "BLACK"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }

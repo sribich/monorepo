@@ -51,7 +51,8 @@ mod one2one_req {
     async fn update_many_parent_failure(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let query = r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
+        let query =
+            r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
 
         assert_error!(
             runner,
@@ -137,7 +138,8 @@ mod one2one_opt {
     async fn update_many_parent_failure(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let query = r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
+        let query =
+            r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
 
         assert_error!(
             runner,
@@ -223,7 +225,8 @@ mod one2many_req {
     async fn update_many_parent_failure(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let query = r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
+        let query =
+            r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
 
         assert_error!(
             runner,
@@ -344,7 +347,8 @@ mod one2many_opt {
     async fn update_many_parent_failure(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let query = r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
+        let query =
+            r#"mutation { updateManyParent(where: { id: 1 }, data: { uniq: "u1" }) { count }}"#;
 
         assert_error!(
             runner,

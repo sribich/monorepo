@@ -1,4 +1,5 @@
-use query_structure::{Model, Take};
+use query_structure::Model;
+use query_structure::Take;
 use schema::QuerySchema;
 
 use super::*;

@@ -1,6 +1,7 @@
 use prisma_value::PrismaValue;
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::{ColumnTypeFamily, DefaultValue};
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::DefaultValue;
 
 #[test_connector(capabilities(Json), exclude(Mysql56))]
 fn json_fields_can_be_created(api: TestApi) {
@@ -17,14 +18,19 @@ fn json_fields_can_be_created(api: TestApi) {
         table.assert_column("javaScriptObjectNotation", |c| {
             if api.is_mariadb() {
                 // JSON is an alias for LONGTEXT on MariaDB - https://mariadb.com/kb/en/json-data-type/
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::String)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::String)
             } else {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Json)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Json)
             }
         })
     });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(capabilities(Json), exclude(Mysql56))]
@@ -63,5 +69,8 @@ fn database_level_json_defaults_can_be_defined(api: TestApi) {
     });
 
     // Check that the migration is idempotent.
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }

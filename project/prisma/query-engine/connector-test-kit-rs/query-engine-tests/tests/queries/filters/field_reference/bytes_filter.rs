@@ -1,10 +1,12 @@
-use super::setup;
 use query_engine_tests::*;
+
+use super::setup;
 
 #[test_suite]
 mod bytes_filter {
-    use super::setup;
     use query_engine_tests::run_query;
+
+    use super::setup;
 
     #[connector_test(schema(setup::common_types))]
     async fn basic_where(runner: Runner) -> TestResult<()> {

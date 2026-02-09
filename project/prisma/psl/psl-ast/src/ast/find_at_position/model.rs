@@ -1,5 +1,7 @@
-use super::{AttributePosition, FieldPosition, WithName, WithSpan};
-
+use super::AttributePosition;
+use super::FieldPosition;
+use super::WithName;
+use super::WithSpan;
 use crate::ast::{self};
 
 /// A cursor position in a context.
@@ -52,7 +54,11 @@ impl<'ast> ModelPosition<'ast> {
 
         for (attr_id, attr) in model.attributes.iter().enumerate() {
             if attr.span().contains(position) {
-                return ModelPosition::ModelAttribute(&attr.name.name, attr_id, AttributePosition::new(attr, position));
+                return ModelPosition::ModelAttribute(
+                    &attr.name.name,
+                    attr_id,
+                    AttributePosition::new(attr, position),
+                );
             }
         }
 

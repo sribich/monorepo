@@ -1,20 +1,24 @@
-use super::*;
-use nom::{
-    IResult,
-    branch::alt,
-    bytes::complete::is_not,
-    bytes::complete::{tag, take_till, take_until},
-    character::complete::{char, multispace0},
-    error::{Error as NomError, ErrorKind},
-    multi::{many0, separated_list0},
-    sequence::delimited,
-};
+use nom::IResult;
+use nom::branch::alt;
+use nom::bytes::complete::is_not;
+use nom::bytes::complete::tag;
+use nom::bytes::complete::take_till;
+use nom::bytes::complete::take_until;
+use nom::character::complete::char;
+use nom::character::complete::multispace0;
+use nom::error::Error as NomError;
+use nom::error::ErrorKind;
+use nom::multi::many0;
+use nom::multi::separated_list0;
+use nom::sequence::delimited;
 use parse_hyperlinks::take_until_unbalanced;
+
+use super::*;
 
 /// Main entry point into the template parsing. Parses a schema fragment of the form `#<fragment_ident>...<eol>`.
 pub fn parse(fragment: &str) -> TemplatingResult<DatamodelFragment> {
-    let (_, fragment) =
-        parse_fragment(fragment).map_err(|err| TemplatingError::nom_error("unknown", err.to_string()))?;
+    let (_, fragment) = parse_fragment(fragment)
+        .map_err(|err| TemplatingError::nom_error("unknown", err.to_string()))?;
 
     Ok(fragment)
 }
@@ -69,16 +73,23 @@ fn parse_directive_argument(input: &str) -> IResult<&str, FragmentArgument> {
         let (input, all_args) = unwrap_parenthesis(input)?;
 
         // Todo: This will fail for @relation with nested commas (e.g. `fields: [field1, field2]`)
-        let (_, chunked_args) = separated_list0(char(','), remove_whitespace(is_not(",")))(all_args)?;
+        let (_, chunked_args) =
+            separated_list0(char(','), remove_whitespace(is_not(",")))(all_args)?;
 
         // Remove trailing comma, if any.
         let (input, _) = many0(remove_whitespace(char(',')))(input)?;
 
-        Ok((input, FragmentArgument::Directive(Directive::new(ident, chunked_args))))
+        Ok((
+            input,
+            FragmentArgument::Directive(Directive::new(ident, chunked_args)),
+        ))
     } else {
         // `,` came first, remove it to allow parsing the next one.
         let (input, _) = many0(remove_whitespace(char(',')))(input)?;
-        Ok((input, FragmentArgument::Directive(Directive::new(ident, vec![]))))
+        Ok((
+            input,
+            FragmentArgument::Directive(Directive::new(ident, vec![])),
+        ))
     }
 }
 
@@ -151,7 +162,10 @@ mod parser_tests {
         let directive = r#"someString"#;
         let parsed = parse_fragment_argument(directive);
 
-        assert_eq!(parsed, Ok(("", FragmentArgument::Value(String::from("someString")))));
+        assert_eq!(
+            parsed,
+            Ok(("", FragmentArgument::Value(String::from("someString"))))
+        );
     }
 
     #[test]

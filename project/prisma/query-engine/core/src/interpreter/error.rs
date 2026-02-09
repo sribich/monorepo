@@ -1,7 +1,10 @@
-use crate::{QueryGraphBuilderError, QueryGraphError};
+use std::fmt;
+
 use connector::error::ConnectorError;
 use query_structure::DomainError;
-use std::fmt;
+
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphError;
 
 #[derive(Debug)]
 pub enum InterpreterError {

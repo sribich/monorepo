@@ -1,4 +1,6 @@
-use super::{AttributePosition, WithName, WithSpan};
+use super::AttributePosition;
+use super::WithName;
+use super::WithSpan;
 use crate::ast::{self};
 
 /// A cursor position in a context.
@@ -50,7 +52,11 @@ impl<'ast> EnumPosition<'ast> {
 
         for (attr_id, attr) in r#enum.attributes.iter().enumerate() {
             if attr.span().contains(position) {
-                return EnumPosition::EnumAttribute(&attr.name.name, attr_id, AttributePosition::new(attr, position));
+                return EnumPosition::EnumAttribute(
+                    &attr.name.name,
+                    attr_id,
+                    AttributePosition::new(attr, position),
+                );
             }
         }
 

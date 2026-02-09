@@ -1,8 +1,10 @@
 use darling::FromAttributes;
-use macro_util::{ast::Attributes, attribute::parse_attributes};
+use macro_util::ast::Attributes;
+use macro_util::attribute::parse_attributes;
 use proc_macro2::Span;
 
-use super::common::{Deprecation, DocAttribute};
+use super::common::Deprecation;
+use super::common::DocAttribute;
 
 #[derive(Clone, Default, FromAttributes)]
 #[darling(

@@ -1,11 +1,12 @@
 //! Rendering of model scalar fields.
 
-use crate::introspection::{
-    introspection_pair::{IdPair, IndexPair, ScalarFieldPair},
-    rendering::defaults,
-};
 use datamodel_renderer::datamodel as renderer;
 use sql_schema_describer::ColumnArity;
+
+use crate::introspection::introspection_pair::IdPair;
+use crate::introspection::introspection_pair::IndexPair;
+use crate::introspection::introspection_pair::ScalarFieldPair;
+use crate::introspection::rendering::defaults;
 
 /// Render a scalar field to be added in a model.
 pub(crate) fn render(field: ScalarFieldPair<'_>) -> renderer::Field<'_> {

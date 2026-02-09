@@ -1,6 +1,8 @@
+use serde::Deserialize;
+use serde::Serialize;
+
 use super::*;
 use crate::TestError;
-use serde::{Deserialize, Serialize};
 
 /// QueryParams enables parsing the generated id(s) of mutations sent to the Query Engine
 /// so that it can be reused in subsequent queries
@@ -37,7 +39,12 @@ impl QueryParams {
     /// Returns a string that's formatted to be included in another query. eg:
     /// "{ "id": "my_fancy_id" }"
     /// Equivalent of `.where()` in Scala
-    pub fn parse_extend(&self, json: serde_json::Value, path: &[&str], meta: &str) -> Result<String, TestError> {
+    pub fn parse_extend(
+        &self,
+        json: serde_json::Value,
+        path: &[&str],
+        meta: &str,
+    ) -> Result<String, TestError> {
         let val = self.where_.parse_extend(json, path, meta)?;
 
         Ok(val)
@@ -47,7 +54,11 @@ impl QueryParams {
     /// Returns a Vec<String> where each id is formatted to be included in another query. eg:
     /// vec![{ "id": "my_fancy_id" }, { "id": "my_fancy_id_2" }]
     /// Equivalent of `.whereMulti()` in Scala
-    pub fn parse_many(&self, json: serde_json::Value, path: &[&str]) -> Result<Vec<String>, TestError> {
+    pub fn parse_many(
+        &self,
+        json: serde_json::Value,
+        path: &[&str],
+    ) -> Result<Vec<String>, TestError> {
         let val = self.where_many.parse(&json, path)?;
 
         Ok(val)
@@ -57,7 +68,11 @@ impl QueryParams {
     /// Returns the first id as a string that's formatted to be included in another query. eg:
     /// "{ "id": "my_fancy_id" }"
     /// Equivalent of `.whereFirst()` in Scala
-    pub fn parse_many_first(&self, json: serde_json::Value, path: &[&str]) -> Result<String, TestError> {
+    pub fn parse_many_first(
+        &self,
+        json: serde_json::Value,
+        path: &[&str],
+    ) -> Result<String, TestError> {
         let val = self.where_many.parse(&json, path)?;
 
         Ok(val.first().unwrap().to_owned())
@@ -67,7 +82,11 @@ impl QueryParams {
     /// Returns all ids, formatted to be included in another query. eg:
     /// "[{ "id": "my_fancy_id" }, { "id": "my_fancy_id_2" }}"
     /// Equivalent of `.whereAll()` in Scala
-    pub fn parse_many_all(&self, json: serde_json::Value, path: &[&str]) -> Result<String, TestError> {
+    pub fn parse_many_all(
+        &self,
+        json: serde_json::Value,
+        path: &[&str],
+    ) -> Result<String, TestError> {
         let val = self.where_many.parse(&json, path)?;
 
         Ok(format!("{}{}{}", "[", val.join(", "), "]"))
@@ -95,7 +114,10 @@ impl QueryParamsWhere {
         F: Into<String>,
         V: Into<Vec<F>>,
     {
-        QueryParamsWhere::CompoundIdentifier(fields.into().into_iter().map(|f| f.into()).collect(), arg_name.into())
+        QueryParamsWhere::CompoundIdentifier(
+            fields.into().into_iter().map(|f| f.into()).collect(),
+            arg_name.into(),
+        )
     }
 
     pub fn parse(&self, json: serde_json::Value, path: &[&str]) -> Result<String, TestError> {
@@ -107,7 +129,12 @@ impl QueryParamsWhere {
         }
     }
 
-    pub fn parse_extend(&self, json: serde_json::Value, path: &[&str], meta: &str) -> Result<String, TestError> {
+    pub fn parse_extend(
+        &self,
+        json: serde_json::Value,
+        path: &[&str],
+        meta: &str,
+    ) -> Result<String, TestError> {
         match self {
             QueryParamsWhere::Identifier(field) => parse_id(field, &json, path, meta),
             QueryParamsWhere::CompoundIdentifier(fields, arg_name) => {
@@ -133,7 +160,10 @@ impl QueryParamsWhereMany {
         F: Into<String>,
         V: Into<Vec<F>>,
     {
-        QueryParamsWhereMany::ManyCompounds(fields.into().into_iter().map(|f| f.into()).collect(), arg_name.into())
+        QueryParamsWhereMany::ManyCompounds(
+            fields.into().into_iter().map(|f| f.into()).collect(),
+            arg_name.into(),
+        )
     }
 
     pub fn parse(&self, json: &serde_json::Value, path: &[&str]) -> Result<Vec<String>, TestError> {

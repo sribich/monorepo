@@ -4,10 +4,10 @@ mod native;
 mod preview;
 mod schema_file_input;
 
-use std::{
-    io::{self, Read},
-    path::PathBuf,
-};
+use std::io::Read;
+use std::io::{self};
+use std::path::PathBuf;
+
 use structopt::StructOpt;
 
 #[derive(Debug, StructOpt, Clone)]

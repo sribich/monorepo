@@ -1,6 +1,8 @@
-use crate::ast::{Expression, Identifier, Span, WithSpan};
-
 use super::WithIdentifier;
+use crate::ast::Expression;
+use crate::ast::Identifier;
+use crate::ast::Span;
+use crate::ast::WithSpan;
 
 /// A named property in a config block.
 ///

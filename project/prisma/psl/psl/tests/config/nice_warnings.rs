@@ -1,5 +1,7 @@
+use psl::diagnostics::DatamodelWarning;
+use psl::diagnostics::Span;
+
 use crate::common::*;
-use psl::diagnostics::{DatamodelWarning, Span};
 
 #[test]
 fn nice_warning_for_deprecated_generator_preview_feature() {

@@ -15,19 +15,22 @@ mod relation_field;
 mod scalar_field;
 mod top;
 
-pub use crate::types::RelationFieldId;
 use diagnostics::Span;
 pub use r#enum::*;
 pub use field::*;
 pub use index::*;
 pub use model::*;
+use psl_ast::ast::NewlineType;
+use psl_ast::ast::WithSpan;
 pub use relation::*;
 pub use relation_field::*;
 pub use scalar_field::*;
-use psl_ast::ast::{NewlineType, WithSpan};
 pub use top::*;
 
-use crate::{FileId, ModelId, ast};
+use crate::FileId;
+use crate::ModelId;
+use crate::ast;
+pub use crate::types::RelationFieldId;
 
 /// A generic walker. Only walkers intantiated with a concrete ID type (`I`) are useful.
 #[derive(Clone, Copy)]
@@ -68,9 +71,10 @@ pub(crate) fn newline(source: &str, span: Span) -> NewlineType {
 impl crate::ParserDatabase {
     /// Iterate all top level blocks.
     fn iter_tops(&self) -> impl Iterator<Item = (FileId, ast::TopId, &ast::Top)> + '_ {
-        self.asts
-            .iter()
-            .flat_map(move |(file_id, _, _, ast)| ast.iter_tops().map(move |(top_id, top)| (file_id, top_id, top)))
+        self.asts.iter().flat_map(move |(file_id, _, _, ast)| {
+            ast.iter_tops()
+                .map(move |(top_id, top)| (file_id, top_id, top))
+        })
     }
 
     /// Find the datasource by name.
@@ -161,7 +165,9 @@ impl crate::ParserDatabase {
     }
 
     /// Walk all scalar field defaults with a function not part of the common ones.
-    pub fn walk_scalar_field_defaults_with_unknown_function(&self) -> impl Iterator<Item = DefaultValueWalker<'_>> {
+    pub fn walk_scalar_field_defaults_with_unknown_function(
+        &self,
+    ) -> impl Iterator<Item = DefaultValueWalker<'_>> {
         self.types
             .unknown_function_defaults
             .iter()
@@ -189,18 +195,20 @@ impl crate::ParserDatabase {
     /// Iterate all complete relations that are not many to many and are
     /// correctly defined from both sides.
     #[track_caller]
-    pub fn walk_complete_inline_relations(&self) -> impl Iterator<Item = CompleteInlineRelationWalker<'_>> + '_ {
+    pub fn walk_complete_inline_relations(
+        &self,
+    ) -> impl Iterator<Item = CompleteInlineRelationWalker<'_>> + '_ {
         self.relations
             .iter_relations()
             .filter(|(relation, _)| !relation.is_implicit_many_to_many())
             .filter_map(move |(relation, _)| {
-                relation
-                    .as_complete_fields()
-                    .map(|(field_a, field_b)| CompleteInlineRelationWalker {
+                relation.as_complete_fields().map(|(field_a, field_b)| {
+                    CompleteInlineRelationWalker {
                         side_a: field_a,
                         side_b: field_b,
                         db: self,
-                    })
+                    }
+                })
             })
     }
 }

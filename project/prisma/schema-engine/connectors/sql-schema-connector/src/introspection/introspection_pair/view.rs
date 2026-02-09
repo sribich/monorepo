@@ -1,15 +1,21 @@
-use super::{IdPair, IndexPair, IntrospectionPair, RelationFieldPair, ScalarFieldPair};
-use psl::{
-    parser_database::{self as db, walkers},
-    psl_ast::ast::WithDocumentation,
-};
-use sql_schema_describer as sql;
 use std::borrow::Cow;
+
+use psl::parser_database::walkers;
+use psl::parser_database::{self as db};
+use psl::psl_ast::ast::WithDocumentation;
+use sql_schema_describer as sql;
+
+use super::IdPair;
+use super::IndexPair;
+use super::IntrospectionPair;
+use super::RelationFieldPair;
+use super::ScalarFieldPair;
 
 /// Comparing a PSL view (which currently utilizes the
 /// model structure due to them being completely the same
 /// things) to a database view.
-pub(crate) type ViewPair<'a> = IntrospectionPair<'a, Option<walkers::ModelWalker<'a>>, sql::ViewWalker<'a>>;
+pub(crate) type ViewPair<'a> =
+    IntrospectionPair<'a, Option<walkers::ModelWalker<'a>>, sql::ViewWalker<'a>>;
 
 impl<'a> ViewPair<'a> {
     /// The position of the view from the PSL, if existing. Used for
@@ -20,7 +26,10 @@ impl<'a> ViewPair<'a> {
 
     /// The namespace of the view, if using the multi-schema feature.
     pub(crate) fn namespace(self) -> Option<&'a str> {
-        self.context.uses_namespaces().then(|| self.next.namespace()).flatten()
+        self.context
+            .uses_namespaces()
+            .then(|| self.next.namespace())
+            .flatten()
     }
 
     /// Name of the view in the PSL. The value can be sanitized if it
@@ -45,7 +54,8 @@ impl<'a> ViewPair<'a> {
 
     /// The documentation on top of the view.
     pub(crate) fn documentation(self) -> Option<&'a str> {
-        self.previous.and_then(|view| view.ast_model().documentation())
+        self.previous
+            .and_then(|view| view.ast_model().documentation())
     }
 
     /// Iterating over the scalar fields.
@@ -75,7 +85,9 @@ impl<'a> ViewPair<'a> {
     /// True, if the user has explicitly mapped the view's name in
     /// the PSL.
     pub(crate) fn remapped_name(self) -> bool {
-        self.previous.filter(|v| v.mapped_name().is_some()).is_some()
+        self.previous
+            .filter(|v| v.mapped_name().is_some())
+            .is_some()
     }
 
     /// True, if the view uses the same name as another top-level item from
@@ -140,6 +152,7 @@ impl<'a> ViewPair<'a> {
     /// in the database.
     pub(crate) fn adds_a_description(self) -> bool {
         self.previous.is_none()
-            && (self.description().is_some() || self.scalar_fields().any(|sf| sf.adds_a_description()))
+            && (self.description().is_some()
+                || self.scalar_fields().any(|sf| sf.adds_a_description()))
     }
 }

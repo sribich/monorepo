@@ -1,9 +1,13 @@
 use either::Either;
 use prisma_value::PrismaValue;
 
-use crate::{DefaultKind, DefaultValue, TableColumnId, TableColumnWalker, TableDefaultValueId, Walker};
-
 use super::DefaultValueWalker;
+use crate::DefaultKind;
+use crate::DefaultValue;
+use crate::TableColumnId;
+use crate::TableColumnWalker;
+use crate::TableDefaultValueId;
+use crate::Walker;
 
 /// Traverse a table column's default value.
 pub type TableDefaultValueWalker<'a> = Walker<'a, TableDefaultValueId>;

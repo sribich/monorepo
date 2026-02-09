@@ -12,10 +12,7 @@ impl Sqlite {
         let client = PrismaClient::builder()
             .with_url(format!(
                 "file://{}",
-                db_file
-                    .as_ref()
-                    .to_str()
-                    .ok_or("Invalid db file path")?
+                db_file.as_ref().to_str().ok_or("Invalid db file path")?
             ))
             .build()
             .await?;

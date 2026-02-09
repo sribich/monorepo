@@ -1,17 +1,22 @@
-use sql_introspection_tests::{TestResult, test_api::*};
+use sql_introspection_tests::TestResult;
+use sql_introspection_tests::test_api::*;
 
 #[test_connector(tags(Postgres))]
-async fn multiple_schemas_without_schema_property_are_not_introspected(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_without_schema_property_are_not_introspected(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = api.schema_name();
     let other_name = "second";
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"A_idx\" ON \"{schema_name}\".\"A\" (\"data\")",);
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_primary).await?;
 
     let create_schema = format!("CREATE Schema \"{other_name}\"",);
-    let create_table = format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"B_idx\" ON \"{other_name}\".\"B\" (\"data\")",);
 
     api.database().raw_cmd(&create_schema).await?;
@@ -38,7 +43,8 @@ async fn multiple_schemas_w_tables_are_introspected(api: &mut TestApi) -> TestRe
     let schema_name = "first";
     let other_name = "second";
     let create_schema = format!("CREATE Schema \"{schema_name}\"",);
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"A_idx\" ON \"{schema_name}\".\"A\" (\"data\")",);
 
     api.database().raw_cmd(&create_schema).await?;
@@ -46,7 +52,8 @@ async fn multiple_schemas_w_tables_are_introspected(api: &mut TestApi) -> TestRe
     api.database().raw_cmd(&create_primary).await?;
 
     let create_schema = format!("CREATE Schema \"{other_name}\"",);
-    let create_table = format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"B_idx\" ON \"{other_name}\".\"B\" (\"data\")",);
 
     api.database().raw_cmd(&create_schema).await?;
@@ -82,7 +89,8 @@ async fn multiple_schemas_w_tables_are_reintrospected(api: &mut TestApi) -> Test
     let schema_name = "first";
     let other_name = "second";
     let create_schema = format!("CREATE Schema \"{schema_name}\"",);
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{schema_name}\".\"A\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"A_idx\" ON \"{schema_name}\".\"A\" (\"data\")",);
 
     api.database().raw_cmd(&create_schema).await?;
@@ -90,7 +98,8 @@ async fn multiple_schemas_w_tables_are_reintrospected(api: &mut TestApi) -> Test
     api.database().raw_cmd(&create_primary).await?;
 
     let create_schema = format!("CREATE Schema \"{other_name}\"",);
-    let create_table = format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
+    let create_table =
+        format!("CREATE TABLE \"{other_name}\".\"B\" (id Text PRIMARY KEY, data Text)",);
     let create_primary = format!("CREATE INDEX \"B_idx\" ON \"{other_name}\".\"B\" (\"data\")",);
 
     api.database().raw_cmd(&create_schema).await?;
@@ -139,7 +148,9 @@ async fn multiple_schemas_w_tables_are_reintrospected(api: &mut TestApi) -> Test
 }
 
 #[test_connector(tags(Postgres), namespaces("first", "second"))]
-async fn multiple_schemas_w_duplicate_table_names_are_introspected(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_w_duplicate_table_names_are_introspected(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = "first";
     let other_name = "second";
     let setup = formatdoc! {
@@ -195,7 +206,9 @@ async fn multiple_schemas_w_duplicate_table_names_are_introspected(api: &mut Tes
 }
 
 #[test_connector(tags(Postgres), namespaces("1first", "2second"))]
-async fn multiple_schemas_w_duplicate_sanitized_table_names_are_introspected(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_w_duplicate_sanitized_table_names_are_introspected(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = "1first";
     let other_name = "2second";
     let setup = formatdoc! {
@@ -349,7 +362,9 @@ async fn multiple_schemas_w_cross_schema_are_reintrospected(api: &mut TestApi) -
 }
 
 #[test_connector(tags(Postgres), namespaces("first", "second"))]
-async fn multiple_schemas_w_cross_schema_fks_w_duplicate_names_are_introspected(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_w_cross_schema_fks_w_duplicate_names_are_introspected(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = "first";
     let other_name = "second";
     let create_schema = format!("CREATE SCHEMA \"{schema_name}\"",);
@@ -579,7 +594,9 @@ async fn multiple_schemas_w_duplicate_models_are_reintrospected(api: &mut TestAp
 }
 
 #[test_connector(tags(Postgres), namespaces("first", "second"))]
-async fn multiple_schemas_w_duplicate_models_are_reintrospected_never_renamed(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_w_duplicate_models_are_reintrospected_never_renamed(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = "first";
     let other_name = "second";
     let setup = formatdoc! {
@@ -687,7 +704,9 @@ async fn multiple_schemas_w_duplicate_enums_are_reintrospected(api: &mut TestApi
 }
 
 #[test_connector(tags(Postgres))]
-async fn multiple_schemas_w_enums_without_schemas_are_not_introspected(api: &mut TestApi) -> TestResult {
+async fn multiple_schemas_w_enums_without_schemas_are_not_introspected(
+    api: &mut TestApi,
+) -> TestResult {
     let schema_name = api.schema_name();
     let other_name = "second";
     let create_type = format!("CREATE TYPE \"{schema_name}\".\"HappyMood\" AS ENUM ('happy')",);

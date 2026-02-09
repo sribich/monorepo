@@ -1,11 +1,11 @@
 use convert_case::Case;
-use generator_shared::{casing::cased_ident, extensions::FieldExtension};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::FieldExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
-use query_structure::{
-    FieldArity,
-    walkers::{ModelWalker, RefinedFieldWalker},
-};
+use query_structure::FieldArity;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::RefinedFieldWalker;
 use quote::quote;
 
 use crate::rust::module::FieldModule;
@@ -17,23 +17,34 @@ pub fn generate_data_field_module(model: ModelWalker) -> FieldModule {
             let field_name = field.name().to_owned();
 
             let (raw_type, recursive_type) = match field.refine_known() {
-                RefinedFieldWalker::Scalar(scalar_field) => match scalar_field.scalar_field_type() {
-                    ScalarFieldType::Enum(_)
-                    | ScalarFieldType::Extension(_)
-                    | ScalarFieldType::BuiltInScalar(_)
-                    | ScalarFieldType::Unsupported(_) => (field.to_tokens(&quote!())?, field.to_tokens(&quote!())?),
-                },
+                RefinedFieldWalker::Scalar(scalar_field) => {
+                    match scalar_field.scalar_field_type() {
+                        ScalarFieldType::Enum(_)
+                        | ScalarFieldType::Extension(_)
+                        | ScalarFieldType::BuiltInScalar(_)
+                        | ScalarFieldType::Unsupported(_) => {
+                            (field.to_tokens(&quote!())?, field.to_tokens(&quote!())?)
+                        }
+                    }
+                }
                 RefinedFieldWalker::Relation(relation_field) => {
-                    let related_model_name = cased_ident(relation_field.related_model().name(), Case::Snake);
+                    let related_model_name =
+                        cased_ident(relation_field.related_model().name(), Case::Snake);
                     let related_model_data = quote!(super::super::#related_model_name::Data);
 
                     match field.ast_field().arity {
-                        FieldArity::Required => (quote!(#related_model_data), quote!(Box<#related_model_data>)),
+                        FieldArity::Required => (
+                            quote!(#related_model_data),
+                            quote!(Box<#related_model_data>),
+                        ),
                         FieldArity::Optional => (
                             quote!(Option<#related_model_data>),
                             quote!(Option<Box<#related_model_data>>),
                         ),
-                        FieldArity::List => (quote!(Vec<#related_model_data>), quote!(Vec<#related_model_data>)),
+                        FieldArity::List => (
+                            quote!(Vec<#related_model_data>),
+                            quote!(Vec<#related_model_data>),
+                        ),
                     }
                 }
             };

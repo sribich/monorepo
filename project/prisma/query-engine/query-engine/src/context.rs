@@ -1,19 +1,29 @@
-use crate::features::{EnabledFeatures, Feature};
-use crate::{PrismaError, PrismaResult};
-use crate::{logger::Logger, opt::PrismaOpt};
-use prisma_metrics::{MetricRecorder, MetricRegistry};
+use std::env;
+use std::fmt;
+use std::sync::Arc;
+
+use prisma_metrics::MetricRecorder;
+use prisma_metrics::MetricRegistry;
 use psl::PreviewFeature;
-use query_core::{
-    QueryExecutor,
-    protocol::EngineProtocol,
-    relation_load_strategy,
-    schema::{self, QuerySchemaRef},
-};
-use request_handlers::{ConnectorKind, load_executor};
-use std::{env, fmt, sync::Arc};
-use telemetry::exporter::{CaptureSettings, CaptureTarget};
-use telemetry::{NextId, RequestId};
+use query_core::QueryExecutor;
+use query_core::protocol::EngineProtocol;
+use query_core::relation_load_strategy;
+use query_core::schema::QuerySchemaRef;
+use query_core::schema::{self};
+use request_handlers::ConnectorKind;
+use request_handlers::load_executor;
+use telemetry::NextId;
+use telemetry::RequestId;
+use telemetry::exporter::CaptureSettings;
+use telemetry::exporter::CaptureTarget;
 use tracing::Instrument;
+
+use crate::PrismaError;
+use crate::PrismaResult;
+use crate::features::EnabledFeatures;
+use crate::features::Feature;
+use crate::logger::Logger;
+use crate::opt::PrismaOpt;
 
 /// Prisma request context containing all immutable state of the process.
 /// There is usually only one context initialized per process.
@@ -64,10 +74,9 @@ impl PrismaContext {
             let preview_features = config.preview_features();
 
             // We only support one data source at the moment, so take the first one (default not exposed yet).
-            let datasource = config
-                .datasources
-                .first()
-                .ok_or_else(|| PrismaError::ConfigurationError("No valid data source found".into()))?;
+            let datasource = config.datasources.first().ok_or_else(|| {
+                PrismaError::ConfigurationError("No valid data source found".into())
+            })?;
 
             let url = datasource.load_url(|key| env::var(key).ok())?;
 
@@ -96,9 +105,11 @@ impl PrismaContext {
         let (query_schema, executor_with_db_version) = tokio::join!(query_schema_fut, executor_fut);
         let (executor, db_version) = executor_with_db_version?;
 
-        let query_schema = query_schema.unwrap().with_db_version_supports_join_strategy(
-            relation_load_strategy::db_version_supports_joins_strategy(db_version)?,
-        );
+        let query_schema = query_schema
+            .unwrap()
+            .with_db_version_supports_join_strategy(
+                relation_load_strategy::db_version_supports_joins_strategy(db_version)?,
+            );
 
         let context = Self {
             query_schema: Arc::new(query_schema),
@@ -131,12 +142,16 @@ impl PrismaContext {
 }
 
 pub async fn setup(opts: &PrismaOpt) -> PrismaResult<Arc<PrismaContext>> {
-    let logger = Logger::new(opts).install().expect("failed to install the logger");
+    let logger = Logger::new(opts)
+        .install()
+        .expect("failed to install the logger");
 
     let metrics = if opts.enable_metrics || opts.dataproxy_metric_override {
         let metrics = MetricRegistry::new();
         let recorder = MetricRecorder::new(metrics.clone());
-        recorder.install_globally().expect("setup must be called only once");
+        recorder
+            .install_globally()
+            .expect("setup must be called only once");
         recorder.init_prisma_metrics();
         Some(metrics)
     } else {
@@ -153,7 +168,10 @@ pub async fn setup(opts: &PrismaOpt) -> PrismaResult<Arc<PrismaContext>> {
     if logger.tracing_config().should_capture() {
         logger
             .exporter()
-            .start_capturing(initial_request_id, CaptureSettings::new(CaptureTarget::Spans))
+            .start_capturing(
+                initial_request_id,
+                CaptureSettings::new(CaptureTarget::Spans),
+            )
             .await;
     }
 
@@ -165,13 +183,21 @@ pub async fn setup(opts: &PrismaOpt) -> PrismaResult<Arc<PrismaContext>> {
 
     let mut features = EnabledFeatures::from(opts);
 
-    if config.preview_features().contains(PreviewFeature::Metrics) || opts.dataproxy_metric_override {
+    if config.preview_features().contains(PreviewFeature::Metrics) || opts.dataproxy_metric_override
+    {
         features |= Feature::Metrics
     }
 
-    let cx = PrismaContext::new(datamodel, protocol, features, metrics, logger, initial_request_id)
-        .instrument(span)
-        .await?;
+    let cx = PrismaContext::new(
+        datamodel,
+        protocol,
+        features,
+        metrics,
+        logger,
+        initial_request_id,
+    )
+    .instrument(span)
+    .await?;
 
     let state = Arc::new(cx);
     Ok(state)

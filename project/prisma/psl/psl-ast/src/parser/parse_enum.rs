@@ -1,11 +1,19 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_attribute::parse_attribute,
-    parse_comments::*,
-};
-use crate::ast::{self, Attribute, Comment, Enum, EnumValue, Identifier};
-use diagnostics::{DatamodelError, Diagnostics, FileId, Span};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+use diagnostics::Span;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_attribute::parse_attribute;
+use super::parse_comments::*;
+use crate::ast::Attribute;
+use crate::ast::Comment;
+use crate::ast::Enum;
+use crate::ast::EnumValue;
+use crate::ast::Identifier;
+use crate::ast::{self};
 
 pub fn parse_enum(
     pair: Pair<'_>,
@@ -31,18 +39,27 @@ pub fn parse_enum(
 
                 for item in current.into_inner() {
                     match item.as_rule() {
-                        Rule::block_attribute => attributes.push(parse_attribute(item, diagnostics, file_id)),
+                        Rule::block_attribute => {
+                            attributes.push(parse_attribute(item, diagnostics, file_id))
+                        }
                         Rule::enum_value_declaration => {
-                            match parse_enum_value(item, pending_value_comment.take(), diagnostics, file_id) {
+                            match parse_enum_value(
+                                item,
+                                pending_value_comment.take(),
+                                diagnostics,
+                                file_id,
+                            ) {
                                 Ok(enum_value) => values.push(enum_value),
                                 Err(err) => diagnostics.push_error(err),
                             }
                         }
                         Rule::comment_block => pending_value_comment = Some(item),
-                        Rule::BLOCK_LEVEL_CATCH_ALL => diagnostics.push_error(DatamodelError::new_validation_error(
-                            "This line is not an enum value definition.",
-                            (file_id, item.as_span()).into(),
-                        )),
+                        Rule::BLOCK_LEVEL_CATCH_ALL => {
+                            diagnostics.push_error(DatamodelError::new_validation_error(
+                                "This line is not an enum value definition.",
+                                (file_id, item.as_span()).into(),
+                            ))
+                        }
                         _ => parsing_catch_all(&item, "enum"),
                     }
                 }
@@ -78,7 +95,9 @@ fn parse_enum_value(
     for current in pair.into_inner() {
         match current.as_rule() {
             Rule::identifier => name = Some(ast::Identifier::new(current, file_id)),
-            Rule::field_attribute => attributes.push(parse_attribute(current, diagnostics, file_id)),
+            Rule::field_attribute => {
+                attributes.push(parse_attribute(current, diagnostics, file_id))
+            }
             Rule::trailing_comment => {
                 comment = match (comment, parse_trailing_comment(current)) {
                     (None, a) | (a, None) => a,
@@ -101,6 +120,8 @@ fn parse_enum_value(
             documentation: comment,
             span: Span::from((file_id, pair_span)),
         }),
-        _ => panic!("Encountered impossible enum value declaration during parsing, name is missing: {pair_str:?}",),
+        _ => panic!(
+            "Encountered impossible enum value declaration during parsing, name is missing: {pair_str:?}",
+        ),
     }
 }

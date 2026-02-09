@@ -1,6 +1,8 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::value::{Function, FunctionParam};
+use crate::value::Function;
+use crate::value::FunctionParam;
 
 /// Defines a field attribute, wrapping a function.
 ///

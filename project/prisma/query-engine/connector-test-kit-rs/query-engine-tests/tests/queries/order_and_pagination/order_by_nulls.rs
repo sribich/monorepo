@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema), capabilities(OrderByNullsFirstLast))]
 mod order_by_nulls {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -412,7 +413,10 @@ mod order_by_nulls {
         Ok(())
     }
 
-    #[connector_test(schema(common_list_types), capabilities(ScalarLists, OrderByNullsFirstLast))]
+    #[connector_test(
+        schema(common_list_types),
+        capabilities(ScalarLists, OrderByNullsFirstLast)
+    )]
     async fn nulls_on_list_field_should_fail(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,
@@ -447,7 +451,9 @@ mod order_by_nulls {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

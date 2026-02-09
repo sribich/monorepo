@@ -1,5 +1,8 @@
-use crate::introspection::{introspection_pair::EnumPair, sanitize_datamodel_names};
-use schema_connector::{Warnings, warnings as generators};
+use schema_connector::Warnings;
+use schema_connector::warnings as generators;
+
+use crate::introspection::introspection_pair::EnumPair;
+use crate::introspection::sanitize_datamodel_names;
 
 /// Analyze and generate warnigs from an enum.
 pub(super) fn generate_warnings(r#enum: EnumPair<'_>, warnings: &mut Warnings) {
@@ -30,13 +33,16 @@ pub(super) fn generate_warnings(r#enum: EnumPair<'_>, warnings: &mut Warnings) {
                 .map(String::from)
                 .unwrap_or_else(|| variant.name().to_string());
 
-            warnings.enum_values_with_empty_names.push(generators::EnumAndValue {
-                r#enum: r#enum.name().to_string(),
-                value,
-            });
+            warnings
+                .enum_values_with_empty_names
+                .push(generators::EnumAndValue {
+                    r#enum: r#enum.name().to_string(),
+                    value,
+                });
         }
 
-        if variant.name().is_empty() || sanitize_datamodel_names::needs_sanitation(&variant.name()) {
+        if variant.name().is_empty() || sanitize_datamodel_names::needs_sanitation(&variant.name())
+        {
             let warning = generators::EnumAndValue {
                 r#enum: r#enum.name().to_string(),
                 value: variant.name().to_string(),

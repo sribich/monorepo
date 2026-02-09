@@ -1,8 +1,11 @@
-use crate::datamodel_connector::ConnectorCapability;
-use crate::{diagnostics::DatamodelError, validate::validation_pipeline::context::Context};
 use bigdecimal::BigDecimal;
 use parser_database::ScalarType;
-use psl_ast::ast::{self, Expression};
+use psl_ast::ast::Expression;
+use psl_ast::ast::{self};
+
+use crate::datamodel_connector::ConnectorCapability;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 /// Function `auto()` works for now only with MongoDB.
 pub(super) fn validate_auto_param(default_value: Option<&ast::Expression>, ctx: &mut Context<'_>) {
@@ -33,7 +36,8 @@ pub(super) fn validate_default_value(
     scalar_type: Option<ScalarType>,
     ctx: &mut Context<'_>,
 ) {
-    use chrono::{DateTime, FixedOffset};
+    use chrono::DateTime;
+    use chrono::FixedOffset;
 
     let scalar_type = match scalar_type {
         Some(scalar_type) => scalar_type,
@@ -62,7 +66,8 @@ pub(super) fn validate_default_value(
                 Err(details) => details,
             };
 
-            let message = format!("Parse error: \"{value}\" is not a valid JSON string. ({details})",);
+            let message =
+                format!("Parse error: \"{value}\" is not a valid JSON string. ({details})",);
 
             ctx.push_error(DatamodelError::new_attribute_validation_error(
                 &message, "@default", *span,
@@ -74,7 +79,8 @@ pub(super) fn validate_default_value(
                 Err(details) => details,
             };
 
-            let message = format!("Parse error: \"{value}\" is not a valid base64 string. ({details})",);
+            let message =
+                format!("Parse error: \"{value}\" is not a valid base64 string. ({details})",);
 
             ctx.push_error(DatamodelError::new_attribute_validation_error(
                 &message, "@default", *span,
@@ -86,7 +92,9 @@ pub(super) fn validate_default_value(
                 Err(details) => details,
             };
 
-            let message = format!("Parse error: \"{value}\" is not a valid rfc3339 datetime string. ({details})");
+            let message = format!(
+                "Parse error: \"{value}\" is not a valid rfc3339 datetime string. ({details})"
+            );
 
             ctx.push_error(DatamodelError::new_attribute_validation_error(
                 &message, "@default", *span,

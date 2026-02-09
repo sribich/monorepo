@@ -9,13 +9,17 @@ pub mod scope;
 mod spec;
 mod typecast_builder;
 
-pub use component::{Builder, Component, TypedBuilder};
-pub use error::{InjectionError, InjectorError};
+pub use component::Builder;
+pub use component::Component;
+pub use component::TypedBuilder;
+pub use error::InjectionError;
+pub use error::InjectorError;
 pub use injector::Injector;
 pub use injector_builder::InjectorBuilder;
 pub use railgun_di_derive::*;
 pub use scope::Scope;
-pub use spec::{OneOf, Spec};
+pub use spec::OneOf;
+pub use spec::Spec;
 
 /*
 use std::{

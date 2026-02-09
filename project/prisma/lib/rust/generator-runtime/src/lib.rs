@@ -21,12 +21,18 @@ pub mod scalar {
 }
 
 pub mod prisma_value {
-    use std::{collections::HashMap, str::FromStr, sync::Arc};
+    use std::collections::HashMap;
+    use std::str::FromStr;
+    use std::sync::Arc;
 
-    pub use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
-    use chrono::{DateTime, FixedOffset};
+    pub use bigdecimal::BigDecimal;
+    pub use bigdecimal::FromPrimitive;
+    pub use bigdecimal::ToPrimitive;
+    use chrono::DateTime;
+    use chrono::FixedOffset;
     pub use query_core::Selection;
-    use query_core::{constants::custom_types, response_ir::Item as PrismaItem};
+    use query_core::constants::custom_types;
+    use query_core::response_ir::Item as PrismaItem;
     use query_structure::Placeholder;
     // pub use query_structure::PrismaValue;
     use serde::{Serialize, Serializer};
@@ -76,26 +82,39 @@ pub mod prisma_value {
                 query_structure::PrismaValue::Enum(value) => Self::Enum(value),
                 query_structure::PrismaValue::Int(value) => Self::Int(value as i32),
                 query_structure::PrismaValue::Uuid(value) => Self::Uuid(value),
-                query_structure::PrismaValue::List(value) => Self::List(value.into_iter().map(Into::into).collect()),
-                query_structure::PrismaValue::Json(value) => Self::Json(serde_json::from_str(&value).unwrap()),
+                query_structure::PrismaValue::List(value) => {
+                    Self::List(value.into_iter().map(Into::into).collect())
+                }
+                query_structure::PrismaValue::Json(value) => {
+                    Self::Json(serde_json::from_str(&value).unwrap())
+                }
                 query_structure::PrismaValue::Object(mut value) => {
                     let type_position = value.iter().position(|(k, _)| k == custom_types::TYPE);
 
                     if let Some((_, query_structure::PrismaValue::String(typ))) =
                         type_position.map(|pos| value.swap_remove(pos))
                     {
-                        let (_, value) =
-                            value.swap_remove(value.iter().position(|(k, _)| k == custom_types::VALUE).unwrap());
+                        let (_, value) = value.swap_remove(
+                            value
+                                .iter()
+                                .position(|(k, _)| k == custom_types::VALUE)
+                                .unwrap(),
+                        );
 
                         match (typ.as_str(), value) {
-                            (custom_types::DATETIME, query_structure::PrismaValue::DateTime(dt)) => {
-                                PrismaValue::DateTime(dt)
+                            (
+                                custom_types::DATETIME,
+                                query_structure::PrismaValue::DateTime(dt),
+                            ) => PrismaValue::DateTime(dt),
+                            (custom_types::BIGINT, query_structure::PrismaValue::BigInt(i)) => {
+                                PrismaValue::BigInt(i)
                             }
-                            (custom_types::BIGINT, query_structure::PrismaValue::BigInt(i)) => PrismaValue::BigInt(i),
                             (custom_types::DECIMAL, query_structure::PrismaValue::String(s)) => {
                                 PrismaValue::Decimal(BigDecimal::from_str(&s).unwrap())
                             }
-                            (custom_types::BYTES, query_structure::PrismaValue::Bytes(b)) => PrismaValue::Bytes(b),
+                            (custom_types::BYTES, query_structure::PrismaValue::Bytes(b)) => {
+                                PrismaValue::Bytes(b)
+                            }
                             (custom_types::JSON, query_structure::PrismaValue::Json(j)) => {
                                 PrismaValue::Json(serde_json::from_str(&j).unwrap())
                             }
@@ -130,7 +149,9 @@ pub mod prisma_value {
                 PrismaValue::Uuid(value) => Self::Uuid(value),
                 PrismaValue::List(value) => Self::List(value.into_iter().map(Into::into).collect()),
                 PrismaValue::Json(value) => Self::Json(serde_json::to_string(&value).unwrap()),
-                PrismaValue::Object(value) => Self::Object(value.into_iter().map(|(k, v)| (k, v.into())).collect()),
+                PrismaValue::Object(value) => {
+                    Self::Object(value.into_iter().map(|(k, v)| (k, v.into())).collect())
+                }
                 PrismaValue::Null => Self::Null,
                 PrismaValue::DateTime(value) => Self::DateTime(value),
                 PrismaValue::Decimal(value) => Self::Float(value),
@@ -156,11 +177,15 @@ pub mod prisma_value {
     impl From<PrismaItem> for Item {
         fn from(item: PrismaItem) -> Self {
             match item {
-                PrismaItem::Map(map) => Item::Map(map.into_iter().map(|(k, v)| (k, v.into())).collect()),
+                PrismaItem::Map(map) => {
+                    Item::Map(map.into_iter().map(|(k, v)| (k, v.into())).collect())
+                }
                 PrismaItem::List(list) => Item::List(list.into_iter().map(Into::into).collect()),
                 PrismaItem::Value(scalar) => Item::Value(scalar.into()),
                 PrismaItem::Json(json) => Item::Json(json),
-                PrismaItem::Ref(arc) => Arc::try_unwrap(arc).unwrap_or_else(|arc| (*arc).clone()).into(),
+                PrismaItem::Ref(arc) => Arc::try_unwrap(arc)
+                    .unwrap_or_else(|arc| (*arc).clone())
+                    .into(),
                 PrismaItem::RawJson(json) => Item::RawJson(json),
             }
         }

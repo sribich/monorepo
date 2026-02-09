@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use sql_schema_describer as sql;
-use sqlparser::{ast::Statement, parser::Parser};
+use sqlparser::ast::Statement;
+use sqlparser::parser::Parser;
 
 pub(crate) struct SqliteIntrospectionFlavour;
 

@@ -3,7 +3,9 @@ use query_engine_tests::*;
 #[test_suite(schema(schema), capabilities(Enums))]
 mod create {
     use indoc::indoc;
-    use query_engine_tests::{TROUBLE_CHARS, assert_error, run_query};
+    use query_engine_tests::TROUBLE_CHARS;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -219,7 +221,7 @@ mod create {
     }
 
     // "A Create Mutation" should "create and return an item with enums passed as strings"
-        #[connector_test]
+    #[connector_test]
     async fn return_enums_passed_as_strings(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {createOneScalarModel(data: {id: "1", optEnum: "A"}){ optEnum }}"#),
@@ -296,7 +298,8 @@ mod create {
 
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(Json))]
 mod json_create {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn create_json_adv(runner: Runner) -> TestResult<()> {

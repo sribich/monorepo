@@ -1,15 +1,29 @@
-use super::*;
-use crate::{
-    Computation, DataExpectation, ParsedInputMap, ParsedInputValue, RowSink,
-    inputs::{
-        IfInput, LeftSideDiffInput, ReturnInput, RightSideDiffInput, UpdateManyRecordsSelectorsInput,
-        UpdateOrCreateArgsInput,
-    },
-    query_graph::{Flow, Node, NodeRef, QueryGraph, QueryGraphDependency},
-};
-use query_structure::{Filter, Model, RelationFieldRef, SelectionResult, WriteArgs};
-use schema::constants::args;
 use std::convert::TryInto;
+
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::RelationFieldRef;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use schema::constants::args;
+
+use super::*;
+use crate::Computation;
+use crate::DataExpectation;
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::RowSink;
+use crate::inputs::IfInput;
+use crate::inputs::LeftSideDiffInput;
+use crate::inputs::ReturnInput;
+use crate::inputs::RightSideDiffInput;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::inputs::UpdateOrCreateArgsInput;
+use crate::query_graph::Flow;
+use crate::query_graph::Node;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Handles nested connect or create cases.
 ///
@@ -114,16 +128,31 @@ fn handle_many_to_many(
             filter,
         ));
 
-        let create_node = create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
+        let create_node =
+            create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
         let if_node = graph.create_node(Flow::if_non_empty());
 
-        let connect_exists_node =
-            connect::connect_records_node(graph, &parent_node, &read_node, parent_relation_field, 1)?;
+        let connect_exists_node = connect::connect_records_node(
+            graph,
+            &parent_node,
+            &read_node,
+            parent_relation_field,
+            1,
+        )?;
 
-        let _connect_create_node =
-            connect::connect_records_node(graph, &parent_node, &create_node, parent_relation_field, 1)?;
+        let _connect_create_node = connect::connect_records_node(
+            graph,
+            &parent_node,
+            &create_node,
+            parent_relation_field,
+            1,
+        )?;
 
-        graph.create_edge(&parent_node, &read_node, QueryGraphDependency::ExecutionOrder)?;
+        graph.create_edge(
+            &parent_node,
+            &read_node,
+            QueryGraphDependency::ExecutionOrder,
+        )?;
         graph.create_edge(
             &read_node,
             &if_node,
@@ -271,10 +300,16 @@ fn one_to_many_inlined_child(
         ));
 
         let if_node = graph.create_node(Flow::if_non_empty());
-        let update_child_node = utils::update_records_node_placeholder(graph, filter, child_model.clone());
-        let create_node = create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
+        let update_child_node =
+            utils::update_records_node_placeholder(graph, filter, child_model.clone());
+        let create_node =
+            create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
 
-        graph.create_edge(&parent_node, &read_node, QueryGraphDependency::ExecutionOrder)?;
+        graph.create_edge(
+            &parent_node,
+            &read_node,
+            QueryGraphDependency::ExecutionOrder,
+        )?;
         graph.create_edge(&if_node, &update_child_node, QueryGraphDependency::Then)?;
         graph.create_edge(&if_node, &create_node, QueryGraphDependency::Else)?;
         graph.create_edge(
@@ -392,10 +427,15 @@ fn one_to_many_inlined_parent(
     ));
 
     graph.mark_nodes(&parent_node, &read_node);
-    graph.create_edge(&parent_node, &read_node, QueryGraphDependency::ExecutionOrder)?;
+    graph.create_edge(
+        &parent_node,
+        &read_node,
+        QueryGraphDependency::ExecutionOrder,
+    )?;
 
     let if_node = graph.create_node(Flow::if_non_empty());
-    let create_node = create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
+    let create_node =
+        create::create_record_node(graph, query_schema, child_model.clone(), create_map)?;
     let return_existing = graph.create_node(Flow::Return(Vec::new()));
     let return_create = graph.create_node(Flow::Return(Vec::new()));
 
@@ -425,7 +465,11 @@ fn one_to_many_inlined_parent(
     graph.create_edge(
         &read_node,
         &return_existing,
-        QueryGraphDependency::ProjectedDataDependency(child_link.clone(), RowSink::All(&ReturnInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            child_link.clone(),
+            RowSink::All(&ReturnInput),
+            None,
+        ),
     )?;
 
     graph.create_edge(
@@ -525,10 +569,15 @@ fn one_to_one_inlined_parent(
     ));
 
     graph.mark_nodes(&parent_node, &read_node);
-    graph.create_edge(&parent_node, &read_node, QueryGraphDependency::ExecutionOrder)?;
+    graph.create_edge(
+        &parent_node,
+        &read_node,
+        QueryGraphDependency::ExecutionOrder,
+    )?;
 
     let if_node = graph.create_node(Flow::if_non_empty());
-    let create_node = create::create_record_node(graph, query_schema, child_model.clone(), create_data)?;
+    let create_node =
+        create::create_record_node(graph, query_schema, child_model.clone(), create_data)?;
     let return_existing = graph.create_node(Flow::Return(Vec::new()));
     let return_create = graph.create_node(Flow::Return(Vec::new()));
 
@@ -543,8 +592,11 @@ fn one_to_one_inlined_parent(
     )?;
 
     // Then branch handling
-    let read_ex_parent_node =
-        utils::insert_existing_1to1_related_model_checks(graph, &read_node, &parent_relation_field.related_field())?;
+    let read_ex_parent_node = utils::insert_existing_1to1_related_model_checks(
+        graph,
+        &read_node,
+        &parent_relation_field.related_field(),
+    )?;
 
     graph.create_edge(&if_node, &read_ex_parent_node, QueryGraphDependency::Then)?;
     graph.create_edge(
@@ -556,7 +608,11 @@ fn one_to_one_inlined_parent(
     graph.create_edge(
         &read_node,
         &return_existing,
-        QueryGraphDependency::ProjectedDataDependency(child_link.clone(), RowSink::All(&ReturnInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            child_link.clone(),
+            RowSink::All(&ReturnInput),
+            None,
+        ),
     )?;
 
     // Else branch handling
@@ -564,7 +620,11 @@ fn one_to_one_inlined_parent(
     graph.create_edge(
         &create_node,
         &return_create,
-        QueryGraphDependency::ProjectedDataDependency(child_link.clone(), RowSink::All(&ReturnInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            child_link.clone(),
+            RowSink::All(&ReturnInput),
+            None,
+        ),
     )?;
 
     if utils::node_is_create(graph, &parent_node) {
@@ -581,10 +641,15 @@ fn one_to_one_inlined_parent(
     } else {
         // Perform checks that no existing child in a required relation is violated.
         graph.create_edge(&if_node, &parent_node, QueryGraphDependency::ExecutionOrder)?;
-        utils::insert_existing_1to1_related_model_checks(graph, &parent_node, parent_relation_field)?;
+        utils::insert_existing_1to1_related_model_checks(
+            graph,
+            &parent_node,
+            parent_relation_field,
+        )?;
 
         let parent_model = parent_relation_field.model();
-        let update_parent_node = utils::update_records_node_placeholder(graph, Filter::empty(), parent_model.clone());
+        let update_parent_node =
+            utils::update_records_node_placeholder(graph, Filter::empty(), parent_model.clone());
 
         graph.create_edge(
             &parent_node,
@@ -704,10 +769,15 @@ fn one_to_one_inlined_child(
     ));
 
     // Edge: Parent -> read new child
-    graph.create_edge(&parent_node, &read_new_child_node, QueryGraphDependency::ExecutionOrder)?;
+    graph.create_edge(
+        &parent_node,
+        &read_new_child_node,
+        QueryGraphDependency::ExecutionOrder,
+    )?;
 
     let if_node = graph.create_node(Flow::if_non_empty());
-    let create_node = create::create_record_node(graph, query_schema, child_model.clone(), create_data)?;
+    let create_node =
+        create::create_record_node(graph, query_schema, child_model.clone(), create_data)?;
 
     // Edge: Read new child -> if node
     graph.create_edge(
@@ -725,7 +795,8 @@ fn one_to_one_inlined_child(
     graph.create_edge(&if_node, &create_node, QueryGraphDependency::Else)?;
 
     // *** Then branch handling ***
-    let update_new_child_node = utils::update_records_node_placeholder(graph, Filter::empty(), child_model.clone());
+    let update_new_child_node =
+        utils::update_records_node_placeholder(graph, Filter::empty(), child_model.clone());
 
     // Edge: Parent node -> update new child node
     graph.create_edge(
@@ -793,15 +864,19 @@ fn one_to_one_inlined_child(
         // Edge: If node -> update new child node
         graph.create_edge(&if_node, &update_new_child_node, QueryGraphDependency::Then)?;
     } else {
-        let read_old_child_node =
-            utils::insert_find_children_by_parent_node(graph, &parent_node, parent_relation_field, Filter::empty())?;
+        let read_old_child_node = utils::insert_find_children_by_parent_node(
+            graph,
+            &parent_node,
+            parent_relation_field,
+            Filter::empty(),
+        )?;
 
         // Edge: If node -> read old child node
         graph.create_edge(&if_node, &read_old_child_node, QueryGraphDependency::Then)?;
 
-        let diff_node = graph.create_node(Node::Computation(Computation::empty_diff_left_to_right(
-            child_model_identifier.clone(),
-        )));
+        let diff_node = graph.create_node(Node::Computation(
+            Computation::empty_diff_left_to_right(child_model_identifier.clone()),
+        ));
 
         // Edge: Read old child node -> diff node
         graph.create_edge(
@@ -829,13 +904,24 @@ fn one_to_one_inlined_child(
         graph.create_edge(
             &diff_node,
             &if_node,
-            QueryGraphDependency::ProjectedDataDependency(child_model_identifier.clone(), RowSink::All(&IfInput), None),
+            QueryGraphDependency::ProjectedDataDependency(
+                child_model_identifier.clone(),
+                RowSink::All(&IfInput),
+                None,
+            ),
         )?;
 
         // update old child, set link to null
-        let write_args = WriteArgs::from_result(SelectionResult::from(&child_link), crate::executor::get_request_now());
-        let update_old_child_node =
-            utils::update_records_node_placeholder_with_args(graph, Filter::empty(), child_model.clone(), write_args);
+        let write_args = WriteArgs::from_result(
+            SelectionResult::from(&child_link),
+            crate::executor::get_request_now(),
+        );
+        let update_old_child_node = utils::update_records_node_placeholder_with_args(
+            graph,
+            Filter::empty(),
+            child_model.clone(),
+            write_args,
+        );
         let rf = parent_relation_field.clone();
 
         // Edge: Read old child node -> update old child

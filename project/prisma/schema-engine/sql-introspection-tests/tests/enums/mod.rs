@@ -4,7 +4,8 @@ mod sqlite;
 
 use barrel::types;
 use quaint::prelude::Queryable;
-use sql_introspection_tests::{TestResult, test_api::*};
+use sql_introspection_tests::TestResult;
+use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
 #[test_connector(exclude(Sqlite), capabilities(Enums))]
@@ -36,8 +37,16 @@ async fn a_table_with_enums(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    let color = if sql_family.is_mysql() { "Book_color" } else { "color" };
-    let color2 = if sql_family.is_mysql() { "Book_color2" } else { "color2" };
+    let color = if sql_family.is_mysql() {
+        "Book_color"
+    } else {
+        "color"
+    };
+    let color2 = if sql_family.is_mysql() {
+        "Book_color2"
+    } else {
+        "color2"
+    };
 
     let dm = format!(
         r#"
@@ -68,7 +77,9 @@ async fn a_table_with_enums(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(exclude(Sqlite), capabilities(Enums))]
-async fn a_table_enums_should_return_alphabetically_even_when_in_different_order(api: &mut TestApi) -> TestResult {
+async fn a_table_enums_should_return_alphabetically_even_when_in_different_order(
+    api: &mut TestApi,
+) -> TestResult {
     let sql_family = api.sql_family();
 
     if sql_family.is_postgres() {
@@ -98,8 +109,16 @@ async fn a_table_enums_should_return_alphabetically_even_when_in_different_order
         })
         .await?;
 
-    let color = if sql_family.is_mysql() { "Book_color" } else { "color" };
-    let color2 = if sql_family.is_mysql() { "Book_color2" } else { "color2" };
+    let color = if sql_family.is_mysql() {
+        "Book_color"
+    } else {
+        "color"
+    };
+    let color2 = if sql_family.is_mysql() {
+        "Book_color2"
+    } else {
+        "color2"
+    };
 
     let dm = format!(
         r#"
@@ -155,7 +174,11 @@ async fn a_table_with_enum_default_values(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    let enum_name = if sql_family.is_mysql() { "Book_color" } else { "color" };
+    let enum_name = if sql_family.is_mysql() {
+        "Book_color"
+    } else {
+        "color"
+    };
 
     let dm = format!(
         r#"

@@ -1,18 +1,21 @@
 use std::marker::PhantomData;
 
-use tracing::{
-    Subscriber, field,
-    span::{Attributes, Id},
-};
-use tracing_subscriber::{
-    Layer,
-    layer::Context,
-    registry::{LookupSpan, SpanRef},
-};
+use tracing::Subscriber;
+use tracing::field;
+use tracing::span::Attributes;
+use tracing::span::Id;
+use tracing_subscriber::Layer;
+use tracing_subscriber::layer::Context;
+use tracing_subscriber::registry::LookupSpan;
+use tracing_subscriber::registry::SpanRef;
 
-use crate::collector::{AllowAttribute, Collector, EventBuilder, SpanBuilder};
+use crate::collector::AllowAttribute;
+use crate::collector::Collector;
+use crate::collector::EventBuilder;
+use crate::collector::SpanBuilder;
 use crate::id::RequestId;
-use crate::models::{LogLevel, SpanKind};
+use crate::models::LogLevel;
+use crate::models::SpanKind;
 
 const REQUEST_ID_FIELD: &str = "request_id";
 const SPAN_NAME_FIELD: &str = "otel.name";
@@ -60,7 +63,8 @@ where
 
     #[track_caller]
     fn require_span<'a>(id: &Id, ctx: &'a Context<'_, S>) -> SpanRef<'a, S> {
-        ctx.span(id).expect("span must exist in the registry, this is a bug")
+        ctx.span(id)
+            .expect("span must exist in the registry, this is a bug")
     }
 }
 
@@ -73,10 +77,12 @@ where
         let span = Self::require_span(id, &ctx);
         let mut span_builder = SpanBuilder::new(span.name(), attrs.fields().len());
 
-        if let Some(request_id) = span
-            .parent()
-            .and_then(|parent| parent.extensions().get::<SpanBuilder>().and_then(|sb| sb.request_id()))
-        {
+        if let Some(request_id) = span.parent().and_then(|parent| {
+            parent
+                .extensions()
+                .get::<SpanBuilder>()
+                .and_then(|sb| sb.request_id())
+        }) {
             span_builder.set_request_id(request_id);
         }
 
@@ -92,13 +98,19 @@ where
         let mut extensions = span.extensions_mut();
 
         if let Some(span_builder) = extensions.get_mut::<SpanBuilder>() {
-            values.record(&mut SpanAttributeVisitor::<'_, C::AttributeFilter>::new(span_builder));
+            values.record(&mut SpanAttributeVisitor::<'_, C::AttributeFilter>::new(
+                span_builder,
+            ));
         }
     }
 
     fn on_follows_from(&self, span: &Id, follows: &Id, ctx: Context<'_, S>) {
         let followed_span = Self::require_span(follows, &ctx);
-        let Some(followed_id) = followed_span.extensions().get::<SpanBuilder>().map(|sb| sb.span_id()) else {
+        let Some(followed_id) = followed_span
+            .extensions()
+            .get::<SpanBuilder>()
+            .map(|sb| sb.span_id())
+        else {
             return;
         };
 
@@ -111,11 +123,12 @@ where
     }
 
     fn on_event(&self, event: &tracing::Event<'_>, ctx: Context<'_, S>) {
-        let Some(parent) = event
-            .parent()
-            .and_then(|id| ctx.span(id))
-            .or_else(|| event.is_contextual().then(|| ctx.lookup_current()).flatten())
-        else {
+        let Some(parent) = event.parent().and_then(|id| ctx.span(id)).or_else(|| {
+            event
+                .is_contextual()
+                .then(|| ctx.lookup_current())
+                .flatten()
+        }) else {
             // Events without a parent span are not collected.
             return;
         };
@@ -155,9 +168,12 @@ where
             return;
         };
 
-        let parent_id = span
-            .parent()
-            .and_then(|parent| parent.extensions().get::<SpanBuilder>().map(|sb| sb.span_id()));
+        let parent_id = span.parent().and_then(|parent| {
+            parent
+                .extensions()
+                .get::<SpanBuilder>()
+                .map(|sb| sb.span_id())
+        });
 
         let collected_span = span_builder.end(parent_id);
 
@@ -182,13 +198,15 @@ impl<'a, F> SpanAttributeVisitor<'a, F> {
 impl<Filter: AllowAttribute> field::Visit for SpanAttributeVisitor<'_, Filter> {
     fn record_f64(&mut self, field: &field::Field, value: f64) {
         if Filter::allow_on_span(field.name()) {
-            self.span_builder.insert_attribute(field.name(), value.into())
+            self.span_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_i64(&mut self, field: &field::Field, value: i64) {
         if Filter::allow_on_span(field.name()) {
-            self.span_builder.insert_attribute(field.name(), value.into())
+            self.span_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
@@ -201,7 +219,8 @@ impl<Filter: AllowAttribute> field::Visit for SpanAttributeVisitor<'_, Filter> {
             }
             _ => {
                 if Filter::allow_on_event(field.name()) {
-                    self.span_builder.insert_attribute(field.name(), value.into())
+                    self.span_builder
+                        .insert_attribute(field.name(), value.into())
                 }
             }
         }
@@ -209,17 +228,21 @@ impl<Filter: AllowAttribute> field::Visit for SpanAttributeVisitor<'_, Filter> {
 
     fn record_bool(&mut self, field: &field::Field, value: bool) {
         if Filter::allow_on_span(field.name()) {
-            self.span_builder.insert_attribute(field.name(), value.into())
+            self.span_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_str(&mut self, field: &field::Field, value: &str) {
         match field.name() {
             SPAN_NAME_FIELD => self.span_builder.set_name(value.to_owned().into()),
-            SPAN_KIND_FIELD => self.span_builder.set_kind(value.parse().unwrap_or(SpanKind::Internal)),
+            SPAN_KIND_FIELD => self
+                .span_builder
+                .set_kind(value.parse().unwrap_or(SpanKind::Internal)),
             _ => {
                 if Filter::allow_on_span(field.name()) {
-                    self.span_builder.insert_attribute(field.name(), value.into())
+                    self.span_builder
+                        .insert_attribute(field.name(), value.into())
                 }
             }
         }
@@ -249,34 +272,41 @@ impl<'a, F> EventAttributeVisitor<'a, F> {
 impl<Filter: AllowAttribute> field::Visit for EventAttributeVisitor<'_, Filter> {
     fn record_f64(&mut self, field: &field::Field, value: f64) {
         if Filter::allow_on_event(field.name()) {
-            self.event_builder.insert_attribute(field.name(), value.into())
+            self.event_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_i64(&mut self, field: &field::Field, value: i64) {
         if Filter::allow_on_event(field.name()) {
-            self.event_builder.insert_attribute(field.name(), value.into())
+            self.event_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_u64(&mut self, field: &field::Field, value: u64) {
         if Filter::allow_on_event(field.name()) {
-            self.event_builder.insert_attribute(field.name(), value.into())
+            self.event_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_bool(&mut self, field: &field::Field, value: bool) {
         if Filter::allow_on_event(field.name()) {
-            self.event_builder.insert_attribute(field.name(), value.into())
+            self.event_builder
+                .insert_attribute(field.name(), value.into())
         }
     }
 
     fn record_str(&mut self, field: &field::Field, value: &str) {
         match field.name() {
-            EVENT_LEVEL_FIELD => self.event_builder.set_level(value.parse().unwrap_or(LogLevel::Trace)),
+            EVENT_LEVEL_FIELD => self
+                .event_builder
+                .set_level(value.parse().unwrap_or(LogLevel::Trace)),
             _ => {
                 if Filter::allow_on_event(field.name()) {
-                    self.event_builder.insert_attribute(field.name(), value.into())
+                    self.event_builder
+                        .insert_attribute(field.name(), value.into())
                 }
             }
         }
@@ -291,21 +321,26 @@ impl<Filter: AllowAttribute> field::Visit for EventAttributeVisitor<'_, Filter> 
 
 #[cfg(test)]
 mod tests {
-    use crate::collector::{AllowAttribute, CollectedEvent, CollectedSpan};
-    use crate::id::{NextId, RequestId};
-
-    use super::*;
-
     use std::cell::RefCell;
-    use std::collections::{BTreeMap, HashMap};
-    use std::sync::{Arc, Mutex};
+    use std::collections::BTreeMap;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+    use std::sync::Mutex;
     use std::thread::LocalKey;
 
     use insta::assert_ron_snapshot;
-    use insta::internals::{Content, Redaction};
+    use insta::internals::Content;
+    use insta::internals::Redaction;
     use tracing::info_span;
     use tracing_subscriber::Registry;
     use tracing_subscriber::layer::SubscriberExt;
+
+    use super::*;
+    use crate::collector::AllowAttribute;
+    use crate::collector::CollectedEvent;
+    use crate::collector::CollectedSpan;
+    use crate::id::NextId;
+    use crate::id::RequestId;
 
     #[derive(Debug, Default, Clone)]
     struct TestCollector {
@@ -388,19 +423,26 @@ mod tests {
                 static REQUEST_ID_TO_SEQUENTIAL_ID: RefCell<HashMap<String, u64>> = <_>::default();
                 static NEXT_ID: RefCell<u64> = const { RefCell::new(1) };
             }
-            redacted_id("RequestId", original_id, &REQUEST_ID_TO_SEQUENTIAL_ID, &NEXT_ID)
+            redacted_id(
+                "RequestId",
+                original_id,
+                &REQUEST_ID_TO_SEQUENTIAL_ID,
+                &NEXT_ID,
+            )
         }
 
         fn redact_recursive(value: Content) -> Content {
             match value {
-                Content::NewtypeStruct(name @ ("SpanId" | "RequestId"), ref nested) => match **nested {
-                    Content::String(ref original_id) => match name {
-                        "SpanId" => redacted_span_id(original_id),
-                        "RequestId" => redacted_request_id(original_id),
-                        _ => unreachable!(),
-                    },
-                    _ => value,
-                },
+                Content::NewtypeStruct(name @ ("SpanId" | "RequestId"), ref nested) => {
+                    match **nested {
+                        Content::String(ref original_id) => match name {
+                            "SpanId" => redacted_span_id(original_id),
+                            "RequestId" => redacted_request_id(original_id),
+                            _ => unreachable!(),
+                        },
+                        _ => value,
+                    }
+                }
                 Content::Some(nested) => Content::Some(Box::new(redact_recursive(*nested))),
                 _ => value,
             }
@@ -484,7 +526,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _parent_guard = info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
+            let _parent_guard =
+                info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
 
             {
                 let _child_guard = info_span!("child_span").entered();
@@ -661,7 +704,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _scope = info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
+            let _scope =
+                info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
             let span1 = info_span!("span1");
             let span2 = info_span!("span2");
             span2.follows_from(span1.id());
@@ -717,7 +761,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _guard = info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
+            let _guard =
+                info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
             tracing::info!("test event");
         });
 
@@ -749,7 +794,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _guard = info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
+            let _guard =
+                info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
 
             tracing::info!(
                 name: "event",
@@ -797,7 +843,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _parent_guard = info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
+            let _parent_guard =
+                info_span!("parent_span", request_id = RequestId::next().into_u64()).entered();
             tracing::info!("parent event");
 
             {
@@ -843,7 +890,8 @@ mod tests {
         let subscriber = Registry::default().with(layer(collector.clone()));
 
         tracing::subscriber::with_default(subscriber, || {
-            let _guard = info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
+            let _guard =
+                info_span!("test_span", request_id = RequestId::next().into_u64()).entered();
 
             tracing::error!("error event");
             tracing::warn!("warn event");
@@ -930,7 +978,11 @@ mod tests {
             )
             .entered();
 
-            tracing::info!(test_ignored_event_attr = "ignored", kept_attr = "kept", "test event");
+            tracing::info!(
+                test_ignored_event_attr = "ignored",
+                kept_attr = "kept",
+                "test event"
+            );
         });
 
         let spans = collector.spans();

@@ -21,7 +21,12 @@ impl Getter for ResultRow {
     fn get_expect_string(&self, name: &str) -> String {
         self.get(name)
             .and_then(|x| x.to_string())
-            .ok_or_else(|| format!("Getting {} from Resultrow {:?} as String failed", name, &self))
+            .ok_or_else(|| {
+                format!(
+                    "Getting {} from Resultrow {:?} as String failed",
+                    name, &self
+                )
+            })
             .unwrap()
     }
 
@@ -85,7 +90,8 @@ impl Getter for ResultRow {
     }
 
     fn get_u32(&self, name: &str) -> Option<u32> {
-        self.get(name).and_then(|x| x.as_integer().map(|x| x as u32))
+        self.get(name)
+            .and_then(|x| x.as_integer().map(|x| x as u32))
     }
 
     fn get_i64(&self, name: &str) -> Option<i64> {

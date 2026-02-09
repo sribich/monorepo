@@ -51,7 +51,9 @@ async fn a_compound_fk_pk_with_overlapping_primary_key(api: &mut TestApi) -> Tes
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn compound_foreign_keys_for_duplicate_one_to_many_relations(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_duplicate_one_to_many_relations(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(move |migration| {
             migration.create_table("User", move |t| {
@@ -155,7 +157,9 @@ async fn compound_foreign_keys_for_one_to_many_relations(api: &mut TestApi) -> T
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {
@@ -202,7 +206,9 @@ async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn compound_foreign_keys_for_one_to_many_relations_with_non_unique_index(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_one_to_many_relations_with_non_unique_index(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(move |migration| {
             migration.create_table("User", move |t| {

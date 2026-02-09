@@ -1,4 +1,7 @@
-use std::{env, fs, io::Write as _, path};
+use std::env;
+use std::fs;
+use std::io::Write as _;
+use std::path;
 
 const VALIDATIONS_ROOT_DIR: &str = "tests/validation";
 const REFORMAT_SINGLE_FILE_ROOT_DIR: &str = "tests/reformatter";
@@ -13,18 +16,20 @@ fn main() {
 
 fn build_reformat_multi_file_tests() {
     println!("cargo:rerun-if-changed={REFORMAT_MULTI_FILE_ROOT_DIR}");
-    let schema_dirs_to_reformat = fs::read_dir(format!("{CARGO_MANIFEST_DIR}/{REFORMAT_MULTI_FILE_ROOT_DIR}"))
-        .unwrap()
-        .map(Result::unwrap)
-        .filter_map(|entry| {
-            let name = entry.file_name();
-            let name = name.to_str().unwrap();
-            if name == "." || name == ".." || name.ends_with(".reformatted") {
-                None
-            } else {
-                Some(name.trim_start_matches('/').to_owned())
-            }
-        });
+    let schema_dirs_to_reformat = fs::read_dir(format!(
+        "{CARGO_MANIFEST_DIR}/{REFORMAT_MULTI_FILE_ROOT_DIR}"
+    ))
+    .unwrap()
+    .map(Result::unwrap)
+    .filter_map(|entry| {
+        let name = entry.file_name();
+        let name = name.to_str().unwrap();
+        if name == "." || name == ".." || name.ends_with(".reformatted") {
+            None
+        } else {
+            Some(name.trim_start_matches('/').to_owned())
+        }
+    });
     let mut out_file = out_file("reformat_multi_file_tests.rs");
     for schema_dir in schema_dirs_to_reformat {
         let test_name = test_name(&schema_dir);
@@ -43,7 +48,9 @@ fn build_reformat_single_file_tests() {
     find_all_schemas("", &mut all_schemas, REFORMAT_SINGLE_FILE_ROOT_DIR);
 
     let mut out_file = out_file("reformat_tests.rs");
-    let schemas_to_reformat = all_schemas.iter().filter(|name| !name.ends_with(".reformatted.prisma"));
+    let schemas_to_reformat = all_schemas
+        .iter()
+        .filter(|name| !name.ends_with(".reformatted.prisma"));
 
     for schema_path in schemas_to_reformat {
         let test_name = test_name(schema_path);

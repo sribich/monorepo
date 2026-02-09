@@ -26,7 +26,6 @@ pub enum ForvoError {
     },
 }
 
-
 pub type Result<T> = core::result::Result<T, ForvoError>;
 
 pub trait ForvoRequest: Debug + Serialize {

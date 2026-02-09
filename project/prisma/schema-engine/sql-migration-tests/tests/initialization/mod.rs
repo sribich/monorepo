@@ -1,5 +1,9 @@
-use schema_core::{commands::ensure_connection_validity::EnsureConnectionValidityParams, json_rpc::types::{DatasourceParam, SchemasContainer}, schema_api_without_extensions};
-use sql_migration_tests::{multi_engine_test_api::*, test_api::SchemaContainer};
+use schema_core::commands::ensure_connection_validity::EnsureConnectionValidityParams;
+use schema_core::json_rpc::types::DatasourceParam;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_api_without_extensions;
+use sql_migration_tests::multi_engine_test_api::*;
+use sql_migration_tests::test_api::SchemaContainer;
 use test_macros::test_connector;
 use url::Url;
 

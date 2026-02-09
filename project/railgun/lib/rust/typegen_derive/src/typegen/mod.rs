@@ -2,17 +2,23 @@ mod r#enum;
 mod r#struct;
 
 use r#enum::impl_enum;
-use macro_util::{
-    ast::Input,
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_bounds},
-};
+use macro_util::ast::Input;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_bounds;
 use proc_macro::TokenStream;
 use proc_macro2::Span;
-use quote::{ToTokens, format_ident, quote};
+use quote::ToTokens;
+use quote::format_ident;
+use quote::quote;
 use r#struct::impl_struct;
-use syn::{GenericArgument, Ident, PathArguments, Type};
+use syn::GenericArgument;
+use syn::Ident;
+use syn::PathArguments;
+use syn::Type;
 
-use crate::{attributes::container::ContainerAttributes, util::get_crate_name};
+use crate::attributes::container::ContainerAttributes;
+use crate::util::get_crate_name;
 
 pub(crate) fn derive(input: TokenStream) -> TokenStream {
     inner_derive(input)
@@ -162,7 +168,7 @@ pub fn datatype(
 
                 let #ident = <#ty as #crate_name::Type>::reference(cache, #generics).inner;
             });
-        },
+        }
         Type::Verbatim(_) => todo!(),
         _ => todo!(),
     };
@@ -206,7 +212,7 @@ pub fn datatype(
                 Span::call_site(),
                 "Only angle bracketed generics are supported!",
             ));
-        },
+        }
     };
     let generic_vars = generic_args
         .iter()

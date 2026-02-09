@@ -7,14 +7,12 @@
 //! An example use case to render a datasource as a string:
 //!
 //! ```
-//! use datamodel_renderer::{configuration::Datasource, value::Env};
-//! use indoc::{indoc, formatdoc};
+//! use datamodel_renderer::configuration::Datasource;
+//! use datamodel_renderer::value::Env;
+//! use indoc::formatdoc;
+//! use indoc::indoc;
 //!
-//! let datasource = Datasource::new(
-//!     "db",
-//!     "postgres",
-//!     Env::variable("DATABASE_URL")
-//! );
+//! let datasource = Datasource::new("db", "postgres", Env::variable("DATABASE_URL"));
 //!
 //! // We get a string rendering without proper formatting
 //! // by calling the `to_string()` method:
@@ -35,13 +33,15 @@
 //!
 //! // Additionally we can just pass the datasource to any
 //! // format block to include it in the resulting string:
-//! let rendered = formatdoc!(r#"
+//! let rendered = formatdoc!(
+//!     r#"
 //!     {datasource}
 //!
 //!     model A {{
 //!       id Int @id
 //!     }}
-//! "#);
+//! "#
+//! );
 //!
 //! // Again, making the result indentation and spacing to
 //! // look prettier.
@@ -67,7 +67,7 @@ pub mod configuration;
 pub mod datamodel;
 pub mod value;
 
+use std::borrow::Cow;
+
 pub use configuration::Configuration;
 pub use datamodel::Datamodel;
-
-use std::borrow::Cow;

@@ -1,4 +1,5 @@
-use std::{any::Any, borrow::Cow};
+use std::any::Any;
+use std::borrow::Cow;
 
 /// Downcasts a boxed [`Any`] from a panic payload to a string.
 pub fn downcast_box_to_string(object: Box<dyn Any>) -> Option<Cow<'static, str>> {

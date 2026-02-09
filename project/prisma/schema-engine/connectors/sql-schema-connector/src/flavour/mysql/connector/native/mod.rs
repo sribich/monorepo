@@ -3,20 +3,22 @@
 pub mod shadow_db;
 
 use enumflags2::BitFlags;
-use quaint::{
-    connector::{
-        self, MysqlUrl,
-        mysql_async::{self as my, prelude::Query},
-    },
-    prelude::{ColumnType, NativeConnectionInfo, Queryable},
-};
-use schema_connector::{ConnectorError, ConnectorResult};
-use sql_schema_describer::{DescriberErrorKind, SqlSchema};
-use user_facing_errors::{
-    KnownError,
-    schema_engine::DatabaseSchemaInconsistent,
-    schema_engine::{ApplyMigrationError, DirectDdlNotAllowed, ForeignKeyCreationNotAllowed},
-};
+use quaint::connector::MysqlUrl;
+use quaint::connector::mysql_async::prelude::Query;
+use quaint::connector::mysql_async::{self as my};
+use quaint::connector::{self};
+use quaint::prelude::ColumnType;
+use quaint::prelude::NativeConnectionInfo;
+use quaint::prelude::Queryable;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use sql_schema_describer::DescriberErrorKind;
+use sql_schema_describer::SqlSchema;
+use user_facing_errors::KnownError;
+use user_facing_errors::schema_engine::ApplyMigrationError;
+use user_facing_errors::schema_engine::DatabaseSchemaInconsistent;
+use user_facing_errors::schema_engine::DirectDdlNotAllowed;
+use user_facing_errors::schema_engine::ForeignKeyCreationNotAllowed;
 
 pub struct Connection(connector::Mysql);
 
@@ -28,7 +30,9 @@ impl Connection {
             })
         })?;
         Ok(Connection(
-            connector::Mysql::new(url.clone()).await.map_err(quaint_err(&url))?,
+            connector::Mysql::new(url.clone())
+                .await
+                .map_err(quaint_err(&url))?,
         ))
     }
 
@@ -38,7 +42,8 @@ impl Connection {
         circumstances: BitFlags<super::Circumstances>,
         params: &super::Params,
     ) -> ConnectorResult<SqlSchema> {
-        use sql_schema_describer::{SqlSchemaDescriberBackend, mysql as describer};
+        use sql_schema_describer::SqlSchemaDescriberBackend;
+        use sql_schema_describer::mysql as describer;
         let mut describer_circumstances: BitFlags<describer::Circumstances> = Default::default();
 
         if circumstances.contains(super::Circumstances::IsMariadb) {
@@ -68,18 +73,19 @@ impl Connection {
             describer_circumstances |= describer::Circumstances::CheckConstraints;
         }
 
-        let schema = sql_schema_describer::mysql::SqlSchemaDescriber::new(&self.0, describer_circumstances)
-            .describe(&[params.url.dbname_or_default()])
-            .await
-            .map_err(|err| match err.into_kind() {
-                DescriberErrorKind::QuaintError(err) => quaint_err(&params.url)(err),
-                e @ DescriberErrorKind::CrossSchemaReference { .. } => {
-                    let err = DatabaseSchemaInconsistent {
-                        explanation: e.to_string(),
-                    };
-                    ConnectorError::user_facing(err)
-                }
-            })?;
+        let schema =
+            sql_schema_describer::mysql::SqlSchemaDescriber::new(&self.0, describer_circumstances)
+                .describe(&[params.url.dbname_or_default()])
+                .await
+                .map_err(|err| match err.into_kind() {
+                    DescriberErrorKind::QuaintError(err) => quaint_err(&params.url)(err),
+                    e @ DescriberErrorKind::CrossSchemaReference { .. } => {
+                        let err = DatabaseSchemaInconsistent {
+                            explanation: e.to_string(),
+                        };
+                        ConnectorError::user_facing(err)
+                    }
+                })?;
 
         Ok(schema)
     }
@@ -164,7 +170,9 @@ impl Connection {
 
             ConnectorError::user_facing(ApplyMigrationError {
                 migration_name: migration_name.to_owned(),
-                database_error_code: code.map(|c| c.to_string()).unwrap_or_else(|| String::from("none")),
+                database_error_code: code
+                    .map(|c| c.to_string())
+                    .unwrap_or_else(|| String::from("none")),
                 database_error: error,
             })
         };
@@ -185,7 +193,10 @@ impl Connection {
                     migration_idx += 1;
 
                     if result.is_empty() {
-                        result.map(drop).await.map_err(|e| convert_error(migration_idx, e))?;
+                        result
+                            .map(drop)
+                            .await
+                            .map_err(|e| convert_error(migration_idx, e))?;
                         return Ok(());
                     }
                 }
@@ -198,13 +209,23 @@ impl Connection {
 }
 
 fn quaint_err(url: &MysqlUrl) -> impl (Fn(quaint::error::Error) -> ConnectorError) + '_ {
-    |err| crate::flavour::quaint_error_to_connector_error(err, Some(&NativeConnectionInfo::Mysql(url.clone())))
+    |err| {
+        crate::flavour::quaint_error_to_connector_error(
+            err,
+            Some(&NativeConnectionInfo::Mysql(url.clone())),
+        )
+    }
 }
 
-fn convert_server_error(circumstances: BitFlags<super::Circumstances>, error: &my::Error) -> Option<KnownError> {
+fn convert_server_error(
+    circumstances: BitFlags<super::Circumstances>,
+    error: &my::Error,
+) -> Option<KnownError> {
     if circumstances.contains(super::Circumstances::IsVitess) {
         match error {
-            my::Error::Server(se) if se.code == 1317 => Some(KnownError::new(ForeignKeyCreationNotAllowed)),
+            my::Error::Server(se) if se.code == 1317 => {
+                Some(KnownError::new(ForeignKeyCreationNotAllowed))
+            }
             // sigh, this code is for unknown error, so we have the ddl
             // error and other stuff, such as typos in the same category...
             my::Error::Server(se) if se.code == 1105 && se.message == "direct DDL is disabled" => {

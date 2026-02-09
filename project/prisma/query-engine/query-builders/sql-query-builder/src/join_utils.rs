@@ -1,6 +1,9 @@
-use crate::{Context, filter::FilterBuilder, model_extensions::*};
 use quaint::prelude::*;
 use query_structure::*;
+
+use crate::Context;
+use crate::filter::FilterBuilder;
+use crate::model_extensions::*;
 
 #[derive(Debug, Clone)]
 pub(crate) struct AliasedJoin {
@@ -95,10 +98,14 @@ fn compute_aggr_join_one2m(
 
     // SELECT Child.<fk>, COUNT(*) AS <AGGREGATOR_ALIAS> FROM Child WHERE <FILTER>
     // + GROUP BY Child.<fk>
-    let query = right_fields.iter().fold(query, |acc, f| acc.group_by(f.as_column(ctx)));
+    let query = right_fields
+        .iter()
+        .fold(query, |acc, f| acc.group_by(f.as_column(ctx)));
 
     let query = if let Some(joins) = joins {
-        joins.into_iter().fold(query, |acc, join| acc.join(join.data))
+        joins
+            .into_iter()
+            .fold(query, |acc, join| acc.join(join.data))
     } else {
         query
     };
@@ -170,7 +177,9 @@ fn compute_aggr_join_m2m(
         .so_that(conditions);
 
     let query = if let Some(joins) = joins {
-        joins.into_iter().fold(query, |acc, join| acc.join(join.data))
+        joins
+            .into_iter()
+            .fold(query, |acc, join| acc.join(join.data))
     } else {
         query
     };
@@ -239,10 +248,11 @@ pub(crate) fn compute_one2m_join(
         .collect();
 
     let related_table = field.related_model().as_table(ctx);
-    let related_join_columns: Vec<_> = ModelProjection::from(field.related_field().linking_fields())
-        .as_columns(ctx)
-        .map(|col| col.table(alias.to_owned()))
-        .collect();
+    let related_join_columns: Vec<_> =
+        ModelProjection::from(field.related_field().linking_fields())
+            .as_columns(ctx)
+            .map(|col| col.table(alias.to_owned()))
+            .collect();
 
     let join = related_table
         .alias(alias.to_owned())

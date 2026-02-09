@@ -41,9 +41,13 @@ impl DatamodelRenderer for MongoDbSchemaRenderer {
         // Add @relation directive that specifies the local array to hold the FKs.
         let relation_directive = match relation_name {
             Some(name) => {
-                format!(r#"@relation(name: "{name}", fields: [{fk_field_name}], references: [{opposing_name}])"#,)
+                format!(
+                    r#"@relation(name: "{name}", fields: [{fk_field_name}], references: [{opposing_name}])"#,
+                )
             }
-            None => format!(r#"@relation(fields: [{fk_field_name}], references: [{opposing_name}])"#),
+            None => {
+                format!(r#"@relation(fields: [{fk_field_name}], references: [{opposing_name}])"#)
+            }
         };
 
         format!("{additional_fk_field}\n{field_name} {field_type} {relation_directive}")
@@ -74,7 +78,10 @@ mod mongo_render_tests {
         let fragment = IdFragment {
             field_name: "someIdField".to_owned(),
             field_type: "SomeType".to_owned(),
-            directives: vec![Directive::new("id", vec![]), Directive::new("map", vec!["\"not_id\""])],
+            directives: vec![
+                Directive::new("id", vec![]),
+                Directive::new("map", vec!["\"not_id\""]),
+            ],
         };
 
         let renderer = MongoDbSchemaRenderer::new();

@@ -1,4 +1,5 @@
-use convert_case::{Case, Casing};
+use convert_case::Case;
+use convert_case::Casing;
 use quote::format_ident;
 use syn::Ident;
 

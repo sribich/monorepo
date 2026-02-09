@@ -1,11 +1,18 @@
 use proc_macro2::Span;
-use syn::{
-    AttrStyle, Expr, Ident, Lit, Meta, MetaList, MetaNameValue, Path, Token,
-    ext::IdentExt,
-    parse::{ParseBuffer, ParseStream},
-    spanned::Spanned,
-    token::Paren,
-};
+use syn::AttrStyle;
+use syn::Expr;
+use syn::Ident;
+use syn::Lit;
+use syn::Meta;
+use syn::MetaList;
+use syn::MetaNameValue;
+use syn::Path;
+use syn::Token;
+use syn::ext::IdentExt;
+use syn::parse::ParseBuffer;
+use syn::parse::ParseStream;
+use syn::spanned::Spanned;
+use syn::token::Paren;
 
 #[derive(Clone, Debug)]
 pub struct Attribute {
@@ -151,7 +158,7 @@ impl TryFrom<&Expr> for AttributeValue {
                     value.span(),
                     "Unable to convert value into an AttributeValue",
                 ));
-            },
+            }
         })
     }
 }

@@ -6,7 +6,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod unchecked_create {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -182,7 +183,10 @@ mod unchecked_create {
             "A value is required but not set"
         );
 
-        run_query!(&runner, r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -228,7 +232,10 @@ mod unchecked_create {
     // "Unchecked creates" should "allow writing non-inlined relations normally"
     #[connector_test(schema(schema_3))]
     async fn allow_write_non_inlined_rel(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -268,7 +275,10 @@ mod unchecked_create {
     // "Unchecked creates" should "honor defaults and make required relation scalars optional"
     #[connector_test(schema(schema_4))]
     async fn honor_defaults_make_req_rel_sclrs_opt(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -295,10 +305,7 @@ mod unchecked_create {
     }
 
     // "Unchecked creates" should "allow to write to autoincrement IDs directly"
-    #[connector_test(
-        schema(schema_5),
-        capabilities(AutoIncrement, WritableAutoincField)
-    )]
+    #[connector_test(schema(schema_5), capabilities(AutoIncrement, WritableAutoincField))]
     async fn allow_write_autoinc_ids(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {

@@ -1,8 +1,11 @@
-use crate::{
-    ast::{self, IndentationType, NewlineType, WithDocumentation, WithName},
-    types,
-    walkers::{Walker, newline},
-};
+use crate::ast::IndentationType;
+use crate::ast::NewlineType;
+use crate::ast::WithDocumentation;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::types;
+use crate::walkers::Walker;
+use crate::walkers::newline;
 
 /// An `enum` declaration in the schema.
 pub type EnumWalker<'db> = Walker<'db, crate::EnumId>;
@@ -81,7 +84,9 @@ impl<'db> EnumWalker<'db> {
     ///          ^^^^^^^^
     /// ```
     pub fn schema(self) -> Option<(&'db str, ast::Span)> {
-        self.attributes().schema.map(|(id, span)| (&self.db[id], span))
+        self.attributes()
+            .schema
+            .map(|(id, span)| (&self.db[id], span))
     }
 }
 

@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 const SQL_SERVER: &str = r#"datasource sqlserver {
                                          provider = "sqlserver"

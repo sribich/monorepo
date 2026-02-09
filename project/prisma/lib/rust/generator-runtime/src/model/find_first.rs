@@ -1,11 +1,18 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{ModelOperation, ModelReadOperation, Query, QueryConvert, QueryResult, SelectionQuery, query},
-};
+use super::Model;
+use super::WhereInput;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::ModelOperation;
+use crate::query::ModelReadOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct FindFirst<'db, TModel: Model> {
     client: &'db InternalClient,

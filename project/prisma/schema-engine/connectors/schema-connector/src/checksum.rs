@@ -10,7 +10,8 @@ pub(crate) fn render_checksum(script: &str) -> String {
 
 /// Returns whether a migration script matches an existing checksum.
 pub(crate) fn script_matches_checksum(script: &str, checksum: &str) -> bool {
-    use std::iter::{once, once_with};
+    use std::iter::once;
+    use std::iter::once_with;
 
     // Checksum with potentially different line endings, so checksums will match
     // between Unix-like systems and Windows.
@@ -19,8 +20,12 @@ pub(crate) fn script_matches_checksum(script: &str, checksum: &str) -> bool {
     // information, read
     // https://web.archive.org/web/20150912185006/http://adaptivepatchwork.com:80/2012/03/01/mind-the-end-of-your-line/
     let mut script_checksums = once(compute_checksum(script))
-        .chain(once_with(|| compute_checksum(&script.replace("\r\n", "\n"))))
-        .chain(once_with(|| compute_checksum(&script.replace('\n', "\r\n"))));
+        .chain(once_with(|| {
+            compute_checksum(&script.replace("\r\n", "\n"))
+        }))
+        .chain(once_with(|| {
+            compute_checksum(&script.replace('\n', "\r\n"))
+        }));
 
     script_checksums.any(|script_checksum| {
         // Due to an omission in a previous version of the schema engine,
@@ -41,7 +46,8 @@ pub(crate) fn script_matches_checksum(script: &str, checksum: &str) -> bool {
 
 /// Checksumming implementation. This should be the single place where we do this.
 fn compute_checksum(script: &str) -> [u8; 32] {
-    use sha2::{Digest, Sha256};
+    use sha2::Digest;
+    use sha2::Sha256;
     let mut hasher = Sha256::new();
     hasher.update(script);
     hasher.finalize().into()
@@ -118,7 +124,10 @@ mod tests {
         for scripts in scripts {
             for script in *scripts {
                 for other_script in *scripts {
-                    assert!(script_matches_checksum(script, &render_checksum(other_script)),);
+                    assert!(script_matches_checksum(
+                        script,
+                        &render_checksum(other_script)
+                    ),);
                 }
             }
         }

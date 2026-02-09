@@ -1,6 +1,8 @@
-use super::*;
-use itertools::Itertools;
 use std::fmt::Display;
+
+use itertools::Itertools;
+
+use super::*;
 
 /// A datamodel fragment is the parsed version of a `#<ident>(...)` template string.
 #[derive(Debug, PartialEq)]

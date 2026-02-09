@@ -1,4 +1,5 @@
-use chrono::{TimeZone, Utc};
+use chrono::TimeZone;
+use chrono::Utc;
 
 /// Convenience full date + time string (UTC, RFC 3339) constructor so you don't have to remember the format.
 pub fn datetime_iso_string(
@@ -12,7 +13,11 @@ pub fn datetime_iso_string(
 ) -> String {
     Utc.with_ymd_and_hms(year, month, day, or_zero(hour), or_zero(min), or_zero(sec))
         .earliest()
-        .and_then(|dt| dt.timezone().timestamp_millis_opt(or_zero(millis) as i64).earliest())
+        .and_then(|dt| {
+            dt.timezone()
+                .timestamp_millis_opt(or_zero(millis) as i64)
+                .earliest()
+        })
         .map(|dt| dt.to_rfc3339())
         .unwrap()
 }

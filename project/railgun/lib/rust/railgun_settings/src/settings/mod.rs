@@ -1,9 +1,14 @@
-use std::{collections::HashMap, fs::File, io::Write, path::Path, str::FromStr};
+use std::collections::HashMap;
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+use std::str::FromStr;
 
 use railgun_core::bootstrap::BootstrapResult;
 use railgun_error::ResultExt;
 pub use railgun_settings_derive::settings;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use toml_edit::visit_mut::VisitMut;
 
 mod impls;
@@ -131,20 +136,20 @@ impl VisitMut for CommentVisitor {
             match node {
                 toml_edit::Item::ArrayOfTables(_) => {
                     todo!();
-                },
+                }
                 toml_edit::Item::None => {
                     todo!();
-                },
+                }
                 toml_edit::Item::Table(_) => {
                     todo!();
-                },
+                }
                 toml_edit::Item::Value(item) => {
                     if let toml_edit::Value::InlineTable(table) = item {
                         table.decor_mut().set_prefix(comment);
                     } else {
                         key.leaf_decor_mut().set_prefix(comment);
                     }
-                },
+                }
             }
         }
 

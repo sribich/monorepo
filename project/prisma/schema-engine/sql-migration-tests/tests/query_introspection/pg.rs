@@ -1,8 +1,9 @@
-use super::utils::*;
-
-use psl::builtin_connectors::{KnownPostgresType, PostgresType};
+use psl::builtin_connectors::KnownPostgresType;
+use psl::builtin_connectors::PostgresType;
 use quaint::prelude::ColumnType;
 use sql_migration_tests::test_api::*;
+
+use super::utils::*;
 
 mod common {
     use super::*;
@@ -108,7 +109,9 @@ mod common {
 
     #[test_connector(tags(Postgres))]
     fn insert_nullable(api: TestApi) {
-        api.schema_push(SIMPLE_NULLABLE_SCHEMA).send().assert_green();
+        api.schema_push(SIMPLE_NULLABLE_SCHEMA)
+            .send()
+            .assert_green();
 
         let query = "INSERT INTO model (int, string, bigint, float, bytes, bool, dt) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING int, string, bigint, float, bytes, bool, dt;";
         let res = api.introspect_sql("test_1", query).send_sync();
@@ -394,7 +397,9 @@ mod postgres {
 
     #[test_connector(tags(Postgres))]
     fn subquery(api: TestApi) {
-        api.schema_push(SIMPLE_NULLABLE_SCHEMA).send().assert_green();
+        api.schema_push(SIMPLE_NULLABLE_SCHEMA)
+            .send()
+            .assert_green();
 
         let expected = expect![[r#"
             IntrospectSqlQueryOutput {

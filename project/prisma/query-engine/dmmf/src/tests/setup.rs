@@ -1,12 +1,12 @@
-use crate::DataModelMetaFormat;
+use std::fs::*;
+use std::io::Read;
+use std::io::Write;
 
 use colored::*;
 use flate2::*;
 use similar::*;
-use std::{
-    fs::*,
-    io::{Read, Write},
-};
+
+use crate::DataModelMetaFormat;
 
 pub(crate) fn write_compressed_snapshot(dmmf: &DataModelMetaFormat, path: &str) {
     let mut encoder = write::GzEncoder::new(File::create(path).unwrap(), Compression::best());
@@ -81,7 +81,10 @@ fn format_diff(old: &str, new: &str) -> String {
 
                 for (emphasized, value) in change.iter_strings_lossy() {
                     if emphasized {
-                        buf.push_str(&format!("{}", apply_styles(&value, change.tag()).underline().bold()));
+                        buf.push_str(&format!(
+                            "{}",
+                            apply_styles(&value, change.tag()).underline().bold()
+                        ));
                     } else {
                         buf.push_str(&format!("{}", apply_styles(&value, change.tag())));
                     }

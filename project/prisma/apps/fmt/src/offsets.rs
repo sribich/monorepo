@@ -1,5 +1,7 @@
-use lsp_types::{Position, Range};
-use psl::{diagnostics::FileId, parser_database::ast::Span};
+use lsp_types::Position;
+use lsp_types::Range;
+use psl::diagnostics::FileId;
+use psl::parser_database::ast::Span;
 
 /// The LSP position is expressed as a (line, col) tuple, but our pest-based parser works with byte
 /// offsets. This function converts from an LSP position to a pest byte offset. Returns `None` if
@@ -52,7 +54,10 @@ pub(crate) fn range_to_span(range: Range, document: &str, file_id: FileId) -> Sp
 
 /// Gives the LSP position right after the given span, skipping any trailing newlines
 pub(crate) fn position_after_span(span: Span, document: &str) -> Position {
-    let end = match (document.chars().nth(span.end - 2), document.chars().nth(span.end - 1)) {
+    let end = match (
+        document.chars().nth(span.end - 2),
+        document.chars().nth(span.end - 1),
+    ) {
         (Some('\r'), Some('\n')) => span.end - 2,
         (_, Some('\n')) => span.end - 1,
         _ => span.end,
@@ -95,22 +100,29 @@ fn offset_to_position_and_next_offset(
 #[allow(dead_code)]
 /// Converts the byte offset to the offset used in the LSP, which is the number of the UTF-16 code unit.
 pub(crate) fn offset_to_lsp_offset(offset: usize, document: &str) -> usize {
-    let (_, lsp_offset, _) = offset_to_position_and_next_offset(offset, document, Position::default(), 0, 0);
+    let (_, lsp_offset, _) =
+        offset_to_position_and_next_offset(offset, document, Position::default(), 0, 0);
     lsp_offset
 }
 
 /// Converts a byte offset to an LSP position, if the given offset
 /// does not overflow the document.
 fn offset_to_position(offset: usize, document: &str) -> Position {
-    let (position, _, _) = offset_to_position_and_next_offset(offset, document, Position::default(), 0, 0);
+    let (position, _, _) =
+        offset_to_position_and_next_offset(offset, document, Position::default(), 0, 0);
     position
 }
 
 fn span_to_range_and_lsp_offsets(span: Span, document: &str) -> (Range, (usize, usize)) {
     let (start_position, start_lsp_offset, next_offset) =
         offset_to_position_and_next_offset(span.start, document, Position::default(), 0, 0);
-    let (end_position, end_lsp_offset, _) =
-        offset_to_position_and_next_offset(span.end, document, start_position, start_lsp_offset, next_offset);
+    let (end_position, end_lsp_offset, _) = offset_to_position_and_next_offset(
+        span.end,
+        document,
+        start_position,
+        start_lsp_offset,
+        next_offset,
+    );
 
     (
         Range::new(start_position, end_position),
@@ -134,8 +146,10 @@ pub fn span_to_range(span: Span, document: &str) -> Range {
 
 #[cfg(test)]
 mod tests {
-    use lsp_types::{Position, Range};
-    use psl::diagnostics::{FileId, Span};
+    use lsp_types::Position;
+    use lsp_types::Range;
+    use psl::diagnostics::FileId;
+    use psl::diagnostics::Span;
 
     // On Windows, a newline is actually two characters.
     #[test]
@@ -143,7 +157,14 @@ mod tests {
         let schema = "\r\nmodel Test {\r\n    id Int @id\r\n}";
         // Let's put the cursor on the "i" in "id Int".
         let expected_offset = schema.bytes().position(|c| c == b'i').unwrap();
-        let found_offset = super::position_to_offset(&Position { line: 2, character: 4 }, schema).unwrap();
+        let found_offset = super::position_to_offset(
+            &Position {
+                line: 2,
+                character: 4,
+            },
+            schema,
+        )
+        .unwrap();
 
         assert_eq!(found_offset, expected_offset);
     }
@@ -181,7 +202,10 @@ mod tests {
         let schema = "// 🌐 ｍｕｌｔｉｂｙｔｅ\n😀@\n";
 
         let cursor_offset = schema.bytes().position(|c| c == b'@').unwrap();
-        let expected_position = Position { line: 1, character: 2 };
+        let expected_position = Position {
+            line: 1,
+            character: 2,
+        };
         let found_position = super::offset_to_position(cursor_offset, schema);
 
         assert_eq!(expected_position, found_position);
@@ -191,7 +215,14 @@ mod tests {
         let schema = "// 🌐 ｍｕｌｔｉｂｙｔｅ\n😀@\n";
 
         let expected_offset = schema.bytes().position(|c| c == b'@').unwrap();
-        let found_offset = super::position_to_offset(&Position { line: 1, character: 2 }, schema).unwrap();
+        let found_offset = super::position_to_offset(
+            &Position {
+                line: 1,
+                character: 2,
+            },
+            schema,
+        )
+        .unwrap();
 
         assert_eq!(expected_offset, found_offset);
     }
@@ -205,7 +236,16 @@ mod tests {
             schema.bytes().position(|c| c == b'$').unwrap(),
             FileId::ZERO,
         );
-        let expected_range = Range::new(Position { line: 1, character: 0 }, Position { line: 1, character: 3 });
+        let expected_range = Range::new(
+            Position {
+                line: 1,
+                character: 0,
+            },
+            Position {
+                line: 1,
+                character: 3,
+            },
+        );
         let found_range = super::span_to_range(span, schema);
 
         assert_eq!(expected_range, found_range);

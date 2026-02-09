@@ -1,6 +1,5 @@
-use crate::ast::{self};
-
 use super::WithName;
+use crate::ast::{self};
 
 #[derive(Debug)]
 pub enum PropertyPosition<'ast> {

@@ -105,7 +105,7 @@ pub fn print_datasource(config: &Configuration) {
 ///
 /// ```rust
 /// assert_eq!(pretty_provider("mysql"), "MySQL");
-///```
+/// ```
 pub fn pretty_provider(provider: &str) -> &'static str {
     match provider {
         "mysql" => "MySQL",

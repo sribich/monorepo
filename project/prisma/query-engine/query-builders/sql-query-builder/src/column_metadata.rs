@@ -1,4 +1,5 @@
-use query_structure::{FieldArity, TypeIdentifier};
+use query_structure::FieldArity;
+use query_structure::TypeIdentifier;
 
 /// Helps dealing with column value conversion and possible error resolution.
 #[derive(Clone, Debug, Copy)]
@@ -41,7 +42,10 @@ impl<'a> ColumnMetadata<'a> {
 
 /// Create a set of metadata objects, combining column names and type
 /// information.
-pub fn create<'a, T>(field_names: &'a [T], idents: &'a [(TypeIdentifier, FieldArity)]) -> Vec<ColumnMetadata<'a>>
+pub fn create<'a, T>(
+    field_names: &'a [T],
+    idents: &'a [(TypeIdentifier, FieldArity)],
+) -> Vec<ColumnMetadata<'a>>
 where
     T: AsRef<str>,
 {
@@ -50,7 +54,9 @@ where
     idents
         .iter()
         .zip(field_names.iter())
-        .map(|((identifier, arity), name)| ColumnMetadata::new(identifier, *arity).set_name(name.as_ref()))
+        .map(|((identifier, arity), name)| {
+            ColumnMetadata::new(identifier, *arity).set_name(name.as_ref())
+        })
         .collect()
 }
 

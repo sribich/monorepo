@@ -1,19 +1,26 @@
 pub(crate) mod index_fields;
 
-use crate::{
-    DatamodelError, ParserDatabase, context::Context, extension::ExtensionTypeId, interner::StringId,
-    walkers::IndexFieldWalker,
-};
+use std::fmt;
+
 use either::Either;
 use enumflags2::bitflags;
-use psl_ast::ast::{self, EnumValueId};
+use psl_ast::ast::EnumValueId;
+use psl_ast::ast::{self};
 use rustc_hash::FxHashMap as HashMap;
-use std::fmt;
+
+use crate::DatamodelError;
+use crate::ParserDatabase;
+use crate::context::Context;
+use crate::extension::ExtensionTypeId;
+use crate::interner::StringId;
+use crate::walkers::IndexFieldWalker;
 
 pub(super) fn resolve_types(ctx: &mut Context<'_>) {
     for ((file_id, top_id), top) in ctx.iter_tops() {
         match (top_id, top) {
-            (ast::TopId::Model(model_id), ast::Top::Model(model)) => visit_model((file_id, model_id), model, ctx),
+            (ast::TopId::Model(model_id), ast::Top::Model(model)) => {
+                visit_model((file_id, model_id), model, ctx)
+            }
             (ast::TopId::Enum(_), ast::Top::Enum(enm)) => visit_enum(enm, ctx),
             (_, ast::Top::Source(_)) | (_, ast::Top::Generator(_)) => (),
             _ => unreachable!(),
@@ -57,7 +64,9 @@ impl Types {
         &self,
         model_id: crate::ModelId,
     ) -> impl Iterator<Item = (ScalarFieldId, &ScalarField)> + Clone {
-        let start = self.scalar_fields.partition_point(|sf| sf.model_id < model_id);
+        let start = self
+            .scalar_fields
+            .partition_point(|sf| sf.model_id < model_id);
         self.scalar_fields[start..]
             .iter()
             .take_while(move |sf| sf.model_id == model_id)
@@ -65,11 +74,15 @@ impl Types {
             .map(move |(idx, sf)| (ScalarFieldId((start + idx) as u32), sf))
     }
 
-    pub(super) fn iter_relation_field_ids(&self) -> impl Iterator<Item = RelationFieldId> + 'static {
+    pub(super) fn iter_relation_field_ids(
+        &self,
+    ) -> impl Iterator<Item = RelationFieldId> + 'static {
         (0..self.relation_fields.len()).map(|idx| RelationFieldId(idx as u32))
     }
 
-    pub(super) fn iter_relation_fields(&self) -> impl Iterator<Item = (RelationFieldId, &RelationField)> {
+    pub(super) fn iter_relation_fields(
+        &self,
+    ) -> impl Iterator<Item = (RelationFieldId, &RelationField)> {
         self.relation_fields
             .iter()
             .enumerate()
@@ -80,7 +93,9 @@ impl Types {
         &self,
         model_id: crate::ModelId,
     ) -> impl Iterator<Item = ScalarFieldId> + Clone + use<> {
-        let end = self.scalar_fields.partition_point(|sf| sf.model_id <= model_id);
+        let end = self
+            .scalar_fields
+            .partition_point(|sf| sf.model_id <= model_id);
         let start = self.scalar_fields[..end].partition_point(|sf| sf.model_id < model_id);
         (start..end).map(|idx| ScalarFieldId(idx as u32))
     }
@@ -89,7 +104,9 @@ impl Types {
         &self,
         model_id: crate::ModelId,
     ) -> impl Iterator<Item = (RelationFieldId, &RelationField)> + Clone {
-        let first_relation_field_idx = self.relation_fields.partition_point(|rf| rf.model_id < model_id);
+        let first_relation_field_idx = self
+            .relation_fields
+            .partition_point(|rf| rf.model_id < model_id);
         self.relation_fields[first_relation_field_idx..]
             .iter()
             .take_while(move |rf| rf.model_id == model_id)
@@ -265,7 +282,10 @@ impl ScalarFieldType {
 
     /// Display the field type as it would appear in the Prisma schema.
     pub fn display<'a>(&'a self, db: &'a ParserDatabase) -> impl fmt::Display + 'a {
-        DisplayScalarFieldType { field_type: self, db }
+        DisplayScalarFieldType {
+            field_type: self,
+            db,
+        }
     }
 }
 
@@ -291,7 +311,11 @@ impl fmt::Display for DisplayScalarFieldType<'_> {
                 write!(f, "{}", self.db.interner.get(*name).unwrap())
             }
             ScalarFieldType::Unsupported(ut) => {
-                write!(f, "Unsupported(\"{}\")", self.db.interner.get(ut.name).unwrap())
+                write!(
+                    f,
+                    "Unsupported(\"{}\")",
+                    self.db.interner.get(ut.name).unwrap()
+                )
             }
         }
     }
@@ -342,7 +366,11 @@ pub(crate) struct RelationField {
 }
 
 impl RelationField {
-    fn new(model_id: crate::ModelId, field_id: ast::FieldId, referenced_model: crate::ModelId) -> Self {
+    fn new(
+        model_id: crate::ModelId,
+        field_id: ast::FieldId,
+        referenced_model: crate::ModelId,
+    ) -> Self {
         RelationField {
             model_id,
             field_id,
@@ -677,7 +705,10 @@ fn visit_model<'db>(model_id: crate::ModelId, ast_model: &'db ast::Model, ctx: &
                     })
                     .collect();
 
-                match top_names.iter().find(|&name| name.to_lowercase() == supported) {
+                match top_names
+                    .iter()
+                    .find(|&name| name.to_lowercase() == supported)
+                {
                     Some(ignore_case_match) => {
                         ctx.push_error(DatamodelError::new_type_for_case_not_found_error(
                             supported,
@@ -735,7 +766,9 @@ fn field_type<'db>(field: &'db ast::Field, ctx: &mut Context<'db>) -> Result<Fie
         .get(&supported_string_id)
         .map(|id| (id.0, id.1, &ctx.asts[*id]))
     {
-        Some((file_id, ast::TopId::Model(model_id), ast::Top::Model(_))) => Ok(FieldType::Model((file_id, model_id))),
+        Some((file_id, ast::TopId::Model(model_id), ast::Top::Model(_))) => {
+            Ok(FieldType::Model((file_id, model_id)))
+        }
         Some((file_id, ast::TopId::Enum(enum_id), ast::Top::Enum(_))) => {
             Ok(FieldType::Scalar(ScalarFieldType::Enum((file_id, enum_id))))
         }

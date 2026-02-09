@@ -1,5 +1,7 @@
-use crate::ast::{self, Span};
 use std::fmt;
+
+use crate::ast::Span;
+use crate::ast::{self};
 
 /// Represents arbitrary, even nested, expressions.
 #[derive(Debug, Clone)]
@@ -24,11 +26,19 @@ impl fmt::Display for Expression {
             Expression::StringValue(val, _) => write!(f, "{}", crate::string_literal(val)),
             Expression::ConstantValue(val, _) => fmt::Display::fmt(val, f),
             Expression::Function(fun, args, _) => {
-                let args = args.iter().map(ToString::to_string).collect::<Vec<_>>().join(",");
+                let args = args
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",");
                 write!(f, "{fun}({args})")
             }
             Expression::Array(vals, _) => {
-                let vals = vals.iter().map(ToString::to_string).collect::<Vec<_>>().join(",");
+                let vals = vals
+                    .iter()
+                    .map(ToString::to_string)
+                    .collect::<Vec<_>>()
+                    .join(",");
                 write!(f, "[{vals}]")
             }
         }

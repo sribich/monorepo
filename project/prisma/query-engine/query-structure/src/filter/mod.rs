@@ -105,7 +105,10 @@ impl Filter {
     }
 
     pub fn batched(self, chunk_size: usize) -> Vec<Filter> {
-        fn split_longest(mut filters: Vec<Filter>, chunk_size: usize) -> (Option<ScalarFilter>, Vec<Filter>) {
+        fn split_longest(
+            mut filters: Vec<Filter>,
+            chunk_size: usize,
+        ) -> (Option<ScalarFilter>, Vec<Filter>) {
             let mut longest: Option<ScalarFilter> = None;
             let mut other = Vec::with_capacity(filters.len());
 
@@ -152,7 +155,11 @@ impl Filter {
         }
 
         match self {
-            Self::Scalar(sf) => sf.batched(chunk_size).into_iter().map(Self::Scalar).collect(),
+            Self::Scalar(sf) => sf
+                .batched(chunk_size)
+                .into_iter()
+                .map(Self::Scalar)
+                .collect(),
             Self::And(filters) => batch(filters, chunk_size, Filter::And),
             Self::Or(filters) => batch(filters, chunk_size, Filter::Or),
             _ => vec![self],
@@ -190,11 +197,19 @@ impl Filter {
     }
 
     pub fn as_scalar(&self) -> Option<&ScalarFilter> {
-        if let Self::Scalar(v) = self { Some(v) } else { None }
+        if let Self::Scalar(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn into_scalar(self) -> Option<ScalarFilter> {
-        if let Self::Scalar(v) = self { Some(v) } else { None }
+        if let Self::Scalar(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -222,10 +237,14 @@ impl Filter {
         use AggregationFilter::*;
         use Filter::*;
         match self {
-            Not(branches) | Or(branches) | And(branches) => branches.iter().any(|filter| filter.has_relations()),
+            Not(branches) | Or(branches) | And(branches) => {
+                branches.iter().any(|filter| filter.has_relations())
+            }
             Scalar(..) | ScalarList(..) | BoolFilter(..) | Empty => false,
             Aggregation(filter) => match filter {
-                Average(filter) | Count(filter) | Sum(filter) | Min(filter) | Max(filter) => filter.has_relations(),
+                Average(filter) | Count(filter) | Sum(filter) | Min(filter) | Max(filter) => {
+                    filter.has_relations()
+                }
             },
             OneRelationIsNull(..) | Relation(..) => true,
         }

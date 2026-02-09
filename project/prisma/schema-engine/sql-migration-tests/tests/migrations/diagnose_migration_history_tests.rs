@@ -1,16 +1,26 @@
-use pretty_assertions::assert_eq;
-use schema_core::{
-    commands::{create_migration::CreateMigrationOutput, diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic}},
-    schema_api_without_extensions,
-};
-use sql_migration_tests::{test_api::*, utils::list_migrations};
 use std::io::Write;
-use user_facing_errors::{UserFacingError, schema_engine::ShadowDbCreationError};
+
+use pretty_assertions::assert_eq;
+use schema_core::commands::create_migration::CreateMigrationOutput;
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryOutput;
+use schema_core::commands::diagnose_migration_history::DriftDiagnostic;
+use schema_core::commands::diagnose_migration_history::HistoryDiagnostic;
+use schema_core::schema_api_without_extensions;
+use sql_migration_tests::test_api::*;
+use sql_migration_tests::utils::list_migrations;
+use user_facing_errors::UserFacingError;
+use user_facing_errors::schema_engine::ShadowDbCreationError;
 
 #[test_connector]
-fn diagnose_migrations_history_on_an_empty_database_without_migration_returns_nothing(api: TestApi) {
+fn diagnose_migrations_history_on_an_empty_database_without_migration_returns_nothing(
+    api: TestApi,
+) {
     let directory = api.create_migrations_directory();
-    let output = api.diagnose_migration_history(&directory).send_sync().into_output();
+    let output = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(output.is_empty());
 }
@@ -28,7 +38,8 @@ fn diagnose_migrations_history_after_two_migrations_happy_path(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -40,13 +51,17 @@ fn diagnose_migrations_history_after_two_migrations_happy_path(api: TestApi) {
     "#,
     );
 
-    api.create_migration("second-migration", &dm2, &directory).send_sync();
+    api.create_migration("second-migration", &dm2, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
         .assert_applied_migrations(&["initial", "second-migration"]);
 
-    let output = api.diagnose_migration_history(&directory).send_sync().into_output();
+    let output = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(output.is_empty());
 }
@@ -109,7 +124,9 @@ fn diagnose_migration_history_with_opt_in_to_shadow_database_calculates_drift(ap
 }
 
 #[test_connector]
-fn diagnose_migration_history_without_opt_in_to_shadow_database_does_not_calculate_drift(api: TestApi) {
+fn diagnose_migration_history_without_opt_in_to_shadow_database_does_not_calculate_drift(
+    api: TestApi,
+) {
     let directory = api.create_migrations_directory();
 
     let dm1 = api.datamodel_with_provider(
@@ -121,7 +138,8 @@ fn diagnose_migration_history_without_opt_in_to_shadow_database_does_not_calcula
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
@@ -144,7 +162,10 @@ fn diagnose_migration_history_without_opt_in_to_shadow_database_does_not_calcula
         edited_migration_names,
         has_migrations_table,
         error_in_unapplied_migration,
-    } = api.diagnose_migration_history(&directory).send_sync().into_output();
+    } = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(drift.is_none());
     assert!(history.is_none());
@@ -167,7 +188,8 @@ fn diagnose_migration_history_calculates_drift_in_presence_of_failed_migrations(
     "#,
     );
 
-    api.create_migration("01_initial", &dm1, &directory).send_sync();
+    api.create_migration("01_initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -193,7 +215,10 @@ fn diagnose_migration_history_calculates_drift_in_presence_of_failed_migrations(
         })
         .migration_script_path();
 
-    let err = api.apply_migrations(&directory).send_unwrap_err().to_string();
+    let err = api
+        .apply_migrations(&directory)
+        .send_unwrap_err()
+        .to_string();
     assert!(err.contains("yolo") || err.contains("YOLO"), "{}", err);
 
     std::fs::write(migration_two, original_migration.as_bytes()).unwrap();
@@ -235,7 +260,8 @@ fn diagnose_migrations_history_can_detect_when_the_database_is_behind(api: TestA
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
@@ -264,7 +290,10 @@ fn diagnose_migrations_history_can_detect_when_the_database_is_behind(api: TestA
         edited_migration_names,
         has_migrations_table,
         error_in_unapplied_migration,
-    } = api.diagnose_migration_history(&directory).send_sync().into_output();
+    } = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(drift.is_none());
     assert!(failed_migration_names.is_empty());
@@ -292,7 +321,8 @@ fn diagnose_migrations_history_can_detect_when_the_folder_is_behind(api: TestApi
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -332,7 +362,10 @@ fn diagnose_migrations_history_can_detect_when_the_folder_is_behind(api: TestApi
 
     assert!(failed_migration_names.is_empty());
     assert!(edited_migration_names.is_empty());
-    assert!(matches!(drift, Some(DriftDiagnostic::DriftDetected { summary: _ })));
+    assert!(matches!(
+        drift,
+        Some(DriftDiagnostic::DriftDetected { summary: _ })
+    ));
     assert_eq!(
         history,
         Some(HistoryDiagnostic::MigrationsDirectoryIsBehind {
@@ -418,7 +451,10 @@ fn diagnose_migrations_history_can_detect_when_history_diverges(api: TestApi) {
 
     assert!(failed_migration_names.is_empty());
     assert!(edited_migration_names.is_empty());
-    assert!(matches!(drift, Some(DriftDiagnostic::DriftDetected { summary: _ })));
+    assert!(matches!(
+        drift,
+        Some(DriftDiagnostic::DriftDetected { summary: _ })
+    ));
     assert_eq!(
         history,
         Some(HistoryDiagnostic::HistoriesDiverge {
@@ -445,7 +481,9 @@ fn diagnose_migrations_history_can_detect_edited_migrations(api: TestApi) {
     );
 
     let (initial_migration_output, initial_migration_path) = {
-        let initial_assertions = api.create_migration("initial", &dm1, &directory).send_sync();
+        let initial_assertions = api
+            .create_migration("initial", &dm1, &directory)
+            .send_sync();
         let path = initial_assertions.migration_script_path();
         (initial_assertions.into_output(), path)
     };
@@ -461,7 +499,8 @@ fn diagnose_migrations_history_can_detect_edited_migrations(api: TestApi) {
     "#,
     );
 
-    api.create_migration("second-migration", &dm2, &directory).send_sync();
+    api.create_migration("second-migration", &dm2, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
@@ -480,7 +519,10 @@ fn diagnose_migrations_history_can_detect_edited_migrations(api: TestApi) {
         failed_migration_names,
         has_migrations_table,
         error_in_unapplied_migration,
-    } = api.diagnose_migration_history(&directory).send_sync().into_output();
+    } = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(drift.is_none());
     assert!(history.is_none());
@@ -504,7 +546,9 @@ fn diagnose_migrations_history_reports_migrations_failing_to_apply_cleanly(api: 
     );
 
     let (initial_migration_name, initial_path) = {
-        let out = api.create_migration("initial", &dm1, &directory).send_sync();
+        let out = api
+            .create_migration("initial", &dm1, &directory)
+            .send_sync();
         let path = out.migration_script_path();
         (out.into_output().generated_migration_name, path)
     };
@@ -519,13 +563,17 @@ fn diagnose_migrations_history_reports_migrations_failing_to_apply_cleanly(api: 
     "#,
     );
 
-    api.create_migration("second-migration", &dm2, &directory).send_sync();
+    api.create_migration("second-migration", &dm2, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
         .assert_applied_migrations(&["initial", "second-migration"]);
 
-    let mut file = std::fs::OpenOptions::new().append(true).open(initial_path).unwrap();
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .open(initial_path)
+        .unwrap();
     file.write_all(b"SELECT YOLO;\n").unwrap();
 
     let DiagnoseMigrationHistoryOutput {
@@ -554,7 +602,10 @@ fn diagnose_migrations_history_reports_migrations_failing_to_apply_cleanly(api: 
                 known_error.error_code,
                 user_facing_errors::schema_engine::MigrationDoesNotApplyCleanly::ERROR_CODE
             );
-            assert_eq!(known_error.meta["migration_name"], initial_migration_name.as_str());
+            assert_eq!(
+                known_error.meta["migration_name"],
+                initial_migration_name.as_str()
+            );
             assert!(
                 known_error.message.contains("yolo")
                     || known_error.message.contains("YOLO")
@@ -578,7 +629,10 @@ fn diagnose_migrations_history_with_a_nonexistent_migrations_directory_works(api
         failed_migration_names,
         has_migrations_table,
         error_in_unapplied_migration,
-    } = api.diagnose_migration_history(&directory).send_sync().into_output();
+    } = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(drift.is_none());
     assert!(history.is_none());
@@ -667,7 +721,8 @@ fn dmh_with_an_invalid_unapplied_migration_should_report_it(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
@@ -746,7 +801,8 @@ fn drift_can_be_detected_without_migrations_table(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let DiagnoseMigrationHistoryOutput {
         drift,
@@ -761,7 +817,10 @@ fn drift_can_be_detected_without_migrations_table(api: TestApi) {
         .send_sync()
         .into_output();
 
-    assert!(matches!(drift, Some(DriftDiagnostic::DriftDetected { summary: _ })));
+    assert!(matches!(
+        drift,
+        Some(DriftDiagnostic::DriftDetected { summary: _ })
+    ));
     assert!(
         matches!(history, Some(HistoryDiagnostic::DatabaseIsBehind { unapplied_migration_names: migs }) if migs.len() == 1)
     );
@@ -783,7 +842,8 @@ fn shadow_database_creation_error_is_special_cased_mysql(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     api.raw_cmd(&format!(
         "
@@ -809,10 +869,12 @@ fn shadow_database_creation_error_is_special_cased_mysql(api: TestApi) {
     let migration_api = schema_api_without_extensions(Some(datamodel), None).unwrap();
     let migrations_list = list_migrations(&directory.keep()).unwrap();
 
-    let output = tok(migration_api.diagnose_migration_history(DiagnoseMigrationHistoryInput {
-        migrations_list,
-        opt_in_to_shadow_database: true,
-    }))
+    let output = tok(
+        migration_api.diagnose_migration_history(DiagnoseMigrationHistoryInput {
+            migrations_list,
+            opt_in_to_shadow_database: true,
+        }),
+    )
     .unwrap();
 
     assert!(
@@ -832,7 +894,8 @@ fn shadow_database_creation_error_is_special_cased_postgres(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     api.raw_cmd(
         "
@@ -1009,7 +1072,8 @@ fn default_dbgenerated_should_not_cause_drift(api: TestApi) {
     "#,
     );
 
-    api.create_migration("01init", &dm, &migrations_directory).send_sync();
+    api.create_migration("01init", &dm, &migrations_directory)
+        .send_sync();
 
     api.apply_migrations(&migrations_directory)
         .send_sync()
@@ -1037,7 +1101,8 @@ fn default_uuid_should_not_cause_drift(api: TestApi) {
     "#,
     );
 
-    api.create_migration("01init", &dm, &migrations_directory).send_sync();
+    api.create_migration("01init", &dm, &migrations_directory)
+        .send_sync();
 
     api.apply_migrations(&migrations_directory)
         .send_sync()

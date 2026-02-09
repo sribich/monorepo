@@ -1,17 +1,30 @@
-use schema_core::{
-    commands::{db_execute::{DbExecuteDatasourceType, DbExecuteParams}, diff::{DiffParams, DiffTarget}}, json_rpc::types::SchemasContainer, schema_connector::{ConnectorParams, SchemaConnector}
-};
+use std::fs;
+use std::io::Write as _;
+use std::path;
+use std::sync::Arc;
+
+use schema_core::commands::db_execute::DbExecuteDatasourceType;
+use schema_core::commands::db_execute::DbExecuteParams;
+use schema_core::commands::diff::DiffParams;
+use schema_core::commands::diff::DiffTarget;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector::ConnectorParams;
+use schema_core::schema_connector::SchemaConnector;
 use sql_migration_tests::test_api::*;
 use sql_schema_connector::SqlSchemaConnector;
-use std::{fs, io::Write as _, path, sync::Arc};
-use test_setup::{TestApiArgs, runtime::run_with_thread_local_runtime as tok};
+use test_setup::TestApiArgs;
+use test_setup::runtime::run_with_thread_local_runtime as tok;
 
 const TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/single_migration_tests");
 
 #[inline(never)] // we want to compile fast
 fn run_single_migration_test(test_file_path: &str, test_function_name: &'static str) {
     let file_path = path::Path::new(TESTS_ROOT).join(test_file_path);
-    let text: Arc<str> = Arc::from(std::fs::read_to_string(&file_path).unwrap().into_boxed_str());
+    let text: Arc<str> = Arc::from(
+        std::fs::read_to_string(&file_path)
+            .unwrap()
+            .into_boxed_str(),
+    );
     const EXPECTATION_TEXT: &str = "// Expected Migration:";
 
     // Find the beginning of expectation comment.
@@ -22,10 +35,15 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
             // look for the first EXPECTATION_TEXT
             .find_map(|(idx, _)| {
                 // ... if there's enough left of the file to look ahead
-                text.get(idx + 1..idx + EXPECTATION_TEXT.len() + 1).and_then(|t| {
-                    // ... and that text matches the delimiter
-                    if t == EXPECTATION_TEXT { Some(idx + 1) } else { None }
-                })
+                text.get(idx + 1..idx + EXPECTATION_TEXT.len() + 1)
+                    .and_then(|t| {
+                        // ... and that text matches the delimiter
+                        if t == EXPECTATION_TEXT {
+                            Some(idx + 1)
+                        } else {
+                            None
+                        }
+                    })
             })
     };
 
@@ -91,7 +109,8 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
     };
 
     let host = Arc::new(sql_migration_tests::test_api::TestConnectorHost::default());
-    let schema_engine = schema_core::schema_api_without_extensions(None, Some(host.clone())).unwrap();
+    let schema_engine =
+        schema_core::schema_api_without_extensions(None, Some(host.clone())).unwrap();
 
     tok(schema_engine.diff(DiffParams {
         exit_code: None,
@@ -110,11 +129,9 @@ fn run_single_migration_test(test_file_path: &str, test_function_name: &'static 
     let migration: String = host.printed_messages.lock().unwrap()[0].clone();
 
     tok(schema_engine.db_execute(DbExecuteParams {
-        datasource_type: DbExecuteDatasourceType::Url(
-            UrlContainer {
-                url: connection_string.clone(),
-            },
-        ),
+        datasource_type: DbExecuteDatasourceType::Url(UrlContainer {
+            url: connection_string.clone(),
+        }),
         script: migration.clone(),
     }))
     .unwrap(); // check that it runs

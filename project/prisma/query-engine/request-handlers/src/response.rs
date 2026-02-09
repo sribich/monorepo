@@ -1,8 +1,8 @@
 use indexmap::IndexMap;
-use query_core::{
-    CoreError,
-    response_ir::{Item, Map, ResponseData},
-};
+use query_core::CoreError;
+use query_core::response_ir::Item;
+use query_core::response_ir::Map;
+use query_core::response_ir::ResponseData;
 
 use crate::HandlerError;
 
@@ -39,7 +39,9 @@ pub struct GQLError {
 
 impl GQLError {
     pub fn code(&self) -> Option<&str> {
-        self.user_facing_error.as_known().map(|err| err.error_code.as_ref())
+        self.user_facing_error
+            .as_known()
+            .map(|err| err.error_code.as_ref())
     }
 
     pub fn message(&self) -> &str {

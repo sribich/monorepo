@@ -98,14 +98,21 @@ pub fn run_test(test: &mut TestData) {
 }
 
 // Recursively run schema steps.
-pub fn run_schema_step(api: &mut TestApi, test: &TestData, namespaces: Option<Namespaces>, step: &SchemaPush) {
+pub fn run_schema_step(
+    api: &mut TestApi,
+    test: &TestData,
+    namespaces: Option<Namespaces>,
+    step: &SchemaPush,
+) {
     match step {
         SchemaPush::PushAnd(first_or_second, next) => {
             let schema = match first_or_second {
                 WithSchema::First => test.schema.common.to_owned() + test.schema.first.as_str(),
                 WithSchema::Second => match &test.schema.second {
                     Some(base_second) => test.schema.common.to_owned() + base_second.as_str(),
-                    None => panic!("Trying to run PushTwiceWithSteps but without defining the second migration."),
+                    None => panic!(
+                        "Trying to run PushTwiceWithSteps but without defining the second migration."
+                    ),
                 },
             };
             api.schema_push(schema)
@@ -131,7 +138,9 @@ pub fn run_schema_step(api: &mut TestApi, test: &TestData, namespaces: Option<Na
                 WithSchema::First => test.schema.common.to_owned() + test.schema.first.as_str(),
                 WithSchema::Second => match &test.schema.second {
                     Some(base_second) => test.schema.common.to_owned() + base_second.as_str(),
-                    None => panic!("Trying to run PushCustomAnd but without defining the second migration."),
+                    None => panic!(
+                        "Trying to run PushCustomAnd but without defining the second migration."
+                    ),
                 },
             };
 

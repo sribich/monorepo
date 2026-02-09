@@ -1,6 +1,7 @@
 use prisma_value::PrismaValue;
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::{DefaultKind, DefaultValue};
+use sql_schema_describer::DefaultKind;
+use sql_schema_describer::DefaultValue;
 
 // MySQL 5.7 and MariaDB are skipped, because the datamodel parser gives us a
 // chrono DateTime, and we don't render that in the exact expected format.
@@ -29,7 +30,10 @@ fn datetime_defaults_work(api: TestApi) {
         table.assert_column("birthday", |col| col.assert_default(Some(expected_default)))
     });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mysql8), exclude(Vitess))]
@@ -50,7 +54,9 @@ fn binary_dbgenerated_defaults_should_work(api: TestApi) {
         table.assert_column("id", |col| col.assert_default(Some(def_val)))
     });
 
-    api.schema_push_w_datasource(schema).send().assert_no_steps();
+    api.schema_push_w_datasource(schema)
+        .send()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mysql), exclude(Mariadb))]
@@ -80,7 +86,10 @@ fn datetime_dbgenerated_defaults(api: TestApi) {
         })
     });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mariadb))]
@@ -110,7 +119,10 @@ fn datetime_dbgenerated_defaults_mariadb(api: TestApi) {
         })
     });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mariadb, Mysql8), exclude(Vitess))]
@@ -197,7 +209,8 @@ fn a_default_can_be_dropped(api: TestApi) {
     "#,
     );
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -208,13 +221,17 @@ fn a_default_can_be_dropped(api: TestApi) {
     "#,
     );
 
-    api.create_migration("second-migration", &dm2, &directory).send_sync();
+    api.create_migration("second-migration", &dm2, &directory)
+        .send_sync();
 
     api.apply_migrations(&directory)
         .send_sync()
         .assert_applied_migrations(&["initial", "second-migration"]);
 
-    let output = api.diagnose_migration_history(&directory).send_sync().into_output();
+    let output = api
+        .diagnose_migration_history(&directory)
+        .send_sync()
+        .into_output();
 
     assert!(output.is_empty());
 }
@@ -299,7 +316,9 @@ fn column_defaults_must_be_migrated(api: TestApi) {
 
     api.assert_schema().assert_table("Fruit", |table| {
         table.assert_column("name", |col| {
-            col.assert_default_kind(Some(DefaultKind::Value(PrismaValue::String("banana".to_string()))))
+            col.assert_default_kind(Some(DefaultKind::Value(PrismaValue::String(
+                "banana".to_string(),
+            ))))
         })
     });
 
@@ -314,7 +333,9 @@ fn column_defaults_must_be_migrated(api: TestApi) {
 
     api.assert_schema().assert_table("Fruit", |table| {
         table.assert_column("name", |col| {
-            col.assert_default_kind(Some(DefaultKind::Value(PrismaValue::String("mango".to_string()))))
+            col.assert_default_kind(Some(DefaultKind::Value(PrismaValue::String(
+                "mango".to_string(),
+            ))))
         })
     });
 }
@@ -353,7 +374,10 @@ fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
         .assert_no_steps();
 
     let sql_schema = api.assert_schema().into_schema();
-    let table_id = sql_schema.table_walker(&api.normalize_identifier("Fruit")).unwrap().id;
+    let table_id = sql_schema
+        .table_walker(&api.normalize_identifier("Fruit"))
+        .unwrap()
+        .id;
 
     assert_eq!(
         sql_schema
@@ -362,7 +386,9 @@ fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
             .unwrap()
             .default()
             .map(|d| d.inner()),
-        Some(&DefaultValue::value(PrismaValue::String("top\ndown".to_string())))
+        Some(&DefaultValue::value(PrismaValue::String(
+            "top\ndown".to_string()
+        )))
     );
     assert_eq!(
         sql_schema
@@ -371,7 +397,9 @@ fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
             .unwrap()
             .default()
             .map(|d| d.inner()),
-        Some(&DefaultValue::value(PrismaValue::String("'potassium'".to_string())))
+        Some(&DefaultValue::value(PrismaValue::String(
+            "'potassium'".to_string()
+        )))
     );
     assert_eq!(
         sql_schema
@@ -380,6 +408,8 @@ fn escaped_string_defaults_are_not_arbitrarily_migrated(api: TestApi) {
             .unwrap()
             .default()
             .map(|d| d.inner()),
-        Some(&DefaultValue::value(PrismaValue::String(r#""summer""#.to_string())))
+        Some(&DefaultValue::value(PrismaValue::String(
+            r#""summer""#.to_string()
+        )))
     );
 }

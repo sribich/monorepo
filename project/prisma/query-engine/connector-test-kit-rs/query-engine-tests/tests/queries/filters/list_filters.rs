@@ -1248,7 +1248,12 @@ mod enum_lists {
     }
 }
 
-async fn list_query(runner: &Runner, field: &str, operation: &str, comparator: &str) -> TestResult<String> {
+async fn list_query(
+    runner: &Runner,
+    field: &str,
+    operation: &str,
+    comparator: &str,
+) -> TestResult<String> {
     let res = run_query!(
         runner,
         format!(
@@ -1266,7 +1271,12 @@ async fn list_query(runner: &Runner, field: &str, operation: &str, comparator: &
     Ok(res)
 }
 
-async fn not_list_query(runner: &Runner, field: &str, operation: &str, comparator: &str) -> TestResult<String> {
+async fn not_list_query(
+    runner: &Runner,
+    field: &str,
+    operation: &str,
+    comparator: &str,
+) -> TestResult<String> {
     let res = run_query!(
         runner,
         format!(

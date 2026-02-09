@@ -1,11 +1,12 @@
 use std::future::Future;
 
-use query_core::{TransactionOptions, protocol::EngineProtocol};
+use query_core::TransactionOptions;
+use query_core::protocol::EngineProtocol;
 
-use super::{
-    client::{ExecutionEngine, InternalClient, PrismaClient},
-    query::QueryError,
-};
+use super::client::ExecutionEngine;
+use super::client::InternalClient;
+use super::client::PrismaClient;
+use super::query::QueryError;
 
 pub struct TransactionBuilder<'client, TClient> {
     client: &'client TClient,
@@ -68,14 +69,14 @@ impl<'client, TClient: PrismaClient> TransactionBuilder<'client, TClient> {
                             .map_err(|e| QueryError::Execute(e.into()))?;
 
                         result
-                    },
+                    }
                     err @ Err(_) => {
                         context.executor.rollback_tx(new_tx_id).await.ok();
 
                         err
-                    },
+                    }
                 }
-            },
+            }
             // _ => tx(self.client.with_tx_id(None)).await,
         }
     }

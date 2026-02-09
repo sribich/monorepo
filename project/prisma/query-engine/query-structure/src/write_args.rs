@@ -1,9 +1,18 @@
-use crate::{
-    Field, Filter, Model, ModelProjection, PrismaValue, ScalarFieldRef, SelectedField,
-    SelectionResult,
-};
-use indexmap::{IndexMap, map::Keys};
-use std::{borrow::Borrow, convert::TryInto, ops::Deref};
+use std::borrow::Borrow;
+use std::convert::TryInto;
+use std::ops::Deref;
+
+use indexmap::IndexMap;
+use indexmap::map::Keys;
+
+use crate::Field;
+use crate::Filter;
+use crate::Model;
+use crate::ModelProjection;
+use crate::PrismaValue;
+use crate::ScalarFieldRef;
+use crate::SelectedField;
+use crate::SelectionResult;
 
 /// WriteArgs represent data to be written to an underlying data source.
 #[derive(Debug, PartialEq, Clone)]
@@ -71,11 +80,19 @@ impl WriteOperation {
     }
 
     pub fn as_scalar(&self) -> Option<&ScalarWriteOperation> {
-        if let Self::Scalar(v) = self { Some(v) } else { None }
+        if let Self::Scalar(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn try_into_scalar(self) -> Option<ScalarWriteOperation> {
-        if let Self::Scalar(v) = self { Some(v) } else { None }
+        if let Self::Scalar(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
 
@@ -205,7 +222,10 @@ impl TryInto<PrismaValue> for WriteOperation {
 pub struct UnexpectedWriteOperation(pub WriteOperation);
 
 impl WriteArgs {
-    pub fn new(args: IndexMap<DatasourceFieldName, WriteOperation>, request_now: PrismaValue) -> Self {
+    pub fn new(
+        args: IndexMap<DatasourceFieldName, WriteOperation>,
+        request_now: PrismaValue,
+    ) -> Self {
         Self { args, request_now }
     }
 
@@ -261,7 +281,8 @@ impl WriteArgs {
 
         for f in updated_at_fields {
             if self.args.get(f.db_name()).is_none() {
-                self.args.insert((&f).into(), WriteOperation::scalar_set(value.clone()));
+                self.args
+                    .insert((&f).into(), WriteOperation::scalar_set(value.clone()));
             }
         }
     }
@@ -272,7 +293,10 @@ impl WriteArgs {
         }
     }
 
-    pub fn as_selection_result(&self, model_projection: ModelProjection) -> Option<SelectionResult> {
+    pub fn as_selection_result(
+        &self,
+        model_projection: ModelProjection,
+    ) -> Option<SelectionResult> {
         let pairs: Vec<_> = model_projection
             .scalar_fields()
             .map(|field| {
@@ -323,7 +347,10 @@ pub fn pick_args(projection: &ModelProjection, args: &WriteArgs) -> WriteArgs {
 }
 
 /// Merges the incoming write argument values into the given, already loaded, ids. Overwrites existing values.
-pub fn merge_write_args(loaded_ids: Vec<SelectionResult>, incoming_args: WriteArgs) -> Vec<SelectionResult> {
+pub fn merge_write_args(
+    loaded_ids: Vec<SelectionResult>,
+    incoming_args: WriteArgs,
+) -> Vec<SelectionResult> {
     if loaded_ids.is_empty() || incoming_args.is_empty() {
         return loaded_ids;
     }
@@ -335,7 +362,11 @@ pub fn merge_write_args(loaded_ids: Vec<SelectionResult>, incoming_args: WriteAr
         .pairs
         .iter()
         .enumerate()
-        .filter_map(|(i, (selection, _))| incoming_args.get_field_value(&selection.db_name()).map(|val| (i, val)))
+        .filter_map(|(i, (selection, _))| {
+            incoming_args
+                .get_field_value(&selection.db_name())
+                .map(|val| (i, val))
+        })
         .collect();
 
     loaded_ids
@@ -343,7 +374,8 @@ pub fn merge_write_args(loaded_ids: Vec<SelectionResult>, incoming_args: WriteAr
         .map(|mut id| {
             for (position, write_op) in positions.iter() {
                 let current_val = id.pairs[*position].1.clone();
-                id.pairs[*position].1 = apply_expression(current_val, (*write_op.as_scalar().unwrap()).clone());
+                id.pairs[*position].1 =
+                    apply_expression(current_val, (*write_op.as_scalar().unwrap()).clone());
             }
 
             id

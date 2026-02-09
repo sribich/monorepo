@@ -1,11 +1,17 @@
 use std::collections::HashMap;
 
-use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand, Diagnostic, Range, TextEdit, Url, WorkspaceEdit};
-use psl::{
-    diagnostics::Span,
-    parser_database::walkers::ModelWalker,
-    psl_ast::ast::{NewlineType, WithSpan},
-};
+use lsp_types::CodeAction;
+use lsp_types::CodeActionKind;
+use lsp_types::CodeActionOrCommand;
+use lsp_types::Diagnostic;
+use lsp_types::Range;
+use lsp_types::TextEdit;
+use lsp_types::Url;
+use lsp_types::WorkspaceEdit;
+use psl::diagnostics::Span;
+use psl::parser_database::walkers::ModelWalker;
+use psl::psl_ast::ast::NewlineType;
+use psl::psl_ast::ast::WithSpan;
 
 use super::CodeActionsContext;
 
@@ -15,8 +21,10 @@ pub(super) fn create_missing_block_for_model(
     model: ModelWalker<'_>,
 ) {
     let span_model = model.ast_model().span();
-    let diagnostics = context
-        .diagnostics_for_span_with_message(span_model, "is neither a built-in type, nor refers to another model,");
+    let diagnostics = context.diagnostics_for_span_with_message(
+        span_model,
+        "is neither a built-in type, nor refers to another model,",
+    );
 
     if diagnostics.is_empty() {
         return;

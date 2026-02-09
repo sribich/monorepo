@@ -1,4 +1,5 @@
-use unicode_properties::{GeneralCategory, UnicodeGeneralCategory};
+use unicode_properties::GeneralCategory;
+use unicode_properties::UnicodeGeneralCategory;
 
 use super::reserved::RESERVED_KEYWORDS;
 

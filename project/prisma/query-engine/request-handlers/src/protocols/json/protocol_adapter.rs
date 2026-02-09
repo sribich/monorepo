@@ -1,14 +1,27 @@
-use crate::{FieldQuery, HandlerError, JsonSingleQuery, SelectionSet};
-use bigdecimal::{BigDecimal, FromPrimitive};
-use indexmap::IndexMap;
-use query_core::{
-    ArgumentValue, Operation, Selection,
-    constants::custom_types,
-    schema::{ObjectType, OutputField, QuerySchema},
-};
-use query_structure::{Field, PrismaValue, PrismaValueType, decode_bytes, parse_datetime, prelude::ParentContainer};
-use serde_json::Value as JsonValue;
 use std::str::FromStr;
+
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use indexmap::IndexMap;
+use query_core::ArgumentValue;
+use query_core::Operation;
+use query_core::Selection;
+use query_core::constants::custom_types;
+use query_core::schema::ObjectType;
+use query_core::schema::OutputField;
+use query_core::schema::QuerySchema;
+use query_structure::Field;
+use query_structure::PrismaValue;
+use query_structure::PrismaValueType;
+use query_structure::decode_bytes;
+use query_structure::parse_datetime;
+use query_structure::prelude::ParentContainer;
+use serde_json::Value as JsonValue;
+
+use crate::FieldQuery;
+use crate::HandlerError;
+use crate::JsonSingleQuery;
+use crate::SelectionSet;
 
 enum OperationType {
     Read,
@@ -68,7 +81,9 @@ impl<'a> JsonProtocolAdapter<'a> {
         for (selection_name, selected) in query_selection.into_selection() {
             match selected {
                 // $scalars: true
-                crate::SelectionSetValue::Shorthand(true) if SelectionSet::is_all_scalars(&selection_name) => {
+                crate::SelectionSetValue::Shorthand(true)
+                    if SelectionSet::is_all_scalars(&selection_name) =>
+                {
                     if let Some(schema_object) = field.field_type().as_object_type() {
                         Self::default_scalar_selection(schema_object, &mut selection);
                     }
@@ -93,7 +108,8 @@ impl<'a> JsonProtocolAdapter<'a> {
                             .as_object_type()
                             .and_then(|t| t.find_field(&selection_name))
                         {
-                            let field = container.and_then(|container| container.find_field(schema_field.name()));
+                            let field = container
+                                .and_then(|container| container.find_field(schema_field.name()));
                             let nested_container = field.map(|f| f.related_container());
 
                             selection.push_nested_selection(self.convert_selection(
@@ -120,7 +136,9 @@ impl<'a> JsonProtocolAdapter<'a> {
         Ok(selection)
     }
 
-    fn convert_arguments(args: IndexMap<String, JsonValue>) -> crate::Result<Vec<(String, ArgumentValue)>> {
+    fn convert_arguments(
+        args: IndexMap<String, JsonValue>,
+    ) -> crate::Result<Vec<(String, ArgumentValue)>> {
         let mut res = vec![];
 
         for (name, value) in args {
@@ -133,13 +151,17 @@ impl<'a> JsonProtocolAdapter<'a> {
     }
 
     fn convert_argument(value: JsonValue) -> crate::Result<ArgumentValue> {
-        let err_message = format!("Could not convert argument value {:?} to ArgumentValue.", &value);
+        let err_message = format!(
+            "Could not convert argument value {:?} to ArgumentValue.",
+            &value
+        );
         let build_err = || HandlerError::query_conversion(err_message.clone());
 
         match value {
             serde_json::Value::String(s) => Ok(ArgumentValue::string(s)),
             serde_json::Value::Array(v) => {
-                let vals: crate::Result<Vec<ArgumentValue>> = v.into_iter().map(Self::convert_argument).collect();
+                let vals: crate::Result<Vec<ArgumentValue>> =
+                    v.into_iter().map(Self::convert_argument).collect();
 
                 Ok(ArgumentValue::List(vals?))
             }
@@ -155,7 +177,11 @@ impl<'a> JsonProtocolAdapter<'a> {
                     Ok(ArgumentValue::float(dec))
                 }
             }
-            serde_json::Value::Object(mut obj) => match obj.get(custom_types::TYPE).as_ref().and_then(|s| s.as_str()) {
+            serde_json::Value::Object(mut obj) => match obj
+                .get(custom_types::TYPE)
+                .as_ref()
+                .and_then(|s| s.as_str())
+            {
                 Some(custom_types::DATETIME) => {
                     let value = obj
                         .get(custom_types::VALUE)
@@ -171,7 +197,9 @@ impl<'a> JsonProtocolAdapter<'a> {
                         .and_then(|v| v.as_str())
                         .ok_or_else(build_err)?;
 
-                    i64::from_str(value).map(ArgumentValue::bigint).map_err(|_| build_err())
+                    i64::from_str(value)
+                        .map(ArgumentValue::bigint)
+                        .map_err(|_| build_err())
                 }
                 Some(custom_types::DECIMAL) => {
                     let value = obj
@@ -194,7 +222,9 @@ impl<'a> JsonProtocolAdapter<'a> {
                         .and_then(|v| v.as_str())
                         .ok_or_else(build_err)?;
 
-                    decode_bytes(value).map(ArgumentValue::bytes).map_err(|_| build_err())
+                    decode_bytes(value)
+                        .map(ArgumentValue::bytes)
+                        .map_err(|_| build_err())
                 }
                 Some(custom_types::JSON) => {
                     let value = obj
@@ -332,7 +362,11 @@ impl<'a> JsonProtocolAdapter<'a> {
         )))
     }
 
-    fn get_output_field<'b>(&mut self, ty: &'b ObjectType<'a>, name: &str) -> Option<&'b OutputField<'a>> {
+    fn get_output_field<'b>(
+        &mut self,
+        ty: &'b ObjectType<'a>,
+        name: &str,
+    ) -> Option<&'b OutputField<'a>> {
         ty.find_field(name)
     }
 }
@@ -340,10 +374,12 @@ impl<'a> JsonProtocolAdapter<'a> {
 #[cfg(test)]
 #[allow(clippy::needless_raw_string_hashes)]
 mod tests {
-    use super::*;
+    use std::sync::Arc;
+
     use insta::assert_debug_snapshot;
     use query_core::schema;
-    use std::sync::Arc;
+
+    use super::*;
 
     fn schema() -> schema::QuerySchema {
         let schema_str = r#"
@@ -398,7 +434,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Read(
@@ -445,7 +483,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Read(
@@ -482,7 +522,9 @@ mod tests {
         }"#,
         )
         .unwrap();
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
         assert_debug_snapshot!(operation, @r###"
         Read(
             Selection {
@@ -535,7 +577,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Read(
@@ -601,7 +645,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Read(
@@ -675,7 +721,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Write(
@@ -707,7 +755,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation, @r###"
         Write(
@@ -858,7 +908,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments()[0].1, @r###"
         Object(
@@ -894,7 +946,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments(), @r###"
         [
@@ -939,7 +993,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments()[0].1, @r###"
         Object(
@@ -974,7 +1030,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments()[0].1, @r###"
         Object(
@@ -1014,7 +1072,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments()[0].1, @r###"
         Object(
@@ -1049,7 +1109,9 @@ mod tests {
         )
         .unwrap();
 
-        let operation = JsonProtocolAdapter::new(&schema()).convert_single(query).unwrap();
+        let operation = JsonProtocolAdapter::new(&schema())
+            .convert_single(query)
+            .unwrap();
 
         assert_debug_snapshot!(operation.arguments()[0].1, @r###"
         Object(

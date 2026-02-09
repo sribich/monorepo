@@ -1,9 +1,9 @@
 #![deny(missing_docs)]
 
-use std::{
-    error::Error,
-    fmt::{self, Display},
-};
+use std::error::Error;
+use std::fmt::Display;
+use std::fmt::{self};
+
 use tracing_error::SpanTrace;
 
 /// The result type.

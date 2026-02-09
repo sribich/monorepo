@@ -1,6 +1,7 @@
 use barrel::types;
 use indoc::indoc;
-use sql_introspection_tests::{TestResult, test_api::*};
+use sql_introspection_tests::TestResult;
+use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
 #[test_connector(exclude(Postgres))]

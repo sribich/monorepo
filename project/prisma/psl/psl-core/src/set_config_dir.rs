@@ -1,9 +1,15 @@
+use std::borrow::Cow;
+use std::collections::BTreeMap;
+
 use connection_string::JdbcString;
-use std::{borrow::Cow, collections::BTreeMap};
 
 use crate::datamodel_connector::Flavour;
 
-pub fn set_config_dir<'a>(flavour: Flavour, config_dir: &std::path::Path, url: &'a str) -> Cow<'a, str> {
+pub fn set_config_dir<'a>(
+    flavour: Flavour,
+    config_dir: &std::path::Path,
+    url: &'a str,
+) -> Cow<'a, str> {
     match flavour {
         Flavour::Sqlite => set_config_dir_sqlite(config_dir, url),
         _ => set_config_dir_default(config_dir, url),
@@ -15,7 +21,13 @@ fn set_config_dir_default<'a>(config_dir: &std::path::Path, url: &'a str) -> Cow
         let path = std::path::Path::new(path);
 
         if path.is_relative() {
-            Some(config_dir.join(path).to_str().map(ToString::to_string).unwrap())
+            Some(
+                config_dir
+                    .join(path)
+                    .to_str()
+                    .map(ToString::to_string)
+                    .unwrap(),
+            )
         } else {
             None
         }
@@ -26,7 +38,10 @@ fn set_config_dir_default<'a>(config_dir: &std::path::Path, url: &'a str) -> Cow
         Err(_) => return Cow::from(url), // bail
     };
 
-    let mut params: BTreeMap<String, String> = url.query_pairs().map(|(k, v)| (k.to_string(), v.to_string())).collect();
+    let mut params: BTreeMap<String, String> = url
+        .query_pairs()
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
 
     url.query_pairs_mut().clear();
 
@@ -36,7 +51,11 @@ fn set_config_dir_default<'a>(config_dir: &std::path::Path, url: &'a str) -> Cow
     }
 
     // Only for PostgreSQL + MySQL
-    if let Some(path) = params.get("sslidentity").map(|s| s.as_str()).and_then(set_root) {
+    if let Some(path) = params
+        .get("sslidentity")
+        .map(|s| s.as_str())
+        .and_then(set_root)
+    {
         params.insert("sslidentity".into(), path);
     }
 
@@ -52,7 +71,13 @@ pub fn set_config_dir_sqlite<'a>(config_dir: &std::path::Path, url: &'a str) -> 
         let path = std::path::Path::new(path);
 
         if path.is_relative() {
-            Some(config_dir.join(path).to_str().map(ToString::to_string).unwrap())
+            Some(
+                config_dir
+                    .join(path)
+                    .to_str()
+                    .map(ToString::to_string)
+                    .unwrap(),
+            )
         } else {
             None
         }

@@ -1,19 +1,22 @@
-use std::{
-    fmt,
-    sync::{
-        LazyLock,
-        atomic::{AtomicU32, Ordering},
-    },
-};
+use std::fmt;
+use std::sync::LazyLock;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
 
 use chrono::Local;
 
 use super::*;
-use crate::{IrSerializer, query_document::*, query_graph::*, schema::*};
+use crate::IrSerializer;
+use crate::query_document::*;
+use crate::query_graph::*;
+use crate::schema::*;
 
 static PRISMA_DOT_PATH: LazyLock<Option<String>> = LazyLock::new(|| {
     // Query graphs are saved only if `PRISMA_RENDER_DOT_FILE` env variable is set.
-    if !matches!(std::env::var("PRISMA_RENDER_DOT_FILE").as_deref(), Ok("true") | Ok("1")) {
+    if !matches!(
+        std::env::var("PRISMA_RENDER_DOT_FILE").as_deref(),
+        Ok("true") | Ok("1")
+    ) {
         return None;
     }
     // If `WORKSPACE_ROOT` env variable is defined, we save query graphs there. This ensures that
@@ -56,15 +59,22 @@ impl<'a> QueryGraphBuilder<'a> {
     }
 
     /// Maps an operation to a query.
-    pub fn build(self, operation: Operation) -> QueryGraphBuilderResult<(QueryGraph, IrSerializer<'a>)> {
+    pub fn build(
+        self,
+        operation: Operation,
+    ) -> QueryGraphBuilderResult<(QueryGraph, IrSerializer<'a>)> {
         let _span = info_span!("prisma:engine:build_graph");
         match operation {
-            Operation::Read(selection) => self.build_internal(selection, self.query_schema.query(), &|name| {
-                self.query_schema.find_query_field(name)
-            }),
-            Operation::Write(selection) => self.build_internal(selection, self.query_schema.mutation(), &|name| {
-                self.query_schema.find_mutation_field(name)
-            }),
+            Operation::Read(selection) => {
+                self.build_internal(selection, self.query_schema.query(), &|name| {
+                    self.query_schema.find_query_field(name)
+                })
+            }
+            Operation::Write(selection) => {
+                self.build_internal(selection, self.query_schema.mutation(), &|name| {
+                    self.query_schema.find_mutation_field(name)
+                })
+            }
         }
     }
 
@@ -80,11 +90,18 @@ impl<'a> QueryGraphBuilder<'a> {
         } else {
             QueryDocumentParser::without_eager_default_evaluation()
         };
-        let mut parsed_object = parser.parse(&selections, None, &root_object, root_object_fields, self.query_schema)?;
+        let mut parsed_object = parser.parse(
+            &selections,
+            None,
+            &root_object,
+            root_object_fields,
+            self.query_schema,
+        )?;
 
         // Because we're processing root objects, there can only be one query / mutation.
         let field_pair = parsed_object.fields.pop().unwrap();
-        let serializer = Self::derive_serializer(&selections.pop().unwrap(), field_pair.schema_field.clone());
+        let serializer =
+            Self::derive_serializer(&selections.pop().unwrap(), field_pair.schema_field.clone());
 
         if field_pair.schema_field.query_info().is_some() {
             let graph = self.dispatch_build(field_pair)?;

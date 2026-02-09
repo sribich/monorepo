@@ -228,7 +228,7 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
             Err(mut error) => {
                 let context = context(&mut error);
                 Err(context.into_error(error))
-            },
+            }
         }
     }
 

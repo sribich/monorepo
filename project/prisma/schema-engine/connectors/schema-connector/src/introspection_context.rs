@@ -1,7 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::path::PathBuf;
 
 use enumflags2::BitFlags;
-use psl::{Datasource, PreviewFeature};
+use psl::Datasource;
+use psl::PreviewFeature;
 use quaint::prelude::SqlFamily;
 
 const INTROSPECTION_FILE_NAME: &str = "introspected.prisma";
@@ -41,13 +43,17 @@ impl IntrospectionContext {
         let mut config_blocks = String::new();
 
         for source in previous_schema.db.datasources() {
-            config_blocks.push_str(&previous_schema.db.source(source.span.file_id)[source.span.start..source.span.end]);
+            config_blocks.push_str(
+                &previous_schema.db.source(source.span.file_id)[source.span.start..source.span.end],
+            );
             config_blocks.push('\n');
         }
 
         for generator in previous_schema.db.generators() {
-            config_blocks
-                .push_str(&previous_schema.db.source(generator.span.file_id)[generator.span.start..generator.span.end]);
+            config_blocks.push_str(
+                &previous_schema.db.source(generator.span.file_id)
+                    [generator.span.start..generator.span.end],
+            );
             config_blocks.push('\n');
         }
 
@@ -70,7 +76,11 @@ impl IntrospectionContext {
 
     /// The datasource block of the previous PSL file.
     pub fn datasource(&self) -> &Datasource {
-        self.previous_schema.configuration.datasources.first().unwrap()
+        self.previous_schema
+            .configuration
+            .datasources
+            .first()
+            .unwrap()
     }
 
     /// True if relations are enforced with database foreign keys.
@@ -107,7 +117,10 @@ impl IntrospectionContext {
             "sqlite" => SqlFamily::Sqlite,
             #[cfg(feature = "mysql")]
             "mysql" => SqlFamily::Mysql,
-            name => unreachable!("The name `{}` for the datamodel connector is not known", name),
+            name => unreachable!(
+                "The name `{}` for the datamodel connector is not known",
+                name
+            ),
         }
     }
 

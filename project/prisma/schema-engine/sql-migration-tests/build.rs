@@ -1,4 +1,7 @@
-use std::{env, fs, io::Write as _, path};
+use std::env;
+use std::fs;
+use std::io::Write as _;
+use std::path;
 
 const ROOT_DIR: &str = "tests/single_migration_tests";
 
@@ -13,7 +16,9 @@ fn main() {
     let mut out_file = fs::File::create(out_file_path).unwrap();
 
     for schema_path in &all_schemas {
-        let test_name = schema_path.trim_start_matches('/').trim_end_matches(".prisma");
+        let test_name = schema_path
+            .trim_start_matches('/')
+            .trim_end_matches(".prisma");
         let test_name = test_name.replace(['/', '\\'], "_");
         let file_path = schema_path.trim_start_matches('/');
         writeln!(

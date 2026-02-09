@@ -1,12 +1,15 @@
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
+use sql_migration_tests::test_api::*;
+use sql_schema_describer::DefaultValue;
 use url::Url;
 
 use crate::migrations::multi_schema::*;
-use sql_migration_tests::test_api::*;
-use sql_schema_describer::DefaultValue;
 
 #[test_connector(tags(Postgres), namespaces("one", "public"))]
-fn apply_migrations_with_multiple_schemas_where_one_is_search_path_with_a_foreign_key(api: TestApi) {
+fn apply_migrations_with_multiple_schemas_where_one_is_search_path_with_a_foreign_key(
+    api: TestApi,
+) {
     let datasource = api.datasource_block_with(&[("schemas", r#"["one", "public"]"#)]);
     let generator = api.generator_block();
 
@@ -39,7 +42,9 @@ fn apply_migrations_with_multiple_schemas_where_one_is_search_path_with_a_foreig
         .send_sync()
         .assert_applied_migrations(&["init"]);
 
-    api.apply_migrations(&dir).send_sync().assert_applied_migrations(&[]);
+    api.apply_migrations(&dir)
+        .send_sync()
+        .assert_applied_migrations(&[]);
 }
 
 // This is the only "top" level test in this module. It defines a list of tests and executes them.
@@ -397,7 +402,9 @@ fn multi_schema_tests(_api: TestApi) {
                 assert
                     .assert_has_table_with_ns("one", "First")
                     .assert_table_with_ns("two", "Second", |table| {
-                        table.assert_column("name", |column| column.assert_is_required().assert_type_is_string())
+                        table.assert_column("name", |column| {
+                            column.assert_is_required().assert_type_is_string()
+                        })
                     });
             }),
             skip: None,
@@ -439,7 +446,9 @@ fn multi_schema_tests(_api: TestApi) {
                 assert
                     .assert_has_table_with_ns("one", "First")
                     .assert_table_with_ns("two", "Second", |table| {
-                        table.assert_pk(|pk| pk.assert_column("new_id_name", |col| col.assert_no_length_prefix()))
+                        table.assert_pk(|pk| {
+                            pk.assert_column("new_id_name", |col| col.assert_no_length_prefix())
+                        })
                     });
             }),
             skip: None,
@@ -924,7 +933,9 @@ fn multi_schema_tests(_api: TestApi) {
                 assert
                     .assert_has_table_with_ns("one", "First")
                     .assert_table_with_ns("two", "Second", |table| {
-                        table.assert_fk_on_columns(&["first_id"], |fk| fk.assert_references("First", &["id"]))
+                        table.assert_fk_on_columns(&["first_id"], |fk| {
+                            fk.assert_references("First", &["id"])
+                        })
                     });
             }),
             skip: None,
@@ -973,8 +984,12 @@ fn multi_schema_tests(_api: TestApi) {
             ),
             assertion: Box::new(|assert| {
                 assert
-                    .assert_table_with_ns("one", "First", |table| table.assert_foreign_keys_count(0))
-                    .assert_table_with_ns("two", "Second", |table| table.assert_foreign_keys_count(0));
+                    .assert_table_with_ns("one", "First", |table| {
+                        table.assert_foreign_keys_count(0)
+                    })
+                    .assert_table_with_ns("two", "Second", |table| {
+                        table.assert_foreign_keys_count(0)
+                    });
             }),
             skip: None,
         },
@@ -1034,7 +1049,9 @@ fn multi_schema_tests(_api: TestApi) {
                 assert
                     .assert_has_table_with_ns("one", "First")
                     .assert_table_with_ns("two", "Second", |table| {
-                        table.assert_fk_on_columns(&["first_id"], |fk| fk.assert_references("First", &["id"]))
+                        table.assert_fk_on_columns(&["first_id"], |fk| {
+                            fk.assert_references("First", &["id"])
+                        })
                     });
             }),
             skip: None,
@@ -1085,7 +1102,9 @@ fn multi_schema_tests(_api: TestApi) {
             assertion: Box::new(|assert| {
                 assert
                     .assert_has_table_with_ns("one", "First")
-                    .assert_table_with_ns("two", "Second", |table| table.assert_fk_with_name("new_name"));
+                    .assert_table_with_ns("two", "Second", |table| {
+                        table.assert_fk_with_name("new_name")
+                    });
             }),
             skip: None,
         },
@@ -1148,9 +1167,13 @@ fn multi_schema_tests(_api: TestApi) {
                     .assert_has_table_with_ns("one", "First")
                     .assert_has_table_with_ns("two", "Second")
                     .assert_table_with_ns("two", "Third", |table| {
-                        table.assert_fk_on_columns(&["first_id"], |fk| fk.assert_references("First", &["id"]));
+                        table.assert_fk_on_columns(&["first_id"], |fk| {
+                            fk.assert_references("First", &["id"])
+                        });
 
-                        table.assert_fk_on_columns(&["second_id"], |fk| fk.assert_references("Second", &["id"]))
+                        table.assert_fk_on_columns(&["second_id"], |fk| {
+                            fk.assert_references("Second", &["id"])
+                        })
                     });
             }),
             skip: None,
@@ -1203,9 +1226,13 @@ fn multi_schema_tests(_api: TestApi) {
                     .assert_has_table_with_ns("one", "First")
                     .assert_has_table_with_ns("two", "Second")
                     .assert_table_with_ns("one", "_FirstToSecond", |table| {
-                        table.assert_fk_on_columns(&["A"], |fk| fk.assert_references("First", &["id"]));
+                        table.assert_fk_on_columns(&["A"], |fk| {
+                            fk.assert_references("First", &["id"])
+                        });
 
-                        table.assert_fk_on_columns(&["B"], |fk| fk.assert_references("Second", &["id"]))
+                        table.assert_fk_on_columns(&["B"], |fk| {
+                            fk.assert_references("Second", &["id"])
+                        })
                     });
             }),
             skip: None,
@@ -1252,7 +1279,9 @@ fn multi_schema_tests(_api: TestApi) {
             ),
             assertion: Box::new(|assert| {
                 assert.assert_table_with_ns("one", "First", |table| {
-                    table.assert_fk_on_columns(&["next_id"], |fk| fk.assert_references("First", &["id"]))
+                    table.assert_fk_on_columns(&["next_id"], |fk| {
+                        fk.assert_references("First", &["id"])
+                    })
                 });
             }),
             skip: None,
@@ -1289,7 +1318,9 @@ fn multi_schema_tests(_api: TestApi) {
             ),
             assertion: Box::new(|assert| {
                 assert.assert_table_with_ns("one", "First", |table| {
-                    table.assert_fk_on_columns(&["next_id"], |fk| fk.assert_references("First", &["id"]))
+                    table.assert_fk_on_columns(&["next_id"], |fk| {
+                        fk.assert_references("First", &["id"])
+                    })
                 });
             }),
             skip: None,
@@ -1466,9 +1497,11 @@ fn multi_schema_tests(_api: TestApi) {
                 ),
             ),
             assertion: Box::new(|assert| {
-                assert.assert_has_table("SomeModel").assert_enum("SomeEnum", |e| {
-                    e.assert_values(&["First", "Third"]).assert_namespace("one")
-                });
+                assert
+                    .assert_has_table("SomeModel")
+                    .assert_enum("SomeEnum", |e| {
+                        e.assert_values(&["First", "Third"]).assert_namespace("one")
+                    });
             }),
             skip: None,
         },
@@ -1504,7 +1537,8 @@ fn multi_schema_tests(_api: TestApi) {
             ),
             assertion: Box::new(|assert| {
                 assert.assert_enum("SomeEnum", |e| {
-                    e.assert_values(&["First", "Second", "Three"]).assert_namespace("two")
+                    e.assert_values(&["First", "Second", "Three"])
+                        .assert_namespace("two")
                 });
             }),
             skip: None,
@@ -1562,9 +1596,11 @@ fn multi_schema_tests(_api: TestApi) {
                 ),
             ),
             assertion: Box::new(|assert| {
-                assert.assert_has_table("SomeModel").assert_enum("SomeEnum", |e| {
-                    e.assert_values(&["First", "Third"]).assert_namespace("two")
-                });
+                assert
+                    .assert_has_table("SomeModel")
+                    .assert_enum("SomeEnum", |e| {
+                        e.assert_values(&["First", "Third"]).assert_namespace("two")
+                    });
             }),
             skip: None,
         },
@@ -1716,11 +1752,7 @@ fn migration_without_schema_change(api: TestApi) {
         .assert_migration_directories_count(1);
 }
 
-#[test_connector(
-    tags(Postgres),
-    preview_features("multiSchema"),
-    namespaces("one")
-)]
+#[test_connector(tags(Postgres), preview_features("multiSchema"), namespaces("one"))]
 fn schema_push_with_multi_schema_should_ignore_default_schema(api: TestApi) {
     // This table and data should not appear in the diff, should not be dropped and hence not create a data loss warning.
     api.raw_cmd(
@@ -1749,10 +1781,16 @@ fn schema_push_with_multi_schema_should_ignore_default_schema(api: TestApi) {
         }
     "#;
 
-    api.schema_push(dm).send().assert_green().assert_has_executed_steps();
+    api.schema_push(dm)
+        .send()
+        .assert_green()
+        .assert_has_executed_steps();
 
     assert_ne!(api.schema_name(), "one"); // ensure default schema name is not by accident the explicitly given schema name
-    api.assert_schema_with_namespaces(Namespaces::from_vec(&mut vec![api.schema_name(), "one".to_string()]))
-        .assert_has_table_with_ns(&api.schema_name(), "default_table")
-        .assert_has_table_with_ns("one", "A");
+    api.assert_schema_with_namespaces(Namespaces::from_vec(&mut vec![
+        api.schema_name(),
+        "one".to_string(),
+    ]))
+    .assert_has_table_with_ns(&api.schema_name(), "default_table")
+    .assert_has_table_with_ns("one", "A");
 }

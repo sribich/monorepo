@@ -1,9 +1,16 @@
-use crate::{Capabilities, Tags, logging, mysql, postgres};
-use enumflags2::BitFlags;
-use quaint::single::Quaint;
+use std::fmt::Display;
+use std::io::Write as _;
 use std::sync::LazyLock;
 use std::time::Duration;
-use std::{fmt::Display, io::Write as _};
+
+use enumflags2::BitFlags;
+use quaint::single::Quaint;
+
+use crate::Capabilities;
+use crate::Tags;
+use crate::logging;
+use crate::mysql;
+use crate::postgres;
 
 #[derive(Debug)]
 pub(crate) struct DbUnderTest {
@@ -29,7 +36,8 @@ source .test_database_urls/mysql_5_6
 const VITESS_MAX_REFRESH_DELAY_MS: u64 = 1000;
 
 static DB_UNDER_TEST: LazyLock<Result<DbUnderTest, String>> = LazyLock::new(|| {
-    let database_url = std::env::var("TEST_DATABASE_URL").map_err(|_| MISSING_TEST_DATABASE_URL_MSG.to_owned())?;
+    let database_url =
+        std::env::var("TEST_DATABASE_URL").map_err(|_| MISSING_TEST_DATABASE_URL_MSG.to_owned())?;
     let shadow_database_url = std::env::var("TEST_SHADOW_DATABASE_URL").ok();
     let prefix = database_url
         .find(':')
@@ -155,9 +163,10 @@ impl TestApiArgs {
     }
 
     pub async fn create_postgres_database(&self) -> (&'static str, Quaint, String) {
-        let (q, cs) = postgres::create_postgres_database(self.database_url(), self.test_function_name())
-            .await
-            .unwrap();
+        let (q, cs) =
+            postgres::create_postgres_database(self.database_url(), self.test_function_name())
+                .await
+                .unwrap();
         (self.test_function_name(), q, cs)
     }
 
@@ -209,7 +218,10 @@ impl DatasourceBlock<'_> {
     }
 }
 fn generator_block(preview_features: &'static [&'static str]) -> String {
-    let preview_features: Vec<String> = preview_features.iter().map(|pf| format!(r#""{pf}""#)).collect();
+    let preview_features: Vec<String> = preview_features
+        .iter()
+        .map(|pf| format!(r#""{pf}""#))
+        .collect();
 
     let preview_feature_string = if preview_features.is_empty() {
         "".to_string()

@@ -1,10 +1,17 @@
-use super::*;
-use constants::{args, operations};
-use mutations::{create_many, create_one};
+use constants::args;
+use constants::operations;
+use mutations::create_many;
+use mutations::create_one;
 use objects::*;
 use psl::datamodel_connector::ConnectorCapability;
 
-pub(crate) fn filter_input_field(ctx: &'_ QuerySchema, field: ModelField, include_aggregates: bool) -> InputField<'_> {
+use super::*;
+
+pub(crate) fn filter_input_field(
+    ctx: &'_ QuerySchema,
+    field: ModelField,
+    include_aggregates: bool,
+) -> InputField<'_> {
     let types = field_filter_types::get_field_filter_types(ctx, field.clone(), include_aggregates);
     let nullable = !field.is_required()
         && !field.is_list()
@@ -18,9 +25,13 @@ pub(crate) fn filter_input_field(ctx: &'_ QuerySchema, field: ModelField, includ
         .nullable_if(nullable)
 }
 
-pub(crate) fn nested_create_one_input_field(ctx: &'_ QuerySchema, parent_field: RelationFieldRef) -> InputField<'_> {
+pub(crate) fn nested_create_one_input_field(
+    ctx: &'_ QuerySchema,
+    parent_field: RelationFieldRef,
+) -> InputField<'_> {
     let parent_field_is_list = parent_field.is_list();
-    let create_types = create_one::create_one_input_types(ctx, parent_field.related_model(), Some(parent_field));
+    let create_types =
+        create_one::create_one_input_types(ctx, parent_field.related_model(), Some(parent_field));
 
     let types: Vec<InputType<'_>> = create_types
         .into_iter()
@@ -46,15 +57,28 @@ pub(crate) fn nested_create_many_input_field(
     {
         let envelope = nested_create_many_envelope(ctx, parent_field);
 
-        Some(input_field(operations::CREATE_MANY, vec![InputType::object(envelope)], None).optional())
+        Some(
+            input_field(
+                operations::CREATE_MANY,
+                vec![InputType::object(envelope)],
+                None,
+            )
+            .optional(),
+        )
     } else {
         None
     }
 }
 
-fn nested_create_many_envelope(ctx: &'_ QuerySchema, parent_field: RelationFieldRef) -> InputObjectType<'_> {
-    let create_type =
-        create_many::create_many_object_type(ctx, parent_field.related_model(), Some(parent_field.clone()));
+fn nested_create_many_envelope(
+    ctx: &'_ QuerySchema,
+    parent_field: RelationFieldRef,
+) -> InputObjectType<'_> {
+    let create_type = create_many::create_many_object_type(
+        ctx,
+        parent_field.related_model(),
+        Some(parent_field.clone()),
+    );
     let name = format!("{}Envelope", create_type.identifier.name());
     let ident = Identifier::new_prisma(name);
     let mut input_object = init_input_object_type(ident);
@@ -64,7 +88,8 @@ fn nested_create_many_envelope(ctx: &'_ QuerySchema, parent_field: RelationField
         let data_arg = input_field(args::DATA, list_union_type(create_many_type, true), None);
 
         if ctx.has_capability(ConnectorCapability::CreateSkipDuplicates) {
-            let skip_arg = input_field(args::SKIP_DUPLICATES, vec![InputType::boolean()], None).optional();
+            let skip_arg =
+                input_field(args::SKIP_DUPLICATES, vec![InputType::boolean()], None).optional();
 
             vec![data_arg, skip_arg]
         } else {
@@ -91,7 +116,10 @@ pub(crate) fn nested_connect_or_create_field(
 }
 
 /// Builds "upsert" field for nested updates (on relation fields).
-pub(crate) fn nested_upsert_field(ctx: &'_ QuerySchema, parent_field: RelationFieldRef) -> Option<InputField<'_>> {
+pub(crate) fn nested_upsert_field(
+    ctx: &'_ QuerySchema,
+    parent_field: RelationFieldRef,
+) -> Option<InputField<'_>> {
     upsert_objects::nested_upsert_input_object(ctx, parent_field.clone()).map(|input_object_type| {
         input_field(
             operations::UPSERT,
@@ -108,7 +136,8 @@ pub(crate) fn nested_delete_many_field<'a>(
     parent_field: &RelationFieldRef,
 ) -> Option<InputField<'a>> {
     if parent_field.is_list() {
-        let input_object = filter_objects::scalar_filter_object_type(ctx, parent_field.related_model(), false);
+        let input_object =
+            filter_objects::scalar_filter_object_type(ctx, parent_field.related_model(), false);
         let input_type = InputType::object(input_object);
 
         Some(
@@ -125,9 +154,13 @@ pub(crate) fn nested_delete_many_field<'a>(
 }
 
 /// Builds "updateMany" field for nested updates (on relation fields).
-pub(crate) fn nested_update_many_field(ctx: &'_ QuerySchema, parent_field: RelationFieldRef) -> Option<InputField<'_>> {
+pub(crate) fn nested_update_many_field(
+    ctx: &'_ QuerySchema,
+    parent_field: RelationFieldRef,
+) -> Option<InputField<'_>> {
     if parent_field.is_list() {
-        let input_type = update_many_objects::update_many_where_combination_object(ctx, parent_field);
+        let input_type =
+            update_many_objects::update_many_where_combination_object(ctx, parent_field);
 
         Some(
             input_field(
@@ -160,7 +193,11 @@ pub(crate) fn nested_disconnect_input_field<'a>(
     parent_field: &RelationFieldRef,
 ) -> Option<InputField<'a>> {
     match (parent_field.is_list(), parent_field.is_required()) {
-        (true, _) => Some(where_unique_input_field(ctx, operations::DISCONNECT, parent_field)),
+        (true, _) => Some(where_unique_input_field(
+            ctx,
+            operations::DISCONNECT,
+            parent_field,
+        )),
         (false, false) => {
             let mut types = vec![InputType::boolean()];
 
@@ -186,7 +223,11 @@ pub(crate) fn nested_delete_input_field<'a>(
     parent_field: &RelationFieldRef,
 ) -> Option<InputField<'a>> {
     match (parent_field.is_list(), parent_field.is_required()) {
-        (true, _) => Some(where_unique_input_field(ctx, operations::DELETE, parent_field)),
+        (true, _) => Some(where_unique_input_field(
+            ctx,
+            operations::DELETE,
+            parent_field,
+        )),
         (false, false) => {
             let types = vec![
                 InputType::boolean(),
@@ -203,25 +244,38 @@ pub(crate) fn nested_delete_input_field<'a>(
 }
 
 /// Builds the "connect" input field for a relation.
-pub(crate) fn nested_connect_input_field<'a>(ctx: &'a QuerySchema, parent_field: &RelationFieldRef) -> InputField<'a> {
+pub(crate) fn nested_connect_input_field<'a>(
+    ctx: &'a QuerySchema,
+    parent_field: &RelationFieldRef,
+) -> InputField<'a> {
     where_unique_input_field(ctx, operations::CONNECT, parent_field)
 }
 
-pub(crate) fn nested_update_input_field(ctx: &'_ QuerySchema, parent_field: RelationFieldRef) -> InputField<'_> {
-    let mut update_shorthand_types =
-        update_one_objects::update_one_input_types(ctx, parent_field.related_model(), Some(parent_field.clone()));
+pub(crate) fn nested_update_input_field(
+    ctx: &'_ QuerySchema,
+    parent_field: RelationFieldRef,
+) -> InputField<'_> {
+    let mut update_shorthand_types = update_one_objects::update_one_input_types(
+        ctx,
+        parent_field.related_model(),
+        Some(parent_field.clone()),
+    );
 
     let update_types = if parent_field.is_list() {
-        let to_many_update_full_type =
-            update_one_objects::update_one_where_combination_object(ctx, update_shorthand_types.clone(), &parent_field);
+        let to_many_update_full_type = update_one_objects::update_one_where_combination_object(
+            ctx,
+            update_shorthand_types.clone(),
+            &parent_field,
+        );
 
         list_union_object_type(to_many_update_full_type, true)
     } else {
-        let to_one_update_full_type = update_one_objects::update_to_one_rel_where_combination_object(
-            ctx,
-            update_shorthand_types.clone(),
-            parent_field,
-        );
+        let to_one_update_full_type =
+            update_one_objects::update_to_one_rel_where_combination_object(
+                ctx,
+                update_shorthand_types.clone(),
+                parent_field,
+            );
 
         let mut to_one_types = vec![InputType::object(to_one_update_full_type)];
         to_one_types.append(&mut update_shorthand_types);
@@ -232,7 +286,11 @@ pub(crate) fn nested_update_input_field(ctx: &'_ QuerySchema, parent_field: Rela
     input_field(operations::UPDATE, update_types, None).optional()
 }
 
-fn where_unique_input_field<'a, T>(ctx: &'a QuerySchema, name: T, field: &RelationFieldRef) -> InputField<'a>
+fn where_unique_input_field<'a, T>(
+    ctx: &'a QuerySchema,
+    name: T,
+    field: &RelationFieldRef,
+) -> InputField<'a>
 where
     T: Into<String>,
 {

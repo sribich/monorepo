@@ -59,7 +59,8 @@ async fn re_introspecting_custom_compound_id_names(api: &mut TestApi) -> TestRes
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expected = expect![[r#"
         *** WARNING ***
@@ -115,7 +116,8 @@ async fn re_introspecting_custom_compound_unique_names(api: &mut TestApi) -> Tes
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -165,7 +167,8 @@ async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -174,7 +177,8 @@ async fn mapped_enum_value_name(api: &mut TestApi) -> TestResult {
           - Enum: "color", value: "BLACK"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -207,10 +211,12 @@ async fn ignore_docs_only_added_once(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![""];
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -243,7 +249,8 @@ async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
 
     let expectation = expect![[r#"
         *** WARNING ***
@@ -252,7 +259,8 @@ async fn reserved_name_docs_are_only_added_once(api: &mut TestApi) -> TestResult
           - "Renamedif"
     "#]];
 
-    api.expect_re_introspect_warnings(input_dm, expectation).await;
+    api.expect_re_introspect_warnings(input_dm, expectation)
+        .await;
 
     Ok(())
 }
@@ -279,6 +287,7 @@ async fn re_introspecting_uuid_default_on_uuid_typed_pk_field(api: &mut TestApi)
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(prisma_schema, expected).await;
+    api.expect_re_introspected_datamodel(prisma_schema, expected)
+        .await;
     Ok(())
 }

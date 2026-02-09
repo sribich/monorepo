@@ -1,11 +1,11 @@
 // TODO: Use a typestate here for a resolved & unresolved, do not let inserting
 // in resolved state but only setting exported stats.
-use std::{
-    cell::RefCell,
-    collections::{BTreeMap, HashSet},
-};
+use std::cell::RefCell;
+use std::collections::BTreeMap;
+use std::collections::HashSet;
 
-use crate::{datatype::NamedDataType, id::TypeId};
+use crate::datatype::NamedDataType;
+use crate::id::TypeId;
 
 #[allow(clippy::large_enum_variant, reason = "Not a performance bottleneck")]
 #[derive(Clone, Debug)]

@@ -43,7 +43,8 @@ fn evaluate_data_loss_with_up_to_date_db_and_pending_changes_returns_steps(api: 
 
     let directory = api.create_migrations_directory();
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
     api.apply_migrations(&directory).send_sync();
 
     let dm2 = api.datamodel_with_provider(
@@ -68,7 +69,9 @@ fn evaluate_data_loss_with_up_to_date_db_and_pending_changes_returns_steps(api: 
 }
 
 #[test_connector]
-fn evaluate_data_loss_with_not_up_to_date_db_and_pending_changes_returns_the_right_steps(api: TestApi) {
+fn evaluate_data_loss_with_not_up_to_date_db_and_pending_changes_returns_the_right_steps(
+    api: TestApi,
+) {
     let dm1 = api.datamodel_with_provider(
         r#"
         model Cat {
@@ -80,7 +83,8 @@ fn evaluate_data_loss_with_not_up_to_date_db_and_pending_changes_returns_the_rig
 
     let directory = api.create_migrations_directory();
 
-    api.create_migration("initial", &dm1, &directory).send_sync();
+    api.create_migration("initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -104,7 +108,9 @@ fn evaluate_data_loss_with_not_up_to_date_db_and_pending_changes_returns_the_rig
 }
 
 #[test_connector(capabilities(Enums))]
-fn evaluate_data_loss_with_past_unapplied_migrations_with_destructive_changes_does_not_warn_for_these(api: TestApi) {
+fn evaluate_data_loss_with_past_unapplied_migrations_with_destructive_changes_does_not_warn_for_these(
+    api: TestApi,
+) {
     let dm1 = api.datamodel_with_provider(
         r#"
         model Cat {
@@ -122,7 +128,8 @@ fn evaluate_data_loss_with_past_unapplied_migrations_with_destructive_changes_do
     );
 
     let directory = api.create_migrations_directory();
-    api.create_migration("1-initial", &dm1, &directory).send_sync();
+    api.create_migration("1-initial", &dm1, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -150,7 +157,8 @@ fn evaluate_data_loss_with_past_unapplied_migrations_with_destructive_changes_do
         .send()
         .assert_warnings(var_name);
 
-    api.create_migration("2-remove-value", &dm2, &directory).send_sync();
+    api.create_migration("2-remove-value", &dm2, &directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -196,11 +204,18 @@ fn evaluate_data_loss_returns_warnings_for_the_local_database_for_the_next_migra
     );
 
     let directory = api.create_migrations_directory();
-    api.create_migration("1-initial", &dm1, &directory).send_sync();
+    api.create_migration("1-initial", &dm1, &directory)
+        .send_sync();
     api.apply_migrations(&directory).send_sync();
 
-    api.insert("Cat").value("id", 1).value("name", "Felix").result_raw();
-    api.insert("Dog").value("id", 1).value("name", "Norbert").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Felix")
+        .result_raw();
+    api.insert("Dog")
+        .value("id", 1)
+        .value("name", "Norbert")
+        .result_raw();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -243,11 +258,18 @@ fn evaluate_data_loss_maps_warnings_to_the_right_steps(api: TestApi) {
     );
 
     let directory = api.create_migrations_directory();
-    api.create_migration("1-initial", &dm1, &directory).send_sync();
+    api.create_migration("1-initial", &dm1, &directory)
+        .send_sync();
     api.apply_migrations(&directory).send_sync();
 
-    api.insert("Cat").value("id", 1).value("name", "Felix").result_raw();
-    api.insert("Dog").value("id", 1).value("name", "Norbert").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Felix")
+        .result_raw();
+    api.insert("Dog")
+        .value("id", 1)
+        .value("name", "Norbert")
+        .result_raw();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -277,7 +299,11 @@ fn evaluate_data_loss_maps_warnings_to_the_right_steps(api: TestApi) {
         api.normalize_identifier("Cat")
     );
 
-    let expected_warnings = if api.is_postgres() || api.is_sqlite() { 1 } else { 0 };
+    let expected_warnings = if api.is_postgres() || api.is_sqlite() {
+        1
+    } else {
+        0
+    };
     let expected_unexecutables = if api.is_postgres() { 2 } else { 1 };
 
     #[allow(clippy::bool_to_int_with_if)]
@@ -308,11 +334,18 @@ fn evaluate_data_loss_multi_file_maps_warnings_to_the_right_steps(api: TestApi) 
     );
 
     let directory = api.create_migrations_directory();
-    api.create_migration("1-initial", &dm1, &directory).send_sync();
+    api.create_migration("1-initial", &dm1, &directory)
+        .send_sync();
     api.apply_migrations(&directory).send_sync();
 
-    api.insert("Cat").value("id", 1).value("name", "Felix").result_raw();
-    api.insert("Dog").value("id", 1).value("name", "Norbert").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Felix")
+        .result_raw();
+    api.insert("Dog")
+        .value("id", 1)
+        .value("name", "Norbert")
+        .result_raw();
 
     let schema_a = api.datamodel_with_provider(
         r#"
@@ -344,7 +377,11 @@ fn evaluate_data_loss_multi_file_maps_warnings_to_the_right_steps(api: TestApi) 
         api.normalize_identifier("Cat")
     );
 
-    let expected_warnings = if api.is_postgres() || api.is_sqlite() { 1 } else { 0 };
+    let expected_warnings = if api.is_postgres() || api.is_sqlite() {
+        1
+    } else {
+        0
+    };
     let expected_unexecutables = if api.is_postgres() { 2 } else { 1 };
     #[allow(clippy::bool_to_int_with_if)]
     api.evaluate_data_loss_multi_file(&directory, &[("schema_a", &schema_a), ("schema_b", schema_b)])

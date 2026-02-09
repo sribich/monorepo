@@ -7,17 +7,20 @@ mod env;
 mod function;
 mod text;
 
+use std::fmt;
+
 pub use array::Array;
+use base64::display::Base64Display;
 pub use constant::Constant;
 pub use documentation::Documentation;
 pub use env::Env;
-pub use function::{Function, FunctionParam};
+pub use function::Function;
+pub use function::FunctionParam;
+use psl::GeneratorConfigValue;
 pub use text::Text;
 
-use crate::{Cow, datamodel::IndexOps};
-use base64::display::Base64Display;
-use psl::GeneratorConfigValue;
-use std::fmt;
+use crate::Cow;
+use crate::datamodel::IndexOps;
 
 /// A PSL value representation.
 pub enum Value<'a> {
@@ -70,7 +73,8 @@ where
 
 impl From<Vec<u8>> for Value<'_> {
     fn from(bytes: Vec<u8>) -> Self {
-        let display = Base64Display::new(&bytes, &base64::engine::general_purpose::STANDARD).to_string();
+        let display =
+            Base64Display::new(&bytes, &base64::engine::general_purpose::STANDARD).to_string();
         Self::Text(Text::new(display))
     }
 }

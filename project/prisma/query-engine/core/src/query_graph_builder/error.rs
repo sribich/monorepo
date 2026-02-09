@@ -1,10 +1,16 @@
 use std::fmt;
 
-use crate::{DataDependencyError, ExpressionResult, QueryGraphError};
 use bon::bon;
-use query_structure::{DomainError, Model, Relation, RelationFieldRef};
+use query_structure::DomainError;
+use query_structure::Model;
+use query_structure::Relation;
+use query_structure::RelationFieldRef;
 use serde::Serialize;
 use user_facing_errors::query_engine::validation::ValidationError;
+
+use crate::DataDependencyError;
+use crate::ExpressionResult;
+use crate::QueryGraphError;
 
 #[derive(Debug)]
 pub enum QueryGraphBuilderError {
@@ -72,7 +78,10 @@ impl From<RelationFieldRef> for RelationViolation {
 impl From<&RelationFieldRef> for RelationViolation {
     fn from(rf: &RelationFieldRef) -> Self {
         let relation = rf.relation();
-        let [model_a_name, model_b_name] = relation.walker().models().map(|m| rf.dm.walk(m).name().to_owned());
+        let [model_a_name, model_b_name] = relation
+            .walker()
+            .models()
+            .map(|m| rf.dm.walk(m).name().to_owned());
 
         Self {
             relation: relation.name(),
@@ -428,7 +437,9 @@ impl fmt::Display for DependentOperation {
             Self::NestedUpdate => write!(f, "perform a nested update"),
             Self::DisconnectRecords => write!(f, "disconnect existing child records"),
             Self::FindRecords { model } => write!(f, "find '{model}' record(s)"),
-            Self::InlineRelation { model } => write!(f, "inline the relation on '{model}' record(s)"),
+            Self::InlineRelation { model } => {
+                write!(f, "inline the relation on '{model}' record(s)")
+            }
             Self::UpdateInlinedRelation { model } => {
                 write!(f, "update inlined relation for '{model}' record(s)")
             }
@@ -436,7 +447,10 @@ impl fmt::Display for DependentOperation {
                 write!(f, "create inlined relation for '{model}' record(s)")
             }
             Self::ConnectOrCreateInlinedRelation { model } => {
-                write!(f, "create or connect inlined relation for '{model}' record(s)")
+                write!(
+                    f,
+                    "create or connect inlined relation for '{model}' record(s)"
+                )
             }
         }
     }

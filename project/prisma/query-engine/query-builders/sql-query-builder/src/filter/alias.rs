@@ -1,9 +1,10 @@
 use std::fmt;
 
-use crate::{model_extensions::AsColumn, *};
-
 use quaint::prelude::Column;
 use query_structure::ScalarField;
+
+use crate::model_extensions::AsColumn;
+use crate::*;
 
 /// An alias referring to a table or a join on a table.
 #[derive(Debug, Clone, Copy)]

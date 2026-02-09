@@ -41,5 +41,11 @@ tasks:
   expand:
     command: cargo expand
 
+  format:
+    command: cargo fmt
+
   bacon:
-    command: bacon check
+    command: bacon .
+    options:
+      cache: false
+      persistent: true

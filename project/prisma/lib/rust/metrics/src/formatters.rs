@@ -1,9 +1,17 @@
-use super::common::{Histogram, Metric, MetricValue, Snapshot};
-use metrics_exporter_prometheus::formatting::{
-    sanitize_description, sanitize_label_key, sanitize_label_value, write_help_line, write_metric_line, write_type_line,
-};
-use serde_json::Value;
 use std::collections::HashMap;
+
+use metrics_exporter_prometheus::formatting::sanitize_description;
+use metrics_exporter_prometheus::formatting::sanitize_label_key;
+use metrics_exporter_prometheus::formatting::sanitize_label_value;
+use metrics_exporter_prometheus::formatting::write_help_line;
+use metrics_exporter_prometheus::formatting::write_metric_line;
+use metrics_exporter_prometheus::formatting::write_type_line;
+use serde_json::Value;
+
+use super::common::Histogram;
+use super::common::Metric;
+use super::common::MetricValue;
+use super::common::Snapshot;
 
 fn create_label_string(labels: &HashMap<String, String>) -> Vec<String> {
     let mut label_string = labels
@@ -82,7 +90,14 @@ pub(crate) fn metrics_to_prometheus(snapshot: Snapshot) -> String {
         let labels = create_label_string(&counter.labels);
 
         if let MetricValue::Counter(value) = counter.value {
-            write_metric_line::<&str, u64>(&mut output, counter.key.as_str(), None, &labels, None, value);
+            write_metric_line::<&str, u64>(
+                &mut output,
+                counter.key.as_str(),
+                None,
+                &labels,
+                None,
+                value,
+            );
         }
         output.push('\n');
     }
@@ -95,7 +110,14 @@ pub(crate) fn metrics_to_prometheus(snapshot: Snapshot) -> String {
         let labels = create_label_string(&gauge.labels);
 
         if let MetricValue::Gauge(value) = gauge.value {
-            write_metric_line::<&str, f64>(&mut output, gauge.key.as_str(), None, &labels, None, value);
+            write_metric_line::<&str, f64>(
+                &mut output,
+                gauge.key.as_str(),
+                None,
+                &labels,
+                None,
+                value,
+            );
         }
         output.push('\n');
     }

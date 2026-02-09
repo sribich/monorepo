@@ -1,16 +1,20 @@
 use convert_case::Case;
-use dmmf::serialization_ast::{
-    DmmfInputField, DmmfInputType, DmmfSchema, DmmfTypeReference, TypeLocation,
-};
+use dmmf::serialization_ast::DmmfInputField;
+use dmmf::serialization_ast::DmmfInputType;
+use dmmf::serialization_ast::DmmfSchema;
+use dmmf::serialization_ast::DmmfTypeReference;
+use dmmf::serialization_ast::TypeLocation;
 use proc_macro2::TokenStream;
-use psl::parser_database::{ParserDatabase, ScalarFieldType, ScalarType};
-use query_structure::{
-    FieldArity,
-    walkers::{
-        FieldWalker, ModelWalker, RefinedFieldWalker, ScalarFieldWalker,
-    },
-};
-use quote::{format_ident, quote};
+use psl::parser_database::ParserDatabase;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::ScalarType;
+use query_structure::FieldArity;
+use query_structure::walkers::FieldWalker;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::RefinedFieldWalker;
+use query_structure::walkers::ScalarFieldWalker;
+use quote::format_ident;
+use quote::quote;
 use syn::Ident;
 
 use super::casing::cased_ident;
@@ -41,17 +45,17 @@ impl FieldExtension for FieldWalker<'_> {
     fn to_tokens(&self, prefix: &TokenStream) -> Option<TokenStream> {
         let it = self.refine()?;
         match it {
-                    RefinedFieldWalker::Scalar(scalar_field) => scalar_field.to_tokens(prefix),
-                    RefinedFieldWalker::Relation(relation_field) => {
-                        let model_name = cased_ident(relation_field.related_model().name(), Case::Snake);
+            RefinedFieldWalker::Scalar(scalar_field) => scalar_field.to_tokens(prefix),
+            RefinedFieldWalker::Relation(relation_field) => {
+                let model_name = cased_ident(relation_field.related_model().name(), Case::Snake);
 
-                        Some(
-                            self.ast_field()
-                                .arity
-                                .to_tokens(&quote! { #prefix::#model_name::Data }),
-                        )
-                    },
-                }
+                Some(
+                    self.ast_field()
+                        .arity
+                        .to_tokens(&quote! { #prefix::#model_name::Data }),
+                )
+            }
+        }
     }
 
     fn is_required(&self) -> bool {
@@ -144,7 +148,7 @@ impl ScalarFieldTypeExtension for ScalarFieldType {
                 let name = cased_ident(db.walk(id).name(), Case::Pascal);
 
                 quote! { #prefix #name }
-            },
+            }
             Self::BuiltInScalar(r#type) => r#type.to_tokens(),
             Self::Extension(_) | Self::Unsupported(_) => return None,
         };
@@ -157,7 +161,7 @@ impl ScalarFieldTypeExtension for ScalarFieldType {
             Self::BuiltInScalar(typ) => typ.to_prisma(var),
             Self::Enum(_) => {
                 quote!(::generator_runtime::internal::PrismaValue::Enum(#var.to_string()))
-            },
+            }
             Self::Extension(_) | Self::Unsupported(_) => return None,
         };
 
@@ -273,11 +277,11 @@ impl DmmfInputFieldExt for DmmfInputField {
             TypeLocation::EnumTypes => {
                 let typ: TokenStream = input_type.typ.parse().unwrap();
                 arity.to_tokens(&quote!(#prefix #typ))
-            },
+            }
             TypeLocation::InputObjectTypes => {
                 let typ: TokenStream = input_type.typ.parse().unwrap();
                 quote!(Vec<#prefix #typ>)
-            },
+            }
             TypeLocation::OutputObjectTypes | TypeLocation::FieldRefTypes => todo!(),
         }
     }
@@ -306,7 +310,7 @@ impl DmmfInputFieldExt for DmmfInputField {
             ),
             TypeLocation::InputObjectTypes => {
                 quote!(::generator_runtime::internal::PrismaValue::Object(#var.into_iter().map(Into::into).collect()))
-            },
+            }
             TypeLocation::OutputObjectTypes | TypeLocation::FieldRefTypes => todo!(),
         }
     }
@@ -332,11 +336,11 @@ impl DmmfTypeReferenceExt for DmmfTypeReference {
             TypeLocation::Scalar => {
                 ScalarFieldType::BuiltInScalar(ScalarType::try_from_str(&self.typ, true).unwrap())
                     .to_tokens(prefix, arity, db)?
-            },
+            }
             TypeLocation::EnumTypes => {
                 let enum_name_pascal = cased_ident(&self.typ, Case::Pascal);
                 quote!(#prefix #enum_name_pascal)
-            },
+            }
             TypeLocation::InputObjectTypes => {
                 let typ = match &self.typ {
                     t if t.ends_with("OrderByWithRelationInput") => {
@@ -344,24 +348,24 @@ impl DmmfTypeReferenceExt for DmmfTypeReference {
                         let model_name_snake = cased_ident(&model_name, Case::Snake);
 
                         quote!(#model_name_snake::OrderByWithRelationParam)
-                    },
+                    }
                     t if t.ends_with("OrderByRelationAggregateInput") => {
                         let model_name = t.replace("OrderByRelationAggregateInput", "");
                         let model_name_snake = cased_ident(&model_name, Case::Snake);
 
                         quote!(#model_name_snake::OrderByRelationAggregateParam)
-                    },
+                    }
                     t if t.ends_with("OrderByInput") => {
                         let model_name = t.replace("OrderByInput", "");
                         let model_name_snake = cased_ident(&model_name, Case::Snake);
 
                         quote!(#model_name_snake::OrderByParam)
-                    },
+                    }
                     _ => return None,
                 };
 
                 quote!(Vec<#prefix #typ>)
-            },
+            }
             TypeLocation::OutputObjectTypes | TypeLocation::FieldRefTypes => return None,
         })
     }

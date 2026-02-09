@@ -1,5 +1,6 @@
-use super::utils::*;
 use sql_migration_tests::test_api::*;
+
+use super::utils::*;
 
 #[test_connector(tags(Postgres))]
 fn parses_doc_complex_pg(api: TestApi) {
@@ -47,7 +48,9 @@ fn parses_doc_complex_pg(api: TestApi) {
     SELECT int FROM model WHERE int = ? and string = ?;
     "#;
 
-    api.introspect_sql("test_1", sql).send_sync().expect_result(expected)
+    api.introspect_sql("test_1", sql)
+        .send_sync()
+        .expect_result(expected)
 }
 
 #[test_connector(tags(Mysql))]
@@ -146,7 +149,9 @@ fn parses_doc_no_position(api: TestApi) {
     SELECT int FROM model WHERE int = :myInt and string = ?;
     "#;
 
-    api.introspect_sql("test_1", sql).send_sync().expect_result(expected)
+    api.introspect_sql("test_1", sql)
+        .send_sync()
+        .expect_result(expected)
 }
 
 #[test_connector(tags(Postgres))]
@@ -189,7 +194,9 @@ fn parses_doc_no_alias(api: TestApi) {
     SELECT int FROM model WHERE int = $1 and string = $2;
     "#;
 
-    api.introspect_sql("test_1", sql).send_sync().expect_result(expected)
+    api.introspect_sql("test_1", sql)
+        .send_sync()
+        .expect_result(expected)
 }
 
 #[test_connector(tags(Postgres))]
@@ -229,7 +236,9 @@ fn parses_doc_enum_name(api: TestApi) {
     SELECT * FROM model WHERE id = ?;
     "#;
 
-    api.introspect_sql("test_1", sql).send_sync().expect_result(expected)
+    api.introspect_sql("test_1", sql)
+        .send_sync()
+        .expect_result(expected)
 }
 
 #[test_connector(tags(Postgres))]
@@ -327,8 +336,9 @@ fn missing_param_position_or_alias_fails(api: TestApi) {
     SELECT int FROM model WHERE int = ? and string = ?;
     "#;
 
-    let expected =
-        expect!["SQL documentation parsing: missing position or alias (eg: $1:alias) at '@param  {Int} myInt'."];
+    let expected = expect![
+        "SQL documentation parsing: missing position or alias (eg: $1:alias) at '@param  {Int} myInt'."
+    ];
 
     expected.assert_eq(
         api.introspect_sql("test_1", sql)
@@ -347,8 +357,9 @@ fn missing_everything_fails(api: TestApi) {
     SELECT int FROM model WHERE int = ? and string = ?;
     "#;
 
-    let expected =
-        expect!["SQL documentation parsing: invalid parameter: could not parse any information at '@param'."];
+    let expected = expect![
+        "SQL documentation parsing: invalid parameter: could not parse any information at '@param'."
+    ];
 
     expected.assert_eq(
         api.introspect_sql("test_1", sql)

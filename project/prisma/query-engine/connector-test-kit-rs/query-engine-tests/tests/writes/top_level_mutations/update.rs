@@ -2,9 +2,13 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod update {
-    use indoc::indoc;
-    use query_engine_tests::{TROUBLE_CHARS, assert_error, run_query, run_query_json};
     use std::time::Duration;
+
+    use indoc::indoc;
+    use query_engine_tests::TROUBLE_CHARS;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use tokio::time::sleep;
 
     fn schema_1() -> String {
@@ -576,7 +580,9 @@ mod update {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -585,7 +591,8 @@ mod update {
 
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(Json))]
 mod json_update {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn update_json_adv(runner: Runner) -> TestResult<()> {

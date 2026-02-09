@@ -15,21 +15,24 @@ mod getters;
 mod ids;
 mod parsers;
 
-use crate::cloneable_any::CloneableAny;
+use std::fmt::Debug;
+use std::fmt::{self};
 
-pub use self::{
-    error::{DescriberError, DescriberErrorKind, DescriberResult},
-    ids::*,
-    walkers::*,
-};
 pub use either::Either;
+use enumflags2::BitFlag;
+use enumflags2::BitFlags;
 use indexmap::IndexSet;
 pub use prisma_value::PrismaValue;
-
-use enumflags2::{BitFlag, BitFlags};
 use regex::Regex;
-use serde::{Deserialize, Serialize};
-use std::fmt::{self, Debug};
+use serde::Deserialize;
+use serde::Serialize;
+
+pub use self::error::DescriberError;
+pub use self::error::DescriberErrorKind;
+pub use self::error::DescriberResult;
+pub use self::ids::*;
+pub use self::walkers::*;
+use crate::cloneable_any::CloneableAny;
 
 /// A database description connector.
 #[async_trait::async_trait]
@@ -85,7 +88,12 @@ impl SqlSchema {
     /// Extract connector-specific constructs. The type parameter must be the right one.
     #[track_caller]
     pub fn downcast_connector_data<T: 'static>(&self) -> &T {
-        self.connector_data.data.as_ref().unwrap().downcast_ref().unwrap()
+        self.connector_data
+            .data
+            .as_ref()
+            .unwrap()
+            .downcast_ref()
+            .unwrap()
     }
 
     /// The id of the next column
@@ -108,7 +116,12 @@ impl SqlSchema {
     /// Extract connector-specific constructs mutably. The type parameter must be the right one.
     #[track_caller]
     pub fn downcast_connector_data_mut<T: 'static>(&mut self) -> &mut T {
-        self.connector_data.data.as_mut().unwrap().downcast_mut().unwrap()
+        self.connector_data
+            .data
+            .as_mut()
+            .unwrap()
+            .downcast_mut()
+            .unwrap()
     }
 
     /// Remove all namespaces from the schema.
@@ -185,7 +198,9 @@ impl SqlSchema {
 
     /// Find a namespace by name.
     pub fn get_namespace_id(&self, name: &str) -> Option<NamespaceId> {
-        self.namespaces.get_index_of(name).map(|pos| NamespaceId(pos as u32))
+        self.namespaces
+            .get_index_of(name)
+            .map(|pos| NamespaceId(pos as u32))
     }
 
     /// The total number of indexes in the schema.
@@ -217,7 +232,12 @@ impl SqlSchema {
     }
 
     /// Add an enum to the schema.
-    pub fn push_enum(&mut self, namespace_id: NamespaceId, enum_name: String, description: Option<String>) -> EnumId {
+    pub fn push_enum(
+        &mut self,
+        namespace_id: NamespaceId,
+        enum_name: String,
+        description: Option<String>,
+    ) -> EnumId {
         let id = EnumId(self.enums.len() as u32);
 
         self.enums.push(Enum {
@@ -232,12 +252,20 @@ impl SqlSchema {
     /// Add a variant to an enum.
     pub fn push_enum_variant(&mut self, enum_id: EnumId, variant_name: String) -> EnumVariantId {
         let id = EnumVariantId(self.enum_variants.len() as u32);
-        self.enum_variants.push(EnumVariant { enum_id, variant_name });
+        self.enum_variants.push(EnumVariant {
+            enum_id,
+            variant_name,
+        });
         id
     }
 
     /// Add a UDT to the schema.
-    pub fn push_udt(&mut self, namespace_id: NamespaceId, name: String, definition: Option<String>) -> UdtId {
+    pub fn push_udt(
+        &mut self,
+        namespace_id: NamespaceId,
+        name: String,
+        definition: Option<String>,
+    ) -> UdtId {
         let id = UdtId(self.user_defined_types.len() as u32);
 
         self.user_defined_types.push(UserDefinedType {
@@ -250,7 +278,12 @@ impl SqlSchema {
     }
 
     /// Add an index of a certain type to the schema.
-    pub fn push_index_of_type(&mut self, table_id: TableId, index_name: String, tpe: IndexType) -> IndexId {
+    pub fn push_index_of_type(
+        &mut self,
+        table_id: TableId,
+        index_name: String,
+        tpe: IndexType,
+    ) -> IndexId {
         let id = IndexId(self.indexes.len() as u32);
         self.indexes.push(Index {
             table_id,
@@ -271,14 +304,22 @@ impl SqlSchema {
     }
 
     /// Add table default value to the schema.
-    pub fn push_table_default_value(&mut self, column_id: TableColumnId, value: DefaultValue) -> TableDefaultValueId {
+    pub fn push_table_default_value(
+        &mut self,
+        column_id: TableColumnId,
+        value: DefaultValue,
+    ) -> TableDefaultValueId {
         let id = TableDefaultValueId(self.table_default_values.len() as u32);
         self.table_default_values.push((column_id, value));
         id
     }
 
     /// Add table default value to the schema.
-    pub fn push_view_default_value(&mut self, column_id: ViewColumnId, value: DefaultValue) -> ViewDefaultValueId {
+    pub fn push_view_default_value(
+        &mut self,
+        column_id: ViewColumnId,
+        value: DefaultValue,
+    ) -> ViewDefaultValueId {
         let id = ViewDefaultValueId(self.view_default_values.len() as u32);
         self.view_default_values.push((column_id, value));
         id
@@ -334,7 +375,12 @@ impl SqlSchema {
         NamespaceId(id as u32)
     }
 
-    pub fn push_table(&mut self, name: String, namespace_id: NamespaceId, description: Option<String>) -> TableId {
+    pub fn push_table(
+        &mut self,
+        name: String,
+        namespace_id: NamespaceId,
+        description: Option<String>,
+    ) -> TableId {
         let id = TableId(self.tables.len() as u32);
 
         self.tables.push(Table {
@@ -626,7 +672,11 @@ impl ColumnType {
         }
     }
 
-    pub fn with_full_data_type(family: ColumnTypeFamily, arity: ColumnArity, full_data_type: String) -> Self {
+    pub fn with_full_data_type(
+        family: ColumnTypeFamily,
+        arity: ColumnArity,
+        full_data_type: String,
+    ) -> Self {
         ColumnType {
             full_data_type,
             family,

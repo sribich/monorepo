@@ -1,5 +1,7 @@
-use serde::{Deserialize, Serialize};
 use std::fmt;
+
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::cloneable_any::CloneableAny;
 

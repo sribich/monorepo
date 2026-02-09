@@ -123,13 +123,13 @@ pub fn merge_fields(fields: Vec<(String, PrismaValue)>) -> Vec<(String, PrismaVa
         match (merged.get_mut(&field.0), field.1) {
             (Some(PrismaValue::Object(existing)), PrismaValue::Object(incoming)) => {
                 existing.extend(incoming);
-            },
+            }
             (None, value) => {
                 merged.insert(field.0, value);
-            },
+            }
             (Some(_), _) => {
                 panic!("Cannot merge fields that are not objects");
-            },
+            }
         }
     }
 

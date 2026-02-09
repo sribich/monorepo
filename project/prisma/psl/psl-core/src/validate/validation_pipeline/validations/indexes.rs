@@ -1,23 +1,29 @@
-use super::{constraint_namespace::ConstraintName, database_name::validate_db_name};
-use crate::{
-    datamodel_connector::{ConnectorCapability, walker_ext_traits::*},
-    diagnostics::DatamodelError,
-    validate::validation_pipeline::context::Context,
-};
 use itertools::Itertools;
-use parser_database::{IndexAlgorithm, walkers::IndexWalker};
+use parser_database::IndexAlgorithm;
+use parser_database::walkers::IndexWalker;
+
+use super::constraint_namespace::ConstraintName;
+use super::database_name::validate_db_name;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::walker_ext_traits::*;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 /// Different databases validate index and unique constraint names in a certain namespace.
 /// Validates index and unique constraint names against the database requirements.
-pub(super) fn has_a_unique_constraint_name(index: IndexWalker<'_>, names: &super::Names<'_>, ctx: &mut Context<'_>) {
+pub(super) fn has_a_unique_constraint_name(
+    index: IndexWalker<'_>,
+    names: &super::Names<'_>,
+    ctx: &mut Context<'_>,
+) {
     let name = index.constraint_name(ctx.connector);
     let model = index.model();
 
-    for violation in
-        names
-            .constraint_namespace
-            .constraint_name_scope_violations(model.id, ConstraintName::Index(name.as_ref()), ctx)
-    {
+    for violation in names.constraint_namespace.constraint_name_scope_violations(
+        model.id,
+        ConstraintName::Index(name.as_ref()),
+        ctx,
+    ) {
         let message = format!(
             "The given constraint name `{}` has to be unique in the following namespace: {}. Please provide a different name using the `map` argument.",
             name,
@@ -74,7 +80,10 @@ pub(crate) fn field_length_prefix_supported(index: IndexWalker<'_>, ctx: &mut Co
         return;
     }
 
-    if index.scalar_field_attributes().any(|f| f.length().is_some()) {
+    if index
+        .scalar_field_attributes()
+        .any(|f| f.length().is_some())
+    {
         let message = "The length argument is not supported in an index definition with the current connector";
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -103,7 +112,10 @@ pub(crate) fn fulltext_index_supported(index: IndexWalker<'_>, ctx: &mut Context
 }
 
 /// `@@fulltext` index columns should not define `length` argument.
-pub(crate) fn fulltext_columns_should_not_define_length(index: IndexWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn fulltext_columns_should_not_define_length(
+    index: IndexWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if !ctx.has_capability(ConnectorCapability::FullTextIndex) {
         return;
     }
@@ -112,7 +124,10 @@ pub(crate) fn fulltext_columns_should_not_define_length(index: IndexWalker<'_>, 
         return;
     }
 
-    if index.scalar_field_attributes().any(|f| f.length().is_some()) {
+    if index
+        .scalar_field_attributes()
+        .any(|f| f.length().is_some())
+    {
         let message = "The length argument is not supported in a @@fulltext attribute.";
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -137,7 +152,10 @@ pub(crate) fn fulltext_column_sort_is_supported(index: IndexWalker<'_>, ctx: &mu
         return;
     }
 
-    if index.scalar_field_attributes().any(|f| f.sort_order().is_some()) {
+    if index
+        .scalar_field_attributes()
+        .any(|f| f.sort_order().is_some())
+    {
         let message = "The sort argument is not supported in a @@fulltext attribute in the current connector.";
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -153,7 +171,10 @@ pub(crate) fn fulltext_column_sort_is_supported(index: IndexWalker<'_>, ctx: &mu
 /// ```ignore
 /// @@fulltext([a(sort: Asc), b, c(sort: Asc), d])
 /// ```
-pub(crate) fn fulltext_text_columns_should_be_bundled_together(index: IndexWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn fulltext_text_columns_should_be_bundled_together(
+    index: IndexWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if !ctx.has_capability(ConnectorCapability::FullTextIndex) {
         return;
     }
@@ -211,7 +232,10 @@ pub(crate) fn hash_index_must_not_use_sort_param(index: IndexWalker<'_>, ctx: &m
         return;
     }
 
-    if index.scalar_field_attributes().any(|f| f.sort_order().is_some()) {
+    if index
+        .scalar_field_attributes()
+        .any(|f| f.sort_order().is_some())
+    {
         let message = "Hash type does not support sort option.";
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -324,7 +348,10 @@ pub(crate) fn index_algorithm_is_supported(index: IndexWalker<'_>, ctx: &mut Con
 }
 
 /// You can use `ops` argument only with a normal index.
-pub(crate) fn opclasses_are_not_allowed_with_other_than_normal_indices(index: IndexWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn opclasses_are_not_allowed_with_other_than_normal_indices(
+    index: IndexWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if index.is_normal() {
         return;
     }
@@ -346,7 +373,10 @@ pub(crate) fn opclasses_are_not_allowed_with_other_than_normal_indices(index: In
     }
 }
 
-pub(super) fn unique_client_name_does_not_clash_with_field(index: IndexWalker<'_>, ctx: &mut Context<'_>) {
+pub(super) fn unique_client_name_does_not_clash_with_field(
+    index: IndexWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if !index.is_unique() {
         return;
     }
@@ -358,7 +388,11 @@ pub(super) fn unique_client_name_does_not_clash_with_field(index: IndexWalker<'_
 
     let idx_client_name = index.all_field_names().join("_");
 
-    if index.model().scalar_fields().any(|f| f.name() == idx_client_name) {
+    if index
+        .model()
+        .scalar_fields()
+        .any(|f| f.name() == idx_client_name)
+    {
         let attr_name = index.attribute_name();
 
         let container_type = if index.model().ast_model().is_view() {

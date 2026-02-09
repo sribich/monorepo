@@ -1,8 +1,9 @@
 use serde::Deserialize;
-use telemetry::{
-    Exporter, RequestId, TraceParent,
-    exporter::{CaptureSettings, CaptureTarget},
-};
+use telemetry::Exporter;
+use telemetry::RequestId;
+use telemetry::TraceParent;
+use telemetry::exporter::CaptureSettings;
+use telemetry::exporter::CaptureTarget;
 use tracing::Span;
 
 use crate::error::ApiError;

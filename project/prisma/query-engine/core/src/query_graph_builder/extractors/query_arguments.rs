@@ -1,11 +1,16 @@
-use super::*;
-use crate::{
-    QueryGraphBuilderError, QueryGraphBuilderResult,
-    query_document::{ParsedArgument, ParsedInputMap},
-};
-use query_structure::{QueryArguments, prelude::*};
-use schema::constants::{aggregations, args, ordering};
 use std::convert::TryInto;
+
+use query_structure::QueryArguments;
+use query_structure::prelude::*;
+use schema::constants::aggregations;
+use schema::constants::args;
+use schema::constants::ordering;
+
+use super::*;
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphBuilderResult;
+use crate::query_document::ParsedArgument;
+use crate::query_document::ParsedInputMap;
 
 /// Expects the caller to know that it is structurally guaranteed that query arguments can be extracted,
 /// e.g. that the query schema guarantees that required fields are present.
@@ -71,7 +76,10 @@ pub fn extract_query_args(
 }
 
 /// Extracts order by conditions in order of appearance.
-fn extract_order_by(container: &ParentContainer, value: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Vec<OrderBy>> {
+fn extract_order_by(
+    container: &ParentContainer,
+    value: ParsedInputValue<'_>,
+) -> QueryGraphBuilderResult<Vec<OrderBy>> {
     match value {
         ParsedInputValue::List(list) => list
             .into_iter()
@@ -82,10 +90,12 @@ fn extract_order_by(container: &ParentContainer, value: ParsedInputValue<'_>) ->
             .collect::<QueryGraphBuilderResult<Vec<_>>>()
             .map(|results| results.into_iter().flatten().collect()),
 
-        ParsedInputValue::Map(map) => Ok(match process_order_object(container, map, vec![], None)? {
-            Some(order) => vec![order],
-            None => vec![],
-        }),
+        ParsedInputValue::Map(map) => {
+            Ok(match process_order_object(container, map, vec![], None)? {
+                Some(order) => vec![order],
+                None => vec![],
+            })
+        }
 
         _ => unreachable!(),
     }
@@ -127,7 +137,11 @@ fn process_order_object(
                         .expect("To-many relation orderBy must be an aggregation ordering.");
 
                     let (sort_order, _) = extract_order_by_args(inner_field_value)?;
-                    Ok(Some(OrderBy::to_many_aggregation(path, sort_order, sort_aggregation)))
+                    Ok(Some(OrderBy::to_many_aggregation(
+                        path,
+                        sort_order,
+                        sort_aggregation,
+                    )))
                 }
 
                 Field::Relation(rf) => {
@@ -267,7 +281,10 @@ fn extract_skip(value: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Option<i
     }
 }
 
-fn extract_cursor(value: ParsedInputValue<'_>, model: &Model) -> QueryGraphBuilderResult<Option<SelectionResult>> {
+fn extract_cursor(
+    value: ParsedInputValue<'_>,
+    model: &Model,
+) -> QueryGraphBuilderResult<Option<SelectionResult>> {
     let input_map: ParsedInputMap<'_> = value.try_into()?;
     let mut pairs = vec![];
 
@@ -316,18 +333,23 @@ fn extract_compound_cursor_field(
 }
 
 /// Runs final transformations on the QueryArguments.
-fn finalize_arguments(mut args: QueryArguments, model: &Model) -> QueryGraphBuilderResult<QueryArguments> {
+fn finalize_arguments(
+    mut args: QueryArguments,
+    model: &Model,
+) -> QueryGraphBuilderResult<QueryArguments> {
     // Check if the query requires an implicit ordering added to the arguments.
     // An implicit ordering is convenient for deterministic results for take and skip, for cursor it's _required_
     // as a cursor needs a direction to page. We simply take the primary identifier as a default order-by.
-    let add_implicit_ordering =
-        (args.skip.as_ref().map(|skip| *skip > 0).unwrap_or(false) || args.cursor.is_some() || args.take.is_some())
-            && args.order_by.is_empty();
+    let add_implicit_ordering = (args.skip.as_ref().map(|skip| *skip > 0).unwrap_or(false)
+        || args.cursor.is_some()
+        || args.take.is_some())
+        && args.order_by.is_empty();
 
     if add_implicit_ordering {
         if !model.has_unique_identifier() {
             return Err(QueryGraphBuilderError::InputError(
-                "`orderBy` definition must not be empty when querying views without unique fields".into(),
+                "`orderBy` definition must not be empty when querying views without unique fields"
+                    .into(),
             ));
         }
 

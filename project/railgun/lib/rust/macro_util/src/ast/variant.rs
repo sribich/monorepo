@@ -2,7 +2,10 @@ use std::fmt::Debug;
 
 use syn::Ident;
 
-use super::{Attributes, Field, Meta, Unresolved};
+use super::Attributes;
+use super::Field;
+use super::Meta;
+use super::Unresolved;
 
 #[derive(Clone, Debug)]
 pub struct Variant<'syn, A = Unresolved, M = Unresolved> {

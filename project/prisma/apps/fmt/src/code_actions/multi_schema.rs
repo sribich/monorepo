@@ -1,9 +1,10 @@
-use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
-use psl::{
-    diagnostics::Span,
-    parser_database::walkers::{EnumWalker, ModelWalker},
-    psl_ast::ast::WithSpan,
-};
+use lsp_types::CodeAction;
+use lsp_types::CodeActionKind;
+use lsp_types::CodeActionOrCommand;
+use psl::diagnostics::Span;
+use psl::parser_database::walkers::EnumWalker;
+use psl::parser_database::walkers::ModelWalker;
+use psl::psl_ast::ast::WithSpan;
 
 use super::CodeActionsContext;
 

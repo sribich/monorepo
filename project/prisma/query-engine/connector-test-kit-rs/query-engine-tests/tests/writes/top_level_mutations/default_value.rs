@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod default_value {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema_string() -> String {
         let schema = indoc! {

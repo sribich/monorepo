@@ -3,28 +3,31 @@
 mod default;
 mod extensions;
 
+use std::any::type_name;
+use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::iter::Peekable;
+use std::sync::LazyLock;
+
 use either::Either;
-pub use extensions::{DatabaseExtension, ExtensionId, ExtensionWalker};
+use enumflags2::BitFlags;
+pub use extensions::DatabaseExtension;
+pub use extensions::ExtensionId;
+pub use extensions::ExtensionWalker;
+use indexmap::IndexMap;
+use indoc::indoc;
+use psl::builtin_connectors::KnownPostgresType;
+use psl::builtin_connectors::PostgresType;
+use psl::datamodel_connector::NativeTypeInstance;
+use quaint::Value;
+use quaint::connector::ResultRow;
+use quaint::prelude::Queryable;
+use regex::Regex;
+use tracing::trace;
 
 use self::default::get_default_value;
 use super::*;
 use crate::getters::Getter;
-use enumflags2::BitFlags;
-use indexmap::IndexMap;
-use indoc::indoc;
-use psl::{
-    builtin_connectors::{KnownPostgresType, PostgresType},
-    datamodel_connector::NativeTypeInstance,
-};
-use quaint::{Value, connector::ResultRow, prelude::Queryable};
-use regex::Regex;
-use std::{
-    any::type_name,
-    collections::{BTreeMap, HashMap},
-    iter::Peekable,
-    sync::LazyLock,
-};
-use tracing::trace;
 
 /// A PostgreSQL sequence.
 /// <https://www.postgresql.org/docs/current/view-pg-sequences.html>
@@ -237,20 +240,28 @@ impl PostgresSchemaExt {
 
     pub fn non_default_foreign_key_constraint_deferring(&self, id: ForeignKeyId) -> bool {
         match self.constraint_options.get(&Constraint::ForeignKey(id)) {
-            Some(opts) => opts.contains(ConstraintOption::Deferrable) || opts.contains(ConstraintOption::Deferred),
+            Some(opts) => {
+                opts.contains(ConstraintOption::Deferrable)
+                    || opts.contains(ConstraintOption::Deferred)
+            }
             None => false,
         }
     }
 
     pub fn non_default_index_constraint_deferring(&self, id: IndexId) -> bool {
         match self.constraint_options.get(&Constraint::Index(id)) {
-            Some(opts) => opts.contains(ConstraintOption::Deferrable) || opts.contains(ConstraintOption::Deferred),
+            Some(opts) => {
+                opts.contains(ConstraintOption::Deferrable)
+                    || opts.contains(ConstraintOption::Deferred)
+            }
             None => false,
         }
     }
 
     pub fn exclude_constraints(&self, table_id: TableId) -> impl ExactSizeIterator<Item = &str> {
-        let low = self.exclude_constraints.partition_point(|(id, _)| *id < table_id);
+        let low = self
+            .exclude_constraints
+            .partition_point(|(id, _)| *id < table_id);
         let high = self.exclude_constraints[low..].partition_point(|(id, _)| *id <= table_id);
 
         self.exclude_constraints[low..low + high]
@@ -536,14 +547,16 @@ impl super::SqlSchemaDescriberBackend for SqlSchemaDescriber<'_> {
         let table_names = self.get_table_names(&mut sql_schema, &mut pg_ext).await?;
 
         // order matters
-        self.get_constraints(&table_names, &mut sql_schema, &mut pg_ext).await?;
+        self.get_constraints(&table_names, &mut sql_schema, &mut pg_ext)
+            .await?;
         self.get_views(&mut sql_schema).await?;
         self.get_enums(&mut sql_schema).await?;
         self.get_udts(&mut sql_schema).await?;
         self.get_columns(&mut sql_schema).await?;
         self.get_foreign_keys(&table_names, &mut pg_ext, &mut sql_schema)
             .await?;
-        self.get_indices(&table_names, &mut pg_ext, &mut sql_schema).await?;
+        self.get_indices(&table_names, &mut pg_ext, &mut sql_schema)
+            .await?;
 
         self.get_procedures(&mut sql_schema).await?;
         self.get_extensions(&mut pg_ext).await?;
@@ -567,8 +580,14 @@ impl super::SqlSchemaDescriberBackend for SqlSchemaDescriber<'_> {
 }
 
 impl<'a> SqlSchemaDescriber<'a> {
-    pub fn new(conn: &'a dyn Queryable, circumstances: BitFlags<Circumstances>) -> SqlSchemaDescriber<'a> {
-        SqlSchemaDescriber { conn, circumstances }
+    pub fn new(
+        conn: &'a dyn Queryable,
+        circumstances: BitFlags<Circumstances>,
+    ) -> SqlSchemaDescriber<'a> {
+        SqlSchemaDescriber {
+            conn,
+            circumstances,
+        }
     }
 
     async fn get_extensions(&self, pg_ext: &mut PostgresSchemaExt) -> DescriberResult<()> {
@@ -614,7 +633,10 @@ impl<'a> SqlSchemaDescriber<'a> {
             WHERE n.nspname = ANY ( $1 )
         "#;
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         let mut procedures = Vec::with_capacity(rows.len());
 
@@ -633,13 +655,22 @@ impl<'a> SqlSchemaDescriber<'a> {
         Ok(())
     }
 
-    async fn get_namespaces(&self, sql_schema: &mut SqlSchema, namespaces: &[&str]) -> DescriberResult<()> {
+    async fn get_namespaces(
+        &self,
+        sql_schema: &mut SqlSchema,
+        namespaces: &[&str],
+    ) -> DescriberResult<()> {
         // Although we have a list of namespaces we should introspect, we still need to check whether they actually already exist in the database.
         let sql = include_str!("postgres/namespaces_query.sql");
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
-        let names = rows.into_iter().map(|row| row.get_expect_string("namespace_name"));
+        let names = rows
+            .into_iter()
+            .map(|row| row.get_expect_string("namespace_name"));
 
         for namespace in names {
             sql_schema.push_namespace(namespace);
@@ -653,7 +684,10 @@ impl<'a> SqlSchemaDescriber<'a> {
         sql_schema: &mut SqlSchema,
         pg_ext: &mut PostgresSchemaExt,
     ) -> DescriberResult<IndexMap<(String, String), TableId>> {
-        let sql = if self.circumstances.contains(Circumstances::CanPartitionTables) {
+        let sql = if self
+            .circumstances
+            .contains(Circumstances::CanPartitionTables)
+        {
             include_str!("postgres/tables_query.sql")
         } else {
             include_str!("postgres/tables_query_simple.sql")
@@ -661,7 +695,10 @@ impl<'a> SqlSchemaDescriber<'a> {
 
         let namespaces = &sql_schema.namespaces;
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         let mut names = Vec::with_capacity(rows.len());
 
@@ -693,7 +730,15 @@ impl<'a> SqlSchemaDescriber<'a> {
 
         let mut map = IndexMap::default();
 
-        for (table_name, namespace, is_partition, has_subclass, has_row_level_security, description) in names {
+        for (
+            table_name,
+            namespace,
+            is_partition,
+            has_subclass,
+            has_row_level_security,
+            description,
+        ) in names
+        {
             let cloned_name = table_name.clone();
 
             let partition = if is_partition {
@@ -746,7 +791,10 @@ impl<'a> SqlSchemaDescriber<'a> {
             WHERE schemaname = ANY ( $1 )
         "#};
 
-        let result_set = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let result_set = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         for row in result_set.into_iter() {
             let name = row.get_expect_string("view_name");
@@ -806,7 +854,10 @@ impl<'a> SqlSchemaDescriber<'a> {
         "#
         );
 
-        let rows = self.conn.query_raw(sql.as_str(), &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql.as_str(), &[Value::array(namespaces)])
+            .await?;
 
         for col in rows {
             let namespace = col.get_expect_string("namespace");
@@ -826,7 +877,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             let is_identity = match col.get_string("is_identity") {
                 Some(is_id) if is_id.eq_ignore_ascii_case("yes") => true,
                 Some(is_id) if is_id.eq_ignore_ascii_case("no") => false,
-                Some(is_identity_str) => panic!("unrecognized is_identity variant '{is_identity_str}'"),
+                Some(is_identity_str) => {
+                    panic!("unrecognized is_identity variant '{is_identity_str}'")
+                }
                 None => false,
             };
 
@@ -840,7 +893,10 @@ impl<'a> SqlSchemaDescriber<'a> {
             let description = col.get_string("description");
 
             let auto_increment = is_identity
-                || matches!(default.as_ref().map(|d| &d.kind), Some(DefaultKind::Sequence(_)));
+                || matches!(
+                    default.as_ref().map(|d| &d.kind),
+                    Some(DefaultKind::Sequence(_))
+                );
 
             match container_id {
                 Either::Left(table_id) => {
@@ -871,8 +927,12 @@ impl<'a> SqlSchemaDescriber<'a> {
         // We need to sort because the collation in the system tables (pg_class) is different from
         // that of the information schema, so tables come out of different order in the tables
         // query and the columns query.
-        sql_schema.table_columns.sort_by_key(|(table_id, _)| *table_id);
-        sql_schema.view_columns.sort_by_key(|(table_id, _)| *table_id);
+        sql_schema
+            .table_columns
+            .sort_by_key(|(table_id, _)| *table_id);
+        sql_schema
+            .view_columns
+            .sort_by_key(|(table_id, _)| *table_id);
 
         table_defaults.sort_by_key(|(table_id, _)| *table_id);
         view_defaults.sort_by_key(|(view_id, _)| *view_id);
@@ -908,9 +968,10 @@ impl<'a> SqlSchemaDescriber<'a> {
                 fn get_dual(formatted_type: &str) -> (Option<u32>, Option<u32>) {
                     static DUAL_REGEX: LazyLock<Regex> =
                         LazyLock::new(|| Regex::new(r"numeric\(([0-9]*),([0-9]*)\)\[\]$").unwrap());
-                    let first = DUAL_REGEX
-                        .captures(formatted_type)
-                        .and_then(|cap| cap.get(1).and_then(|precision| precision.as_str().parse().ok()));
+                    let first = DUAL_REGEX.captures(formatted_type).and_then(|cap| {
+                        cap.get(1)
+                            .and_then(|precision| precision.as_str().parse().ok())
+                    });
 
                     let second = DUAL_REGEX
                         .captures(formatted_type)
@@ -931,7 +992,9 @@ impl<'a> SqlSchemaDescriber<'a> {
                     _ => (None, None),
                 };
                 let time = match fdt.as_str() {
-                    "_timestamptz" | "_timestamp" | "_timetz" | "_time" | "_interval" => get_single(&formatted_type),
+                    "_timestamptz" | "_timestamp" | "_timetz" | "_time" | "_interval" => {
+                        get_single(&formatted_type)
+                    }
                     _ => None,
                 };
 
@@ -956,7 +1019,8 @@ impl<'a> SqlSchemaDescriber<'a> {
     fn get_type_modifiers(col: &ResultRow) -> Option<Vec<i32>> {
         let fdt = col.get_expect_string("formatted_type");
 
-        static TYPE_MODIFIER_REGEX: LazyLock<Regex> = LazyLock::new(|| Regex::new(r".*\(([-0-9, ]+)\)").unwrap());
+        static TYPE_MODIFIER_REGEX: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r".*\(([-0-9, ]+)\)").unwrap());
 
         TYPE_MODIFIER_REGEX
             .captures(&fdt)
@@ -1041,16 +1105,28 @@ impl<'a> SqlSchemaDescriber<'a> {
             sql_schema: &SqlSchema,
         ) -> Option<(TableId, TableColumnId, TableId, TableColumnId)> {
             let table_id = *table_ids.get(&(namespace, table_name))?;
-            let referenced_table_id = *table_ids.get(&(referenced_schema_name, referenced_table_name))?;
+            let referenced_table_id =
+                *table_ids.get(&(referenced_schema_name, referenced_table_name))?;
             let column_id = sql_schema.walk(table_id).column(column_name)?.id;
-            let referenced_column_id = sql_schema.walk(referenced_table_id).column(referenced_column_name)?.id;
+            let referenced_column_id = sql_schema
+                .walk(referenced_table_id)
+                .column(referenced_column_name)?
+                .id;
 
-            Some((table_id, column_id, referenced_table_id, referenced_column_id))
+            Some((
+                table_id,
+                column_id,
+                referenced_table_id,
+                referenced_column_id,
+            ))
         }
 
         // One foreign key with multiple columns will be represented here as several
         // rows with the same ID.
-        let result_set = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let result_set = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         for row in result_set.into_iter() {
             trace!("Got description FK row {:?}", row);
@@ -1064,28 +1140,31 @@ impl<'a> SqlSchemaDescriber<'a> {
 
             let referenced_schema_name = row.get_expect_string("referenced_schema_name");
             if !sql_schema.namespaces.contains(&referenced_schema_name) {
-                return Err(DescriberError::from(DescriberErrorKind::CrossSchemaReference {
-                    from: format!("{}.{table_name}", sql_schema.namespaces[0]),
-                    to: format!("{referenced_schema_name}.{referenced_table}"),
-                    constraint: constraint_name,
-                    missing_namespace: referenced_schema_name,
-                }));
+                return Err(DescriberError::from(
+                    DescriberErrorKind::CrossSchemaReference {
+                        from: format!("{}.{table_name}", sql_schema.namespaces[0]),
+                        to: format!("{referenced_schema_name}.{referenced_table}"),
+                        constraint: constraint_name,
+                        missing_namespace: referenced_schema_name,
+                    },
+                ));
             }
 
-            let (table_id, column_id, referenced_table_id, referenced_column_id) = if let Some(ids) = get_ids(
-                namespace,
-                table_name,
-                &column_name,
-                referenced_schema_name,
-                referenced_table,
-                &referenced_column,
-                table_ids,
-                sql_schema,
-            ) {
-                ids
-            } else {
-                continue;
-            };
+            let (table_id, column_id, referenced_table_id, referenced_column_id) =
+                if let Some(ids) = get_ids(
+                    namespace,
+                    table_name,
+                    &column_name,
+                    referenced_schema_name,
+                    referenced_table,
+                    &referenced_column,
+                    table_ids,
+                    sql_schema,
+                ) {
+                    ids
+                } else {
+                    continue;
+                };
 
             let confdeltype = row
                 .get_char("confdeltype")
@@ -1157,7 +1236,10 @@ impl<'a> SqlSchemaDescriber<'a> {
         let namespaces = &sql_schema.namespaces;
         let sql = include_str!("postgres/constraints_query.sql");
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         for row in rows {
             let namespace = row.get_expect_string("namespace");
@@ -1172,7 +1254,9 @@ impl<'a> SqlSchemaDescriber<'a> {
 
             match constraint_type {
                 'c' => {
-                    sql_schema.check_constraints.push((table_id, constraint_name));
+                    sql_schema
+                        .check_constraints
+                        .push((table_id, constraint_name));
                 }
                 'x' => {
                     pg_ext.exclude_constraints.push((table_id, constraint_name));
@@ -1195,7 +1279,10 @@ impl<'a> SqlSchemaDescriber<'a> {
     ) -> DescriberResult<()> {
         let namespaces = &sql_schema.namespaces;
         let sql = include_str!("postgres/indexes_query.sql");
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         let mut result_rows = Vec::new();
         let mut index_rows = rows.into_iter().peekable();
@@ -1209,7 +1296,10 @@ impl<'a> SqlSchemaDescriber<'a> {
             }
 
             // * Expression Indexes
-            if result_rows.iter().any(|row| row.get_string("column_name").is_none()) {
+            if result_rows
+                .iter()
+                .any(|row| row.get_string("column_name").is_none())
+            {
                 let row = result_rows.first().unwrap();
                 let namespace = row.get_expect_string("namespace");
                 let table_name = row.get_expect_string("table_name");
@@ -1225,11 +1315,21 @@ impl<'a> SqlSchemaDescriber<'a> {
                 continue;
             }
 
-            index_from_row(result_rows.drain(..), table_ids, sql_schema, pg_ext, self.circumstances);
+            index_from_row(
+                result_rows.drain(..),
+                table_ids,
+                sql_schema,
+                pg_ext,
+                self.circumstances,
+            );
         }
     }
 
-    async fn get_sequences(&self, sql_schema: &SqlSchema, postgres_ext: &mut PostgresSchemaExt) -> DescriberResult<()> {
+    async fn get_sequences(
+        &self,
+        sql_schema: &SqlSchema,
+        postgres_ext: &mut PostgresSchemaExt,
+    ) -> DescriberResult<()> {
         let namespaces = &sql_schema.namespaces;
         // On postgres 9, pg_sequences does not exist, and the information schema view does not
         // contain the cache size.
@@ -1248,7 +1348,10 @@ impl<'a> SqlSchemaDescriber<'a> {
               ORDER BY sequence_name
             "#;
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
         let sequences = rows.into_iter().map(|seq| Sequence {
             namespace_id: sql_schema
                 .get_namespace_id(&seq.get_expect_string("namespace"))
@@ -1282,8 +1385,12 @@ impl<'a> SqlSchemaDescriber<'a> {
             WHERE n.nspname = ANY ( $1 )
             ORDER BY e.enumsortorder";
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
-        let mut enum_values: BTreeMap<(NamespaceId, String, Option<String>), Vec<String>> = BTreeMap::new();
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
+        let mut enum_values: BTreeMap<(NamespaceId, String, Option<String>), Vec<String>> =
+            BTreeMap::new();
 
         for row in rows.into_iter() {
             let name = row.get_expect_string("name");
@@ -1292,7 +1399,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             let description = row.get_string("description");
             let namespace_id = sql_schema.get_namespace_id(&namespace).unwrap();
 
-            let values = enum_values.entry((namespace_id, name, description)).or_default();
+            let values = enum_values
+                .entry((namespace_id, name, description))
+                .or_default();
 
             values.push(value);
         }
@@ -1322,7 +1431,10 @@ impl<'a> SqlSchemaDescriber<'a> {
               AND t.typinput::regproc::text <> 'array_in' -- exclude array types
         ";
 
-        let rows = self.conn.query_raw(sql, &[Value::array(namespaces)]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[Value::array(namespaces)])
+            .await?;
 
         for row in rows.into_iter() {
             let name = row.get_expect_string("name");
@@ -1434,7 +1546,10 @@ fn index_from_row(
         }
 
         let index_id = current_index.unwrap();
-        let operator_class = if !matches!(algorithm, SqlIndexAlgorithm::BTree | SqlIndexAlgorithm::Hash) {
+        let operator_class = if !matches!(
+            algorithm,
+            SqlIndexAlgorithm::BTree | SqlIndexAlgorithm::Hash
+        ) {
             row.get_string("opclass")
                 .map(|c| (c, row.get_bool("opcdefault").unwrap_or_default()))
                 .map(|(c, is_default)| SQLOperatorClass {
@@ -1455,8 +1570,7 @@ fn index_from_row(
         pg_ext.indexes.push((index_id, algorithm));
 
         // only enable nulls first/last on Postgres
-        if algorithm == SqlIndexAlgorithm::BTree && !is_primary_key
-        {
+        if algorithm == SqlIndexAlgorithm::BTree && !is_primary_key {
             let nulls_first = row.get_expect_bool("nulls_first");
 
             let position = if nulls_first {
@@ -1520,7 +1634,9 @@ fn get_column_type_family(
         "citext" | "_citext" => (String, Some(KnownPostgresType::Citext)),
         "varchar" | "_varchar" => (
             String,
-            Some(KnownPostgresType::VarChar(precision.character_maximum_length)),
+            Some(KnownPostgresType::VarChar(
+                precision.character_maximum_length,
+            )),
         ),
         "bpchar" | "_bpchar" => (
             String,
@@ -1534,10 +1650,15 @@ fn get_column_type_family(
         "uuid" | "_uuid" => (Uuid, Some(KnownPostgresType::Uuid)),
         "xml" | "_xml" => (String, Some(KnownPostgresType::Xml)),
         // bit and varbit should be binary, but are currently mapped to strings.
-        "bit" | "_bit" => (String, Some(KnownPostgresType::Bit(precision.character_maximum_length))),
+        "bit" | "_bit" => (
+            String,
+            Some(KnownPostgresType::Bit(precision.character_maximum_length)),
+        ),
         "varbit" | "_varbit" => (
             String,
-            Some(KnownPostgresType::VarBit(precision.character_maximum_length)),
+            Some(KnownPostgresType::VarBit(
+                precision.character_maximum_length,
+            )),
         ),
         "numeric" | "_numeric" => (
             Decimal,
@@ -1550,10 +1671,22 @@ fn get_column_type_family(
             )),
         ),
         "money" | "_money" => (Decimal, Some(KnownPostgresType::Money)),
-        "time" | "_time" => (DateTime, Some(KnownPostgresType::Time(precision.time_precision))),
-        "timetz" | "_timetz" => (DateTime, Some(KnownPostgresType::Timetz(precision.time_precision))),
-        "timestamp" | "_timestamp" => (DateTime, Some(KnownPostgresType::Timestamp(precision.time_precision))),
-        "timestamptz" | "_timestamptz" => (DateTime, Some(KnownPostgresType::Timestamptz(precision.time_precision))),
+        "time" | "_time" => (
+            DateTime,
+            Some(KnownPostgresType::Time(precision.time_precision)),
+        ),
+        "timetz" | "_timetz" => (
+            DateTime,
+            Some(KnownPostgresType::Timetz(precision.time_precision)),
+        ),
+        "timestamp" | "_timestamp" => (
+            DateTime,
+            Some(KnownPostgresType::Timestamp(precision.time_precision)),
+        ),
+        "timestamptz" | "_timestamptz" => (
+            DateTime,
+            Some(KnownPostgresType::Timestamptz(precision.time_precision)),
+        ),
         "inet" | "_inet" => (String, Some(KnownPostgresType::Inet)),
         _ => return get_udt_column_type_family(data_type, full_data_type, row, schema),
     };
@@ -1598,7 +1731,9 @@ fn get_udt_column_type_family(
             )),
         )
     } else {
-        (ColumnTypeFamily::Unsupported(full_data_type.to_owned()), None)
+        (
+            ColumnTypeFamily::Unsupported(full_data_type.to_owned()),
+            None,
+        )
     }
 }
-

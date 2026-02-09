@@ -51,7 +51,7 @@ pub trait Feature {
 }
 
 pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
-    let service_info  = service_info!();
+    let service_info = service_info!();
     let configuration = get_configuration(&service_info).unwrap();
 
     telemetry::init(service_info, &configuration.telemetry)?;
@@ -78,7 +78,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
         features,
         modules,
         HttpServerContext {
-
             port: configuration.port,
             injector: Arc::new(injector),
         },

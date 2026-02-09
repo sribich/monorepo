@@ -1,17 +1,25 @@
-use super::execute_operation::{execute_many_operations, execute_many_self_contained, execute_single_self_contained};
-use super::request_context;
-use crate::ItxManager;
-use crate::{
-    BatchDocumentTransaction, CoreError, Operation, QueryExecutor, ResponseData, TransactionError, TransactionManager,
-    TransactionOptions, TxId, protocol::EngineProtocol,
-};
-
 use async_trait::async_trait;
 use connector::Connector;
 use schema::QuerySchemaRef;
 use telemetry::TraceParent;
 use tokio::time::Duration;
 use tracing_futures::Instrument;
+
+use super::execute_operation::execute_many_operations;
+use super::execute_operation::execute_many_self_contained;
+use super::execute_operation::execute_single_self_contained;
+use super::request_context;
+use crate::BatchDocumentTransaction;
+use crate::CoreError;
+use crate::ItxManager;
+use crate::Operation;
+use crate::QueryExecutor;
+use crate::ResponseData;
+use crate::TransactionError;
+use crate::TransactionManager;
+use crate::TransactionOptions;
+use crate::TxId;
+use crate::protocol::EngineProtocol;
 
 /// Central query executor and main entry point into the query core.
 pub struct InterpretingExecutor<C> {
@@ -54,7 +62,9 @@ where
     ) -> crate::Result<ResponseData> {
         request_context::with_request_context(engine_protocol, async move {
             if let Some(tx_id) = tx_id {
-                self.itx_manager.execute(&tx_id, operation, traceparent).await
+                self.itx_manager
+                    .execute(&tx_id, operation, traceparent)
+                    .await
             } else {
                 execute_single_self_contained(
                     &self.connector,
@@ -98,18 +108,31 @@ where
                         "Can not set batch isolation level within interactive transaction".into(),
                     ));
                 }
-                self.itx_manager.batch_execute(&tx_id, operations, traceparent).await
+                self.itx_manager
+                    .batch_execute(&tx_id, operations, traceparent)
+                    .await
             } else if let Some(transaction) = transaction {
                 let conn_span = info_span!(
                     "prisma:engine:connection",
                     user_facing = true,
                     "db.system" = self.connector.name(),
                 );
-                let mut conn = self.connector.get_connection().instrument(conn_span).await?;
-                let mut tx = conn.start_transaction(transaction.isolation_level()).await?;
+                let mut conn = self
+                    .connector
+                    .get_connection()
+                    .instrument(conn_span)
+                    .await?;
+                let mut tx = conn
+                    .start_transaction(transaction.isolation_level())
+                    .await?;
 
-                let results =
-                    execute_many_operations(query_schema, tx.as_connection_like(), &operations, traceparent).await;
+                let results = execute_many_operations(
+                    query_schema,
+                    tx.as_connection_like(),
+                    &operations,
+                    traceparent,
+                )
+                .await;
 
                 if results.is_err() {
                     tx.rollback().await?;

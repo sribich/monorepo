@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod multi_field_unique {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn two_field_unique() -> String {
         let schema = indoc! {
@@ -48,8 +49,16 @@ mod multi_field_unique {
 
     #[connector_test(schema(two_field_unique))]
     async fn simple(runner: Runner) -> TestResult<()> {
-        create_user(&runner, r#"{ id: 1, FirstName: "Matt", LastName: "Eagle" }"#).await?;
-        create_user(&runner, r#"{ id: 2, FirstName: "Hans", LastName: "Wurst" }"#).await?;
+        create_user(
+            &runner,
+            r#"{ id: 1, FirstName: "Matt", LastName: "Eagle" }"#,
+        )
+        .await?;
+        create_user(
+            &runner,
+            r#"{ id: 2, FirstName: "Hans", LastName: "Wurst" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, indoc! { r#"
@@ -115,8 +124,16 @@ mod multi_field_unique {
 
     #[connector_test(schema(aliased))]
     async fn aliased_index(runner: Runner) -> TestResult<()> {
-        create_user(&runner, r#"{ id: 1, FirstName: "Matt", LastName: "Eagle" }"#).await?;
-        create_user(&runner, r#"{ id: 2, FirstName: "Hans", LastName: "Wurst" }"#).await?;
+        create_user(
+            &runner,
+            r#"{ id: 1, FirstName: "Matt", LastName: "Eagle" }"#,
+        )
+        .await?;
+        create_user(
+            &runner,
+            r#"{ id: 2, FirstName: "Hans", LastName: "Wurst" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, indoc! { r#"
@@ -267,7 +284,9 @@ mod multi_field_unique {
 
     async fn create_user(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneUser(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneUser(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

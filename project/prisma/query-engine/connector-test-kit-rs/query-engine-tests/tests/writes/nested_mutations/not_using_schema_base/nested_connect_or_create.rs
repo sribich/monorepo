@@ -484,8 +484,14 @@ mod connect_or_create {
     // Regression test for https://github.com/prisma/prisma/issues/16090
     #[connector_test(schema(schema_5))]
     async fn one2one_update_if_no_child_connected_yet(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneParent(data: { id: 1 }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneChild(data: { id: 1 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneParent(data: { id: 1 }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneChild(data: { id: 1 }) { id } }"#
+        );
 
         // connect (without child connected yet)
         insta::assert_snapshot!(
@@ -519,8 +525,14 @@ mod connect_or_create {
     // Regression test for https://github.com/prisma/prisma/issues/16090
     #[connector_test(schema(schema_5))]
     async fn one2one_upsert_if_no_child_connected_yet(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneParent(data: { id: 1 }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneChild(data: { id: 1 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneParent(data: { id: 1 }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneChild(data: { id: 1 }) { id } }"#
+        );
 
         // connect (without child connected yet)
         insta::assert_snapshot!(

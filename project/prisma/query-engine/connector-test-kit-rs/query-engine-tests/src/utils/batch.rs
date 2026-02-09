@@ -1,7 +1,9 @@
-use query_tests_setup::{
-    GraphqlBody, MultiQuery, Runner, TestResult,
-    query_core::{BatchDocument, QueryDocument},
-};
+use query_tests_setup::GraphqlBody;
+use query_tests_setup::MultiQuery;
+use query_tests_setup::Runner;
+use query_tests_setup::TestResult;
+use query_tests_setup::query_core::BatchDocument;
+use query_tests_setup::query_core::QueryDocument;
 
 use crate::run_query;
 
@@ -12,7 +14,10 @@ pub async fn compact_batch(runner: &Runner, queries: Vec<String>) -> TestResult<
     }
 
     // Ensure batched queries are valid
-    runner.batch(queries.clone(), false, None).await?.assert_success();
+    runner
+        .batch(queries.clone(), false, None)
+        .await?
+        .assert_success();
 
     let doc = GraphqlBody::Multi(MultiQuery::new(
         queries.into_iter().map(Into::into).collect(),

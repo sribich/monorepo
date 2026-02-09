@@ -1,8 +1,13 @@
-use std::{error::Error, fmt::Display, io, path::Path};
+use std::error::Error;
+use std::fmt::Display;
+use std::io;
+use std::path::Path;
 
-use schema_core::json_rpc::types::{
-    MigrationDirectory, MigrationFile, MigrationList, MigrationLockfile, SchemaContainer,
-};
+use schema_core::json_rpc::types::MigrationDirectory;
+use schema_core::json_rpc::types::MigrationFile;
+use schema_core::json_rpc::types::MigrationList;
+use schema_core::json_rpc::types::MigrationLockfile;
+use schema_core::json_rpc::types::SchemaContainer;
 
 #[macro_export]
 macro_rules! write_multi_file {
@@ -50,12 +55,15 @@ pub fn to_schema_containers(files: &[(String, &str)]) -> Vec<SchemaContainer> {
 /// List the migrations present in the migration directory, lexicographically sorted by name.
 ///
 /// If the migrations directory does not exist, it will not error but return an empty Vec.
-pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList, ListMigrationsError> {
+pub fn list_migrations(
+    migrations_directory_path: &Path,
+) -> Result<MigrationList, ListMigrationsError> {
     let base_dir = migrations_directory_path.to_string_lossy().into_owned();
 
     let lockfile = MigrationLockfile {
         path: "migration_lock.toml".to_string(),
-        content: std::fs::read_to_string(migrations_directory_path.join("migration_lock.toml")).ok(),
+        content: std::fs::read_to_string(migrations_directory_path.join("migration_lock.toml"))
+            .ok(),
     };
 
     let mut entries: Vec<MigrationDirectory> = Vec::new();
@@ -82,7 +90,9 @@ pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList
             // Relative path to a migration directory from `baseDir`.
             // E.g., `20201117144659_test`.
             // This will return a &Path that is the relative path
-            let entry_relative = entry.strip_prefix(&base_dir).expect("entry is not inside base_dir");
+            let entry_relative = entry
+                .strip_prefix(&base_dir)
+                .expect("entry is not inside base_dir");
 
             let path = entry_relative.to_string_lossy().into_owned();
 
@@ -93,7 +103,10 @@ pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList
                     .into(),
             };
 
-            let migration_directory = MigrationDirectory { path, migration_file };
+            let migration_directory = MigrationDirectory {
+                path,
+                migration_file,
+            };
             entries.push(migration_directory);
         }
     }

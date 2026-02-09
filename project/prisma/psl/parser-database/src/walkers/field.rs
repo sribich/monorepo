@@ -1,9 +1,14 @@
-use super::{ModelWalker, RelationFieldWalker, ScalarFieldWalker, Walker};
-use crate::{
-    ScalarFieldType, ScalarType,
-    types::{RefinedFieldVariant, RelationField, ScalarField},
-};
 use psl_ast::ast;
+
+use super::ModelWalker;
+use super::RelationFieldWalker;
+use super::ScalarFieldWalker;
+use super::Walker;
+use crate::ScalarFieldType;
+use crate::ScalarType;
+use crate::types::RefinedFieldVariant;
+use crate::types::RelationField;
+use crate::types::ScalarField;
 
 /// A model field, scalar or relation.
 pub type FieldWalker<'db> = Walker<'db, (crate::ModelId, ast::FieldId)>;
@@ -52,14 +57,18 @@ pub enum RefinedFieldWalker<'db> {
 
 impl<'db> From<ScalarFieldWalker<'db>> for FieldWalker<'db> {
     fn from(w: ScalarFieldWalker<'db>) -> Self {
-        let ScalarField { model_id, field_id, .. } = w.db.types[w.id];
+        let ScalarField {
+            model_id, field_id, ..
+        } = w.db.types[w.id];
         w.db.walk((model_id, field_id))
     }
 }
 
 impl<'db> From<RelationFieldWalker<'db>> for FieldWalker<'db> {
     fn from(w: RelationFieldWalker<'db>) -> Self {
-        let RelationField { model_id, field_id, .. } = w.db.types[w.id];
+        let RelationField {
+            model_id, field_id, ..
+        } = w.db.types[w.id];
         w.db.walk((model_id, field_id))
     }
 }

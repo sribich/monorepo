@@ -1,15 +1,15 @@
 use convert_case::Casing;
-use macro_util::ast::{Struct, Unresolved};
-use quote::{format_ident, quote};
+use macro_util::ast::Struct;
+use macro_util::ast::Unresolved;
+use quote::format_ident;
+use quote::quote;
 use syn::GenericParam;
 
-use crate::{
-    attributes::{
-        common::tokenize_deprecation, container::ContainerAttributes, field::FieldAttributes,
-    },
-    typegen::datatype,
-    util::get_crate_name,
-};
+use crate::attributes::common::tokenize_deprecation;
+use crate::attributes::container::ContainerAttributes;
+use crate::attributes::field::FieldAttributes;
+use crate::typegen::datatype;
+use crate::util::get_crate_name;
 
 pub(super) fn impl_struct(
     container_name: &String,
@@ -53,13 +53,13 @@ pub(super) fn impl_struct(
                 }
 
                 fields.into_iter().next().unwrap()
-            },
+            }
             macro_util::ast::StructKind::Unit => {
                 return Err(syn::Error::new(
                     input.name.span(),
                     "Unit structs cannot be transparent.",
                 ));
-            },
+            }
         };
 
         let ty = datatype(&format_ident!("ty"), field.ty, &generic_idents)?;
@@ -122,7 +122,7 @@ pub(super) fn impl_struct(
                     quote!(#crate_name::datatype::r#struct::StructFields::new_named(
                         vec![#(#fields),*]
                     ))
-                },
+                }
                 macro_util::ast::StructKind::Unnamed => {
                     let fields = input
                         .fields
@@ -158,10 +158,10 @@ pub(super) fn impl_struct(
                     quote!(#crate_name::datatype::r#struct::StructFields::new_unnamed(
                         vec![#(#fields),*]
                     ))
-                },
+                }
                 macro_util::ast::StructKind::Unit => {
                     quote!(#crate_name::datatype::r#struct::StructFields::new_unit())
-                },
+                }
             };
 
         quote! {

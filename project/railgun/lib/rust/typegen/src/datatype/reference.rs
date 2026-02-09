@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 
-use super::{DataType, generic::GenericType};
-use crate::{
-    Generics, NamedType, Type,
-    cache::{CachedType, TypeCache},
-    id::TypeId,
-};
+use super::DataType;
+use super::generic::GenericType;
+use crate::Generics;
+use crate::NamedType;
+use crate::Type;
+use crate::cache::CachedType;
+use crate::cache::TypeCache;
+use crate::id::TypeId;
 
 #[derive(Clone, Debug)]
 pub struct Reference {

@@ -1,11 +1,14 @@
 mod read;
 mod write;
 
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::SelectionResult;
 pub use read::*;
 pub use write::*;
 
 use crate::ToGraphviz;
-use query_structure::{FieldSelection, Filter, Model, SelectionResult};
 
 #[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]

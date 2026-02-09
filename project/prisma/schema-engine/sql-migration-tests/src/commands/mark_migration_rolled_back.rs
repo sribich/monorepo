@@ -1,6 +1,10 @@
-use schema_core::{
-    CoreError, CoreResult, commands::mark_migration_rolled_back::{self, MarkMigrationRolledBackInput, MarkMigrationRolledBackOutput, mark_migration_rolled_back}, schema_connector::SchemaConnector,
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::mark_migration_rolled_back::MarkMigrationRolledBackInput;
+use schema_core::commands::mark_migration_rolled_back::MarkMigrationRolledBackOutput;
+use schema_core::commands::mark_migration_rolled_back::mark_migration_rolled_back;
+use schema_core::commands::mark_migration_rolled_back::{self};
+use schema_core::schema_connector::SchemaConnector;
 
 #[must_use = "This struct does nothing on its own. See MarkMigrationRolledBack::send()"]
 pub struct MarkMigrationRolledBack<'a> {
@@ -10,16 +14,20 @@ pub struct MarkMigrationRolledBack<'a> {
 
 impl<'a> MarkMigrationRolledBack<'a> {
     pub fn new(api: &'a mut dyn SchemaConnector, migration_name: String) -> Self {
-        MarkMigrationRolledBack { api, migration_name }
+        MarkMigrationRolledBack {
+            api,
+            migration_name,
+        }
     }
 
     fn send_impl(self) -> CoreResult<MarkMigrationRolledBackAssertion> {
-        let output = test_setup::runtime::run_with_thread_local_runtime(mark_migration_rolled_back(
-            MarkMigrationRolledBackInput {
-                migration_name: self.migration_name,
-            },
-            self.api,
-        ))?;
+        let output =
+            test_setup::runtime::run_with_thread_local_runtime(mark_migration_rolled_back(
+                MarkMigrationRolledBackInput {
+                    migration_name: self.migration_name,
+                },
+                self.api,
+            ))?;
 
         Ok(MarkMigrationRolledBackAssertion { _output: output })
     }

@@ -1,15 +1,20 @@
-use macro_util::{
-    ast::{Struct, StructKind},
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_type_bound},
-};
-use quote::{format_ident, quote, quote_spanned};
-use syn::{Ident, Path, spanned::Spanned};
+use macro_util::ast::Struct;
+use macro_util::ast::StructKind;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_type_bound;
+use quote::format_ident;
+use quote::quote;
+use quote::quote_spanned;
+use syn::Ident;
+use syn::Path;
+use syn::spanned::Spanned;
 
-use crate::{
-    attributes::{ContainerAttributes, FieldAttributes},
-    get_crate_path,
-    meta::{FieldMeta, StructMeta},
-};
+use crate::attributes::ContainerAttributes;
+use crate::attributes::FieldAttributes;
+use crate::get_crate_path;
+use crate::meta::FieldMeta;
+use crate::meta::StructMeta;
 
 type TypedStruct<'syn> =
     Struct<'syn, ContainerAttributes, StructMeta<'syn>, FieldAttributes, FieldMeta>;
@@ -25,7 +30,7 @@ pub fn impl_struct(input: Struct) -> syn::Result<proc_macro2::TokenStream> {
                 input.node,
                 "Tuple structs are not supported targets for Error derivation.",
             ));
-        },
+        }
     };
 
     match input.kind {
@@ -79,7 +84,7 @@ pub fn impl_struct(input: Struct) -> syn::Result<proc_macro2::TokenStream> {
 
                 #context
             })
-        },
+        }
         StructKind::Unnamed => todo!(),
         StructKind::Unit => todo!(),
     }

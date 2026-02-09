@@ -1,11 +1,6 @@
 use query_engine_tests::*;
 
-#[test_suite(
-    schema(schema),
-    exclude(
-        Sqlite("react-native"),
-    )
-)]
+#[test_suite(schema(schema), exclude(Sqlite("react-native"),))]
 mod logs {
     use indoc::indoc;
     use query_core::executor::TraceParent;
@@ -125,7 +120,9 @@ mod logs {
     }
 
     #[connector_test]
-    async fn nested_delete_in_update_logs_all_have_traceparent(mut runner: Runner) -> TestResult<()> {
+    async fn nested_delete_in_update_logs_all_have_traceparent(
+        mut runner: Runner,
+    ) -> TestResult<()> {
         let traceparent = TraceParent::new_random();
         runner
             .query_with_traceparent(
@@ -166,18 +163,26 @@ mod logs {
         assert_all_logs_contain_traceparents(&mut runner, traceparent).await
     }
 
-    async fn assert_all_logs_contain_traceparents(runner: &mut Runner, traceparent: TraceParent) -> TestResult<()> {
+    async fn assert_all_logs_contain_traceparents(
+        runner: &mut Runner,
+        traceparent: TraceParent,
+    ) -> TestResult<()> {
         let logs = runner.get_logs().await;
 
         let query_logs = logs
             .iter()
             .filter(|log| {
                 log.split_once("db.query.text=").is_some_and(|(_, q)| {
-                    !q.starts_with("BEGIN") && !q.starts_with("COMMIT") && !q.starts_with("SET TRANSACTION")
+                    !q.starts_with("BEGIN")
+                        && !q.starts_with("COMMIT")
+                        && !q.starts_with("SET TRANSACTION")
                 })
             })
             .collect::<Vec<_>>();
-        assert!(!query_logs.is_empty(), "expected db.query.text logs in {logs:?}");
+        assert!(
+            !query_logs.is_empty(),
+            "expected db.query.text logs in {logs:?}"
+        );
 
         let expected_traceparent = format!("/* traceparent='{traceparent}' */");
         let matching = query_logs

@@ -21,24 +21,28 @@ mod parser;
 mod selection;
 mod transformers;
 
-pub use argument_value::{ArgumentValue, ArgumentValueObject};
-pub use operation::Operation;
-pub use selection::{Exclusion, In, Selection, SelectionArgument, SelectionSet};
+use std::collections::HashMap;
 
+pub use argument_value::ArgumentValue;
+pub use argument_value::ArgumentValueObject;
+use itertools::Itertools;
+pub use operation::Operation;
 pub(crate) use parse_ast::*;
 pub(crate) use parser::*;
-
-use crate::{
-    query_ast::{QueryOption, QueryOptions},
-    query_graph_builder::resolve_compound_field,
-};
-use itertools::Itertools;
 use query_structure::Model;
-use schema::{QuerySchema, constants::*};
-use std::collections::HashMap;
+use schema::QuerySchema;
+use schema::constants::*;
+pub use selection::Exclusion;
+pub use selection::In;
+pub use selection::Selection;
+pub use selection::SelectionArgument;
+pub use selection::SelectionSet;
 use user_facing_errors::query_engine::validation::ValidationError;
 
 use self::selection::QueryFilters;
+use crate::query_ast::QueryOption;
+use crate::query_ast::QueryOptions;
+use crate::query_graph_builder::resolve_compound_field;
 
 pub(crate) type QueryParserResult<T> = std::result::Result<T, ValidationError>;
 
@@ -87,7 +91,10 @@ impl BatchDocument {
             .expect("findUnique must be a read query containing `where` object argument");
 
         let field = schema.find_query_field(op.name()).unwrap();
-        let model = schema.internal_data_model.clone().zip(field.model().unwrap());
+        let model = schema
+            .internal_data_model
+            .clone()
+            .zip(field.model().unwrap());
 
         where_obj.iter().any(|(key, val)| match val {
             // If it's a compound, then it's still considered as scalar
@@ -111,8 +118,9 @@ impl BatchDocument {
                 Some((first, rest)) if first.is_find_unique(schema) => {
                     // If any of the operation has an "invalid" compact filter (see documentation of `invalid_compact_filter`),
                     // we do not compact the queries.
-                    let has_invalid_compact_filter =
-                        operations.iter().any(|op| Self::invalid_compact_filter(op, schema));
+                    let has_invalid_compact_filter = operations
+                        .iter()
+                        .any(|op| Self::invalid_compact_filter(op, schema));
 
                     if has_invalid_compact_filter {
                         return false;
@@ -180,7 +188,8 @@ pub struct CompactedDocument {
 
 impl CompactedDocument {
     pub fn throw_on_empty(&self) -> bool {
-        self.original_query_options.contains(QueryOption::ThrowOnEmpty)
+        self.original_query_options
+            .contains(QueryOption::ThrowOnEmpty)
     }
 
     pub fn single_name(&self) -> String {
@@ -197,13 +206,21 @@ impl CompactedDocument {
 
     /// Here be the dragons. Ay caramba!
     pub fn from_operations(ops: Vec<Operation>, schema: &QuerySchema) -> Self {
-        let field = schema.find_query_field(ops.first().unwrap().name()).unwrap();
-        let model = schema.internal_data_model.clone().zip(field.model().unwrap());
+        let field = schema
+            .find_query_field(ops.first().unwrap().name())
+            .unwrap();
+        let model = schema
+            .internal_data_model
+            .clone()
+            .zip(field.model().unwrap());
         // Unpack all read queries (an enum) into a collection of selections.
         // We already took care earlier that all operations here must be reads.
         let selections: Vec<Selection> = ops
             .into_iter()
-            .map(|op| op.into_read().expect("Trying to compact a write operation."))
+            .map(|op| {
+                op.into_read()
+                    .expect("Trying to compact a write operation.")
+            })
             .collect();
 
         // Convert the selections into a map of arguments. This defines the
@@ -249,7 +266,8 @@ impl CompactedDocument {
             // query. Otherwise we fail hard here.
             builder.set_nested_selections(selections[0].nested_selections().to_vec());
 
-            let selection_set = SelectionSet::new(arguments.iter().cloned().map(QueryFilters::new).collect());
+            let selection_set =
+                SelectionSet::new(arguments.iter().cloned().map(QueryFilters::new).collect());
 
             // We must select all unique fields in the query so we can
             // match the right response back to the right request later on.
@@ -319,11 +337,15 @@ fn extract_filter(where_obj: ArgumentValueObject, model: &Model) -> Vec<Selectio
         .into_iter()
         .flat_map(|(key, val)| match val {
             // This means our query has a compound field in the form of: {co1_col2: { col1_col2: { col1: <val>, col2: <val> } }}
-            ArgumentValue::Object(obj) if resolve_compound_field(&key, model).is_some() => obj.into_iter().collect(),
+            ArgumentValue::Object(obj) if resolve_compound_field(&key, model).is_some() => {
+                obj.into_iter().collect()
+            }
             // This means our query has a scalar filter in the form of {col1: { equals: <val> }}
             ArgumentValue::Object(obj) => {
                 // This is safe because it's been validated before in the `.can_compact` method.
-                let equal_val = obj.get(filters::EQUALS).expect("we only support scalar equals filters");
+                let equal_val = obj
+                    .get(filters::EQUALS)
+                    .expect("we only support scalar equals filters");
 
                 vec![(key, equal_val.clone())]
             }

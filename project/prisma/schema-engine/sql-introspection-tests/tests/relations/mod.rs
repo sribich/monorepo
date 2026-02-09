@@ -178,7 +178,10 @@ async fn a_one_to_one_relation_referencing_non_id(api: &mut TestApi) -> TestResu
                 );
 
                 t.add_constraint("Post_pkey", types::primary_constraint(vec!["id"]));
-                t.add_constraint("Post_user_email_key", types::unique_constraint(vec!["user_email"]));
+                t.add_constraint(
+                    "Post_user_email_key",
+                    types::unique_constraint(vec!["user_email"]),
+                );
             });
         })
         .await?;

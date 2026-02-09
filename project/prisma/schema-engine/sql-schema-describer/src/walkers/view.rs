@@ -1,6 +1,10 @@
 use std::ops::Range;
 
-use crate::{View, ViewColumnId, ViewColumnWalker, ViewId, Walker};
+use crate::View;
+use crate::ViewColumnId;
+use crate::ViewColumnWalker;
+use crate::ViewId;
+use crate::Walker;
 
 /// Traverse a view
 pub type ViewWalker<'a> = Walker<'a, ViewId>;
@@ -26,7 +30,8 @@ impl<'a> ViewWalker<'a> {
 
     /// Traverse the view's columns.
     pub fn columns(self) -> impl ExactSizeIterator<Item = ViewColumnWalker<'a>> {
-        self.columns_range().map(move |idx| self.walk(ViewColumnId(idx as u32)))
+        self.columns_range()
+            .map(move |idx| self.walk(ViewColumnId(idx as u32)))
     }
 
     /// Description (comment) of the view.

@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn basic_unique_index_must_work() {
@@ -220,7 +222,8 @@ fn mapped_singular_unique_must_work() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
+    let schema =
+        psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
 
     schema
         .assert_has_model("Model")
@@ -244,7 +247,8 @@ fn named_and_mapped_multi_field_unique_must_work() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
+    let schema =
+        psl::parse_schema_without_extensions(with_header(dml, Provider::Postgres, &[])).unwrap();
 
     schema
         .assert_has_model("Model")

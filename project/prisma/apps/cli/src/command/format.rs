@@ -1,9 +1,13 @@
-use std::{fs, time::Instant};
+use std::fs;
+use std::time::Instant;
 
-use anyhow::{Result, anyhow};
+use anyhow::Result;
+use anyhow::anyhow;
 use clap::Parser;
 use indoc::indoc;
-use psl::{Schema, SchemaParser, SourceFile};
+use psl::Schema;
+use psl::SchemaParser;
+use psl::SourceFile;
 
 #[derive(Parser)]
 #[command(name = "format")]

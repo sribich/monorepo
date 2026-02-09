@@ -1,12 +1,15 @@
-use super::{
-    DestructiveCheckPlan,
-    check::{Column, Table},
-};
-use crate::{
-    SqlConnector, migration_pair::MigrationPair, sql_migration::AlterColumn, sql_schema_differ::ColumnChanges,
-};
-use schema_connector::{BoxFuture, ConnectorError, ConnectorResult};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
 use sql_schema_describer::walkers::TableColumnWalker;
+
+use super::DestructiveCheckPlan;
+use super::check::Column;
+use super::check::Table;
+use crate::SqlConnector;
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::AlterColumn;
+use crate::sql_schema_differ::ColumnChanges;
 
 /// Flavour-specific destructive change checks and queries.
 pub(crate) trait DestructiveChangeCheckerFlavour: Send + Sync {
@@ -52,7 +55,10 @@ pub(crate) fn display_column_type(
     }
 }
 
-pub(crate) fn extract_table_rows_count(table: &Table, result_set: quaint::prelude::ResultSet) -> ConnectorResult<i64> {
+pub(crate) fn extract_table_rows_count(
+    table: &Table,
+    result_set: quaint::prelude::ResultSet,
+) -> ConnectorResult<i64> {
     result_set
         .first()
         .ok_or_else(|| {
@@ -71,11 +77,17 @@ pub(crate) fn extract_table_rows_count(table: &Table, result_set: quaint::prelud
         })
 }
 
-pub(crate) fn extract_column_values_count(result_set: quaint::prelude::ResultSet) -> ConnectorResult<i64> {
+pub(crate) fn extract_column_values_count(
+    result_set: quaint::prelude::ResultSet,
+) -> ConnectorResult<i64> {
     result_set
         .first()
         .as_ref()
         .and_then(|row| row.at(0))
         .and_then(|count| count.as_integer())
-        .ok_or_else(|| ConnectorError::from_msg("Unexpected result set shape when checking dropped columns.".into()))
+        .ok_or_else(|| {
+            ConnectorError::from_msg(
+                "Unexpected result set shape when checking dropped columns.".into(),
+            )
+        })
 }

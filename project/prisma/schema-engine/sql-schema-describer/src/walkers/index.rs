@@ -1,4 +1,11 @@
-use crate::{Index, IndexColumnId, IndexColumnWalker, IndexId, IndexType, TableColumnId, TableWalker, Walker};
+use crate::Index;
+use crate::IndexColumnId;
+use crate::IndexColumnWalker;
+use crate::IndexId;
+use crate::IndexType;
+use crate::TableColumnId;
+use crate::TableWalker;
+use crate::Walker;
 
 /// Traverse an index.
 pub type IndexWalker<'a> = Walker<'a, IndexId>;
@@ -17,7 +24,8 @@ impl<'a> IndexWalker<'a> {
 
     /// True if index contains the given column.
     pub fn contains_column(self, column_id: TableColumnId) -> bool {
-        self.columns().any(|column| column.as_column().id == column_id)
+        self.columns()
+            .any(|column| column.as_column().id == column_id)
     }
 
     fn get(self) -> &'a Index {

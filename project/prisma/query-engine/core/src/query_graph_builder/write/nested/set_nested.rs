@@ -1,16 +1,23 @@
-use super::*;
-use crate::{
-    ParsedInputValue,
-    inputs::{
-        DisconnectChildrenInput, DisconnectParentInput, IfInput, LeftSideDiffInput, RightSideDiffInput,
-        UpdateManyRecordsSelectorsInput, UpdateOrCreateArgsInput,
-    },
-    query_ast::*,
-    query_graph::*,
-};
-use itertools::Itertools;
-use query_structure::{Filter, Model, RelationFieldRef, SelectionResult, WriteArgs};
 use std::convert::TryInto;
+
+use itertools::Itertools;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::RelationFieldRef;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+
+use super::*;
+use crate::ParsedInputValue;
+use crate::inputs::DisconnectChildrenInput;
+use crate::inputs::DisconnectParentInput;
+use crate::inputs::IfInput;
+use crate::inputs::LeftSideDiffInput;
+use crate::inputs::RightSideDiffInput;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::inputs::UpdateOrCreateArgsInput;
+use crate::query_ast::*;
+use crate::query_graph::*;
 
 /// Only for x-to-many relations.
 ///
@@ -94,11 +101,17 @@ fn handle_many_to_many(
     parent_relation_field: &RelationFieldRef,
     filter: Filter,
 ) -> QueryGraphBuilderResult<()> {
-    let parent_model_identifier = parent_relation_field.model().shard_aware_primary_identifier();
+    let parent_model_identifier = parent_relation_field
+        .model()
+        .shard_aware_primary_identifier();
     let child_model = parent_relation_field.related_model();
     let child_model_identifier = child_model.shard_aware_primary_identifier();
-    let read_old_node =
-        utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, Filter::empty())?;
+    let read_old_node = utils::insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        Filter::empty(),
+    )?;
 
     let disconnect = WriteQuery::DisconnectRecords(DisconnectRecords {
         parent_id: None,
@@ -139,10 +152,15 @@ fn handle_many_to_many(
 
     if filter.size() > 0 {
         let expected_connects = filter.size();
-        let read_new_query = utils::read_ids_infallible(child_model, child_model_identifier, filter);
+        let read_new_query =
+            utils::read_ids_infallible(child_model, child_model_identifier, filter);
         let read_new_node = graph.create_node(read_new_query);
 
-        graph.create_edge(&disconnect_node, &read_new_node, QueryGraphDependency::ExecutionOrder)?;
+        graph.create_edge(
+            &disconnect_node,
+            &read_new_node,
+            QueryGraphDependency::ExecutionOrder,
+        )?;
 
         connect::connect_records_node(
             graph,
@@ -207,25 +225,36 @@ fn handle_one_to_many(
     parent_relation_field: &RelationFieldRef,
     filter: Filter,
 ) -> QueryGraphBuilderResult<()> {
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
     let child_link = parent_relation_field.related_field().linking_fields();
     let parent_link = parent_relation_field.linking_fields();
     let empty_child_link = SelectionResult::from(&child_link);
 
     let child_model = parent_relation_field.related_model();
-    let read_old_node =
-        utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, Filter::empty())?;
+    let read_old_node = utils::insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        Filter::empty(),
+    )?;
 
-    let read_new_query = utils::read_ids_infallible(child_model.clone(), child_model_identifier.clone(), filter);
+    let read_new_query =
+        utils::read_ids_infallible(child_model.clone(), child_model_identifier.clone(), filter);
     let read_new_node = graph.create_node(read_new_query);
-    let diff_left_to_right_node = graph.create_node(Node::Computation(Computation::empty_diff_left_to_right(
-        child_model_identifier.clone(),
-    )));
-    let diff_right_to_left_node = graph.create_node(Node::Computation(Computation::empty_diff_right_to_left(
-        child_model_identifier.clone(),
-    )));
+    let diff_left_to_right_node = graph.create_node(Node::Computation(
+        Computation::empty_diff_left_to_right(child_model_identifier.clone()),
+    ));
+    let diff_right_to_left_node = graph.create_node(Node::Computation(
+        Computation::empty_diff_right_to_left(child_model_identifier.clone()),
+    ));
 
-    graph.create_edge(&read_old_node, &read_new_node, QueryGraphDependency::ExecutionOrder)?;
+    graph.create_edge(
+        &read_old_node,
+        &read_new_node,
+        QueryGraphDependency::ExecutionOrder,
+    )?;
 
     // The new IDs that are not yet connected will be on the `left` side of the diff.
     graph.create_edge(
@@ -269,16 +298,25 @@ fn handle_one_to_many(
 
     // Update (connect) case: Check left diff IDs
     let connect_if_node = graph.create_node(Node::Flow(Flow::if_non_empty()));
-    let update_connect_node = utils::update_records_node_placeholder(graph, Filter::empty(), child_model.clone());
+    let update_connect_node =
+        utils::update_records_node_placeholder(graph, Filter::empty(), child_model.clone());
 
     graph.create_edge(
         &diff_left_to_right_node,
         &connect_if_node,
-        QueryGraphDependency::ProjectedDataDependency(child_model_identifier.clone(), RowSink::All(&IfInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            child_model_identifier.clone(),
+            RowSink::All(&IfInput),
+            None,
+        ),
     )?;
 
     // Connect to the if node, the parent node (for the inlining ID) and the diff node (to get the IDs to update)
-    graph.create_edge(&connect_if_node, &update_connect_node, QueryGraphDependency::Then)?;
+    graph.create_edge(
+        &connect_if_node,
+        &update_connect_node,
+        QueryGraphDependency::Then,
+    )?;
     graph.create_edge(
         parent_node,
         &update_connect_node,
@@ -308,8 +346,12 @@ fn handle_one_to_many(
     // Update (disconnect) case: Check right diff IDs.
     let disconnect_if_node = graph.create_node(Node::Flow(Flow::if_non_empty()));
     let write_args = WriteArgs::from_result(empty_child_link, crate::executor::get_request_now());
-    let update_disconnect_node =
-        utils::update_records_node_placeholder_with_args(graph, Filter::empty(), child_model, write_args);
+    let update_disconnect_node = utils::update_records_node_placeholder_with_args(
+        graph,
+        Filter::empty(),
+        child_model,
+        write_args,
+    );
 
     let child_side_required = parent_relation_field.related_field().is_required();
     let rf = parent_relation_field.clone();
@@ -325,7 +367,11 @@ fn handle_one_to_many(
     )?;
 
     // Connect to the if node and the diff node (to get the IDs to update)
-    graph.create_edge(&disconnect_if_node, &update_disconnect_node, QueryGraphDependency::Then)?;
+    graph.create_edge(
+        &disconnect_if_node,
+        &update_disconnect_node,
+        QueryGraphDependency::Then,
+    )?;
     graph.create_edge(
         &diff_right_to_left_node,
         &update_disconnect_node,

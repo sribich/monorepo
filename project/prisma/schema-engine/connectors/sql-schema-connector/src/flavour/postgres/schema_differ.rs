@@ -1,22 +1,27 @@
 use std::sync::LazyLock;
 
-use crate::{
-    database_schema::SqlDatabaseSchema,
-    flavour::postgres::Circumstances,
-    migration_pair::MigrationPair,
-    sql_migration::{
-        AlterEnum, AlterExtension, CreateExtension, DropExtension, ExtensionChange, SequenceChange, SequenceChanges,
-        SqlMigrationStep,
-    },
-    sql_schema_differ::{SqlSchemaDifferFlavour, column::ColumnTypeChange, differ_database::DifferDatabase},
-};
 use enumflags2::BitFlags;
-use psl::builtin_connectors::{KnownPostgresType, PostgresType};
+use psl::builtin_connectors::KnownPostgresType;
+use psl::builtin_connectors::PostgresType;
 use regex::RegexSet;
-use sql_schema_describer::{
-    postgres::PostgresSchemaExt,
-    walkers::{IndexWalker, TableColumnWalker},
-};
+use sql_schema_describer::postgres::PostgresSchemaExt;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+
+use crate::database_schema::SqlDatabaseSchema;
+use crate::flavour::postgres::Circumstances;
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::AlterEnum;
+use crate::sql_migration::AlterExtension;
+use crate::sql_migration::CreateExtension;
+use crate::sql_migration::DropExtension;
+use crate::sql_migration::ExtensionChange;
+use crate::sql_migration::SequenceChange;
+use crate::sql_migration::SequenceChanges;
+use crate::sql_migration::SqlMigrationStep;
+use crate::sql_schema_differ::SqlSchemaDifferFlavour;
+use crate::sql_schema_differ::column::ColumnTypeChange;
+use crate::sql_schema_differ::differ_database::DifferDatabase;
 
 /// These can be tables or views, depending on the PostGIS version. In both cases, they should be ignored.
 static POSTGIS_TABLES_OR_VIEWS: LazyLock<RegexSet> = LazyLock::new(|| {
@@ -33,7 +38,8 @@ static POSTGIS_TABLES_OR_VIEWS: LazyLock<RegexSet> = LazyLock::new(|| {
 });
 
 // https://www.postgresql.org/docs/12/pgbuffercache.html
-static EXTENSION_VIEWS: LazyLock<RegexSet> = LazyLock::new(|| RegexSet::new(["(?i)^pg_buffercache$"]).unwrap());
+static EXTENSION_VIEWS: LazyLock<RegexSet> =
+    LazyLock::new(|| RegexSet::new(["(?i)^pg_buffercache$"]).unwrap());
 
 #[derive(Debug)]
 pub struct PostgresSchemaDifferFlavour {
@@ -59,10 +65,16 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
         columns.previous.is_autoincrement() != columns.next.is_autoincrement()
     }
 
-    fn column_type_change(&self, columns: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange> {
+    fn column_type_change(
+        &self,
+        columns: MigrationPair<TableColumnWalker<'_>>,
+    ) -> Option<ColumnTypeChange> {
         // Handle the enum cases first.
         match columns
-            .map(|col| col.column_type_family_as_enum().map(|e| (e.name(), e.namespace())))
+            .map(|col| {
+                col.column_type_family_as_enum()
+                    .map(|e| (e.name(), e.namespace()))
+            })
             .into_tuple()
         {
             (Some(prev), Some(next)) if prev == next => return None,
@@ -100,7 +112,11 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
         }
     }
 
-    fn push_alter_sequence_steps(&self, steps: &mut Vec<SqlMigrationStep>, db: &DifferDatabase<'_>) {
+    fn push_alter_sequence_steps(
+        &self,
+        steps: &mut Vec<SqlMigrationStep>,
+        db: &DifferDatabase<'_>,
+    ) {
         return;
     }
 
@@ -126,7 +142,9 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
 
                 // the dml doesn't always have opclass defined if it's the
                 // default.
-                a_kind == b_kind || (a_class.is_none() && b_is_default) || (b_class.is_none() && a_is_default)
+                a_kind == b_kind
+                    || (a_class.is_none() && b_is_default)
+                    || (b_class.is_none() && a_is_default)
             })
     }
 
@@ -172,8 +190,12 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
 
     fn push_extension_steps(&self, steps: &mut Vec<SqlMigrationStep>, db: &DifferDatabase<'_>) {
         for ext in db.non_relocatable_extension_pairs() {
-            steps.push(SqlMigrationStep::DropExtension(DropExtension { id: ext.previous.id }));
-            steps.push(SqlMigrationStep::CreateExtension(CreateExtension { id: ext.next.id }));
+            steps.push(SqlMigrationStep::DropExtension(DropExtension {
+                id: ext.previous.id,
+            }));
+            steps.push(SqlMigrationStep::CreateExtension(CreateExtension {
+                id: ext.next.id,
+            }));
         }
 
         for ext in db.relocatable_extension_pairs() {
@@ -210,8 +232,10 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
             .map(|schema| (schema, schema.describer_schema.downcast_connector_data()));
 
         for extension in schemas.previous.1.extension_walkers() {
-            db.extensions
-                .insert(extension.name(), MigrationPair::new(Some(extension.id), None));
+            db.extensions.insert(
+                extension.name(),
+                MigrationPair::new(Some(extension.id), None),
+            );
         }
 
         for extension in schemas.next.1.extension_walkers() {
@@ -221,7 +245,9 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
     }
 }
 
-fn postgres_column_type_change(columns: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange> {
+fn postgres_column_type_change(
+    columns: MigrationPair<TableColumnWalker<'_>>,
+) -> Option<ColumnTypeChange> {
     use ColumnTypeChange::*;
     let previous_type: Option<&PostgresType> = columns.previous.column_native_type();
     let next_type: Option<&PostgresType> = columns.next.column_native_type();
@@ -270,15 +296,15 @@ fn postgres_native_type_change_riskyness(
     let cast = || {
         Some(match previous {
             KnownPostgresType::Inet => match next {
-                KnownPostgresType::Citext | KnownPostgresType::Text | KnownPostgresType::VarChar(_) => {
-                    ColumnTypeChange::SafeCast
-                }
+                KnownPostgresType::Citext
+                | KnownPostgresType::Text
+                | KnownPostgresType::VarChar(_) => ColumnTypeChange::SafeCast,
                 _ => NotCastable,
             },
             KnownPostgresType::Money => match next {
-                KnownPostgresType::Citext | KnownPostgresType::Text | KnownPostgresType::VarChar(_) => {
-                    ColumnTypeChange::SafeCast
-                }
+                KnownPostgresType::Citext
+                | KnownPostgresType::Text
+                | KnownPostgresType::VarChar(_) => ColumnTypeChange::SafeCast,
                 KnownPostgresType::Decimal(_) => ColumnTypeChange::RiskyCast,
                 _ => RiskyCast,
             },
@@ -374,7 +400,9 @@ fn postgres_native_type_change_riskyness(
                     (None, Some((p_new, s_new))) if *p_new < 131072 || *s_new < 16383 => RiskyCast,
                     // Sigh... So, numeric(4,0) to numeric(4,2) would be risky,
                     // so would numeric(4,2) to numeric(4,0).
-                    (Some((p_old, s_old)), Some((p_new, s_new))) if p_old - s_old > p_new - s_new || s_old > s_new => {
+                    (Some((p_old, s_old)), Some((p_new, s_new)))
+                        if p_old - s_old > p_new - s_new || s_old > s_new =>
+                    {
                         RiskyCast
                     }
                     _ => SafeCast,
@@ -468,7 +496,9 @@ fn postgres_native_type_change_riskyness(
                 Text | VarChar(None) => SafeCast,
                 Char(Some(len)) | VarChar(Some(len)) if *len > 22 => SafeCast,
                 KnownPostgresType::Timestamp(None) => return None,
-                KnownPostgresType::Timestamp(Some(b)) if a.is_none() || *a == Some(*b) => return None,
+                KnownPostgresType::Timestamp(Some(b)) if a.is_none() || *a == Some(*b) => {
+                    return None;
+                }
                 Timestamp(_) | Timestamptz(_) | Date | Time(_) | Timetz(_) => SafeCast,
                 _ => NotCastable,
             },
@@ -476,7 +506,9 @@ fn postgres_native_type_change_riskyness(
                 Text | VarChar(None) => SafeCast,
                 Char(Some(len)) | VarChar(Some(len)) if *len > 27 => SafeCast,
                 KnownPostgresType::Timestamptz(None) => return None,
-                KnownPostgresType::Timestamptz(Some(b)) if a.is_none() || *a == Some(*b) => return None,
+                KnownPostgresType::Timestamptz(Some(b)) if a.is_none() || *a == Some(*b) => {
+                    return None;
+                }
                 Timestamp(_) | Timestamptz(_) | Date | Time(_) | Timetz(_) => SafeCast,
                 _ => NotCastable,
             },
@@ -515,7 +547,9 @@ fn postgres_native_type_change_riskyness(
             Bit(Some(length)) => match next {
                 Text | VarChar(None) | VarBit(None) => SafeCast,
                 VarChar(Some(new_length)) if new_length >= length => SafeCast,
-                VarBit(Some(new_length)) | Char(Some(new_length)) if new_length >= length => SafeCast,
+                VarBit(Some(new_length)) | Char(Some(new_length)) if new_length >= length => {
+                    SafeCast
+                }
                 _ => NotCastable,
             },
 
@@ -527,7 +561,9 @@ fn postgres_native_type_change_riskyness(
             VarBit(Some(length)) => match next {
                 Text | VarChar(None) | VarBit(None) => SafeCast,
                 VarBit(Some(new_length)) if *new_length > *length => SafeCast,
-                VarChar(Some(new_length)) | Char(Some(new_length)) if new_length >= length => SafeCast,
+                VarChar(Some(new_length)) | Char(Some(new_length)) if new_length >= length => {
+                    SafeCast
+                }
                 Bit(Some(new_length)) if new_length <= length => RiskyCast,
                 Bit(None) => RiskyCast,
                 Char(_) | VarChar(_) => RiskyCast,
@@ -581,10 +617,10 @@ fn push_alter_enum_previous_usages_as_default(db: &DifferDatabase<'_>, alter_enu
             previous_usages_as_default.push((column.id, None));
         }
 
-        for columns in tables
-            .column_pairs()
-            .filter(|col| col.previous.column_type_is_enum(enum_names.previous) && col.previous.default().is_some())
-        {
+        for columns in tables.column_pairs().filter(|col| {
+            col.previous.column_type_is_enum(enum_names.previous)
+                && col.previous.default().is_some()
+        }) {
             let next_usage_as_default = Some(&columns.next)
                 .filter(|col| col.column_type_is_enum(enum_names.next) && col.default().is_some())
                 .map(|col| col.id);

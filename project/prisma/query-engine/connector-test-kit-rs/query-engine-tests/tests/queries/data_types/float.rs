@@ -10,7 +10,10 @@ mod float {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { float } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { float } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -93,7 +96,9 @@ mod float {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

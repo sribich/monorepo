@@ -1,15 +1,28 @@
-use darling::{Error, FromAttributes, FromMeta};
-use macro_util::{
-    ast::{Attributes, Input, Struct, StructKind, Unresolved},
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_type_bound},
-};
+use darling::Error;
+use darling::FromAttributes;
+use darling::FromMeta;
+use macro_util::ast::Attributes;
+use macro_util::ast::Input;
+use macro_util::ast::Struct;
+use macro_util::ast::StructKind;
+use macro_util::ast::Unresolved;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_type_bound;
 use proc_macro::TokenStream;
 use proc_macro_error2::abort;
-use quote::{ToTokens, format_ident, quote};
-use syn::{
-    AngleBracketedGenericArguments, Expr, Meta, Token, Type, TypeGroup, TypePath, parse::Parser,
-    parse_quote,
-};
+use quote::ToTokens;
+use quote::format_ident;
+use quote::quote;
+use syn::AngleBracketedGenericArguments;
+use syn::Expr;
+use syn::Meta;
+use syn::Token;
+use syn::Type;
+use syn::TypeGroup;
+use syn::TypePath;
+use syn::parse::Parser;
+use syn::parse_quote;
 
 pub fn derive(input: TokenStream) -> TokenStream {
     inner_derive(input)
@@ -209,7 +222,7 @@ fn get_depdency_scope(injection_type: &InjectionType) -> proc_macro2::TokenStrea
     match injection_type {
         InjectionType::Arc { inner } | InjectionType::Reference { inner } => {
             quote!(injector.get::<#inner>()?)
-        },
+        }
         // InjectionType::Option { element } => match element.as_ref() {
         //     InjectionType::Arc { inner } => todo!(),
         //     InjectionType::Value { typ } => ,
@@ -221,10 +234,10 @@ fn get_depdency_scope(injection_type: &InjectionType) -> proc_macro2::TokenStrea
         // InjectionType::Lazy { .. } => todo!(),
         InjectionType::PhantomData => {
             quote!(::std::marker::PhantomData)
-        },
+        }
         InjectionType::Default => {
             quote!(Default::default())
-        },
+        }
         // InjectionType::Value { .. } => todo!(),
         InjectionType::Raw(expr) => quote!(#expr),
     }
@@ -311,10 +324,10 @@ fn impl_named_struct(input: Struct) -> Result<proc_macro2::TokenStream, syn::Err
         .map(|it| match it {
             ImplKind::Single(inner) => {
                 quote!(injector.bind::<#inner, #ty #type_params>().unwrap();)
-            },
+            }
             ImplKind::Collection(inner) => {
                 quote!(injector.bind_vec::<#inner, #ty #type_params>().unwrap();)
-            },
+            }
         })
         .collect::<Vec<_>>();
 

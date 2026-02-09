@@ -1,5 +1,10 @@
-use crate::{capitalize, constants::ordering, scalar_filter_name};
-use query_structure::{ast::FieldArity, prelude::*, *};
+use query_structure::ast::FieldArity;
+use query_structure::prelude::*;
+use query_structure::*;
+
+use crate::capitalize;
+use crate::constants::ordering;
+use crate::scalar_filter_name;
 
 /// Enum used to represent unique schema type names.
 /// It helps deferring the allocation + formatting of strings
@@ -76,7 +81,12 @@ impl std::fmt::Display for IdentifierType {
                     ParentContainer::Model(_) => "Relation",
                 };
 
-                write!(f, "{}OrderBy{}AggregateInput", container.name(), container_type)
+                write!(
+                    f,
+                    "{}OrderBy{}AggregateInput",
+                    container.name(),
+                    container_type
+                )
             }
             IdentifierType::OrderByRelevanceInput(container) => {
                 write!(f, "{}OrderByRelevanceInput", container.name())
@@ -147,11 +157,15 @@ impl std::fmt::Display for IdentifierType {
                     nullable
                 )
             }
-            IdentifierType::ScalarListFilterInput(typ, required) => {
-                f.write_str(&scalar_filter_name(&typ.type_name(), true, !required, false, false))
-            }
+            IdentifierType::ScalarListFilterInput(typ, required) => f.write_str(
+                &scalar_filter_name(&typ.type_name(), true, !required, false, false),
+            ),
             IdentifierType::ScalarFilterInput(model, includes_aggregate) => {
-                let aggregate = if *includes_aggregate { "WithAggregates" } else { "" };
+                let aggregate = if *includes_aggregate {
+                    "WithAggregates"
+                } else {
+                    ""
+                };
 
                 write!(f, "{}ScalarWhere{}Input", model.name(), aggregate)
             }
@@ -162,7 +176,12 @@ impl std::fmt::Display for IdentifierType {
                 write!(f, "{}WhereUniqueInput", model.name())
             }
             IdentifierType::CheckedUpdateOneInput(model, related_field) => match related_field {
-                Some(field) => write!(f, "{}UpdateWithout{}Input", model.name(), capitalize(field.name())),
+                Some(field) => write!(
+                    f,
+                    "{}UpdateWithout{}Input",
+                    model.name(),
+                    capitalize(field.name())
+                ),
                 _ => write!(f, "{}UpdateInput", model.name()),
             },
             IdentifierType::UncheckedUpdateOneInput(model, related_field) => match related_field {
@@ -228,7 +247,12 @@ impl std::fmt::Display for IdentifierType {
                 )
             }
             IdentifierType::CheckedCreateInput(model, related_field) => match related_field {
-                Some(rf) => write!(f, "{}CreateWithout{}Input", model.name(), capitalize(rf.name())),
+                Some(rf) => write!(
+                    f,
+                    "{}CreateWithout{}Input",
+                    model.name(),
+                    capitalize(rf.name())
+                ),
                 _ => write!(f, "{}CreateInput", model.name()),
             },
             IdentifierType::UncheckedCreateInput(model, related_field) => match related_field {
@@ -241,7 +265,12 @@ impl std::fmt::Display for IdentifierType {
                 _ => write!(f, "{}UncheckedCreateInput", model.name()),
             },
             IdentifierType::CreateManyInput(model, related_field) => match related_field {
-                Some(rf) => write!(f, "{}CreateMany{}Input", model.name(), capitalize(rf.name())),
+                Some(rf) => write!(
+                    f,
+                    "{}CreateMany{}Input",
+                    model.name(),
+                    capitalize(rf.name())
+                ),
                 _ => write!(f, "{}CreateManyInput", model.name()),
             },
             IdentifierType::CreateManyAndReturnOutput(model) => {

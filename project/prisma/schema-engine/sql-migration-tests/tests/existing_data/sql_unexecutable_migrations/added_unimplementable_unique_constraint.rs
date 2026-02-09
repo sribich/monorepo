@@ -37,10 +37,12 @@ fn adding_a_unique_constraint_should_warn(api: TestApi) {
 
     api.dump_table("Test")
         .assert_row(0, |row| {
-            row.assert_text_value("id", "abc").assert_text_value("name", "george")
+            row.assert_text_value("id", "abc")
+                .assert_text_value("name", "george")
         })
         .assert_row(1, |row| {
-            row.assert_text_value("id", "def").assert_text_value("name", "george")
+            row.assert_text_value("id", "def")
+                .assert_text_value("name", "george")
         });
 }
 
@@ -96,10 +98,12 @@ fn dropping_enum_values_should_warn(api: TestApi) {
 
     api.dump_table("Test")
         .assert_row(0, |row| {
-            row.assert_text_value("id", "abc").assert_text_value("name", "george")
+            row.assert_text_value("id", "abc")
+                .assert_text_value("name", "george")
         })
         .assert_row(1, |row| {
-            row.assert_text_value("id", "def").assert_text_value("name", "george")
+            row.assert_text_value("id", "def")
+                .assert_text_value("name", "george")
         });
 }
 
@@ -138,9 +142,11 @@ fn adding_a_unique_constraint_when_existing_data_respects_it_works(api: TestApi)
 
     api.dump_table("Test")
         .assert_row(0, |row| {
-            row.assert_text_value("id", "abc").assert_text_value("name", "george")
+            row.assert_text_value("id", "abc")
+                .assert_text_value("name", "george")
         })
         .assert_row(1, |row| {
-            row.assert_text_value("id", "def").assert_text_value("name", "georgina")
+            row.assert_text_value("id", "def")
+                .assert_text_value("name", "georgina")
         });
 }

@@ -26,7 +26,13 @@ async fn compound_foreign_keys_for_one_to_one_relations(api: &mut TestApi) -> Te
 
                 t.add_constraint(
                     "Post_user_id_user_age_fkey",
-                    types::foreign_constraint(&["user_id", "user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["user_id", "user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
 
                 t.add_constraint(
@@ -80,7 +86,13 @@ async fn compound_foreign_keys_for_required_one_to_many_relations(api: &mut Test
 
                 t.add_constraint(
                     "Post_user_id_user_age_fkey",
-                    types::foreign_constraint(&["user_id", "user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["user_id", "user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
             });
         })
@@ -120,9 +132,18 @@ async fn compound_foreign_keys_for_required_self_relations(api: &mut TestApi) ->
 
                 t.add_constraint(
                     "Person_pid_page_fkey",
-                    types::foreign_constraint(&["partner_id", "partner_age"], "Person", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["partner_id", "partner_age"],
+                        "Person",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
-                t.add_constraint("post_user_unique", types::unique_constraint(vec!["id", "age"]));
+                t.add_constraint(
+                    "post_user_unique",
+                    types::unique_constraint(vec!["id", "age"]),
+                );
             });
         })
         .await?;
@@ -157,9 +178,18 @@ async fn compound_foreign_keys_for_self_relations(api: &mut TestApi) -> TestResu
 
                 t.add_constraint(
                     "Person_fkey",
-                    types::foreign_constraint(&["partner_id", "partner_age"], "Person", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["partner_id", "partner_age"],
+                        "Person",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
-                t.add_constraint("post_user_unique", types::unique_constraint(vec!["id", "age"]));
+                t.add_constraint(
+                    "post_user_unique",
+                    types::unique_constraint(vec!["id", "age"]),
+                );
                 t.add_constraint("Person_pkey", types::primary_constraint(["id"]));
             });
         })
@@ -276,7 +306,9 @@ async fn a_compound_fk_pk_with_overlapping_primary_key(api: &mut TestApi) -> Tes
 }
 
 #[test_connector(exclude(Mysql, Sqlite))]
-async fn compound_foreign_keys_for_duplicate_one_to_many_relations(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_duplicate_one_to_many_relations(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(move |migration| {
             migration.create_table("User", move |t| {
@@ -296,11 +328,23 @@ async fn compound_foreign_keys_for_duplicate_one_to_many_relations(api: &mut Tes
 
                 t.add_constraint(
                     "Post_fk1",
-                    types::foreign_constraint(&["user_id", "user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["user_id", "user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
                 t.add_constraint(
                     "Post_fk2",
-                    types::foreign_constraint(&["other_user_id", "other_user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["other_user_id", "other_user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
                 t.add_constraint("Post_pkey", types::primary_constraint(["id"]));
             });

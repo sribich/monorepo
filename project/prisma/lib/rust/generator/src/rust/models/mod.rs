@@ -1,15 +1,18 @@
 use convert_case::Case;
-use generator_shared::{
-    casing::cased_ident,
-    extensions::{FieldExtension, ModelExtension},
-};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::FieldExtension;
+use generator_shared::extensions::ModelExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
-use query_structure::walkers::{FieldWalker, ModelWalker, RefinedFieldWalker};
+use query_structure::walkers::FieldWalker;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::RefinedFieldWalker;
 use quote::quote;
 
-use self::{data::generate_data_field_module, r#where::generate_where_field_module};
-use super::{Module, module::FieldModule};
+use self::data::generate_data_field_module;
+use self::r#where::generate_where_field_module;
+use super::Module;
+use super::module::FieldModule;
 use crate::args::GeneratorArgs;
 
 mod actions;
@@ -98,21 +101,25 @@ pub(super) struct RequiredField<'db> {
     pub inner: FieldWalker<'db>,
 }
 
-pub(super) fn get_required_model_fields<'db>(model: &ModelWalker<'db>) -> Option<Vec<RequiredField<'db>>> {
+pub(super) fn get_required_model_fields<'db>(
+    model: &ModelWalker<'db>,
+) -> Option<Vec<RequiredField<'db>>> {
     model
         .fields()
         .filter(|field| {
             field
                 .refine()
                 .map(|it| match it {
-                    RefinedFieldWalker::Scalar(scalar_field) => match scalar_field.scalar_field_type() {
-                        ScalarFieldType::Enum(_)
-                        | ScalarFieldType::Extension(_)
-                        | ScalarFieldType::BuiltInScalar(_)
-                        | ScalarFieldType::Unsupported(_) => {
-                            !model.field_has_relation(scalar_field) && field.is_required()
+                    RefinedFieldWalker::Scalar(scalar_field) => {
+                        match scalar_field.scalar_field_type() {
+                            ScalarFieldType::Enum(_)
+                            | ScalarFieldType::Extension(_)
+                            | ScalarFieldType::BuiltInScalar(_)
+                            | ScalarFieldType::Unsupported(_) => {
+                                !model.field_has_relation(scalar_field) && field.is_required()
+                            }
                         }
-                    },
+                    }
                     RefinedFieldWalker::Relation(_) => field.is_required(),
                 })
                 .unwrap_or(false)
@@ -120,14 +127,17 @@ pub(super) fn get_required_model_fields<'db>(model: &ModelWalker<'db>) -> Option
         .map(|field| {
             Some({
                 let r#type = field.refine().and_then(|it| match it {
-                    RefinedFieldWalker::Scalar(scalar_field) => match scalar_field.scalar_field_type() {
-                        ScalarFieldType::Enum(_)
-                        | ScalarFieldType::Extension(_)
-                        | ScalarFieldType::BuiltInScalar(_)
-                        | ScalarFieldType::Unsupported(_) => field.to_tokens(&quote!(super::)),
-                    },
+                    RefinedFieldWalker::Scalar(scalar_field) => {
+                        match scalar_field.scalar_field_type() {
+                            ScalarFieldType::Enum(_)
+                            | ScalarFieldType::Extension(_)
+                            | ScalarFieldType::BuiltInScalar(_)
+                            | ScalarFieldType::Unsupported(_) => field.to_tokens(&quote!(super::)),
+                        }
+                    }
                     RefinedFieldWalker::Relation(relation_field) => {
-                        let model_name = cased_ident(relation_field.related_model().name(), Case::Snake);
+                        let model_name =
+                            cased_ident(relation_field.related_model().name(), Case::Snake);
 
                         Some(quote! { super::#model_name::UniqueWhereParam })
                     }

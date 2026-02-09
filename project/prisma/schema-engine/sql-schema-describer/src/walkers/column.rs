@@ -2,18 +2,24 @@ mod index_column;
 mod table_column;
 mod view_column;
 
+use std::any::Any;
+
+use either::Either;
 pub use index_column::IndexColumnWalker;
 pub use table_column::TableColumnWalker;
 pub use view_column::ViewColumnWalker;
 
-use std::any::Any;
-
-use either::Either;
-
-use crate::{
-    Column, ColumnArity, ColumnType, ColumnTypeFamily, DefaultValueWalker, EnumWalker, TableColumnId,
-    TableDefaultValueId, ViewColumnId, ViewDefaultValueId, Walker,
-};
+use crate::Column;
+use crate::ColumnArity;
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
+use crate::DefaultValueWalker;
+use crate::EnumWalker;
+use crate::TableColumnId;
+use crate::TableDefaultValueId;
+use crate::ViewColumnId;
+use crate::ViewDefaultValueId;
+use crate::Walker;
 
 /// Traverse a column, that can be in a table or in a view.
 pub type ColumnWalker<'a> = Walker<'a, Either<TableColumnId, ViewColumnId>>;
@@ -56,7 +62,9 @@ impl<'a> ColumnWalker<'a> {
 
     /// Extract an `Enum` column type family, or `None` if the family is something else.
     pub fn column_type_family_as_enum(self) -> Option<EnumWalker<'a>> {
-        self.column_type_family().as_enum().map(|enum_id| self.walk(enum_id))
+        self.column_type_family()
+            .as_enum()
+            .map(|enum_id| self.walk(enum_id))
     }
 
     /// The column name.
@@ -71,7 +79,10 @@ impl<'a> ColumnWalker<'a> {
 
     /// the column native type.
     pub fn column_native_type<T: Any + 'static>(self) -> Option<&'a T> {
-        self.column_type().native_type.as_ref().map(|nt| nt.downcast_ref())
+        self.column_type()
+            .native_type
+            .as_ref()
+            .map(|nt| nt.downcast_ref())
     }
 
     /// is this column an auto-incrementing integer?
@@ -118,7 +129,9 @@ impl<'a> ColumnWalker<'a> {
 
     fn get(self) -> &'a Column {
         match self.id {
-            Either::Left(table_column_id) => &self.schema.table_columns[table_column_id.0 as usize].1,
+            Either::Left(table_column_id) => {
+                &self.schema.table_columns[table_column_id.0 as usize].1
+            }
             Either::Right(view_column_id) => &self.schema.view_columns[view_column_id.0 as usize].1,
         }
     }

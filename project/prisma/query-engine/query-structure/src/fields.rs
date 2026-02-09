@@ -1,5 +1,6 @@
-use crate::*;
 use psl::parser_database::ScalarFieldType;
+
+use crate::*;
 
 #[derive(Debug, Clone)]
 pub struct Fields<'a> {
@@ -41,10 +42,7 @@ impl<'a> Fields<'a> {
             .scalar_fields()
             .filter(|sf| {
                 !sf.is_ignored()
-                    && !matches!(
-                        sf.scalar_field_type(),
-                        ScalarFieldType::Unsupported(_)
-                    )
+                    && !matches!(sf.scalar_field_type(), ScalarFieldType::Unsupported(_))
             })
             .map(|rf| self.model.dm.clone().zip(ScalarFieldId::InModel(rf.id)))
     }
@@ -59,9 +57,7 @@ impl<'a> Fields<'a> {
     }
 
     pub fn non_relational(&self) -> Vec<Field> {
-        self.scalar()
-            .map(Field::from)
-            .collect()
+        self.scalar().map(Field::from).collect()
     }
 
     pub fn find_from_all(&self, prisma_name: &str) -> crate::Result<Field> {

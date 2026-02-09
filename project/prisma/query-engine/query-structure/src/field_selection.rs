@@ -1,12 +1,27 @@
-use crate::{
-    DomainError, Field, FieldTypeInformation, Filter, InternalDataModel, Model, ModelProjection,
-    QueryArguments, RelationField, RelationFieldRef, ScalarField, ScalarFieldRef, SelectionResult, Type,
-    TypeIdentifier, parent_container::ParentContainer, prisma_value_ext::PrismaValueExtensions,
-};
+use std::borrow::Cow;
+use std::fmt::Display;
+
 use itertools::Itertools;
 use prisma_value::PrismaValue;
 use psl::psl_ast::ast::FieldArity;
-use std::{borrow::Cow, fmt::Display};
+
+use crate::DomainError;
+use crate::Field;
+use crate::FieldTypeInformation;
+use crate::Filter;
+use crate::InternalDataModel;
+use crate::Model;
+use crate::ModelProjection;
+use crate::QueryArguments;
+use crate::RelationField;
+use crate::RelationFieldRef;
+use crate::ScalarField;
+use crate::ScalarFieldRef;
+use crate::SelectionResult;
+use crate::Type;
+use crate::TypeIdentifier;
+use crate::parent_container::ParentContainer;
+use crate::prisma_value_ext::PrismaValueExtensions;
 
 /// A selection of fields from a model.
 #[derive(Debug, Clone, PartialEq, Default, Hash, Eq)]
@@ -79,7 +94,8 @@ impl FieldSelection {
     /// [`FieldSelection::db_names_grouping_virtuals`] and
     /// [`FieldSelection::type_identifiers_with_arities_grouping_virtuals`].
     fn selections_with_virtual_group_heads(&self) -> impl Iterator<Item = &SelectedField> {
-        self.selections().unique_by(|f| f.prisma_name_grouping_virtuals())
+        self.selections()
+            .unique_by(|f| f.prisma_name_grouping_virtuals())
     }
 
     /// Returns all Prisma (e.g. schema model field) names of contained fields.
@@ -113,7 +129,9 @@ impl FieldSelection {
     }
 
     pub fn get(&self, name: &str) -> Option<&SelectedField> {
-        self.selections.iter().find(|selection| selection.prisma_name() == name)
+        self.selections
+            .iter()
+            .find(|selection| selection.prisma_name() == name)
     }
 
     pub fn as_fields(&self) -> Vec<Field> {
@@ -194,7 +212,12 @@ impl FieldSelection {
     /// occurrence of the first field in order from left (`self`) to right (`other`)
     /// is retained. Assumes that both selections reason over the same model.
     pub fn merge(self, other: FieldSelection) -> FieldSelection {
-        let selections = self.selections.into_iter().chain(other.selections).unique().collect();
+        let selections = self
+            .selections
+            .into_iter()
+            .chain(other.selections)
+            .unique()
+            .collect();
 
         FieldSelection { selections }
     }
@@ -215,7 +238,9 @@ impl FieldSelection {
     /// identifier and arity is returned for the whole object containing multiple virtual fields
     /// and not each of those fields separately. This represents the selection in joined queries
     /// that use JSON objects for relations and relation aggregations.
-    pub fn type_identifiers_with_arities_grouping_virtuals(&self) -> Vec<(TypeIdentifier, FieldArity)> {
+    pub fn type_identifiers_with_arities_grouping_virtuals(
+        &self,
+    ) -> Vec<(TypeIdentifier, FieldArity)> {
         self.selections_with_virtual_group_heads()
             .filter_map(|vs| vs.type_identifier_with_arity_grouping_virtuals())
             .collect()
@@ -264,17 +289,21 @@ pub struct RelationSelection {
 
 impl RelationSelection {
     pub fn scalars(&self) -> impl Iterator<Item = &ScalarField> {
-        self.selections.iter().filter_map(|selection| match selection {
-            SelectedField::Scalar(sf) => Some(sf),
-            _ => None,
-        })
+        self.selections
+            .iter()
+            .filter_map(|selection| match selection {
+                SelectedField::Scalar(sf) => Some(sf),
+                _ => None,
+            })
     }
 
     pub fn relations(&self) -> impl Iterator<Item = &RelationSelection> {
-        self.selections.iter().filter_map(|selection| match selection {
-            SelectedField::Relation(rs) => Some(rs),
-            _ => None,
-        })
+        self.selections
+            .iter()
+            .filter_map(|selection| match selection {
+                SelectedField::Relation(rs) => Some(rs),
+                _ => None,
+            })
     }
 
     pub fn virtuals(&self) -> impl Iterator<Item = &VirtualSelection> {
@@ -422,7 +451,9 @@ impl SelectedField {
     pub fn type_identifier_with_arity(&self) -> Option<(TypeIdentifier, FieldArity)> {
         match self {
             SelectedField::Scalar(sf) => Some(sf.type_identifier_with_arity()),
-            SelectedField::Relation(rf) if rf.field.is_list() => Some((TypeIdentifier::Json, FieldArity::Required)),
+            SelectedField::Relation(rf) if rf.field.is_list() => {
+                Some((TypeIdentifier::Json, FieldArity::Required))
+            }
             SelectedField::Relation(rf) => Some((TypeIdentifier::Json, rf.field.arity())),
             SelectedField::Virtual(vs) => Some(vs.type_identifier_with_arity()),
         }
@@ -448,7 +479,9 @@ impl SelectedField {
     /// with relation JOINs because they use JSON objects to reprsent both relations and relation
     /// aggregations, so individual virtual fields that correspond to those relation aggregations
     /// don't exist as separate values in the result of the query.
-    pub fn type_identifier_with_arity_grouping_virtuals(&self) -> Option<(TypeIdentifier, FieldArity)> {
+    pub fn type_identifier_with_arity_grouping_virtuals(
+        &self,
+    ) -> Option<(TypeIdentifier, FieldArity)> {
         match self {
             SelectedField::Virtual(_) => Some((TypeIdentifier::Json, FieldArity::Required)),
             _ => self.type_identifier_with_arity(),
@@ -536,7 +569,10 @@ impl Display for SelectedField {
                 f,
                 "{} {{ {} }}",
                 rs.field,
-                rs.selections.iter().map(|selection| format!("{selection}")).join(", ")
+                rs.selections
+                    .iter()
+                    .map(|selection| format!("{selection}"))
+                    .join(", ")
             ),
             SelectedField::Virtual(vs) => write!(f, "{vs}"),
         }
@@ -556,8 +592,8 @@ impl From<&SelectionResult> for FieldSelection {
 }
 
 impl IntoIterator for FieldSelection {
-    type Item = SelectedField;
     type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = SelectedField;
 
     fn into_iter(self) -> Self::IntoIter {
         self.selections.into_iter()

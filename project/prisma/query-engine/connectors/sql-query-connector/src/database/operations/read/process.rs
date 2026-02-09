@@ -1,8 +1,11 @@
 use std::borrow::Cow;
 
-use itertools::{Either, Itertools};
+use itertools::Either;
+use itertools::Itertools;
 use query_builder::QueryArgumentsExt;
-use query_structure::{QueryArguments, Record, RelationLoadStrategy};
+use query_structure::QueryArguments;
+use query_structure::Record;
+use query_structure::RelationLoadStrategy;
 
 macro_rules! processor_state {
     ($name:ident $(-> $transition:ident($bound:ident))?) => {
@@ -43,7 +46,10 @@ trait ApplyReverseOrder<T>: DoubleEndedIterator<Item = T>
 where
     Self: Sized,
 {
-    fn apply_reverse_order(self, args: &QueryArguments) -> WithReverseOrder<impl DoubleEndedIterator<Item = T>> {
+    fn apply_reverse_order(
+        self,
+        args: &QueryArguments,
+    ) -> WithReverseOrder<impl DoubleEndedIterator<Item = T>> {
         WithReverseOrder(match args.needs_reversed_order() {
             true => Either::Left(self.rev()),
             false => Either::Right(self),
@@ -58,7 +64,11 @@ where
     fn apply_distinct<'a>(
         self,
         args: &'a QueryArguments,
-        mut get_record_and_fields: impl for<'b> FnMut(&'b Self::Item) -> Option<(Cow<'b, Record>, Cow<'a, [String]>)> + 'a,
+        mut get_record_and_fields: impl for<'b> FnMut(
+            &'b Self::Item,
+        )
+            -> Option<(Cow<'b, Record>, Cow<'a, [String]>)>
+        + 'a,
     ) -> WithDistinct<impl Iterator<Item = T>> {
         WithDistinct(match args.distinct.as_ref() {
             Some(distinct) if args.requires_inmemory_distinct(RelationLoadStrategy::Join) => {
@@ -117,7 +127,8 @@ where
 
     pub fn process(
         self,
-        get_record_and_fields: impl for<'b> FnMut(&'b T) -> Option<(Cow<'b, Record>, Cow<'a, [String]>)> + 'a,
+        get_record_and_fields: impl for<'b> FnMut(&'b T) -> Option<(Cow<'b, Record>, Cow<'a, [String]>)>
+        + 'a,
     ) -> impl Iterator<Item = T> + 'a {
         Initial(self.records)
             .apply_reverse_order(self.args)

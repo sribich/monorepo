@@ -84,12 +84,16 @@ fn basic_create_migration_multi_file_works(api: TestApi) {
     let is_mysql = api.is_mysql();
     let is_sqlite = api.is_sqlite();
 
-    api.create_migration_multi_file("create-cats", &[("a.prisma", &schema_a), ("b.prisma", schema_b)], &dir)
-        .send_sync()
-        .assert_migration_directories_count(1)
-        .assert_migration("create-cats", move |migration| {
-            let expected_script = if is_postgres {
-                expect![[r#"
+    api.create_migration_multi_file(
+        "create-cats",
+        &[("a.prisma", &schema_a), ("b.prisma", schema_b)],
+        &dir,
+    )
+    .send_sync()
+    .assert_migration_directories_count(1)
+    .assert_migration("create-cats", move |migration| {
+        let expected_script = if is_postgres {
+            expect![[r#"
                     -- CreateTable
                     CREATE TABLE "Cat" (
                         "id" INTEGER NOT NULL,
@@ -106,8 +110,8 @@ fn basic_create_migration_multi_file_works(api: TestApi) {
                         CONSTRAINT "Dog_pkey" PRIMARY KEY ("id")
                     );
                 "#]]
-            } else if is_mysql {
-                expect![[r#"
+        } else if is_mysql {
+            expect![[r#"
                     -- CreateTable
                     CREATE TABLE `Cat` (
                         `id` INTEGER NOT NULL,
@@ -124,8 +128,8 @@ fn basic_create_migration_multi_file_works(api: TestApi) {
                         PRIMARY KEY (`id`)
                     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
                 "#]]
-            } else if is_sqlite {
-                expect![[r#"
+        } else if is_sqlite {
+            expect![[r#"
                     -- CreateTable
                     CREATE TABLE "Cat" (
                         "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -138,12 +142,12 @@ fn basic_create_migration_multi_file_works(api: TestApi) {
                         "name" TEXT NOT NULL
                     );
                 "#]]
-            } else {
-                unreachable!()
-            };
+        } else {
+            unreachable!()
+        };
 
-            migration.expect_contents(expected_script)
-        });
+        migration.expect_contents(expected_script)
+    });
 }
 
 #[test_connector]
@@ -242,7 +246,9 @@ fn bad_migrations_should_make_the_command_fail_with_a_good_error(api: TestApi) {
     let mut file = std::fs::File::create(migration_file_path).unwrap();
     write!(file, "{script}").unwrap();
 
-    let error = api.create_migration("create-cats", &dm, &dir).send_unwrap_err();
+    let error = api
+        .create_migration("create-cats", &dm, &dir)
+        .send_unwrap_err();
 
     assert!(error.to_string().contains("syntax"), "{}", error);
 }
@@ -831,8 +837,16 @@ fn alter_constraint_name(mut api: TestApi) {
            @@id([a, b]{})
          }}
      "#,
-        if api.is_sqlite() { "" } else { r#"(map: "CustomId")"# },
-        if api.is_sqlite() { "" } else { r#", map: "CustomFK""# },
+        if api.is_sqlite() {
+            ""
+        } else {
+            r#"(map: "CustomId")"#
+        },
+        if api.is_sqlite() {
+            ""
+        } else {
+            r#", map: "CustomFK""#
+        },
         if api.is_sqlite() || api.is_mysql() {
             ""
         } else {

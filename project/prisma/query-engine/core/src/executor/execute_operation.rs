@@ -1,28 +1,41 @@
 #![allow(unused_variables)]
 #![cfg_attr(not(feature = "metrics"), allow(clippy::let_and_return))]
 
-use super::pipeline::QueryPipeline;
-use crate::{
-    CoreError, IrSerializer, Operation, QueryGraph, QueryGraphBuilder, QueryInterpreter, ResponseData,
-    executor::request_context, protocol::EngineProtocol,
-};
-use connector::{Connection, ConnectionLike, Connector};
+use std::time::Duration;
+
+use connector::Connection;
+use connector::ConnectionLike;
+use connector::Connector;
 use crosstarget_utils::time::ElapsedTimeCounter;
 use futures::future;
-
-#[cfg(not(feature = "metrics"))]
-use crate::metrics::MetricsInstrumentationStub;
 #[cfg(feature = "metrics")]
-use prisma_metrics::{
-    PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS, PRISMA_CLIENT_QUERIES_TOTAL, WithMetricsInstrumentation, counter,
-    histogram,
-};
-
-use schema::{QuerySchema, QuerySchemaRef};
-use std::time::Duration;
+use prisma_metrics::PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS;
+#[cfg(feature = "metrics")]
+use prisma_metrics::PRISMA_CLIENT_QUERIES_TOTAL;
+#[cfg(feature = "metrics")]
+use prisma_metrics::WithMetricsInstrumentation;
+#[cfg(feature = "metrics")]
+use prisma_metrics::counter;
+#[cfg(feature = "metrics")]
+use prisma_metrics::histogram;
+use schema::QuerySchema;
+use schema::QuerySchemaRef;
 use telemetry::TraceParent;
 use tracing::Instrument;
 use tracing_futures::WithSubscriber;
+
+use super::pipeline::QueryPipeline;
+use crate::CoreError;
+use crate::IrSerializer;
+use crate::Operation;
+use crate::QueryGraph;
+use crate::QueryGraphBuilder;
+use crate::QueryInterpreter;
+use crate::ResponseData;
+use crate::executor::request_context;
+#[cfg(not(feature = "metrics"))]
+use crate::metrics::MetricsInstrumentationStub;
+use crate::protocol::EngineProtocol;
 
 pub async fn execute_single_operation(
     query_schema: QuerySchemaRef,
@@ -59,7 +72,8 @@ pub async fn execute_many_operations(
         let result = execute_on(conn, graph, serializer, query_schema.as_ref(), traceparent).await;
 
         #[cfg(feature = "metrics")]
-        histogram!(PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS).record(operation_timer.elapsed_time());
+        histogram!(PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS)
+            .record(operation_timer.elapsed_time());
 
         match result {
             Ok(result) => results.push(Ok(result)),
@@ -170,8 +184,15 @@ async fn execute_self_contained(
     } else {
         let (graph, serializer) = build_graph(&query_schema, operation)?;
 
-        execute_self_contained_without_retry(conn, graph, serializer, force_transactions, &query_schema, traceparent)
-            .await
+        execute_self_contained_without_retry(
+            conn,
+            graph,
+            serializer,
+            force_transactions,
+            &query_schema,
+            traceparent,
+        )
+        .await
     };
 
     #[cfg(feature = "metrics")]
@@ -192,7 +213,14 @@ async fn execute_self_contained_without_retry<'a>(
         return execute_in_tx(&mut conn, graph, serializer, query_schema, traceparent).await;
     }
 
-    execute_on(conn.as_connection_like(), graph, serializer, query_schema, traceparent).await
+    execute_on(
+        conn.as_connection_like(),
+        graph,
+        serializer,
+        query_schema,
+        traceparent,
+    )
+    .await
 }
 
 // As suggested by the MongoDB documentation
@@ -221,9 +249,11 @@ async fn execute_self_contained_with_retry(
 
         loop {
             let (graph, serializer) = build_graph(&query_schema, operation.clone())?;
-            let res = execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent).await;
+            let res =
+                execute_in_tx(conn, graph, serializer, query_schema.as_ref(), traceparent).await;
 
-            if is_transient_error(&res) && retry_timeout.elapsed_time() < MAX_TX_TIMEOUT_RETRY_LIMIT {
+            if is_transient_error(&res) && retry_timeout.elapsed_time() < MAX_TX_TIMEOUT_RETRY_LIMIT
+            {
                 crosstarget_utils::time::sleep(TX_RETRY_BACKOFF).await;
                 continue;
             } else {
@@ -250,7 +280,14 @@ async fn execute_in_tx<'a>(
     traceparent: Option<TraceParent>,
 ) -> crate::Result<ResponseData> {
     let mut tx = conn.start_transaction(None).await?;
-    let result = execute_on(tx.as_connection_like(), graph, serializer, query_schema, traceparent).await;
+    let result = execute_on(
+        tx.as_connection_like(),
+        graph,
+        serializer,
+        query_schema,
+        traceparent,
+    )
+    .await;
 
     if result.is_ok() {
         tx.commit().await?;
@@ -278,7 +315,10 @@ async fn execute_on<'a>(
         .await
 }
 
-fn build_graph(query_schema: &QuerySchema, operation: Operation) -> crate::Result<(QueryGraph, IrSerializer<'_>)> {
+fn build_graph(
+    query_schema: &QuerySchema,
+    operation: Operation,
+) -> crate::Result<(QueryGraph, IrSerializer<'_>)> {
     let (query_graph, serializer) = QueryGraphBuilder::new(query_schema).build(operation)?;
 
     Ok((query_graph, serializer))

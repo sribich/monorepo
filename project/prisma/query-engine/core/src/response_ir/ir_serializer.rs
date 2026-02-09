@@ -1,7 +1,13 @@
-use super::{internal::serialize_internal, response::*, *};
-use crate::{CoreError, ExpressionResult, QueryResult};
 use query_structure::PrismaValue;
-use schema::{OutputField, QuerySchema};
+use schema::OutputField;
+use schema::QuerySchema;
+
+use super::internal::serialize_internal;
+use super::response::*;
+use super::*;
+use crate::CoreError;
+use crate::ExpressionResult;
+use crate::QueryResult;
 
 #[derive(Debug)]
 pub struct IrSerializer<'a> {
@@ -54,7 +60,9 @@ impl<'a> IrSerializer<'a> {
                 Ok(ResponseData::new(self.key.clone(), result))
             }
 
-            ExpressionResult::Empty => panic!("Internal error: Attempted to serialize empty result."),
+            ExpressionResult::Empty => {
+                panic!("Internal error: Attempted to serialize empty result.")
+            }
 
             _ => panic!("Internal error: Attempted to serialize non-query result {result:?}."),
         }

@@ -643,7 +643,9 @@ async fn one_to_one_relation_on_a_singular_primary_key(api: &mut TestApi) -> Tes
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn multiple_foreign_key_constraints_are_taken_always_in_the_same_order(api: &mut TestApi) -> TestResult {
+async fn multiple_foreign_key_constraints_are_taken_always_in_the_same_order(
+    api: &mut TestApi,
+) -> TestResult {
     let migration = indoc! {r#"
         CREATE TABLE A (
             id  int primary key,

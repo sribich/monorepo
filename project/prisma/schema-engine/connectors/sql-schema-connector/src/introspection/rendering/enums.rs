@@ -2,12 +2,13 @@
 
 use std::borrow::Cow;
 
-use crate::introspection::{
-    datamodel_calculator::DatamodelCalculatorContext, introspection_helpers as helpers, introspection_pair::EnumPair,
-    sanitize_datamodel_names,
-};
 use datamodel_renderer::datamodel as renderer;
 use psl::parser_database as db;
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use crate::introspection::introspection_helpers as helpers;
+use crate::introspection::introspection_pair::EnumPair;
+use crate::introspection::sanitize_datamodel_names;
 
 /// Render all enums.
 pub(super) fn render<'a>(
@@ -21,7 +22,9 @@ pub(super) fn render<'a>(
         all_enums.push((pair.previous_position(), render_enum(pair)))
     }
 
-    all_enums.sort_by(|(id_a, _), (id_b, _)| helpers::compare_options_none_last(id_a.as_ref(), id_b.as_ref()));
+    all_enums.sort_by(|(id_a, _), (id_b, _)| {
+        helpers::compare_options_none_last(id_a.as_ref(), id_b.as_ref())
+    });
 
     if ctx.sql_family.is_mysql() {
         // MySQL can have multiple database enums matching one Prisma enum.
@@ -33,7 +36,9 @@ pub(super) fn render<'a>(
 
     for (previous_schema_enum, enm) in all_enums {
         let file_name = match previous_schema_enum {
-            Some((prev_file_id, _)) => Cow::Borrowed(ctx.previous_schema.db.file_name(prev_file_id)),
+            Some((prev_file_id, _)) => {
+                Cow::Borrowed(ctx.previous_schema.db.file_name(prev_file_id))
+            }
             None => introspection_file_name.clone(),
         };
 
@@ -73,7 +78,8 @@ fn render_enum(r#enum: EnumPair<'_>) -> renderer::Enum<'_> {
             rendered_variant.map(map);
         }
 
-        if variant.name().is_empty() || sanitize_datamodel_names::needs_sanitation(&variant.name()) {
+        if variant.name().is_empty() || sanitize_datamodel_names::needs_sanitation(&variant.name())
+        {
             rendered_variant.comment_out();
         }
 

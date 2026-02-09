@@ -12,15 +12,21 @@ mod internal;
 mod ir_serializer;
 mod response;
 
-pub use response::*;
+use std::collections::HashMap;
+use std::fmt;
+use std::sync::Arc;
 
+use indexmap::IndexMap;
 pub(crate) use ir_serializer::*;
+use query_structure::PrismaValue;
+use query_structure::RawJson;
+pub use response::*;
+use serde::ser::Serialize;
+use serde::ser::SerializeMap;
+use serde::ser::SerializeSeq;
+use serde::ser::Serializer;
 
 use crate::ArgumentValue;
-use indexmap::IndexMap;
-use query_structure::{PrismaValue, RawJson};
-use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
-use std::{collections::HashMap, fmt, sync::Arc};
 
 /// A `key -> value` map to an IR item
 pub type Map = IndexMap<String, Item>;
@@ -75,8 +81,8 @@ impl From<Vec<Item>> for List {
 }
 
 impl IntoIterator for List {
-    type Item = Item;
     type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = Item;
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.into_iter()
@@ -84,8 +90,8 @@ impl IntoIterator for List {
 }
 
 impl<'a> IntoIterator for &'a List {
-    type Item = &'a Item;
     type IntoIter = std::slice::Iter<'a, Item>;
+    type Item = &'a Item;
 
     fn into_iter(self) -> Self::IntoIter {
         self.inner.iter()

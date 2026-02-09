@@ -5,13 +5,13 @@
 mod datasource;
 mod generator;
 
-pub use datasource::Datasource;
-pub use generator::Generator;
-use psl::ValidatedSchema;
-
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
+
+pub use datasource::Datasource;
+pub use generator::Generator;
+use psl::ValidatedSchema;
 
 /// The configuration part of a data model. First the generators, then
 /// the datasources.
@@ -26,12 +26,18 @@ pub struct Configuration<'a> {
 impl<'a> Configuration<'a> {
     /// Add a new generator to the configuration.
     pub fn push_generator(&mut self, file: impl Into<Cow<'a, str>>, generator: Generator<'a>) {
-        self.generators.entry(file.into()).or_default().push(generator);
+        self.generators
+            .entry(file.into())
+            .or_default()
+            .push(generator);
     }
 
     /// Add a new datasource to the configuration.
     pub fn push_datasource(&mut self, file: impl Into<Cow<'a, str>>, datasource: Datasource<'a>) {
-        self.datasources.entry(file.into()).or_default().push(datasource);
+        self.datasources
+            .entry(file.into())
+            .or_default()
+            .push(datasource);
     }
 
     /// Create a rendering from a PSL datasource.
@@ -81,8 +87,10 @@ impl fmt::Display for Configuration<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{configuration::*, value::*};
     use expect_test::expect;
+
+    use crate::configuration::*;
+    use crate::value::*;
 
     #[test]
     fn minimal() {
@@ -119,7 +127,10 @@ mod tests {
         let mut config = Configuration::default();
         let file_name = "schema.prisma";
 
-        config.push_generator(file_name.to_owned(), Generator::new("js", Env::value("prisma-client")));
+        config.push_generator(
+            file_name.to_owned(),
+            Generator::new("js", Env::value("prisma-client")),
+        );
         config.push_generator(
             file_name.to_owned(),
             Generator::new("go", Env::value("prisma-client-go")),

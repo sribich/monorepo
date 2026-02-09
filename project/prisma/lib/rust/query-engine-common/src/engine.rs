@@ -1,11 +1,14 @@
-use crate::error::ApiError;
-use query_core::{QueryExecutor, protocol::EngineProtocol, schema::QuerySchema};
+use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use query_core::QueryExecutor;
+use query_core::protocol::EngineProtocol;
+use query_core::schema::QuerySchema;
 use serde::Deserialize;
-use std::{
-    collections::{BTreeMap, HashMap},
-    path::PathBuf,
-    sync::Arc,
-};
+
+use crate::error::ApiError;
 
 /// The state of the engine.
 pub enum Inner {

@@ -1,6 +1,6 @@
-use crosstarget_utils::time::SystemTime;
 use std::time::Duration;
 
+use crosstarget_utils::time::SystemTime;
 use serde::Serialize;
 
 /// High-resolution time in the same format that OpenTelemetry uses.

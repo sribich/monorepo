@@ -1,12 +1,22 @@
-use super::*;
-use crate::{
-    DataExpectation, ParsedInputMap, ParsedInputValue, RowSink,
-    inputs::{DeleteManyRecordsSelectorsInput, DeleteRecordSelectorsInput},
-    query_ast::*,
-    query_graph::{NodeRef, QueryGraph, QueryGraphDependency},
-};
-use query_structure::{Filter, Model, PrismaValue, RecordFilter, RelationFieldRef};
 use std::convert::TryInto;
+
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::PrismaValue;
+use query_structure::RecordFilter;
+use query_structure::RelationFieldRef;
+
+use super::*;
+use crate::DataExpectation;
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::RowSink;
+use crate::inputs::DeleteManyRecordsSelectorsInput;
+use crate::inputs::DeleteRecordSelectorsInput;
+use crate::query_ast::*;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Adds a delete (single) record node to the graph and connects it to the parent.
 ///
@@ -28,7 +38,9 @@ pub fn nested_delete(
     value: ParsedInputValue<'_>,
     child_model: &Model,
 ) -> QueryGraphBuilderResult<()> {
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
 
     if parent_relation_field.is_list() {
         let filters: Vec<Filter> = utils::coerce_vec(value)
@@ -48,11 +60,19 @@ pub fn nested_delete(
         });
 
         let delete_many_node = graph.create_node(Query::Write(delete_many));
-        let find_child_records_node =
-            utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, or_filter)?;
+        let find_child_records_node = utils::insert_find_children_by_parent_node(
+            graph,
+            parent_node,
+            parent_relation_field,
+            or_filter,
+        )?;
 
-        let dependencies =
-            utils::insert_emulated_on_delete(graph, query_schema, child_model, &find_child_records_node)?;
+        let dependencies = utils::insert_emulated_on_delete(
+            graph,
+            query_schema,
+            child_model,
+            &find_child_records_node,
+        )?;
         utils::create_execution_order_edges(graph, dependencies, delete_many_node)?;
 
         graph.create_edge(
@@ -84,18 +104,27 @@ pub fn nested_delete(
                 _ => Filter::empty(),
             };
 
-            let find_child_records_node =
-                utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, filter.clone())?;
+            let find_child_records_node = utils::insert_find_children_by_parent_node(
+                graph,
+                parent_node,
+                parent_relation_field,
+                filter.clone(),
+            )?;
 
-            let delete_record_node = graph.create_node(Query::Write(WriteQuery::DeleteRecord(DeleteRecord {
-                name: String::new(),
-                model: child_model.clone(),
-                record_filter: filter.into(),
-                selected_fields: None,
-            })));
+            let delete_record_node =
+                graph.create_node(Query::Write(WriteQuery::DeleteRecord(DeleteRecord {
+                    name: String::new(),
+                    model: child_model.clone(),
+                    record_filter: filter.into(),
+                    selected_fields: None,
+                })));
 
-            let dependencies =
-                utils::insert_emulated_on_delete(graph, query_schema, child_model, &find_child_records_node)?;
+            let dependencies = utils::insert_emulated_on_delete(
+                graph,
+                query_schema,
+                child_model,
+                &find_child_records_node,
+            )?;
             utils::create_execution_order_edges(graph, dependencies, delete_record_node)?;
 
             graph.create_edge(
@@ -127,14 +156,20 @@ pub fn nested_delete_many(
     value: ParsedInputValue<'_>,
     child_model: &Model,
 ) -> QueryGraphBuilderResult<()> {
-    let child_model_identifier = parent_relation_field.related_model().shard_aware_primary_identifier();
+    let child_model_identifier = parent_relation_field
+        .related_model()
+        .shard_aware_primary_identifier();
 
     for value in utils::coerce_vec(value) {
         let as_map: ParsedInputMap<'_> = value.try_into()?;
         let filter = extract_filter(as_map, child_model)?;
 
-        let find_child_records_node =
-            utils::insert_find_children_by_parent_node(graph, parent, parent_relation_field, filter.clone())?;
+        let find_child_records_node = utils::insert_find_children_by_parent_node(
+            graph,
+            parent,
+            parent_relation_field,
+            filter.clone(),
+        )?;
 
         let delete_many = WriteQuery::DeleteManyRecords(DeleteManyRecords {
             model: child_model.clone(),
@@ -143,8 +178,12 @@ pub fn nested_delete_many(
         });
 
         let delete_many_node = graph.create_node(Query::Write(delete_many));
-        let dependencies =
-            utils::insert_emulated_on_delete(graph, query_schema, child_model, &find_child_records_node)?;
+        let dependencies = utils::insert_emulated_on_delete(
+            graph,
+            query_schema,
+            child_model,
+            &find_child_records_node,
+        )?;
         utils::create_execution_order_edges(graph, dependencies, delete_many_node)?;
 
         graph.create_edge(

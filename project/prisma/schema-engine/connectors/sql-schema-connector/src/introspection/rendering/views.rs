@@ -1,10 +1,15 @@
-use super::{id, indexes, relation_field, scalar_field};
-use crate::introspection::{
-    datamodel_calculator::DatamodelCalculatorContext, introspection_helpers as helpers, introspection_pair::ViewPair,
-};
+use std::borrow::Cow;
+
 use datamodel_renderer::datamodel as renderer;
 use schema_connector::ViewDefinition;
-use std::borrow::Cow;
+
+use super::id;
+use super::indexes;
+use super::relation_field;
+use super::scalar_field;
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use crate::introspection::introspection_helpers as helpers;
+use crate::introspection::introspection_pair::ViewPair;
 
 /// Render all view blocks to the PSL.
 pub(super) fn render<'a>(
@@ -13,7 +18,8 @@ pub(super) fn render<'a>(
     rendered: &mut renderer::Datamodel<'a>,
 ) -> Vec<ViewDefinition> {
     let mut definitions = Vec::new();
-    let mut views_with_idx: Vec<(Option<_>, renderer::View<'a>)> = Vec::with_capacity(ctx.sql_schema.views_count());
+    let mut views_with_idx: Vec<(Option<_>, renderer::View<'a>)> =
+        Vec::with_capacity(ctx.sql_schema.views_count());
 
     for view in ctx.view_pairs() {
         if let Some(definition) = view.definition() {
@@ -36,7 +42,9 @@ pub(super) fn render<'a>(
 
     for (previous_view, render) in views_with_idx.into_iter() {
         let file_name = match previous_view {
-            Some((previous_file_id, _)) => Cow::Borrowed(ctx.previous_schema.db.file_name(previous_file_id)),
+            Some((previous_file_id, _)) => {
+                Cow::Borrowed(ctx.previous_schema.db.file_name(previous_file_id))
+            }
             None => introspection_file_name.clone(),
         };
 

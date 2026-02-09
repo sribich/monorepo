@@ -1,11 +1,17 @@
 use either::Either;
 
-use crate::{
-    Column, ColumnArity, ColumnType, ColumnTypeFamily, EnumWalker, TableColumnId, TableDefaultValueId,
-    TableDefaultValueWalker, TableId, TableWalker, Walker,
-};
-
 use super::ColumnWalker;
+use crate::Column;
+use crate::ColumnArity;
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
+use crate::EnumWalker;
+use crate::TableColumnId;
+use crate::TableDefaultValueId;
+use crate::TableDefaultValueWalker;
+use crate::TableId;
+use crate::TableWalker;
+use crate::Walker;
 
 /// Traverse a table column.
 pub type TableColumnWalker<'a> = Walker<'a, TableColumnId>;
@@ -32,7 +38,8 @@ impl<'a> TableColumnWalker<'a> {
 
     /// Returns whether the column has the enum default value of the given enum type.
     pub fn column_has_enum_default_value(self, enum_name: &str, value: &str) -> bool {
-        self.coarsen().column_has_enum_default_value(enum_name, value)
+        self.coarsen()
+            .column_has_enum_default_value(enum_name, value)
     }
 
     /// Returns whether the type of the column matches the provided enum name.
@@ -83,7 +90,9 @@ impl<'a> TableColumnWalker<'a> {
 
     /// Is this column indexed by a secondary index??
     pub fn is_part_of_secondary_index(self) -> bool {
-        self.table().indexes().any(|idx| idx.contains_column(self.id))
+        self.table()
+            .indexes()
+            .any(|idx| idx.contains_column(self.id))
     }
 
     /// Is this column a part of the table's primary key?
@@ -106,7 +115,14 @@ impl<'a> TableColumnWalker<'a> {
     pub fn is_single_primary_key(self) -> bool {
         self.table()
             .primary_key()
-            .map(|pk| pk.columns().len() == 1 && pk.columns().next().map(|c| c.name() == self.name()).unwrap_or(false))
+            .map(|pk| {
+                pk.columns().len() == 1
+                    && pk
+                        .columns()
+                        .next()
+                        .map(|c| c.name() == self.name())
+                        .unwrap_or(false)
+            })
             .unwrap_or(false)
     }
 

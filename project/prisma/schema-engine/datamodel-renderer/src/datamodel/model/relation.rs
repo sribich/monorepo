@@ -1,9 +1,12 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    datamodel::attributes::FieldAttribute,
-    value::{Array, Constant, Function, Text, Value},
-};
+use crate::datamodel::attributes::FieldAttribute;
+use crate::value::Array;
+use crate::value::Constant;
+use crate::value::Function;
+use crate::value::Text;
+use crate::value::Value;
 
 /// Defines the relation argument of a model field.
 #[derive(Debug)]
@@ -83,7 +86,11 @@ impl<'a> Relation<'a> {
         self.push_array_parameter("references", fields);
     }
 
-    fn push_array_parameter(&mut self, param_name: &'static str, data: impl Iterator<Item = Cow<'a, str>>) {
+    fn push_array_parameter(
+        &mut self,
+        param_name: &'static str,
+        data: impl Iterator<Item = Cow<'a, str>>,
+    ) {
         let fields: Vec<_> = data.map(Value::Constant).collect();
 
         if !fields.is_empty() {

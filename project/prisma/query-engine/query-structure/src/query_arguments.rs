@@ -1,4 +1,6 @@
-use psl::{PreviewFeature, datamodel_connector::ConnectorCapability, has_capability};
+use psl::PreviewFeature;
+use psl::datamodel_connector::ConnectorCapability;
+use psl::has_capability;
 
 use crate::*;
 
@@ -156,7 +158,9 @@ impl QueryArguments {
     /// retrieved by the connector or if it requires the query engine to fetch a raw set
     /// of records and perform certain operations itself, in-memory.
     pub fn requires_inmemory_processing(&self, rls: RelationLoadStrategy) -> bool {
-        self.contains_unstable_cursor() || self.contains_null_cursor() || self.requires_inmemory_distinct(rls)
+        self.contains_unstable_cursor()
+            || self.contains_null_cursor()
+            || self.requires_inmemory_distinct(rls)
     }
 
     pub fn requires_inmemory_distinct(&self, rls: RelationLoadStrategy) -> bool {
@@ -202,7 +206,10 @@ impl QueryArguments {
     }
 
     fn connector_supports_distinct_on(&self) -> bool {
-        has_capability(self.model().dm.schema.connector, ConnectorCapability::DistinctOn)
+        has_capability(
+            self.model().dm.schema.connector,
+            ConnectorCapability::DistinctOn,
+        )
     }
 
     /// An unstable cursor is a cursor that is used in conjunction with an unstable (non-unique) combination of orderBys.
@@ -267,9 +274,9 @@ impl QueryArguments {
         // Indicates whether or not a combination of contained fields is on the source model (we don't check for relations for now).
         let order_by_contains_unique_index = self.model.unique_indexes().any(|index| {
             index.fields().all(|f| {
-                on_model
-                    .iter()
-                    .any(|o| Some(o.field.id) == f.as_scalar_field().map(|sf| ScalarFieldId::InModel(sf.id)))
+                on_model.iter().any(|o| {
+                    Some(o.field.id) == f.as_scalar_field().map(|sf| ScalarFieldId::InModel(sf.id))
+                })
             })
         });
 
@@ -296,7 +303,9 @@ impl QueryArguments {
     }
 
     pub fn has_unbatchable_ordering(&self) -> bool {
-        self.order_by.iter().any(|o| !matches!(o, OrderBy::Scalar(_)))
+        self.order_by
+            .iter()
+            .any(|o| !matches!(o, OrderBy::Scalar(_)))
     }
 
     pub fn has_unbatchable_filters(&self) -> bool {

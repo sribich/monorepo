@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod delete_many_inside_update {
-    use query_engine_tests::{assert_error, run_query, run_query_json};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "A 1-n relation" should "error if trying to use nestedDeleteMany"
@@ -114,7 +116,10 @@ mod delete_many_inside_update {
 
     // "a PM to C1!  relation " should "work with several deleteManys"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_many_delete_manys(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_many_delete_manys(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let (parent_1, _) = setup_data(runner, t).await?;
 
         run_query!(
@@ -147,7 +152,10 @@ mod delete_many_inside_update {
 
     // "a PM to C1! relation " should "work with empty Filter"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_work_empty_filter(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_work_empty_filter(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let (parent_1, _) = setup_data(runner, t).await?;
 
         run_query!(
@@ -177,7 +185,10 @@ mod delete_many_inside_update {
 
     // "a PM to C1!  relation " should "not change anything when there is no hit"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_no_change_if_no_hit(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_no_change_if_no_hit(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let (parent_1, _) = setup_data(runner, t).await?;
 
         run_query!(

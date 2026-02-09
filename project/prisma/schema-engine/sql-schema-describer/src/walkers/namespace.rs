@@ -1,4 +1,5 @@
-use crate::{NamespaceId, Walker};
+use crate::NamespaceId;
+use crate::Walker;
 
 /// Traverse a namespace
 pub type NamespaceWalker<'a> = Walker<'a, NamespaceId>;

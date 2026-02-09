@@ -1,30 +1,41 @@
 mod json_adapter;
 
+use std::fmt::Display;
+use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
+
+use colored::Colorize;
 pub use json_adapter::*;
-use serde::{Deserialize, Serialize};
+use prisma_metrics::MetricRegistry;
+use query_core::QueryExecutor;
+use query_core::TransactionOptions;
+use query_core::TxId;
+use query_core::protocol::EngineProtocol;
+use query_core::relation_load_strategy;
+use query_core::schema::QuerySchemaRef;
+use query_core::schema::{self};
+use request_handlers::BatchTransactionOption;
+use request_handlers::ConnectorKind;
+use request_handlers::GraphqlBody;
+use request_handlers::JsonBatchQuery;
+use request_handlers::JsonBody;
+use request_handlers::JsonSingleQuery;
+use request_handlers::MultiQuery;
+use request_handlers::RequestBody;
+use request_handlers::RequestHandler;
+use serde::Deserialize;
+use serde::Serialize;
+use serde_json::json;
 use telemetry::TraceParent;
 
-use crate::{
-    ConnectorTag, ConnectorVersion, ENGINE_PROTOCOL, QueryResult, RenderedDatamodel, TestError, TestLogCapture,
-    TestResult,
-};
-use colored::Colorize;
-use prisma_metrics::MetricRegistry;
-use query_core::{
-    QueryExecutor, TransactionOptions, TxId,
-    protocol::EngineProtocol,
-    relation_load_strategy,
-    schema::{self, QuerySchemaRef},
-};
-use request_handlers::{
-    BatchTransactionOption, ConnectorKind, GraphqlBody, JsonBatchQuery, JsonBody, JsonSingleQuery, MultiQuery,
-    RequestBody, RequestHandler,
-};
-use serde_json::json;
-use std::{
-    fmt::Display,
-    sync::{Arc, atomic::AtomicUsize},
-};
+use crate::ConnectorTag;
+use crate::ConnectorVersion;
+use crate::ENGINE_PROTOCOL;
+use crate::QueryResult;
+use crate::RenderedDatamodel;
+use crate::TestError;
+use crate::TestLogCapture;
+use crate::TestResult;
 
 pub type TxResult = Result<(), user_facing_errors::Error>;
 
@@ -84,7 +95,11 @@ impl Runner {
     }
 
     pub fn prisma_dml(&self) -> &str {
-        self.query_schema.internal_data_model.schema.db.source_assert_single()
+        self.query_schema
+            .internal_data_model
+            .schema
+            .db
+            .source_assert_single()
     }
 
     pub fn max_bind_values(&self) -> Option<usize> {
@@ -140,9 +155,10 @@ impl Runner {
         // TypeScript Driver Adapter implementation itself.
         let local_max_bind_values = override_local_max_bind_values;
 
-        let query_schema = schema::build(Arc::new(schema), true).with_db_version_supports_join_strategy(
-            relation_load_strategy::db_version_supports_joins_strategy(db_version)?,
-        );
+        let query_schema = schema::build(Arc::new(schema), true)
+            .with_db_version_supports_join_strategy(
+                relation_load_strategy::db_version_supports_joins_strategy(db_version)?,
+            );
 
         Ok(Self {
             version: connector_version,
@@ -159,10 +175,15 @@ impl Runner {
     }
 
     pub async fn query(&self, query: impl Into<String>) -> TestResult<QueryResult> {
-        self.query_with_params(self.current_tx_id.as_ref(), None, query).await
+        self.query_with_params(self.current_tx_id.as_ref(), None, query)
+            .await
     }
 
-    pub async fn query_in_tx(&self, tx_id: &TxId, query: impl Into<String>) -> TestResult<QueryResult> {
+    pub async fn query_in_tx(
+        &self,
+        tx_id: &TxId,
+        query: impl Into<String>,
+    ) -> TestResult<QueryResult> {
         self.query_with_params(Some(tx_id), None, query).await
     }
 
@@ -197,7 +218,10 @@ impl Runner {
             EngineProtocol::Json => {
                 // Translate the GraphQL query to JSON
                 let json_query = JsonRequest::from_graphql(&query, self.query_schema())?;
-                println!("{}", serde_json::to_string_pretty(&json_query).unwrap().green());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json_query).unwrap().green()
+                );
 
                 RequestBody::Json(JsonBody::Single(json_query))
             }
@@ -208,7 +232,9 @@ impl Runner {
             }
         };
 
-        let response = handler.handle(request_body, tx_id.cloned(), traceparent).await;
+        let response = handler
+            .handle(request_body, tx_id.cloned(), traceparent)
+            .await;
 
         let result: QueryResult = match self.protocol {
             EngineProtocol::Json => JsonResponse::from_graphql(response).into(),
@@ -262,7 +288,9 @@ impl Runner {
         let query = query.into();
         tracing::debug!("Raw execute: {}", query.clone().green());
 
-        self.connector_tag.raw_execute(&query, &self.connection_url).await?;
+        self.connector_tag
+            .raw_execute(&query, &self.connection_url)
+            .await?;
 
         Ok(())
     }
@@ -343,7 +371,8 @@ impl Runner {
         valid_for_millis: u64,
         isolation_level: Option<String>,
     ) -> TestResult<TxId> {
-        let tx_opts = TransactionOptions::new(max_acquisition_millis, valid_for_millis, isolation_level);
+        let tx_opts =
+            TransactionOptions::new(max_acquisition_millis, valid_for_millis, isolation_level);
         match &self.executor {
             RunnerExecutor::Builtin(executor) => {
                 let id = executor

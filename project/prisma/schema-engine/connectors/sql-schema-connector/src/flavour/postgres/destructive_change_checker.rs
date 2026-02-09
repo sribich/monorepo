@@ -1,22 +1,23 @@
-use crate::{
-    flavour::{SqlConnector, postgres::Circumstances},
-    migration_pair::MigrationPair,
-    sql_destructive_change_checker::{
-        DestructiveChangeCheckerFlavour,
-        check::{Column, Table},
-        destructive_change_checker_flavour::{
-            display_column_type, extract_column_values_count, extract_table_rows_count,
-        },
-        destructive_check_plan::DestructiveCheckPlan,
-        unexecutable_step_check::UnexecutableStepCheck,
-        warning_check::SqlMigrationWarningCheck,
-    },
-    sql_migration::{AlterColumn, ColumnTypeChange},
-    sql_schema_differ::ColumnChanges,
-};
 use enumflags2::BitFlags;
-use schema_connector::{BoxFuture, ConnectorResult};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorResult;
 use sql_schema_describer::walkers::TableColumnWalker;
+
+use crate::flavour::SqlConnector;
+use crate::flavour::postgres::Circumstances;
+use crate::migration_pair::MigrationPair;
+use crate::sql_destructive_change_checker::DestructiveChangeCheckerFlavour;
+use crate::sql_destructive_change_checker::check::Column;
+use crate::sql_destructive_change_checker::check::Table;
+use crate::sql_destructive_change_checker::destructive_change_checker_flavour::display_column_type;
+use crate::sql_destructive_change_checker::destructive_change_checker_flavour::extract_column_values_count;
+use crate::sql_destructive_change_checker::destructive_change_checker_flavour::extract_table_rows_count;
+use crate::sql_destructive_change_checker::destructive_check_plan::DestructiveCheckPlan;
+use crate::sql_destructive_change_checker::unexecutable_step_check::UnexecutableStepCheck;
+use crate::sql_destructive_change_checker::warning_check::SqlMigrationWarningCheck;
+use crate::sql_migration::AlterColumn;
+use crate::sql_migration::ColumnTypeChange;
+use crate::sql_schema_differ::ColumnChanges;
 
 #[derive(Debug)]
 pub struct PostgresDestructiveChangeCheckerFlavour {
@@ -47,22 +48,36 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
             type_change,
         } = alter_column;
 
-        if changes.arity_changed() && columns.previous.arity().is_nullable() && columns.next.arity().is_required() {
+        if changes.arity_changed()
+            && columns.previous.arity().is_nullable()
+            && columns.next.arity().is_required()
+        {
             plan.push_unexecutable(
                 UnexecutableStepCheck::MadeOptionalFieldRequired(Column {
                     table: columns.previous.table().name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(str::to_owned),
                     column: columns.previous.name().to_owned(),
                 }),
                 step_index,
             )
         }
 
-        if changes.arity_changed() && !columns.previous.arity().is_list() && columns.next.arity().is_list() {
+        if changes.arity_changed()
+            && !columns.previous.arity().is_list()
+            && columns.next.arity().is_list()
+        {
             plan.push_unexecutable(
                 UnexecutableStepCheck::MadeScalarFieldIntoArrayField(Column {
                     table: columns.previous.table().name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(str::to_owned),
                     column: columns.previous.name().to_owned(),
                 }),
                 step_index,
@@ -78,7 +93,11 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
                 plan.push_warning(
                     SqlMigrationWarningCheck::RiskyCast {
                         table: columns.previous.table().name().to_owned(),
-                        namespace: columns.previous.table().explicit_namespace().map(String::from),
+                        namespace: columns
+                            .previous
+                            .table()
+                            .explicit_namespace()
+                            .map(String::from),
                         column: columns.previous.name().to_owned(),
                         previous_type,
                         next_type,
@@ -90,7 +109,11 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
                 plan.push_warning(
                     SqlMigrationWarningCheck::NotCastable {
                         table: columns.previous.table().name().to_owned(),
-                        namespace: columns.previous.table().explicit_namespace().map(String::from),
+                        namespace: columns
+                            .previous
+                            .table()
+                            .explicit_namespace()
+                            .map(String::from),
                         column: columns.previous.name().to_owned(),
                         previous_type,
                         next_type,
@@ -117,7 +140,11 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
             plan.push_unexecutable(
                 UnexecutableStepCheck::AddedRequiredFieldToTable(Column {
                     table: columns.previous.table().name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(str::to_owned),
                     column: columns.previous.name().to_owned(),
                 }),
                 step_index,
@@ -126,7 +153,11 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
             plan.push_unexecutable(
                 UnexecutableStepCheck::DropAndRecreateRequiredColumn(Column {
                     table: columns.previous.table().name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(str::to_owned),
                     column: columns.previous.name().to_owned(),
                 }),
                 step_index,
@@ -136,7 +167,11 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
             plan.push_warning(
                 SqlMigrationWarningCheck::DropAndRecreateColumn {
                     column: columns.previous.name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(String::from),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(String::from),
                     table: columns.previous.table().name().to_owned(),
                 },
                 step_index,
@@ -170,7 +205,10 @@ impl DestructiveChangeCheckerFlavour for PostgresDestructiveChangeCheckerFlavour
                 Some(namespace) => format!("\"{}\".\"{}\"", namespace, column.table),
                 None => format!("\"{}\"", column.table),
             };
-            let query = format!("SELECT COUNT(*) FROM {} WHERE \"{}\" IS NOT NULL", from, column.column);
+            let query = format!(
+                "SELECT COUNT(*) FROM {} WHERE \"{}\" IS NOT NULL",
+                from, column.column
+            );
             let result_set = connector.query_raw(&query, &[]).await?;
             extract_column_values_count(result_set)
         })

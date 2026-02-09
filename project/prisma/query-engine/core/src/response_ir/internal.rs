@@ -1,18 +1,26 @@
-use super::*;
-use crate::{
-    CoreError, QueryResult, RecordAggregations, RecordSelection,
-    constants::custom_types,
-    protocol::EngineProtocol,
-    result_ast::{RecordSelectionWithRelations, RelationRecordSelection},
-};
+use std::collections::HashMap;
+use std::collections::HashSet;
+
 use connector::AggregationResult;
 use indexmap::IndexMap;
-use query_structure::{Field, Model, PrismaValue, SelectionResult, VirtualSelection};
-use schema::{
-    constants::{aggregations::*, output_fields::*},
-    *,
-};
-use std::collections::{HashMap, HashSet};
+use query_structure::Field;
+use query_structure::Model;
+use query_structure::PrismaValue;
+use query_structure::SelectionResult;
+use query_structure::VirtualSelection;
+use schema::constants::aggregations::*;
+use schema::constants::output_fields::*;
+use schema::*;
+
+use super::*;
+use crate::CoreError;
+use crate::QueryResult;
+use crate::RecordAggregations;
+use crate::RecordSelection;
+use crate::constants::custom_types;
+use crate::protocol::EngineProtocol;
+use crate::result_ast::RecordSelectionWithRelations;
+use crate::result_ast::RelationRecordSelection;
 
 /// A grouping of items to their parent record.
 /// The item implicitly holds the information of the type of item contained.
@@ -57,7 +65,10 @@ pub(crate) fn serialize_internal(
             let mut map: Map = IndexMap::with_capacity(1);
             let mut result = CheckedItemsWithParents::new();
 
-            map.insert(AFFECTED_COUNT.into(), Item::Value(PrismaValue::Int(c as i64)));
+            map.insert(
+                AFFECTED_COUNT.into(),
+                Item::Value(PrismaValue::Int(c as i64)),
+            );
             result.insert(None, Item::Map(map));
 
             Ok(result)
@@ -84,7 +95,10 @@ fn serialize_aggregations(
             match result {
                 AggregationResult::Field(field, value) => {
                     let output_field = aggregate_object_type.find_field(field.name()).unwrap();
-                    flattened.insert(field.name().to_owned(), serialize_scalar(output_field, value)?);
+                    flattened.insert(
+                        field.name().to_owned(),
+                        serialize_scalar(output_field, value)?,
+                    );
                 }
 
                 AggregationResult::Count(field, count) => {
@@ -96,32 +110,56 @@ fn serialize_aggregations(
                 }
 
                 AggregationResult::Average(field, value) => {
-                    let output_field =
-                        find_nested_aggregate_output_field(aggregate_object_type, UNDERSCORE_AVG, field.name());
-                    flattened.insert(format!("_avg_{}", field.name()), serialize_scalar(output_field, value)?);
+                    let output_field = find_nested_aggregate_output_field(
+                        aggregate_object_type,
+                        UNDERSCORE_AVG,
+                        field.name(),
+                    );
+                    flattened.insert(
+                        format!("_avg_{}", field.name()),
+                        serialize_scalar(output_field, value)?,
+                    );
                 }
 
                 AggregationResult::Sum(field, value) => {
-                    let output_field =
-                        find_nested_aggregate_output_field(aggregate_object_type, UNDERSCORE_SUM, field.name());
-                    flattened.insert(format!("_sum_{}", field.name()), serialize_scalar(output_field, value)?);
+                    let output_field = find_nested_aggregate_output_field(
+                        aggregate_object_type,
+                        UNDERSCORE_SUM,
+                        field.name(),
+                    );
+                    flattened.insert(
+                        format!("_sum_{}", field.name()),
+                        serialize_scalar(output_field, value)?,
+                    );
                 }
 
                 AggregationResult::Min(field, value) => {
-                    let output_field =
-                        find_nested_aggregate_output_field(aggregate_object_type, UNDERSCORE_MIN, field.name());
+                    let output_field = find_nested_aggregate_output_field(
+                        aggregate_object_type,
+                        UNDERSCORE_MIN,
+                        field.name(),
+                    );
                     flattened.insert(
                         format!("_min_{}", field.name()),
-                        serialize_scalar(output_field, coerce_non_numeric(value, output_field.field_type()))?,
+                        serialize_scalar(
+                            output_field,
+                            coerce_non_numeric(value, output_field.field_type()),
+                        )?,
                     );
                 }
 
                 AggregationResult::Max(field, value) => {
-                    let output_field =
-                        find_nested_aggregate_output_field(aggregate_object_type, UNDERSCORE_MAX, field.name());
+                    let output_field = find_nested_aggregate_output_field(
+                        aggregate_object_type,
+                        UNDERSCORE_MAX,
+                        field.name(),
+                    );
                     flattened.insert(
                         format!("_max_{}", field.name()),
-                        serialize_scalar(output_field, coerce_non_numeric(value, output_field.field_type()))?,
+                        serialize_scalar(
+                            output_field,
+                            coerce_non_numeric(value, output_field.field_type()),
+                        )?,
                     );
                 }
             }
@@ -272,7 +310,10 @@ fn finalize_objects(
                 .map(|(parent, items)| {
                     if !opt {
                         // Check that all items are non-null
-                        if items.iter().any(|item| matches!(item, Item::Value(PrismaValue::Null))) {
+                        if items
+                            .iter()
+                            .any(|item| matches!(item, Item::Value(PrismaValue::Null)))
+                        {
                             return Err(CoreError::null_serialization_error(&name));
                         }
                     }
@@ -295,7 +336,10 @@ fn finalize_objects(
                         // Simple return the first record in the list.
                         Ok((parent, Item::Ref(ItemRef::new(first))))
                     } else if items.is_empty() && opt {
-                        Ok((parent, Item::Ref(ItemRef::new(Item::Value(PrismaValue::Null)))))
+                        Ok((
+                            parent,
+                            Item::Ref(ItemRef::new(Item::Value(PrismaValue::Null))),
+                        ))
                     } else if items.is_empty() && !opt {
                         Err(CoreError::null_serialization_error(&name))
                     } else {
@@ -330,8 +374,12 @@ fn serialize_objects_with_relation(
 
     let nested = result.nested;
 
-    let fields =
-        collect_serialized_fields_with_relations(typ, &result.model, &result.virtuals, &result.records.field_names);
+    let fields = collect_serialized_fields_with_relations(
+        typ,
+        &result.model,
+        &result.virtuals,
+        &result.records.field_names,
+    );
 
     // Hack: we convert it to a hashset to support contains with &str as input
     // because Vec<String>::contains(&str) doesn't work and we don't want to allocate a string record value
@@ -385,7 +433,10 @@ fn serialize_objects_with_relation(
                 }
 
                 SerializedFieldWithRelations::VirtualsGroup(group_name, virtuals) => {
-                    object.insert(group_name.to_string(), serialize_virtuals_group(val, virtuals)?);
+                    object.insert(
+                        group_name.to_string(),
+                        serialize_virtuals_group(val, virtuals)?,
+                    );
                 }
 
                 _ => panic!("unexpected field"),
@@ -396,7 +447,10 @@ fn serialize_objects_with_relation(
 
         let result = Item::Map(map);
 
-        object_mapping.get_mut(&record.parent_id).unwrap().push(result);
+        object_mapping
+            .get_mut(&record.parent_id)
+            .unwrap()
+            .push(result);
     }
 
     Ok(object_mapping)
@@ -415,21 +469,31 @@ fn serialize_relation_selection(
     let mut map = Map::new();
 
     // TODO: better handle errors
-    let mut value_obj: HashMap<String, PrismaValue> = HashMap::from_iter(value.into_object().unwrap());
+    let mut value_obj: HashMap<String, PrismaValue> =
+        HashMap::from_iter(value.into_object().unwrap());
 
-    let fields = collect_serialized_fields_with_relations(typ, &rrs.model, &rrs.virtuals, &rrs.fields);
+    let fields =
+        collect_serialized_fields_with_relations(typ, &rrs.model, &rrs.virtuals, &rrs.fields);
 
     for field in fields {
         let value = value_obj.remove(field.name()).unwrap();
 
         match field {
-            SerializedFieldWithRelations::Model(Field::Scalar(_), out_field) if !out_field.field_type().is_object() => {
+            SerializedFieldWithRelations::Model(Field::Scalar(_), out_field)
+                if !out_field.field_type().is_object() =>
+            {
                 map.insert(field.name().to_owned(), serialize_scalar(out_field, value)?);
             }
 
-            SerializedFieldWithRelations::Model(Field::Relation(_), out_field) if out_field.field_type().is_list() => {
+            SerializedFieldWithRelations::Model(Field::Relation(_), out_field)
+                if out_field.field_type().is_list() =>
+            {
                 let inner_typ = out_field.field_type.as_object_type().unwrap();
-                let inner_rrs = rrs.nested.iter().find(|rrs| rrs.name == field.name()).unwrap();
+                let inner_rrs = rrs
+                    .nested
+                    .iter()
+                    .find(|rrs| rrs.name == field.name())
+                    .unwrap();
 
                 let items = value
                     .into_list()
@@ -443,7 +507,11 @@ fn serialize_relation_selection(
 
             SerializedFieldWithRelations::Model(Field::Relation(_), out_field) => {
                 let inner_typ = out_field.field_type.as_object_type().unwrap();
-                let inner_rrs = rrs.nested.iter().find(|rrs| rrs.name == field.name()).unwrap();
+                let inner_rrs = rrs
+                    .nested
+                    .iter()
+                    .find(|rrs| rrs.name == field.name())
+                    .unwrap();
 
                 map.insert(
                     field.name().to_owned(),
@@ -452,7 +520,10 @@ fn serialize_relation_selection(
             }
 
             SerializedFieldWithRelations::VirtualsGroup(group_name, virtuals) => {
-                map.insert(group_name.to_string(), serialize_virtuals_group(value, &virtuals)?);
+                map.insert(
+                    group_name.to_string(),
+                    serialize_virtuals_group(value, &virtuals)?,
+                );
             }
 
             _ => (),
@@ -481,15 +552,22 @@ fn collect_serialized_fields_with_relations<'a, 'b>(
                         .map(|out_field| SerializedFieldWithRelations::Model(field, out_field))
                 })
                 .unwrap_or_else(|| {
-                    let matching_virtuals = virtuals.iter().filter(|vs| vs.serialized_name().0 == name).collect();
+                    let matching_virtuals = virtuals
+                        .iter()
+                        .filter(|vs| vs.serialized_name().0 == name)
+                        .collect();
                     SerializedFieldWithRelations::VirtualsGroup(name.as_str(), matching_virtuals)
                 })
         })
         .collect()
 }
 
-fn serialize_virtuals_group(obj_value: PrismaValue, virtuals: &[&VirtualSelection]) -> crate::Result<Item> {
-    let mut db_object: HashMap<String, PrismaValue> = HashMap::from_iter(obj_value.into_object().unwrap());
+fn serialize_virtuals_group(
+    obj_value: PrismaValue,
+    virtuals: &[&VirtualSelection],
+) -> crate::Result<Item> {
+    let mut db_object: HashMap<String, PrismaValue> =
+        HashMap::from_iter(obj_value.into_object().unwrap());
     let mut out_object = Map::new();
 
     // We have to reorder the object fields according to selection even if the query
@@ -565,7 +643,10 @@ fn serialize_objects(
     // If nothing is written to the object, write null instead.
     for record in result.records.records {
         let record_id =
-            Some(record.extract_selection_result_from_db_name(&db_field_names, &model.primary_identifier())?);
+            Some(record.extract_selection_result_from_db_name(
+                &db_field_names,
+                &model.primary_identifier(),
+            )?);
 
         if !object_mapping.contains_key(&record.parent_id) {
             object_mapping.insert(record.parent_id.clone(), Vec::new());
@@ -592,7 +673,8 @@ fn serialize_objects(
                         .as_map_mut()
                         .expect("Virtual and scalar fields must not collide");
 
-                    virtual_obj.insert(nested_field_name.into(), Item::Value(vs.coerce_value(val)?));
+                    virtual_obj
+                        .insert(nested_field_name.into(), Item::Value(vs.coerce_value(val)?));
                 }
             }
         }
@@ -602,7 +684,10 @@ fn serialize_objects(
 
         let map = reorder_object_with_selection_order(&result.fields, object);
 
-        object_mapping.get_mut(&record.parent_id).unwrap().push(Item::Map(map));
+        object_mapping
+            .get_mut(&record.parent_id)
+            .unwrap()
+            .push(Item::Map(map));
     }
 
     Ok(object_mapping)
@@ -612,12 +697,13 @@ fn reorder_object_with_selection_order(
     selection_order: &[String],
     mut object: HashMap<String, Item>,
 ) -> IndexMap<String, Item> {
-    selection_order
-        .iter()
-        .fold(Map::with_capacity(selection_order.len()), |mut acc, field_name| {
+    selection_order.iter().fold(
+        Map::with_capacity(selection_order.len()),
+        |mut acc, field_name| {
             acc.insert(field_name.to_owned(), object.remove(field_name).unwrap());
             acc
-        })
+        },
+    )
 }
 
 /// Unwraps are safe due to query validation.
@@ -711,7 +797,9 @@ fn serialize_scalar(field: &OutputField<'_>, value: PrismaValue) -> crate::Resul
             EnumType::Database(db) => convert_enum(value, db),
             _ => unreachable!(),
         },
-        (_, InnerOutputType::Scalar(st)) => Ok(Item::Value(convert_prisma_value(field, value, st)?)),
+        (_, InnerOutputType::Scalar(st)) => {
+            Ok(Item::Value(convert_prisma_value(field, value, st)?))
+        }
         (pv, ot) => Err(CoreError::SerializationError(format!(
             "Attempted to serialize scalar '{}' with non-scalar compatible type '{:?}' for field {}.",
             pv,
@@ -721,7 +809,11 @@ fn serialize_scalar(field: &OutputField<'_>, value: PrismaValue) -> crate::Resul
     }
 }
 
-fn convert_prisma_value(field: &OutputField<'_>, value: PrismaValue, st: &ScalarType) -> crate::Result<PrismaValue> {
+fn convert_prisma_value(
+    field: &OutputField<'_>,
+    value: PrismaValue,
+    st: &ScalarType,
+) -> crate::Result<PrismaValue> {
     match crate::executor::get_engine_protocol() {
         #[cfg(feature = "graphql-protocol")]
         EngineProtocol::Graphql => convert_prisma_value_graphql_protocol(field, value, st),
@@ -773,7 +865,9 @@ fn convert_prisma_value_json_protocol(
 ) -> crate::Result<PrismaValue> {
     let item_value = match (st, value) {
         // Coerced to tagged object matchers
-        (ScalarType::Json, PrismaValue::Json(x)) => custom_types::make_object(custom_types::JSON, PrismaValue::Json(x)),
+        (ScalarType::Json, PrismaValue::Json(x)) => {
+            custom_types::make_object(custom_types::JSON, PrismaValue::Json(x))
+        }
         (ScalarType::DateTime, PrismaValue::DateTime(x)) => {
             custom_types::make_object(custom_types::DATETIME, PrismaValue::DateTime(x))
         }

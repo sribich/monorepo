@@ -1,13 +1,18 @@
-use std::{borrow::Cow, time::Duration};
+use std::borrow::Cow;
+use std::time::Duration;
 
-use ahash::{HashMap, HashMapExt};
-use crosstarget_utils::time::{ElapsedTimeCounter, SystemTime};
+use ahash::HashMap;
+use ahash::HashMapExt;
+use crosstarget_utils::time::ElapsedTimeCounter;
+use crosstarget_utils::time::SystemTime;
 #[cfg(test)]
 use serde::Serialize;
 
 use crate::NextId;
-use crate::id::{RequestId, SpanId};
-use crate::models::{LogLevel, SpanKind};
+use crate::id::RequestId;
+use crate::id::SpanId;
+use crate::models::LogLevel;
+use crate::models::SpanKind;
 
 #[derive(Debug, Clone)]
 #[cfg_attr(test, derive(Serialize))]
@@ -113,7 +118,12 @@ pub(crate) struct EventBuilder {
 }
 
 impl EventBuilder {
-    pub fn new(span_id: SpanId, target: &'static str, level: LogLevel, attrs_size_hint: usize) -> Self {
+    pub fn new(
+        span_id: SpanId,
+        target: &'static str,
+        level: LogLevel,
+        attrs_size_hint: usize,
+    ) -> Self {
         Self {
             span_id,
             target,

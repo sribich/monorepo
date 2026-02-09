@@ -1,4 +1,6 @@
-use crate::{BoxFuture, ConnectorResult, Migration};
+use crate::BoxFuture;
+use crate::ConnectorResult;
+use crate::Migration;
 
 /// Implementors of this trait are responsible for checking whether a migration
 /// could lead to data loss, or if it would be potentially unexecutable.

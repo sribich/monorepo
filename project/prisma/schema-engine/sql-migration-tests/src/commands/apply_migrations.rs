@@ -1,10 +1,13 @@
-use crate::utils;
-use schema_core::{
-    CoreError, CoreResult,
-    commands::apply_migrations::{ApplyMigrationsInput, ApplyMigrationsOutput, apply_migrations},
-    schema_connector::{Namespaces, SchemaConnector},
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::apply_migrations::ApplyMigrationsInput;
+use schema_core::commands::apply_migrations::ApplyMigrationsOutput;
+use schema_core::commands::apply_migrations::apply_migrations;
+use schema_core::schema_connector::Namespaces;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
+
+use crate::utils;
 
 #[must_use = "This struct does nothing on its own. See ApplyMigrations::send()"]
 pub struct ApplyMigrations<'a> {
@@ -31,9 +34,7 @@ impl<'a> ApplyMigrations<'a> {
     pub async fn send(self) -> CoreResult<ApplyMigrationsAssertion<'a>> {
         let migrations_list = utils::list_migrations(self.migrations_directory.path()).unwrap();
         let output = apply_migrations(
-            ApplyMigrationsInput {
-                migrations_list,
-            },
+            ApplyMigrationsInput { migrations_list },
             self.api,
             self.namespaces,
         )

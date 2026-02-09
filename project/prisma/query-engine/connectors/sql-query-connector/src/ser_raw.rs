@@ -1,9 +1,12 @@
 use base64::prelude::*;
-use quaint::{
-    Value, ValueType,
-    connector::{ColumnType, ResultRowRef, ResultSet},
-};
-use serde::{Serialize, Serializer, ser::*};
+use quaint::Value;
+use quaint::ValueType;
+use quaint::connector::ColumnType;
+use quaint::connector::ResultRowRef;
+use quaint::connector::ResultSet;
+use serde::Serialize;
+use serde::Serializer;
+use serde::ser::*;
 
 pub struct SerializedResultSet(pub ResultSet);
 
@@ -53,14 +56,14 @@ impl SerializedTypes<'_> {
 
         let mut types = rows.types().to_owned();
         // Find all the unknown column types to avoid unnecessary iterations.
-        let unknown_indexes = rows
-            .types()
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, ty)| match ty.is_unknown() {
-                true => Some(idx),
-                false => None,
-            });
+        let unknown_indexes =
+            rows.types()
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, ty)| match ty.is_unknown() {
+                    true => Some(idx),
+                    false => None,
+                });
 
         for unknown_idx in unknown_indexes {
             // While quaint already infers `ColumnType`s from the database, it can still have ColumnType::Unknown.
@@ -168,7 +171,10 @@ impl Serialize for SerializedValue<'_> {
             ValueType::Float(value) => value.serialize(serializer),
             ValueType::Double(value) => value.serialize(serializer),
             ValueType::Text(value) => value.serialize(serializer),
-            ValueType::Enum(value, _) => value.as_ref().map(|value| value.inner()).serialize(serializer),
+            ValueType::Enum(value, _) => value
+                .as_ref()
+                .map(|value| value.inner())
+                .serialize(serializer),
             ValueType::EnumArray(Some(variants), _) => {
                 let mut seq = serializer.serialize_seq(Some(variants.len()))?;
 
@@ -188,7 +194,9 @@ impl Serialize for SerializedValue<'_> {
             ValueType::Json(value) => value.serialize(serializer),
             ValueType::Xml(value) => value.serialize(serializer),
             ValueType::Uuid(value) => value.serialize(serializer),
-            ValueType::DateTime(value) => value.map(|value| value.to_rfc3339()).serialize(serializer),
+            ValueType::DateTime(value) => {
+                value.map(|value| value.to_rfc3339()).serialize(serializer)
+            }
             ValueType::Date(value) => value.serialize(serializer),
             ValueType::Time(value) => value.serialize(serializer),
             ValueType::Opaque(_) => unreachable!(),

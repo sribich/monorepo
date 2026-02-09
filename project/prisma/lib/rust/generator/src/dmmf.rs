@@ -6,8 +6,8 @@
 //! The official DMMF structure can be found here:
 //!
 //!   https://github.com/prisma/prisma/blob/main/packages/generator-helper/src/dmmf.ts
-//!
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 use serde_json::Value;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -19,7 +19,6 @@ pub struct Document {
 }
 
 /// All types that exist within the prisma datamodel.
-///
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Datamodel {

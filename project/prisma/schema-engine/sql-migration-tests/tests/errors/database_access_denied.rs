@@ -1,8 +1,9 @@
-use super::error_tests::connection_error;
 use expect_test::expect;
 use sql_migration_tests::multi_engine_test_api::*;
 use test_macros::test_connector;
 use url::Url;
+
+use super::error_tests::connection_error;
 
 #[test_connector(tags(Mysql57), exclude(Vitess))]
 fn database_access_denied_must_return_a_proper_error_in_rpc(api: TestApi) {

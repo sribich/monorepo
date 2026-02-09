@@ -1,9 +1,14 @@
 //! PostgreSQL-specific rendering.
 
-use crate::introspection::sanitize_datamodel_names::{needs_sanitation, sanitize_string};
 use datamodel_renderer as render;
-use psl::{Configuration, PreviewFeature, builtin_connectors::PostgresDatasourceProperties};
-use sql_schema_describer::{SqlSchema, postgres::PostgresSchemaExt};
+use psl::Configuration;
+use psl::PreviewFeature;
+use psl::builtin_connectors::PostgresDatasourceProperties;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::postgres::PostgresSchemaExt;
+
+use crate::introspection::sanitize_datamodel_names::needs_sanitation;
+use crate::introspection::sanitize_datamodel_names::sanitize_string;
 
 const EXTENSION_ALLOW_LIST: &[&str] = &["citext", "postgis", "pg_crypto", "uuid-ossp"];
 
@@ -13,7 +18,10 @@ pub(super) fn add_extensions<'a>(
     schema: &'a SqlSchema,
     config: &'a Configuration,
 ) {
-    if !config.preview_features().contains(PreviewFeature::PostgresqlExtensions) {
+    if !config
+        .preview_features()
+        .contains(PreviewFeature::PostgresqlExtensions)
+    {
         return;
     }
 
@@ -43,20 +51,24 @@ pub(super) fn add_extensions<'a>(
             Some(prev) => {
                 match prev.version() {
                     Some(previous_version) if previous_version != ext.version() => {
-                        next_extension.push_param(("version", render::value::Text::new(ext.version())));
+                        next_extension
+                            .push_param(("version", render::value::Text::new(ext.version())));
                     }
                     Some(previous_version) => {
-                        next_extension.push_param(("version", render::value::Text::new(previous_version)));
+                        next_extension
+                            .push_param(("version", render::value::Text::new(previous_version)));
                     }
                     None => (),
                 };
 
                 match prev.schema() {
                     Some(previous_schema) if previous_schema != ext.schema() => {
-                        next_extension.push_param(("schema", render::value::Text::new(ext.schema())));
+                        next_extension
+                            .push_param(("schema", render::value::Text::new(ext.schema())));
                     }
                     Some(previous_schema) => {
-                        next_extension.push_param(("schema", render::value::Text::new(previous_schema)));
+                        next_extension
+                            .push_param(("schema", render::value::Text::new(previous_schema)));
                     }
                     None => (),
                 }

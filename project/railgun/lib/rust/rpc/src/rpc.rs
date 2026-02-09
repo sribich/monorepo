@@ -1,9 +1,8 @@
 use std::marker::PhantomData;
 
-use crate::{
-    procedure::{Procedure, Unresolved},
-    router::Router,
-};
+use crate::procedure::Procedure;
+use crate::procedure::Unresolved;
+use crate::router::Router;
 
 pub struct RpcContext<TContext = ()>
 where

@@ -1,7 +1,8 @@
 //! Rendering of relation fields.
 
-use crate::introspection::introspection_pair::RelationFieldPair;
 use datamodel_renderer::datamodel as renderer;
+
+use crate::introspection::introspection_pair::RelationFieldPair;
 
 /// Render a relation field to be added in a model.
 pub(super) fn render(field: RelationFieldPair<'_>) -> renderer::Field<'_> {

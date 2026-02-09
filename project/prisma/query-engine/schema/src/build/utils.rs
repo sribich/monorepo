@@ -1,6 +1,10 @@
+use std::borrow::Cow;
+use std::sync::LazyLock;
+
+use query_structure::DefaultKind;
+use query_structure::walkers;
+
 use super::*;
-use query_structure::{DefaultKind, walkers};
-use std::{borrow::Cow, sync::LazyLock};
 
 /// Input object type initializer for cases where only the name is known, and fields are computed later.
 pub(crate) fn init_input_object_type<'a>(ident: Identifier) -> InputObjectType<'a> {

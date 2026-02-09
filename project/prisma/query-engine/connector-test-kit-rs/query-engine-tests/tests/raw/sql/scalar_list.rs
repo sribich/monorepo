@@ -3,7 +3,9 @@ use query_engine_tests::*;
 
 #[test_suite(only(Postgres))]
 mod scalar_list {
-    use query_engine_tests::{fmt_query_raw, run_query, run_query_pretty};
+    use query_engine_tests::fmt_query_raw;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_pretty;
 
     #[connector_test(schema(common_list_types))]
     async fn null_scalar_lists(runner: Runner) -> TestResult<()> {

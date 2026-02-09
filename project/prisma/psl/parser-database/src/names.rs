@@ -1,14 +1,22 @@
 mod reserved_model_names;
 
 pub use reserved_model_names::is_reserved_type_name;
+use reserved_model_names::validate_enum_name;
+use reserved_model_names::validate_model_name;
+use rustc_hash::FxHashMap as HashMap;
+use rustc_hash::FxHashSet as HashSet;
 
-use crate::{
-    Context, DatamodelError, FileId, StringId,
-    ast::{self, ConfigBlockProperty, TopId, WithAttributes, WithIdentifier, WithName},
-    types::ScalarType,
-};
-use reserved_model_names::{validate_enum_name, validate_model_name};
-use rustc_hash::{FxHashMap as HashMap, FxHashSet as HashSet};
+use crate::Context;
+use crate::DatamodelError;
+use crate::FileId;
+use crate::StringId;
+use crate::ast::ConfigBlockProperty;
+use crate::ast::TopId;
+use crate::ast::WithAttributes;
+use crate::ast::WithIdentifier;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::types::ScalarType;
 
 /// Resolved names for use in the validation process.
 #[derive(Default, Clone)]
@@ -152,7 +160,10 @@ fn duplicate_top_error(existing: &ast::Top, duplicate: &ast::Top) -> DatamodelEr
 
 fn assert_is_not_a_reserved_scalar_type(ident: &ast::Identifier, ctx: &mut Context<'_>) {
     if ScalarType::try_from_str(&ident.name, false).is_some() {
-        ctx.push_error(DatamodelError::new_reserved_scalar_type_error(&ident.name, ident.span));
+        ctx.push_error(DatamodelError::new_reserved_scalar_type_error(
+            &ident.name,
+            ident.span,
+        ));
     }
 }
 

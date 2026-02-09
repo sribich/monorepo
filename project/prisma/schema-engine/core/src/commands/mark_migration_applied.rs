@@ -1,10 +1,12 @@
-use crate::{CoreError, CoreResult};
 use json_rpc::types::MigrationList;
-use schema_connector::{
-    SchemaConnector,
-    migrations_directory::{MigrationDirectory, error_on_changed_provider},
-};
-use user_facing_errors::schema_engine::{MigrationAlreadyApplied, MigrationToMarkAppliedNotFound};
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory::MigrationDirectory;
+use schema_connector::migrations_directory::error_on_changed_provider;
+use user_facing_errors::schema_engine::MigrationAlreadyApplied;
+use user_facing_errors::schema_engine::MigrationToMarkAppliedNotFound;
+
+use crate::CoreError;
+use crate::CoreResult;
 
 /// Mark a migration as applied in the migrations table.
 ///
@@ -49,11 +51,13 @@ pub async fn mark_migration_applied(
             })
         })?;
 
-    let script = migration_directory.read_migration_script().map_err(|_err| {
-        CoreError::user_facing(MigrationToMarkAppliedNotFound {
-            migration_name: input.migration_name.clone(),
-        })
-    })?;
+    let script = migration_directory
+        .read_migration_script()
+        .map_err(|_err| {
+            CoreError::user_facing(MigrationToMarkAppliedNotFound {
+                migration_name: input.migration_name.clone(),
+            })
+        })?;
 
     let relevant_migrations = match connector.migration_persistence().list_migrations().await? {
         Ok(migrations) => migrations
@@ -61,7 +65,10 @@ pub async fn mark_migration_applied(
             .filter(|migration| migration.migration_name == input.migration_name)
             .collect(),
         Err(_) => {
-            connector.migration_persistence().baseline_initialize().await?;
+            connector
+                .migration_persistence()
+                .baseline_initialize()
+                .await?;
 
             vec![]
         }

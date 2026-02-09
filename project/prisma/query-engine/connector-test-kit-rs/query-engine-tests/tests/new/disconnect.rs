@@ -73,7 +73,9 @@ mod disconnect_security {
             .assert_success();
 
         runner
-            .query("mutation { createOneA(data: { id: 2, many_b: { create: [{ id: 3 }] } }) { id }}")
+            .query(
+                "mutation { createOneA(data: { id: 2, many_b: { create: [{ id: 3 }] } }) { id }}",
+            )
             .await?
             .assert_success();
 

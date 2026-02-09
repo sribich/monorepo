@@ -1,9 +1,14 @@
-use crate::{
-    Context,
-    model_extensions::{AsColumns, AsTable, ColumnIterator},
-};
-use quaint::{ast::Table, prelude::Column};
-use query_structure::{ModelProjection, Relation, RelationField, walkers};
+use quaint::ast::Table;
+use quaint::prelude::Column;
+use query_structure::ModelProjection;
+use query_structure::Relation;
+use query_structure::RelationField;
+use query_structure::walkers;
+
+use crate::Context;
+use crate::model_extensions::AsColumns;
+use crate::model_extensions::AsTable;
+use crate::model_extensions::ColumnIterator;
 
 pub trait RelationFieldExt {
     fn m2m_column(&self, ctx: &Context<'_>) -> Column<'static>;
@@ -14,7 +19,13 @@ pub trait RelationFieldExt {
 
 impl RelationFieldExt for RelationField {
     fn m2m_column(&self, ctx: &Context<'_>) -> Column<'static> {
-        let is_side_a = self.walker().relation().relation_fields().next().map(|rf| rf.id) == Some(self.id);
+        let is_side_a = self
+            .walker()
+            .relation()
+            .relation_fields()
+            .next()
+            .map(|rf| rf.id)
+            == Some(self.id);
         let prefix = if is_side_a { "B" } else { "A" };
         Column::from(prefix).table(self.as_table(ctx))
     }
@@ -79,9 +90,10 @@ impl AsTable for Relation {
                 };
                 table.add_unique_index(vec![Column::from("A"), Column::from("B")])
             }
-            walkers::RefinedRelationWalker::Inline(ref m) => {
-                self.dm.find_model_by_id(m.referencing_model().id).as_table(ctx)
-            }
+            walkers::RefinedRelationWalker::Inline(ref m) => self
+                .dm
+                .find_model_by_id(m.referencing_model().id)
+                .as_table(ctx),
             walkers::RefinedRelationWalker::TwoWayEmbeddedManyToMany(_) => {
                 unreachable!("TwoWayEmbeddedManyToMany relation in sql-query-connector")
             }

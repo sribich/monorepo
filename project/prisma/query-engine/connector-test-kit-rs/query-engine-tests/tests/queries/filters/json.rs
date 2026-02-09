@@ -2,7 +2,10 @@ use query_engine_tests::*;
 
 #[test_suite(capabilities(Json), exclude(MySQL(5.6)))]
 mod json {
-    use query_engine_tests::{ConnectorCapability, assert_error, jNull, run_query};
+    use query_engine_tests::ConnectorCapability;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::jNull;
+    use query_engine_tests::run_query;
     use query_tests_setup::Runner;
 
     #[connector_test(schema(json_opt))]
@@ -132,7 +135,10 @@ mod json {
             runner
                 .query("mutation { createOneTestModel(data: { id: 1, json: DbNull}) { id }}")
                 .await?
-                .assert_failure(2009, Some("`DbNull` is not a valid `JsonNullValueInput`".to_owned()));
+                .assert_failure(
+                    2009,
+                    Some("`DbNull` is not a valid `JsonNullValueInput`".to_owned()),
+                );
 
             insta::assert_snapshot!(
               run_query!(&runner, r#"query { findManyTestModel(where: { NOT: [{ json: { equals: DbNull } }]}) { id }}"#),

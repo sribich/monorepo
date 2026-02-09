@@ -132,7 +132,8 @@ impl HttpServer {
             let mut export_path = current_dir().unwrap();
             println!("{:#?}", export_path);
             // TODO(sr): This needs to be configurable.
-            export_path.push("../../../../project/immersly/bin/desktop-ui/src/generated/rpc-client");
+            export_path
+                .push("../../../../project/immersly/bin/desktop-ui/src/generated/rpc-client");
 
             let export_config =
                 ExportConfig::<TypescriptClient>::new(export_path.clone(), Default::default());

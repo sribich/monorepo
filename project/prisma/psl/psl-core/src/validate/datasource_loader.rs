@@ -1,18 +1,25 @@
-use crate::{
-    Datasource,
-    ast::{self, SourceConfig, Span, WithName},
-    builtin_connectors::BUILTIN_CONNECTORS,
-    configuration::StringFromEnvVar,
-    datamodel_connector::{ConnectorCapability, RelationMode},
-    diagnostics::{DatamodelError, Diagnostics},
-};
+use std::borrow::Cow;
+use std::collections::HashMap;
+
 use diagnostics::DatamodelWarning;
-use parser_database::{
-    ast::{Expression, WithDocumentation},
-    coerce, coerce_array, coerce_opt,
-};
+use parser_database::ast::Expression;
+use parser_database::ast::WithDocumentation;
+use parser_database::coerce;
+use parser_database::coerce_array;
+use parser_database::coerce_opt;
 use psl_ast::ast::WithSpan;
-use std::{borrow::Cow, collections::HashMap};
+
+use crate::Datasource;
+use crate::ast::SourceConfig;
+use crate::ast::Span;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::builtin_connectors::BUILTIN_CONNECTORS;
+use crate::configuration::StringFromEnvVar;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
 
 const PREVIEW_FEATURES_KEY: &str = "previewFeatures";
 const SCHEMAS_KEY: &str = "schemas";
@@ -24,7 +31,10 @@ const PROVIDER_KEY: &str = "provider";
 /// Loads all datasources from the provided schema AST.
 /// - `ignore_datasource_urls`: datasource URLs are not parsed. They are replaced with dummy values.
 /// - `datasource_url_overrides`: datasource URLs are not parsed and overridden with the provided ones.
-pub(crate) fn load_datasources_from_ast(ast_schema: &ast::SchemaAst, diagnostics: &mut Diagnostics) -> Vec<Datasource> {
+pub(crate) fn load_datasources_from_ast(
+    ast_schema: &ast::SchemaAst,
+    diagnostics: &mut Diagnostics,
+) -> Vec<Datasource> {
     let mut sources = Vec::new();
 
     for src in ast_schema.sources() {
@@ -46,7 +56,10 @@ pub(crate) fn load_datasources_from_ast(ast_schema: &ast::SchemaAst, diagnostics
     sources
 }
 
-fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics) -> Option<Datasource> {
+fn lift_datasource(
+    ast_source: &ast::SourceConfig,
+    diagnostics: &mut Diagnostics,
+) -> Option<Datasource> {
     let source_name = ast_source.name();
     let mut args: HashMap<_, (_, &Expression)> = ast_source
         .properties
@@ -68,8 +81,13 @@ fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics
     let (provider, provider_arg) = match args.remove(PROVIDER_KEY) {
         Some((_span, provider_arg)) => {
             if provider_arg.is_env_expression() {
-                let msg = Cow::Borrowed("A datasource must not use the env() function in the provider argument.");
-                diagnostics.push_error(DatamodelError::new_functional_evaluation_error(msg, ast_source.span));
+                let msg = Cow::Borrowed(
+                    "A datasource must not use the env() function in the provider argument.",
+                );
+                diagnostics.push_error(DatamodelError::new_functional_evaluation_error(
+                    msg,
+                    ast_source.span,
+                ));
                 return None;
             }
 
@@ -124,7 +142,10 @@ fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics
     let connector_data = active_connector.parse_datasource_properties(&mut args, diagnostics);
 
     let (url, url_span) = match args.remove(URL_KEY) {
-        Some((_span, url_arg)) => (StringFromEnvVar::coerce(url_arg, diagnostics)?, url_arg.span()),
+        Some((_span, url_arg)) => (
+            StringFromEnvVar::coerce(url_arg, diagnostics)?,
+            url_arg.span(),
+        ),
         None => {
             diagnostics.push_error(DatamodelError::new_source_argument_not_found_error(
                 URL_KEY,
@@ -137,12 +158,18 @@ fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics
     };
 
     let shadow_database_url = match args.remove(SHADOW_DATABASE_URL_KEY) {
-        Some((_span, shadow_db_url_arg)) => match StringFromEnvVar::coerce(shadow_db_url_arg, diagnostics) {
-            Some(shadow_db_url) => Some(shadow_db_url)
-                .filter(|s| !s.as_literal().map(|literal| literal.is_empty()).unwrap_or(false))
-                .map(|url| (url, shadow_db_url_arg.span())),
-            None => None,
-        },
+        Some((_span, shadow_db_url_arg)) => {
+            match StringFromEnvVar::coerce(shadow_db_url_arg, diagnostics) {
+                Some(shadow_db_url) => Some(shadow_db_url)
+                    .filter(|s| {
+                        !s.as_literal()
+                            .map(|literal| literal.is_empty())
+                            .unwrap_or(false)
+                    })
+                    .map(|url| (url, shadow_db_url_arg.span())),
+                None => None,
+            }
+        }
 
         _ => None,
     };
@@ -160,17 +187,21 @@ fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics
         if let (Some(direct_url), Some(direct_url_span)) = (&direct_url, direct_url_span)
             && shadow_url == direct_url
         {
-            diagnostics.push_error(DatamodelError::new_shadow_database_is_same_as_direct_url_error(
-                source_name,
-                direct_url_span,
-            ));
+            diagnostics.push_error(
+                DatamodelError::new_shadow_database_is_same_as_direct_url_error(
+                    source_name,
+                    direct_url_span,
+                ),
+            );
         }
 
         if shadow_url == &url {
-            diagnostics.push_error(DatamodelError::new_shadow_database_is_same_as_main_url_error(
-                source_name,
-                url_span,
-            ));
+            diagnostics.push_error(
+                DatamodelError::new_shadow_database_is_same_as_main_url_error(
+                    source_name,
+                    url_span,
+                ),
+            );
         }
     }
 
@@ -222,7 +253,10 @@ fn lift_datasource(ast_source: &ast::SourceConfig, diagnostics: &mut Diagnostics
     }
 
     Some(Datasource {
-        namespaces: schemas.into_iter().map(|(s, span)| (s.to_owned(), span)).collect(),
+        namespaces: schemas
+            .into_iter()
+            .map(|(s, span)| (s.to_owned(), span))
+            .collect(),
         span: ast_source.span(),
         schemas_span,
         name: source_name.to_owned(),
@@ -250,17 +284,22 @@ fn get_relation_mode(
 ) -> Option<RelationMode> {
     // check for deprecated `referentialIntegrity` attribute.
     if let Some((span, _)) = args.get("referentialIntegrity") {
-        diagnostics.push_warning(DatamodelWarning::new_referential_integrity_attr_deprecation_warning(
-            *span,
-        ));
+        diagnostics.push_warning(
+            DatamodelWarning::new_referential_integrity_attr_deprecation_warning(*span),
+        );
     }
 
     // figure out which attribute is used for the `relationMode` feature
-    match (args.remove("relationMode"), args.remove("referentialIntegrity")) {
+    match (
+        args.remove("relationMode"),
+        args.remove("referentialIntegrity"),
+    ) {
         (None, None) => None,
         (Some(_), Some((span, _))) => {
             // both possible attributes are used, which is invalid
-            diagnostics.push_error(DatamodelError::new_referential_integrity_and_relation_mode_cooccur_error(span));
+            diagnostics.push_error(
+                DatamodelError::new_referential_integrity_and_relation_mode_cooccur_error(span),
+            );
             None
         }
         (Some((_span, rm)), None) | (None, Some((_span, rm))) => {
@@ -272,13 +311,20 @@ fn get_relation_mode(
                     let message = format!(
                         "Invalid relation mode setting: \"{other}\". Supported values: \"prisma\", \"foreignKeys\"",
                     );
-                    let error = DatamodelError::new_source_validation_error(&message, "relationMode", source.span);
+                    let error = DatamodelError::new_source_validation_error(
+                        &message,
+                        "relationMode",
+                        source.span,
+                    );
                     diagnostics.push_error(error);
                     return None;
                 }
             };
 
-            if !connector.allowed_relation_mode_settings().contains(relation_mode) {
+            if !connector
+                .allowed_relation_mode_settings()
+                .contains(relation_mode)
+            {
                 let supported_values = connector
                     .allowed_relation_mode_settings()
                     .iter()
@@ -289,7 +335,11 @@ fn get_relation_mode(
                 let message = format!(
                     "Invalid relation mode setting: \"{relation_mode}\". Supported values: {supported_values}",
                 );
-                let error = DatamodelError::new_source_validation_error(&message, "relationMode", rm.span());
+                let error = DatamodelError::new_source_validation_error(
+                    &message,
+                    "relationMode",
+                    rm.span(),
+                );
                 diagnostics.push_error(error);
             }
 
@@ -298,7 +348,10 @@ fn get_relation_mode(
     }
 }
 
-fn preview_features_guardrail(args: &mut HashMap<&str, (Span, &ast::Expression)>, diagnostics: &mut Diagnostics) {
+fn preview_features_guardrail(
+    args: &mut HashMap<&str, (Span, &ast::Expression)>,
+    diagnostics: &mut Diagnostics,
+) {
     if let Some((span, _)) = args.remove(PREVIEW_FEATURES_KEY) {
         let msg = "Preview features are only supported in the generator block. Please move this field to the generator block.";
         diagnostics.push_error(DatamodelError::new_static(msg, span));

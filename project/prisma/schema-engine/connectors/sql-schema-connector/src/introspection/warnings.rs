@@ -5,11 +5,12 @@ mod r#enum;
 mod model;
 mod view;
 
-use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
 use psl::PreviewFeature;
-use schema_connector::{Warnings, warnings::Model};
+use schema_connector::Warnings;
+use schema_connector::warnings::Model;
 
 use super::introspection_pair::RelationFieldDirection;
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
 
 /// Analyzes the described database schema, triggering
 /// warnings to the user if necessary.
@@ -37,15 +38,25 @@ pub(crate) fn generate(ctx: &DatamodelCalculatorContext<'_>) -> Warnings {
         };
         if model != expected_model {
             let pair = if rel.model_a().id < rel.model_b().id {
-                (Model::new(rel.model_a().name()), Model::new(rel.model_b().name()))
+                (
+                    Model::new(rel.model_a().name()),
+                    Model::new(rel.model_b().name()),
+                )
             } else {
-                (Model::new(rel.model_b().name()), Model::new(rel.model_a().name()))
+                (
+                    Model::new(rel.model_b().name()),
+                    Model::new(rel.model_a().name()),
+                )
             };
             warnings.broken_m2m_relations.insert(pair);
         }
     }
 
-    if ctx.config.preview_features().contains(PreviewFeature::Views) {
+    if ctx
+        .config
+        .preview_features()
+        .contains(PreviewFeature::Views)
+    {
         for view in ctx.view_pairs() {
             view::generate_warnings(view, &mut warnings);
         }

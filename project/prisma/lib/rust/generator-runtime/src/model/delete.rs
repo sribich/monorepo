@@ -1,11 +1,17 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput};
-use crate::{
-    client::InternalClient,
-    query::{ModelOperation, ModelWriteOperation, Query, QueryConvert, QueryResult, SelectionQuery, query},
-};
+use super::Model;
+use super::WhereInput;
+use crate::client::InternalClient;
+use crate::query::ModelOperation;
+use crate::query::ModelWriteOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct Delete<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -19,7 +25,11 @@ pub struct DeleteParams<TModel: Model> {
 
 impl<'db, TModel: Model> Delete<'db, TModel> {
     #[must_use]
-    pub fn new(client: &'db InternalClient, r#where: TModel::WhereUnique, r#with: Vec<TModel::With>) -> Self {
+    pub fn new(
+        client: &'db InternalClient,
+        r#where: TModel::WhereUnique,
+        r#with: Vec<TModel::With>,
+    ) -> Self {
         Self {
             client,
             params: DeleteParams { r#where, r#with },

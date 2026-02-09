@@ -1,9 +1,16 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schemas::json), capabilities(JsonFiltering), exclude(MySql(5.6)))]
+#[test_suite(
+    schema(schemas::json),
+    capabilities(JsonFiltering),
+    exclude(MySql(5.6))
+)]
 mod json_filters {
     use indoc::indoc;
-    use query_engine_tests::{Runner, assert_error, is_one_of, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::is_one_of;
+    use query_engine_tests::run_query;
 
     fn pg_json() -> String {
         let schema = indoc! {
@@ -59,7 +66,11 @@ mod json_filters {
 
         let res = run_query!(
             runner,
-            jsonq(&runner, r#"path: ["a", "b", "0"], equals: JsonNull "#, Some(""))
+            jsonq(
+                &runner,
+                r#"path: ["a", "b", "0"], equals: JsonNull "#,
+                Some("")
+            )
         );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
@@ -79,7 +90,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"path: ["a", "b"], equals: DbNull "#, Some("")));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"path: ["a", "b"], equals: DbNull "#, Some(""))
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -124,7 +138,10 @@ mod json_filters {
         create_row(&runner, 5, r#"{ \"a\": { \"b\": [null] } }"#, false).await?;
         create_row(&runner, 6, r#"{ }"#, false).await?;
 
-        let res = run_query!(runner, jsonq(&runner, r#"path: "$.a.b", equals: "\"c\"" "#, Some("")));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"path: "$.a.b", equals: "\"c\"" "#, Some(""))
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -151,7 +168,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"path: "$.a.b", equals: DbNull "#, Some("")));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"path: "$.a.b", equals: DbNull "#, Some(""))
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -159,7 +179,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"path: "$.a.b", equals: AnyNull "#, Some("")));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"path: "$.a.b", equals: AnyNull "#, Some(""))
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -204,7 +227,10 @@ mod json_filters {
                 @r###"{"data":{"findManyTestModel":[{"id":4},{"id":6},{"id":7},{"id":8}]}}"###
             );
         }
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_contains: "[\"a\"]""#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_contains: "[\"a\"]""#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -232,7 +258,10 @@ mod json_filters {
         match runner.connector_version() {
             // MariaDB does not support finding arrays in arrays, unlike MySQL
             ConnectorVersion::MySql(Some(MySqlVersion::MariaDb)) => {
-                let res = run_query!(runner, jsonq(&runner, r#"array_contains: "[[1, 2]]" "#, None));
+                let res = run_query!(
+                    runner,
+                    jsonq(&runner, r#"array_contains: "[[1, 2]]" "#, None)
+                );
                 insta::allow_duplicates! {
                     insta::assert_snapshot!(
                         res,
@@ -241,7 +270,10 @@ mod json_filters {
                 }
             }
             _ => {
-                let res = run_query!(runner, jsonq(&runner, r#"array_contains: "[[1, 2]]" "#, None));
+                let res = run_query!(
+                    runner,
+                    jsonq(&runner, r#"array_contains: "[[1, 2]]" "#, None)
+                );
                 insta::allow_duplicates! {
                     insta::assert_snapshot!(
                         res,
@@ -249,7 +281,10 @@ mod json_filters {
                     );
                 }
 
-                let res = run_query!(runner, jsonq(&runner, r#"array_contains: "[[null]]" "#, None));
+                let res = run_query!(
+                    runner,
+                    jsonq(&runner, r#"array_contains: "[[null]]" "#, None)
+                );
                 insta::allow_duplicates! {
                     insta::assert_snapshot!(
                         res,
@@ -295,7 +330,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_starts_with: "\"a\"" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_starts_with: "\"a\"" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -303,7 +341,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_starts_with: "[1, 2]" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_starts_with: "[1, 2]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -311,7 +352,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_starts_with: "null" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_starts_with: "null" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -319,7 +363,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_starts_with: "[null]" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_starts_with: "[null]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -328,7 +375,10 @@ mod json_filters {
         }
 
         // NOT
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_starts_with: "3" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_starts_with: "3" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -336,7 +386,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_starts_with: "\"a\"" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_starts_with: "\"a\"" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -344,7 +397,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_starts_with: "[1, 2]" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_starts_with: "[1, 2]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -352,7 +408,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_starts_with: "null" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_starts_with: "null" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -360,7 +419,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_starts_with: "[null]" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_starts_with: "[null]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -410,7 +472,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_ends_with: "[3, 4]" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_ends_with: "[3, 4]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -426,7 +491,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, jsonq(&runner, r#"array_ends_with: "[null]" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"array_ends_with: "[null]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -443,7 +511,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_ends_with: "\"b\"" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_ends_with: "\"b\"" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -451,7 +522,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_ends_with: "[3, 4]" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_ends_with: "[3, 4]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -459,7 +533,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_ends_with: "null" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_ends_with: "null" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -467,7 +544,10 @@ mod json_filters {
             );
         }
 
-        let res = run_query!(runner, not_jsonq(&runner, r#"array_ends_with: "[null]" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"array_ends_with: "[null]" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -508,7 +588,11 @@ mod json_filters {
         // QueryMode::Insensitive
         let res = run_query!(
             runner,
-            jsonq(&runner, r#"string_contains: "Oo", mode: "insensitive" "#, None)
+            jsonq(
+                &runner,
+                r#"string_contains: "Oo", mode: "insensitive" "#,
+                None
+            )
         );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
@@ -518,7 +602,10 @@ mod json_filters {
         }
 
         // NOT
-        let res = run_query!(runner, not_jsonq(&runner, r#"string_contains: "ab" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"string_contains: "ab" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -549,7 +636,10 @@ mod json_filters {
         create_row(&runner, 3, r#"[\"foo\"]"#, true).await?;
 
         // string_starts_with
-        let res = run_query!(runner, jsonq(&runner, r#"string_starts_with: "foo" "#, None));
+        let res = run_query!(
+            runner,
+            jsonq(&runner, r#"string_starts_with: "foo" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -560,7 +650,11 @@ mod json_filters {
         // QueryMode::insensitive
         let res = run_query!(
             runner,
-            jsonq(&runner, r#"string_starts_with: "FoO", mode: "insensitive" "#, None)
+            jsonq(
+                &runner,
+                r#"string_starts_with: "FoO", mode: "insensitive" "#,
+                None
+            )
         );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
@@ -570,7 +664,10 @@ mod json_filters {
         }
 
         // NOT string_starts_with
-        let res = run_query!(runner, not_jsonq(&runner, r#"string_starts_with: "ab" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"string_starts_with: "ab" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -611,7 +708,11 @@ mod json_filters {
         // QueryMode::insensitive
         let res = run_query!(
             runner,
-            jsonq(&runner, r#"string_ends_with: "oO", mode: "insensitive" "#, None)
+            jsonq(
+                &runner,
+                r#"string_ends_with: "oO", mode: "insensitive" "#,
+                None
+            )
         );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
@@ -621,7 +722,10 @@ mod json_filters {
         }
 
         // NOT
-        let res = run_query!(runner, not_jsonq(&runner, r#"string_ends_with: "oo" "#, None));
+        let res = run_query!(
+            runner,
+            not_jsonq(&runner, r#"string_ends_with: "oo" "#, None)
+        );
         insta::allow_duplicates! {
             insta::assert_snapshot!(
                 res,
@@ -918,7 +1022,9 @@ mod json_filters {
         } else {
             data.to_owned()
         };
-        let q = format!(r#"mutation {{ createOneTestModel(data: {{ id: {id}, json: "{json}" }}) {{ id }} }}"#);
+        let q = format!(
+            r#"mutation {{ createOneTestModel(data: {{ id: {id}, json: "{json}" }}) {{ id }} }}"#
+        );
 
         runner.query(q).await?.assert_success();
         Ok(())
@@ -927,21 +1033,25 @@ mod json_filters {
     fn jsonq(runner: &Runner, filter: &str, path: Option<&str>) -> String {
         let path = path.unwrap_or_else(|| json_path(runner));
 
-        format!(r#"query {{ findManyTestModel(where: {{ json: {{ {filter}, {path} }} }} ) {{ id }} }}"#)
+        format!(
+            r#"query {{ findManyTestModel(where: {{ json: {{ {filter}, {path} }} }} ) {{ id }} }}"#
+        )
     }
 
     fn not_jsonq(runner: &Runner, filter: &str, path: Option<&str>) -> String {
         let path = path.unwrap_or_else(|| json_path(runner));
 
-        format!(r#"query {{ findManyTestModel(where: {{ NOT: {{ json: {{ {filter}, {path} }} }} }} ) {{ id }} }}"#)
+        format!(
+            r#"query {{ findManyTestModel(where: {{ NOT: {{ json: {{ {filter}, {path} }} }} }} ) {{ id }} }}"#
+        )
     }
 
     fn json_path(runner: &Runner) -> &'static str {
         match runner.connector_version() {
             ConnectorVersion::Postgres(_) => r#"path: ["a", "b"]"#,
-            ConnectorVersion::Sqlite(_) | ConnectorVersion::MySql(_) | ConnectorVersion::Vitess(_) => {
-                r#"path: "$.a.b""#
-            }
+            ConnectorVersion::Sqlite(_)
+            | ConnectorVersion::MySql(_)
+            | ConnectorVersion::Vitess(_) => r#"path: "$.a.b""#,
             x => unreachable!("JSON filtering is not supported on {:?}", x),
         }
     }

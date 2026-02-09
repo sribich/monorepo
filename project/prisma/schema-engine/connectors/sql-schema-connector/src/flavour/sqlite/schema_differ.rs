@@ -1,8 +1,10 @@
-use crate::{
-    migration_pair::MigrationPair,
-    sql_schema_differ::{SqlSchemaDifferFlavour, column::ColumnTypeChange, differ_database::DifferDatabase},
-};
-use sql_schema_describer::{ColumnTypeFamily, walkers::TableColumnWalker};
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::walkers::TableColumnWalker;
+
+use crate::migration_pair::MigrationPair;
+use crate::sql_schema_differ::SqlSchemaDifferFlavour;
+use crate::sql_schema_differ::column::ColumnTypeChange;
+use crate::sql_schema_differ::differ_database::DifferDatabase;
 
 #[derive(Debug, Default)]
 pub struct SqliteSchemaDifferFlavour;
@@ -24,8 +26,14 @@ impl SqlSchemaDifferFlavour for SqliteSchemaDifferFlavour {
         false
     }
 
-    fn column_type_change(&self, differ: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange> {
-        match (differ.previous.column_type_family(), differ.next.column_type_family()) {
+    fn column_type_change(
+        &self,
+        differ: MigrationPair<TableColumnWalker<'_>>,
+    ) -> Option<ColumnTypeChange> {
+        match (
+            differ.previous.column_type_family(),
+            differ.next.column_type_family(),
+        ) {
             (a, b) if a == b => None,
             (_, ColumnTypeFamily::String) => Some(ColumnTypeChange::SafeCast),
             (_, _) => Some(ColumnTypeChange::RiskyCast),

@@ -1,9 +1,9 @@
-pub mod completions;
 mod capabilities_support;
+pub mod completions;
 
-mod native_type_definition;
 #[cfg(feature = "mysql")]
 mod mysql;
+mod native_type_definition;
 #[cfg(feature = "postgresql")]
 mod postgres;
 #[cfg(feature = "sqlite")]
@@ -11,13 +11,19 @@ mod sqlite;
 
 mod utils;
 
+pub use capabilities_support::can_have_capability;
+pub use capabilities_support::can_support_relation_load_strategy;
+pub use capabilities_support::has_capability;
 #[cfg(feature = "mysql")]
 pub use mysql::MySqlType;
 #[cfg(feature = "postgresql")]
-pub use postgres::{KnownPostgresType, PostgresDatasourceProperties, PostgresType, SequenceFunction};
-
-
-pub use capabilities_support::{can_have_capability, can_support_relation_load_strategy, has_capability};
+pub use postgres::KnownPostgresType;
+#[cfg(feature = "postgresql")]
+pub use postgres::PostgresDatasourceProperties;
+#[cfg(feature = "postgresql")]
+pub use postgres::PostgresType;
+#[cfg(feature = "postgresql")]
+pub use postgres::SequenceFunction;
 
 use crate::ConnectorRegistry;
 

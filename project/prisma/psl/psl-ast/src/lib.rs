@@ -9,10 +9,14 @@ mod renderer;
 mod source_file;
 
 use diagnostics::FileId;
-use psl_schema::{DefaultRefiner, Schema, SchemaFile, SchemaRefiner};
-
-pub use self::{parser::parse_schema, reformat::reformat};
+use psl_schema::DefaultRefiner;
+use psl_schema::Schema;
+use psl_schema::SchemaFile;
+use psl_schema::SchemaRefiner;
 pub use source_file::SourceFile;
+
+pub use self::parser::parse_schema;
+pub use self::reformat::reformat;
 
 /// The AST data structure. It aims to faithfully represent the syntax of a Prisma Schema, with
 /// source span information.
@@ -30,14 +34,12 @@ impl ParsedFile {
 }
 
 ///
-///
 pub struct Parsed;
 
 impl SchemaRefiner for Parsed {
-    type From = DefaultRefiner;
-
-    type SchemaContext = ();
     type FileContext = ParsedFile;
+    type From = DefaultRefiner;
+    type SchemaContext = ();
 
     fn refine_context(&self, from: &Schema<Self::From>) -> Self::SchemaContext {
         ()
@@ -57,7 +59,11 @@ impl SchemaRefiner for Parsed {
             .map(|it| parse_schema(it.content(), &mut *schema.diagnostics().borrow_mut(), FileId(0)))
             .collect::<Vec<_>>();
          */
-        let ast = parse_schema(file.content(), &mut *from.diagnostics().borrow_mut(), FileId(0));
+        let ast = parse_schema(
+            file.content(),
+            &mut *from.diagnostics().borrow_mut(),
+            FileId(0),
+        );
 
         ParsedFile { ast }
     }
@@ -80,9 +86,9 @@ impl SchemaParser for Schema {
 ///
 /// ```
 /// # use psl_ast::string_literal;
-///let input = r#"oh
-///hi"#;
-///assert_eq!(r#""oh\nhi""#, &string_literal(input).to_string());
+/// let input = r#"oh
+/// hi"#;
+/// assert_eq!(r#""oh\nhi""#, &string_literal(input).to_string());
 /// ```
 pub fn string_literal(s: &str) -> impl std::fmt::Display + '_ {
     struct StringLiteral<'a>(&'a str);

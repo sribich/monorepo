@@ -1,6 +1,8 @@
-use super::*;
-use crate::{diagnostics::DatamodelError, validate::validation_pipeline::context::Context};
 use parser_database::ast::WithSpan;
+
+use super::*;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 /// A relation should have the explicit and back-relation side defined.
 pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
@@ -33,8 +35,14 @@ pub(crate) fn both_sides_are_defined(relation: InlineRelationWalker<'_>, ctx: &m
 }
 
 /// The forward side must define `fields` and `references` in the `@relation` attribute.
-pub(crate) fn fields_and_references_are_defined(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+pub(crate) fn fields_and_references_are_defined(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) => (forward, back),
         _ => return,
     };
@@ -113,7 +121,10 @@ pub(crate) fn fields_and_references_defined_on_one_side_only(
     relation: InlineRelationWalker<'_>,
     ctx: &mut Context<'_>,
 ) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) => (forward, back),
         _ => return,
     };
@@ -141,7 +152,8 @@ pub(crate) fn fields_and_references_defined_on_one_side_only(
         ));
     }
 
-    if !is_empty_fields(forward.referencing_fields()) && !is_empty_fields(back.referencing_fields()) {
+    if !is_empty_fields(forward.referencing_fields()) && !is_empty_fields(back.referencing_fields())
+    {
         let message = format!(
             "The relation fields `{}` on Model `{}` and `{}` on Model `{}` both provide the `fields` argument in the {} attribute. You have to provide it only on one of the two fields.",
             forward.name(),
@@ -167,7 +179,10 @@ pub(crate) fn fields_and_references_defined_on_one_side_only(
 
 /// Referential actions must be defined in the forward side.
 pub(crate) fn referential_actions(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) => (forward, back),
         _ => return,
     };
@@ -226,12 +241,16 @@ pub(crate) fn referential_actions(relation: InlineRelationWalker<'_>, ctx: &mut 
 /// Validation of some crazy things, such as definining `fields` and `references` on different
 /// sides in the relation.
 pub(crate) fn fields_references_mixups(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) if ctx.diagnostics.errors().is_empty() => (forward, back),
         _ => return,
     };
 
-    if !is_empty_fields(forward.referencing_fields()) && !is_empty_fields(back.referenced_fields()) {
+    if !is_empty_fields(forward.referencing_fields()) && !is_empty_fields(back.referenced_fields())
+    {
         let message = format!(
             "The relation field `{}` on Model `{}` provides the `fields` argument in the {} attribute. And the related field `{}` on Model `{}` provides the `references` argument. You must provide both arguments on the same side.",
             forward.name(),
@@ -254,7 +273,8 @@ pub(crate) fn fields_references_mixups(relation: InlineRelationWalker<'_>, ctx: 
         ));
     }
 
-    if !is_empty_fields(forward.referenced_fields()) && !is_empty_fields(back.referencing_fields()) {
+    if !is_empty_fields(forward.referenced_fields()) && !is_empty_fields(back.referencing_fields())
+    {
         let message = format!(
             "The relation field `{}` on Model `{}` provides the `references` argument in the {} attribute. And the related field `{}` on Model `{}` provides the `fields` argument. You must provide both arguments on the same side.",
             forward.name(),
@@ -273,8 +293,14 @@ pub(crate) fn fields_references_mixups(relation: InlineRelationWalker<'_>, ctx: 
 }
 
 /// The back-relation side cannot be required.
-pub(crate) fn back_relation_arity_is_optional(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+pub(crate) fn back_relation_arity_is_optional(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) if ctx.diagnostics.errors().is_empty() => (forward, back),
         _ => return,
     };
@@ -296,13 +322,21 @@ pub(crate) fn back_relation_arity_is_optional(relation: InlineRelationWalker<'_>
     }
 }
 
-pub(crate) fn fields_and_references_on_wrong_side(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    let (forward, back) = match (relation.forward_relation_field(), relation.back_relation_field()) {
+pub(crate) fn fields_and_references_on_wrong_side(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let (forward, back) = match (
+        relation.forward_relation_field(),
+        relation.back_relation_field(),
+    ) {
         (Some(forward), Some(back)) if ctx.diagnostics.errors().is_empty() => (forward, back),
         _ => return,
     };
 
-    if forward.is_required() && (back.referencing_fields().is_some() || back.referenced_fields().is_some()) {
+    if forward.is_required()
+        && (back.referencing_fields().is_some() || back.referenced_fields().is_some())
+    {
         let message = format!(
             "The relation field `{back_model}.{back_field}` defines the `fields` and/or `references` argument. You must set them on the required side of the relation (`{forward_model}.{forward_field}`) in order for the constraints to be enforced. Alternatively, you can change this field to be required and the opposite optional, or make both sides of the relation optional.",
             back_model = back.model().name(),
@@ -322,7 +356,10 @@ pub(crate) fn fields_and_references_on_wrong_side(relation: InlineRelationWalker
 /// A 1:1 relation is enforced with a unique constraint. The
 /// referencing side must use a unique constraint to enforce the
 /// relation.
-pub(crate) fn fields_must_be_a_unique_constraint(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn fields_must_be_a_unique_constraint(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     let forward = match relation.forward_relation_field() {
         Some(field) => field,
         None => return,

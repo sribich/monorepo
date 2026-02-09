@@ -1,5 +1,7 @@
+use query_structure::ScalarField;
+use query_structure::prelude::ParentContainer;
+
 use super::*;
-use query_structure::{ScalarField, prelude::ParentContainer};
 
 pub(crate) mod group_by;
 pub(crate) mod plain;
@@ -19,7 +21,11 @@ pub(crate) fn collect_non_list_nor_json_fields(container: &ParentContainer) -> V
         .fields()
         .into_iter()
         .filter_map(|field| match field {
-            ModelField::Scalar(sf) if !sf.is_list() && sf.type_identifier() != TypeIdentifier::Json => Some(sf),
+            ModelField::Scalar(sf)
+                if !sf.is_list() && sf.type_identifier() != TypeIdentifier::Json =>
+            {
+                Some(sf)
+            }
             _ => None,
         })
         .collect()
@@ -94,7 +100,10 @@ where
         fields
             .clone()
             .into_iter()
-            .map(|sf| field_no_arguments(sf.name().to_owned(), type_mapper(ctx, sf), None).nullable_if(!is_count))
+            .map(|sf| {
+                field_no_arguments(sf.name().to_owned(), type_mapper(ctx, sf), None)
+                    .nullable_if(!is_count)
+            })
             .collect()
     }))
 }

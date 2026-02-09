@@ -1,8 +1,12 @@
-use std::{borrow::Cow, fmt};
-
-use crate::value::{Array, Constant, Function, Text, Value};
+use std::borrow::Cow;
+use std::fmt;
 
 use super::attributes::FieldAttribute;
+use crate::value::Array;
+use crate::value::Constant;
+use crate::value::Function;
+use crate::value::Text;
+use crate::value::Value;
 
 /// A field default value.
 #[derive(Debug)]

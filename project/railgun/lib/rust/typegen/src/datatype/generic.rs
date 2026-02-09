@@ -1,4 +1,5 @@
-use std::borrow::{Borrow, Cow};
+use std::borrow::Borrow;
+use std::borrow::Cow;
 
 #[derive(Clone, Debug)]
 pub struct GenericType(pub Cow<'static, str>);

@@ -1,4 +1,10 @@
-use crate::{IndexColumn, IndexColumnId, IndexWalker, SQLSortOrder, TableColumnWalker, TableWalker, Walker};
+use crate::IndexColumn;
+use crate::IndexColumnId;
+use crate::IndexWalker;
+use crate::SQLSortOrder;
+use crate::TableColumnWalker;
+use crate::TableWalker;
+use crate::Walker;
 
 /// Traverse a specific column inside an index.
 pub type IndexColumnWalker<'a> = Walker<'a, IndexColumnId>;

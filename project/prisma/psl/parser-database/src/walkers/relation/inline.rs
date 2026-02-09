@@ -3,10 +3,11 @@ mod complete;
 pub use complete::CompleteInlineRelationWalker;
 
 use super::RelationWalker;
-use crate::{
-    relations::{OneToManyRelationFields, OneToOneRelationFields, Relation, RelationAttributes},
-    walkers::*,
-};
+use crate::relations::OneToManyRelationFields;
+use crate::relations::OneToOneRelationFields;
+use crate::relations::Relation;
+use crate::relations::RelationAttributes;
+use crate::walkers::*;
 
 /// An explicitly defined 1:1 or 1:n relation. The walker has the referencing side defined, but
 /// might miss the back relation in the AST.
@@ -52,7 +53,9 @@ impl<'db> InlineRelationWalker<'db> {
     }
 
     /// The referencing fields, from the forward relation field.
-    pub fn referencing_fields(self) -> Option<impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>> {
+    pub fn referencing_fields(
+        self,
+    ) -> Option<impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>> {
         self.forward_relation_field().and_then(|rf| rf.fields())
     }
 
@@ -85,16 +88,25 @@ impl<'db> InlineRelationWalker<'db> {
             RelationAttributes::OneToOne(OneToOneRelationFields::Forward(a))
             | RelationAttributes::OneToOne(OneToOneRelationFields::Both(a, _))
             | RelationAttributes::OneToMany(OneToManyRelationFields::Both(a, _))
-            | RelationAttributes::OneToMany(OneToManyRelationFields::Forward(a)) => Some(self.0.walk(a)),
+            | RelationAttributes::OneToMany(OneToManyRelationFields::Forward(a)) => {
+                Some(self.0.walk(a))
+            }
             RelationAttributes::OneToMany(OneToManyRelationFields::Back(_)) => None,
-            RelationAttributes::ImplicitManyToMany { field_a: _, field_b: _ } => unreachable!(),
-            RelationAttributes::TwoWayEmbeddedManyToMany { field_a: _, field_b: _ } => unreachable!(),
+            RelationAttributes::ImplicitManyToMany {
+                field_a: _,
+                field_b: _,
+            } => unreachable!(),
+            RelationAttributes::TwoWayEmbeddedManyToMany {
+                field_a: _,
+                field_b: _,
+            } => unreachable!(),
         }
     }
 
     /// The contents of the `map: ...` argument of the `@relation` attribute.
     pub fn mapped_name(self) -> Option<&'db str> {
-        self.forward_relation_field().and_then(|field| field.mapped_name())
+        self.forward_relation_field()
+            .and_then(|field| field.mapped_name())
     }
 
     /// The back relation field, or virtual relation field (on model B, the referenced model).
@@ -103,11 +115,19 @@ impl<'db> InlineRelationWalker<'db> {
         match rel.attributes {
             RelationAttributes::OneToOne(OneToOneRelationFields::Both(_, b))
             | RelationAttributes::OneToMany(OneToManyRelationFields::Both(_, b))
-            | RelationAttributes::OneToMany(OneToManyRelationFields::Back(b)) => Some(self.0.walk(b)),
+            | RelationAttributes::OneToMany(OneToManyRelationFields::Back(b)) => {
+                Some(self.0.walk(b))
+            }
             RelationAttributes::OneToMany(OneToManyRelationFields::Forward(_))
             | RelationAttributes::OneToOne(OneToOneRelationFields::Forward(_)) => None,
-            RelationAttributes::ImplicitManyToMany { field_a: _, field_b: _ } => unreachable!(),
-            RelationAttributes::TwoWayEmbeddedManyToMany { field_a: _, field_b: _ } => unreachable!(),
+            RelationAttributes::ImplicitManyToMany {
+                field_a: _,
+                field_b: _,
+            } => unreachable!(),
+            RelationAttributes::TwoWayEmbeddedManyToMany {
+                field_a: _,
+                field_b: _,
+            } => unreachable!(),
         }
     }
 
@@ -131,6 +151,11 @@ impl<'db> InlineRelationWalker<'db> {
     pub fn relation_name(self) -> RelationName<'db> {
         self.explicit_relation_name()
             .map(RelationName::Explicit)
-            .unwrap_or_else(|| RelationName::generated(self.referencing_model().name(), self.referenced_model().name()))
+            .unwrap_or_else(|| {
+                RelationName::generated(
+                    self.referencing_model().name(),
+                    self.referenced_model().name(),
+                )
+            })
     }
 }

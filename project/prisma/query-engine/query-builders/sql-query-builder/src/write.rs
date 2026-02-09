@@ -1,11 +1,17 @@
-use crate::limit::wrap_with_limit_subquery_if_needed;
-use crate::{Context, model_extensions::*, sql_trace::SqlTraceComment};
-use crate::{FilterBuilder, update};
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::convert::TryInto;
+
 use itertools::Itertools;
 use quaint::ast::*;
 use query_structure::*;
-use std::collections::HashMap;
-use std::{collections::HashSet, convert::TryInto};
+
+use crate::Context;
+use crate::FilterBuilder;
+use crate::limit::wrap_with_limit_subquery_if_needed;
+use crate::model_extensions::*;
+use crate::sql_trace::SqlTraceComment;
+use crate::update;
 
 /// `INSERT` a new record to the database. Resulting an `INSERT` ast and an
 /// optional `RecordProjection` if available from the arguments or model.
@@ -21,20 +27,25 @@ pub fn create_record(
         .filter(|field| args.has_arg_for(field.db_name()))
         .collect();
 
-    let insert = fields
-        .into_iter()
-        .fold(Insert::single_into(model.as_table(ctx)), |insert, field| {
-            let db_name = field.db_name();
-            let value = args.take_field_value(db_name).unwrap();
-            let value: PrismaValue = value
-                .try_into()
-                .expect("Create calls can only use PrismaValue write expressions (right now).");
+    let insert =
+        fields
+            .into_iter()
+            .fold(Insert::single_into(model.as_table(ctx)), |insert, field| {
+                let db_name = field.db_name();
+                let value = args.take_field_value(db_name).unwrap();
+                let value: PrismaValue = value
+                    .try_into()
+                    .expect("Create calls can only use PrismaValue write expressions (right now).");
 
-            insert.value(db_name.to_owned(), field.value(value, ctx))
-        });
+                insert.value(db_name.to_owned(), field.value(value, ctx))
+            });
 
     Insert::from(insert)
-        .returning(selected_fields.as_columns(ctx).map(|c| c.set_is_selected(true)))
+        .returning(
+            selected_fields
+                .as_columns(ctx)
+                .map(|c| c.set_is_selected(true)),
+        )
         .add_traceparent(ctx.traceparent)
 }
 
@@ -66,9 +77,9 @@ pub fn create_records_nonempty(
 
                 match value {
                     Some(write_op) => {
-                        let value: PrismaValue = write_op
-                            .try_into()
-                            .expect("Create calls can only use PrismaValue write expressions (right now).");
+                        let value: PrismaValue = write_op.try_into().expect(
+                            "Create calls can only use PrismaValue write expressions (right now).",
+                        );
 
                         row.push(field.value(value, ctx).into());
                     }
@@ -86,7 +97,9 @@ pub fn create_records_nonempty(
 
     let columns = fields.as_columns(ctx);
     let insert = Insert::multi_into(model.as_table(ctx), columns);
-    let insert = values.into_iter().fold(insert, |stmt, values| stmt.values(values));
+    let insert = values
+        .into_iter()
+        .fold(insert, |stmt, values| stmt.values(values));
     let insert: Insert = insert.into();
     let mut insert = insert.add_traceparent(ctx.traceparent);
 
@@ -148,59 +161,67 @@ pub fn build_update_and_set_query(
 ) -> Update<'static> {
     let scalar_fields = model.fields().scalar();
     let table = model.as_table(ctx);
-    let query = args
-        .args
-        .into_iter()
-        .fold(Update::table(table.clone()), |acc, (field_name, val)| {
-            let DatasourceFieldName(name) = field_name;
-            let field = scalar_fields
-                .clone()
-                .find(|f| f.db_name() == name)
-                .expect("Expected field to be valid");
+    let query =
+        args.args
+            .into_iter()
+            .fold(Update::table(table.clone()), |acc, (field_name, val)| {
+                let DatasourceFieldName(name) = field_name;
+                let field = scalar_fields
+                    .clone()
+                    .find(|f| f.db_name() == name)
+                    .expect("Expected field to be valid");
 
-            let value: Expression = match val.try_into_scalar().unwrap() {
-                ScalarWriteOperation::Field(_) => unimplemented!(),
-                ScalarWriteOperation::Set(rhs) => field.value(rhs, ctx).into(),
-                ScalarWriteOperation::Add(rhs) if field.is_list() => {
-                    let e: Expression = Column::from((table.clone(), name.clone())).into();
-                    let vals: Vec<_> = match rhs {
-                        PrismaValue::List(vals) => vals.into_iter().map(|val| field.value(val, ctx)).collect(),
-                        _ => vec![field.value(rhs, ctx)],
-                    };
+                let value: Expression = match val.try_into_scalar().unwrap() {
+                    ScalarWriteOperation::Field(_) => unimplemented!(),
+                    ScalarWriteOperation::Set(rhs) => field.value(rhs, ctx).into(),
+                    ScalarWriteOperation::Add(rhs) if field.is_list() => {
+                        let e: Expression = Column::from((table.clone(), name.clone())).into();
+                        let vals: Vec<_> = match rhs {
+                            PrismaValue::List(vals) => {
+                                vals.into_iter().map(|val| field.value(val, ctx)).collect()
+                            }
+                            _ => vec![field.value(rhs, ctx)],
+                        };
 
-                    // Postgres only
-                    e.compare_raw("||", Value::array(vals)).into()
-                }
-                ScalarWriteOperation::Add(rhs) => {
-                    let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
-                    e + field.value(rhs, ctx).into()
-                }
+                        // Postgres only
+                        e.compare_raw("||", Value::array(vals)).into()
+                    }
+                    ScalarWriteOperation::Add(rhs) => {
+                        let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
+                        e + field.value(rhs, ctx).into()
+                    }
 
-                ScalarWriteOperation::Subtract(rhs) => {
-                    let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
-                    e - field.value(rhs, ctx).into()
-                }
+                    ScalarWriteOperation::Subtract(rhs) => {
+                        let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
+                        e - field.value(rhs, ctx).into()
+                    }
 
-                ScalarWriteOperation::Multiply(rhs) => {
-                    let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
-                    e * field.value(rhs, ctx).into()
-                }
+                    ScalarWriteOperation::Multiply(rhs) => {
+                        let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
+                        e * field.value(rhs, ctx).into()
+                    }
 
-                ScalarWriteOperation::Divide(rhs) => {
-                    let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
-                    e / field.value(rhs, ctx).into()
-                }
+                    ScalarWriteOperation::Divide(rhs) => {
+                        let e: Expression<'_> = Column::from((table.clone(), name.clone())).into();
+                        e / field.value(rhs, ctx).into()
+                    }
 
-                ScalarWriteOperation::Unset(_) => unreachable!("Unset is not supported on SQL connectors"),
-            };
+                    ScalarWriteOperation::Unset(_) => {
+                        unreachable!("Unset is not supported on SQL connectors")
+                    }
+                };
 
-            acc.set(name, value)
-        });
+                acc.set(name, value)
+            });
 
     let query = query.add_traceparent(ctx.traceparent);
 
     if let Some(selected_fields) = selected_fields {
-        query.returning(selected_fields.as_columns(ctx).map(|c| c.set_is_selected(true)))
+        query.returning(
+            selected_fields
+                .as_columns(ctx)
+                .map(|c| c.set_is_selected(true)),
+        )
     } else {
         query
     }
@@ -218,7 +239,9 @@ pub fn chunk_update_with_ids(
         .collect();
 
     super::chunked_conditions(&columns, ids, ctx, |conditions| {
-        update.clone().so_that(conditions.and(filter_condition.clone()))
+        update
+            .clone()
+            .so_that(conditions.and(filter_condition.clone()))
     })
 }
 
@@ -227,7 +250,9 @@ fn projection_into_columns(
     selected_fields: &ModelProjection,
     ctx: &Context<'_>,
 ) -> impl Iterator<Item = Column<'static>> {
-    selected_fields.as_columns(ctx).map(|c| c.set_is_selected(true))
+    selected_fields
+        .as_columns(ctx)
+        .map(|c| c.set_is_selected(true))
 }
 
 pub fn generate_update_statements(
@@ -242,10 +267,18 @@ pub fn generate_update_statements(
     match selectors {
         Some(ids) => {
             let slice = &ids[..limit.unwrap_or(ids.len()).min(ids.len())];
-            update::update_many_from_ids_and_filter(model, filter, slice, args, selected_fields, ctx)
+            update::update_many_from_ids_and_filter(
+                model,
+                filter,
+                slice,
+                args,
+                selected_fields,
+                ctx,
+            )
         }
         None => {
-            let query = update::update_many_from_filter(model, filter, args, selected_fields, limit, ctx);
+            let query =
+                update::update_many_from_filter(model, filter, args, selected_fields, limit, ctx);
             vec![query]
         }
     }
@@ -258,7 +291,8 @@ pub fn generate_delete_statements(
     limit: Option<usize>,
     ctx: &Context<'_>,
 ) -> Vec<Query<'static>> {
-    let filter_condition = FilterBuilder::without_top_level_joins().visit_filter(record_filter.filter.clone(), ctx);
+    let filter_condition =
+        FilterBuilder::without_top_level_joins().visit_filter(record_filter.filter.clone(), ctx);
 
     // If we have selectors, then we must chunk the mutation into multiple if necessary and add the ids to the filter.
     if let Some(selectors) = record_filter.selectors.as_deref() {
@@ -352,7 +386,10 @@ pub fn delete_relation_table_records(
     let parent_id_values = parent_id.db_values(ctx);
     let parent_id_criteria = parent_column.equals(parent_id_values);
 
-    let child_ids_row = child_ids.iter().flat_map(|id| id.db_values(ctx)).collect::<Row>();
+    let child_ids_row = child_ids
+        .iter()
+        .flat_map(|id| id.db_values(ctx))
+        .collect::<Row>();
 
     let child_id_criteria = if !child_ids.is_empty()
         && child_ids[0]
@@ -390,7 +427,16 @@ pub fn generate_insert_statements(
 
         partitioned_batches
             .into_iter()
-            .map(|batch| create_records_nonempty(model, batch, skip_duplicates, &affected_fields, selected_fields, ctx))
+            .map(|batch| {
+                create_records_nonempty(
+                    model,
+                    batch,
+                    skip_duplicates,
+                    &affected_fields,
+                    selected_fields,
+                    ctx,
+                )
+            })
             .collect()
     }
 }
@@ -402,7 +448,13 @@ fn collect_affected_fields(args: &[WriteArgs], model: &Model) -> HashSet<ScalarF
 
     fields
         .into_iter()
-        .map(|dsfn| model.fields().scalar().find(|sf| sf.db_name() == &**dsfn).unwrap())
+        .map(|dsfn| {
+            model
+                .fields()
+                .scalar()
+                .find(|sf| sf.db_name() == &**dsfn)
+                .unwrap()
+        })
         .collect()
 }
 
@@ -493,7 +545,10 @@ fn partition_into_batches(args: Vec<WriteArgs>, ctx: &Context<'_>) -> Vec<Vec<Wr
 /// As such, the fields that we compute for a given CreateMany entry is the set of fields that are _not_ present in the [`WriteArgs`] and that have a default value.
 /// Note: This works because the [`crate::QueryDocumentParser`] injects into the CreateMany entries, the default values that _can_ be generated at runtime.
 /// Note: We can ignore optional fields without default values because they can be inserted as `NULL`. It is a value that the QueryEngine _can_ generate at runtime.
-pub fn split_write_args_by_shape(model: &Model, args: Vec<WriteArgs>) -> impl Iterator<Item = Vec<WriteArgs>> {
+pub fn split_write_args_by_shape(
+    model: &Model,
+    args: Vec<WriteArgs>,
+) -> impl Iterator<Item = Vec<WriteArgs>> {
     let mut args_by_shape: HashMap<_, Vec<_>> = HashMap::new();
     for write_args in args {
         let shape = write_args_to_shape(&write_args, model);
@@ -534,7 +589,9 @@ pub fn defaults_for_mysql_write_args<'a>(
 
         match func.as_str() {
             "(uuid())" => Some((sf.clone(), native_uuid().alias(alias))),
-            "(uuid_to_bin(uuid()))" | "(uuid_to_bin(uuid(),0))" => Some((sf.clone(), uuid_to_bin().alias(alias))),
+            "(uuid_to_bin(uuid()))" | "(uuid_to_bin(uuid(),0))" => {
+                Some((sf.clone(), uuid_to_bin().alias(alias)))
+            }
             "(uuid_to_bin(uuid(),1))" => Some((sf.clone(), uuid_to_bin_swapped().alias(alias))),
             _ => None,
         }

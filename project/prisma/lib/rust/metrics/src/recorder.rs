@@ -1,11 +1,23 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
+use std::sync::OnceLock;
 
 use derive_more::Display;
-use metrics::{Counter, CounterFn, Gauge, GaugeFn, Histogram, HistogramFn, Key, Recorder, Unit};
-use metrics::{KeyName, Metadata, SharedString};
+use metrics::Counter;
+use metrics::CounterFn;
+use metrics::Gauge;
+use metrics::GaugeFn;
+use metrics::Histogram;
+use metrics::HistogramFn;
+use metrics::Key;
+use metrics::KeyName;
+use metrics::Metadata;
+use metrics::Recorder;
+use metrics::SharedString;
+use metrics::Unit;
 
 use crate::MetricRegistry;
-use crate::common::{MetricAction, MetricType};
+use crate::common::MetricAction;
+use crate::common::MetricType;
 use crate::registry::MetricVisitor;
 
 /// Default global metric recorder.
@@ -33,7 +45,9 @@ pub struct AlreadyInstalled;
 impl std::error::Error for AlreadyInstalled {}
 
 fn set_global_recorder(recorder: MetricRecorder) -> Result<(), AlreadyInstalled> {
-    GLOBAL_RECORDER.set(Some(recorder)).map_err(|_| AlreadyInstalled)
+    GLOBAL_RECORDER
+        .set(Some(recorder))
+        .map_err(|_| AlreadyInstalled)
 }
 
 pub(crate) fn global_recorder() -> Option<MetricRecorder> {
@@ -103,20 +117,34 @@ impl Recorder for MetricRecorder {
         self.register_description(key_name, &description);
     }
 
-    fn describe_histogram(&self, key_name: KeyName, _unit: Option<Unit>, description: SharedString) {
+    fn describe_histogram(
+        &self,
+        key_name: KeyName,
+        _unit: Option<Unit>,
+        description: SharedString,
+    ) {
         self.register_description(key_name, &description);
     }
 
     fn register_counter(&self, key: &Key, _metadata: &Metadata<'_>) -> Counter {
-        Counter::from_arc(Arc::new(MetricHandle::new(key.clone(), self.registry.clone())))
+        Counter::from_arc(Arc::new(MetricHandle::new(
+            key.clone(),
+            self.registry.clone(),
+        )))
     }
 
     fn register_gauge(&self, key: &Key, _metadata: &Metadata<'_>) -> Gauge {
-        Gauge::from_arc(Arc::new(MetricHandle::new(key.clone(), self.registry.clone())))
+        Gauge::from_arc(Arc::new(MetricHandle::new(
+            key.clone(),
+            self.registry.clone(),
+        )))
     }
 
     fn register_histogram(&self, key: &Key, _metadata: &Metadata<'_>) -> Histogram {
-        Histogram::from_arc(Arc::new(MetricHandle::new(key.clone(), self.registry.clone())))
+        Histogram::from_arc(Arc::new(MetricHandle::new(
+            key.clone(),
+            self.registry.clone(),
+        )))
     }
 }
 

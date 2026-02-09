@@ -1,13 +1,17 @@
+use std::borrow::Cow;
+use std::collections::HashMap;
+
+use parser_database::walkers::ModelWalker;
+use parser_database::walkers::PrimaryKeyWalker;
+
 use super::database_name::validate_db_name;
-use crate::{
-    PreviewFeature,
-    datamodel_connector::{ConnectorCapability, walker_ext_traits::*},
-    diagnostics::DatamodelError,
-    parser_database::ast::{WithName, WithSpan},
-    validate::validation_pipeline::context::Context,
-};
-use parser_database::walkers::{ModelWalker, PrimaryKeyWalker};
-use std::{borrow::Cow, collections::HashMap};
+use crate::PreviewFeature;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::walker_ext_traits::*;
+use crate::diagnostics::DatamodelError;
+use crate::parser_database::ast::WithName;
+use crate::parser_database::ast::WithSpan;
+use crate::validate::validation_pipeline::context::Context;
 
 /// A model must have either a primary key, or a unique criterion
 /// with no optional, commented-out or unsupported fields.
@@ -32,7 +36,11 @@ pub(super) fn has_a_strict_unique_criteria(model: ModelWalker<'_>, ctx: &mut Con
         })
         .peekable();
 
-    let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+    let container_type = if model.ast_model().is_view() {
+        "view"
+    } else {
+        "model"
+    };
 
     let msg = format!(
         "Each {container_type} must have at least one unique criteria that has only required fields. Either mark a single field with `@id`, `@unique` or add a multi field criterion with `@@id([])` or `@@unique([])` to the {container_type}."
@@ -59,7 +67,11 @@ pub(super) fn has_a_strict_unique_criteria(model: ModelWalker<'_>, ctx: &mut Con
 
 /// A primary key name can be unique in different namespaces, depending on a database. Validates
 /// model's primary key against the database requirements.
-pub(super) fn has_a_unique_primary_key_name(model: ModelWalker<'_>, names: &super::Names<'_>, ctx: &mut Context<'_>) {
+pub(super) fn has_a_unique_primary_key_name(
+    model: ModelWalker<'_>,
+    names: &super::Names<'_>,
+    ctx: &mut Context<'_>,
+) {
     let (pk, name): (PrimaryKeyWalker<'_>, Cow<'_, str>) = match model
         .primary_key()
         .and_then(|pk| pk.constraint_name(ctx.connector).map(|name| (pk, name)))
@@ -143,7 +155,8 @@ pub(crate) fn primary_key_length_prefix_supported(model: ModelWalker<'_>, ctx: &
     if let Some(pk) = model.primary_key()
         && pk.scalar_field_attributes().any(|f| f.length().is_some())
     {
-        let message = "The length argument is not supported in the primary key with the current connector";
+        let message =
+            "The length argument is not supported in the primary key with the current connector";
         let span = pk.ast_attribute().span;
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -161,9 +174,12 @@ pub(crate) fn primary_key_sort_order_supported(model: ModelWalker<'_>, ctx: &mut
     }
 
     if let Some(pk) = model.primary_key()
-        && pk.scalar_field_attributes().any(|f| f.sort_order().is_some())
+        && pk
+            .scalar_field_attributes()
+            .any(|f| f.sort_order().is_some())
     {
-        let message = "The sort argument is not supported in the primary key with the current connector";
+        let message =
+            "The sort argument is not supported in the primary key with the current connector";
         let span = pk.ast_attribute().span;
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -210,9 +226,15 @@ pub(crate) fn primary_key_connector_specific(model: ModelWalker<'_>, ctx: &mut C
         return;
     };
 
-    let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+    let container_type = if model.ast_model().is_view() {
+        "view"
+    } else {
+        "model"
+    };
 
-    if primary_key.mapped_name().is_some() && !ctx.has_capability(ConnectorCapability::NamedPrimaryKeys) {
+    if primary_key.mapped_name().is_some()
+        && !ctx.has_capability(ConnectorCapability::NamedPrimaryKeys)
+    {
         ctx.push_error(DatamodelError::new_model_validation_error(
             "You defined a database name for the primary key on the model. This is not supported by the provider.",
             container_type,
@@ -232,11 +254,14 @@ pub(crate) fn primary_key_connector_specific(model: ModelWalker<'_>, ctx: &mut C
 }
 
 pub(super) fn connector_specific(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
-    ctx.connector.validate_model(model, ctx.relation_mode, ctx.diagnostics)
+    ctx.connector
+        .validate_model(model, ctx.relation_mode, ctx.diagnostics)
 }
 
 pub(super) fn id_has_fields(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
-    let Some(id) = model.primary_key() else { return };
+    let Some(id) = model.primary_key() else {
+        return;
+    };
 
     if id.fields().len() > 0 {
         return;
@@ -252,8 +277,15 @@ pub(super) fn id_has_fields(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
     ))
 }
 
-pub(super) fn id_client_name_does_not_clash_with_field(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
-    let id = if let Some(id) = model.primary_key() { id } else { return };
+pub(super) fn id_client_name_does_not_clash_with_field(
+    model: ModelWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    let id = if let Some(id) = model.primary_key() {
+        id
+    } else {
+        return;
+    };
 
     // Only compound ids clash.
     if id.fields().len() <= 1 {
@@ -262,7 +294,11 @@ pub(super) fn id_client_name_does_not_clash_with_field(model: ModelWalker<'_>, c
 
     let id_client_name = id.fields().map(|f| f.name()).collect::<Vec<_>>().join("_");
     if model.scalar_fields().any(|f| f.name() == id_client_name) {
-        let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+        let container_type = if model.ast_model().is_view() {
+            "view"
+        } else {
+            "model"
+        };
 
         ctx.push_error(DatamodelError::new_model_validation_error(
             &format!("The field `{id_client_name}` clashes with the `@@id` attribute's name. Please resolve the conflict by providing a custom id name: `@@id([...], name: \"custom_name\")`"),
@@ -298,7 +334,10 @@ pub(super) fn schema_is_defined_in_the_datasource(model: ModelWalker<'_>, ctx: &
     ))
 }
 
-pub(super) fn schema_attribute_supported_in_connector(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
+pub(super) fn schema_attribute_supported_in_connector(
+    model: ModelWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if ctx.has_capability(ConnectorCapability::MultiSchema) {
         return;
     }
@@ -336,7 +375,11 @@ pub(super) fn schema_attribute_missing(model: ModelWalker<'_>, ctx: &mut Context
         return;
     }
 
-    let container = if model.ast_model().is_view() { "view" } else { "model" };
+    let container = if model.ast_model().is_view() {
+        "view"
+    } else {
+        "model"
+    };
 
     ctx.push_error(DatamodelError::new_model_validation_error(
         &format!("This {container} is missing an `@@schema` attribute."),
@@ -391,7 +434,9 @@ pub(super) fn database_name_clashes(ctx: &mut Context<'_>) {
 }
 
 pub(super) fn shard_key_has_fields(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
-    let Some(shard_key) = model.shard_key() else { return };
+    let Some(shard_key) = model.shard_key() else {
+        return;
+    };
 
     if shard_key.fields().len() > 0 {
         return;
@@ -408,7 +453,9 @@ pub(super) fn shard_key_has_fields(model: ModelWalker<'_>, ctx: &mut Context<'_>
 }
 
 pub(super) fn shard_key_is_supported(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
-    let Some(shard_key) = model.shard_key() else { return };
+    let Some(shard_key) = model.shard_key() else {
+        return;
+    };
 
     if !ctx.preview_features.contains(PreviewFeature::ShardKeys) {
         ctx.push_error(DatamodelError::new_attribute_validation_error(

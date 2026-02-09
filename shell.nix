@@ -18,6 +18,7 @@
             "llvm-tools-preview"
             "rustc-codegen-cranelift-preview"
             "miri"
+            "rust-analyzer"
           ];
           # targets = [ "arm-unknown-linux-gnueabihf" ];
         }

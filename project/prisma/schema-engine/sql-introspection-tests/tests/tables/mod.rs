@@ -2,9 +2,11 @@ mod mysql;
 mod postgres;
 mod sqlite;
 
-use barrel::{functions, types};
+use barrel::functions;
+use barrel::types;
 use expect_test::expect;
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use quaint::prelude::Queryable;
 use sql_introspection_tests::test_api::*;
 
@@ -148,7 +150,10 @@ async fn a_table_with_compound_primary_keys(api: &mut TestApi) -> TestResult {
                 t.add_column("id", types::integer());
                 t.add_column("authorId", types::integer());
 
-                t.add_constraint("Blog_pkey", types::primary_constraint(vec!["id", "authorId"]));
+                t.add_constraint(
+                    "Blog_pkey",
+                    types::primary_constraint(vec!["id", "authorId"]),
+                );
             });
         })
         .await?;
@@ -202,7 +207,10 @@ async fn a_table_with_multi_column_unique_index(api: &mut TestApi) -> TestResult
                 t.add_column("id", types::integer().increments(true));
                 t.add_column("firstname", types::integer());
                 t.add_column("lastname", types::integer());
-                t.add_index("test", types::index(vec!["firstname", "lastname"]).unique(true));
+                t.add_index(
+                    "test",
+                    types::index(vec!["firstname", "lastname"]).unique(true),
+                );
                 t.add_constraint("User_pkey", types::primary_constraint(vec!["id"]));
             });
         })
@@ -362,7 +370,10 @@ async fn a_table_with_non_id_autoincrement(api: &mut TestApi) -> TestResult {
                 t.add_column("authorId", types::serial());
 
                 t.add_constraint("Test_pkey", types::primary_constraint(vec!["id"]));
-                t.add_constraint("Test_authorId_key", types::unique_constraint(vec!["authorId"]));
+                t.add_constraint(
+                    "Test_authorId_key",
+                    types::unique_constraint(vec!["authorId"]),
+                );
             });
         })
         .await?;
@@ -399,10 +410,15 @@ async fn default_values(api: &mut TestApi) -> TestResult {
                 );
                 t.add_column("int_static", types::integer().default(2).nullable(true));
                 t.add_column("float_static", types::float().default(1.43).nullable(true));
-                t.add_column("boolean_static", types::boolean().default(true).nullable(true));
+                t.add_column(
+                    "boolean_static",
+                    types::boolean().default(true).nullable(true),
+                );
                 t.add_column(
                     "datetime_now",
-                    types::datetime().default(functions::current_timestamp()).nullable(true),
+                    types::datetime()
+                        .default(functions::current_timestamp())
+                        .nullable(true),
                 );
             });
         })
@@ -553,14 +569,18 @@ async fn my_default_value_as_dbgenerated(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(tags(Mysql8))]
-async fn a_table_with_an_index_that_contains_expressions_should_be_ignored(api: &mut TestApi) -> TestResult {
+async fn a_table_with_an_index_that_contains_expressions_should_be_ignored(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("Test", |t| {
                 t.add_column("id", types::integer().primary(true));
                 t.add_column("parentId", types::integer().nullable(true));
                 t.add_column("name", types::varchar(45).nullable(true));
-                t.inject_custom("UNIQUE KEY `SampleTableUniqueIndexName` (`name`,(ifnull(`parentId`,-(1))))");
+                t.inject_custom(
+                    "UNIQUE KEY `SampleTableUniqueIndexName` (`name`,(ifnull(`parentId`,-(1))))",
+                );
             });
         })
         .await?;
@@ -590,7 +610,11 @@ async fn a_table_with_partial_indexes_should_ignore_them(api: &mut TestApi) -> T
                 t.add_column("latest", types::integer().nullable(false));
                 t.add_column("other", types::integer().nullable(false));
                 t.add_index("full", types::index(vec!["other"]).unique(true));
-                t.add_partial_index("partial", types::index(vec!["staticId"]).unique(true), "latest = 1");
+                t.add_partial_index(
+                    "partial",
+                    types::index(vec!["staticId"]).unique(true),
+                    "latest = 1",
+                );
 
                 t.add_constraint("pages_pkey", types::primary_constraint(vec!["id"]));
             });

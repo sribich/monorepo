@@ -1,7 +1,7 @@
-use psl::{
-    datamodel_connector::walker_ext_traits::*,
-    parser_database::{ReferentialAction, RelationId, walkers},
-};
+use psl::datamodel_connector::walker_ext_traits::*;
+use psl::parser_database::ReferentialAction;
+use psl::parser_database::RelationId;
+use psl::parser_database::walkers;
 
 pub type Relation = crate::Zipper<RelationId>;
 
@@ -29,7 +29,9 @@ impl Relation {
 
     /// Practically deprecated with Prisma 2.
     pub fn is_many_to_many(&self) -> bool {
-        self.walker().relation_fields().all(|f| f.ast_field().arity.is_list())
+        self.walker()
+            .relation_fields()
+            .all(|f| f.ast_field().arity.is_list())
     }
 
     pub fn is_one_to_one(&self) -> bool {
@@ -57,7 +59,10 @@ impl Relation {
                     .relation_fields()
                     .next()
                     .unwrap()
-                    .default_on_delete_action(self.dm.schema.relation_mode(), self.dm.schema.connector)
+                    .default_on_delete_action(
+                        self.dm.schema.relation_mode(),
+                        self.dm.schema.connector,
+                    )
             })
     }
 

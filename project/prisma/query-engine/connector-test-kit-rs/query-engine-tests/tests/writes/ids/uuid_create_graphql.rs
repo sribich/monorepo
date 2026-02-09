@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod uuid_create_graphql {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -58,7 +59,10 @@ mod uuid_create_graphql {
     // "Fetching a UUID field that is null" should "work"
     #[connector_test(schema(schema_2))]
     async fn fetch_null_uuid_should_work(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation {createOneTableA(data: {name:"testA"}){id}}"#);
+        run_query!(
+            &runner,
+            r#"mutation {createOneTableA(data: {name:"testA"}){id}}"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"{findManyTableA {name, b}}"#),
@@ -97,9 +101,11 @@ mod uuid_create_graphql {
 
         // Validate that this is a valid UUIDv7 value
         {
-            let uuid = uuid::Uuid::parse_str(uuid).expect("Expected valid UUID but couldn't parse it.");
+            let uuid =
+                uuid::Uuid::parse_str(uuid).expect("Expected valid UUID but couldn't parse it.");
             assert_eq!(
-                uuid.get_version().expect("Expected UUIDv7 but got something else."),
+                uuid.get_version()
+                    .expect("Expected UUIDv7 but got something else."),
                 uuid::Version::SortRand
             );
         }
@@ -117,7 +123,10 @@ mod uuid_create_graphql {
         // Test findUnique
         let res = run_query_json!(
             &runner,
-            format!(r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#, uuid)
+            format!(
+                r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#,
+                uuid
+            )
         );
         let uuid_find_unique = res["data"]["findUniqueTodo"]["id"]
             .as_str()
@@ -170,7 +179,10 @@ mod uuid_create_graphql {
         // Test findUnique
         let res = run_query_json!(
             &runner,
-            format!(r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#, cuid_1)
+            format!(
+                r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#,
+                cuid_1
+            )
         );
         let uuid_find_unique = res["data"]["findUniqueTodo"]["id"]
             .as_str()
@@ -223,7 +235,10 @@ mod uuid_create_graphql {
         // Test findUnique
         let res = run_query_json!(
             &runner,
-            format!(r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#, cuid_2)
+            format!(
+                r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#,
+                cuid_2
+            )
         );
         let cuid_find_unique = res["data"]["findUniqueTodo"]["id"]
             .as_str()
@@ -280,7 +295,10 @@ mod uuid_create_graphql {
         // Test findUnique
         let res = run_query_json!(
             &runner,
-            format!(r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#, ulid)
+            format!(
+                r#"query {{ findUniqueTodo(where: {{ id: "{}" }}) {{ id }} }}"#,
+                ulid
+            )
         );
         let ulid_find_unique = res["data"]["findUniqueTodo"]["id"]
             .as_str()

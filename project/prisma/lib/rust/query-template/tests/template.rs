@@ -1,4 +1,6 @@
-use query_template::{Fragment, PlaceholderFormat, QueryTemplate};
+use query_template::Fragment;
+use query_template::PlaceholderFormat;
+use query_template::QueryTemplate;
 
 struct Dummy {}
 
@@ -11,10 +13,16 @@ fn query_template_formatting_numbered() {
 
     let qt = new_query_template(pf.clone());
     assert_eq!(qt.to_string(), "SELECT * FROM users WHERE id = $1 LIMIT 1");
-    assert_eq!(qt.to_sql().unwrap(), "SELECT * FROM users WHERE id = $1 LIMIT 1");
+    assert_eq!(
+        qt.to_sql().unwrap(),
+        "SELECT * FROM users WHERE id = $1 LIMIT 1"
+    );
 
     let qt = new_query_template_with_parameter_tuple(pf);
-    assert_eq!(qt.to_string(), "SELECT * FROM users WHERE id = $1 AND status IN [$2]");
+    assert_eq!(
+        qt.to_string(),
+        "SELECT * FROM users WHERE id = $1 AND status IN [$2]"
+    );
     assert!(qt.to_sql().is_err());
 }
 
@@ -27,10 +35,16 @@ fn query_template_formatting_unnumbered() {
 
     let qt = new_query_template(pf.clone());
     assert_eq!(qt.to_string(), "SELECT * FROM users WHERE id = ? LIMIT 1");
-    assert_eq!(qt.to_sql().unwrap(), "SELECT * FROM users WHERE id = ? LIMIT 1");
+    assert_eq!(
+        qt.to_sql().unwrap(),
+        "SELECT * FROM users WHERE id = ? LIMIT 1"
+    );
 
     let qt = new_query_template_with_parameter_tuple(pf);
-    assert_eq!(qt.to_string(), "SELECT * FROM users WHERE id = ? AND status IN [?]");
+    assert_eq!(
+        qt.to_string(),
+        "SELECT * FROM users WHERE id = ? AND status IN [?]"
+    );
     assert!(qt.to_sql().is_err());
 }
 

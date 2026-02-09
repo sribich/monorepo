@@ -1,3 +1,5 @@
+pub use prisma_value::*;
+
 pub use crate::error::*;
 pub use crate::field::*;
 pub use crate::field_selection::*;
@@ -10,4 +12,3 @@ pub use crate::projections::*;
 pub use crate::record::*;
 pub use crate::relation::*;
 pub use crate::selection_result::*;
-pub use prisma_value::*;

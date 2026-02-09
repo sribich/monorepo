@@ -14,12 +14,19 @@ pub fn derive_simple_user_facing_error(input: proc_macro::TokenStream) -> proc_m
     };
 
     if !data.fields.is_empty() {
-        return syn::Error::new_spanned(&data.fields, "SimpleUserFacingError implementors cannot have fields")
-            .to_compile_error()
-            .into();
+        return syn::Error::new_spanned(
+            &data.fields,
+            "SimpleUserFacingError implementors cannot have fields",
+        )
+        .to_compile_error()
+        .into();
     }
 
-    let UserErrorDeriveInput { ident, code, message } = match UserErrorDeriveInput::new(&input) {
+    let UserErrorDeriveInput {
+        ident,
+        code,
+        message,
+    } = match UserErrorDeriveInput::new(&input) {
         Ok(input) => input,
         Err(err) => return err.into_compile_error().into(),
     };
@@ -53,13 +60,22 @@ pub fn derive_user_facing_error(input: proc_macro::TokenStream) -> proc_macro::T
         }
     };
 
-    let UserErrorDeriveInput { ident, code, message } = match UserErrorDeriveInput::new(&input) {
+    let UserErrorDeriveInput {
+        ident,
+        code,
+        message,
+    } = match UserErrorDeriveInput::new(&input) {
         Ok(input) => input,
         Err(err) => return err.into_compile_error().into(),
     };
 
     let template_variables: Box<dyn Iterator<Item = _>> = match &data.fields {
-        syn::Fields::Named(named) => Box::new(named.named.iter().map(|field| field.ident.as_ref().unwrap())),
+        syn::Fields::Named(named) => Box::new(
+            named
+                .named
+                .iter()
+                .map(|field| field.ident.as_ref().unwrap()),
+        ),
         syn::Fields::Unit => Box::new(std::iter::empty()),
         syn::Fields::Unnamed(unnamed) => {
             return syn::Error::new_spanned(unnamed, "The error fields must be named")
@@ -109,7 +125,9 @@ impl<'a> UserErrorDeriveInput<'a> {
             }
 
             for namevalue in attr.parse_args_with(|stream: &'_ syn::parse::ParseBuffer| {
-                syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated(stream)
+                syn::punctuated::Punctuated::<syn::MetaNameValue, syn::Token![,]>::parse_terminated(
+                    stream,
+                )
             })? {
                 let litstr = match namevalue.value {
                     syn::Expr::Lit(syn::ExprLit {

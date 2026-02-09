@@ -1,9 +1,11 @@
 use std::borrow::Cow;
 
-use super::*;
-use constants::{aggregations, ordering};
+use constants::aggregations;
+use constants::ordering;
 use output_types::aggregation;
 use query_structure::prelude::ParentContainer;
+
+use super::*;
 
 #[derive(Debug, Default, Clone, Copy)]
 pub(crate) struct OrderByOptions {
@@ -84,8 +86,18 @@ fn compute_scalar_aggregation_fields<'a>(container: ParentContainer) -> Vec<Inpu
         .collect::<Vec<ScalarFieldRef>>();
 
     let fields = [
-        order_by_field_aggregate(aggregations::UNDERSCORE_COUNT, "Count", &container, scalar_fields),
-        order_by_field_aggregate(aggregations::UNDERSCORE_AVG, "Avg", &container, numeric_fields.clone()),
+        order_by_field_aggregate(
+            aggregations::UNDERSCORE_COUNT,
+            "Count",
+            &container,
+            scalar_fields,
+        ),
+        order_by_field_aggregate(
+            aggregations::UNDERSCORE_AVG,
+            "Avg",
+            &container,
+            numeric_fields.clone(),
+        ),
         order_by_field_aggregate(
             aggregations::UNDERSCORE_MAX,
             "Max",
@@ -98,7 +110,12 @@ fn compute_scalar_aggregation_fields<'a>(container: ParentContainer) -> Vec<Inpu
             &container,
             non_list_nor_json_fields,
         ),
-        order_by_field_aggregate(aggregations::UNDERSCORE_SUM, "Sum", &container, numeric_fields),
+        order_by_field_aggregate(
+            aggregations::UNDERSCORE_SUM,
+            "Sum",
+            &container,
+            numeric_fields,
+        ),
     ];
 
     fields.into_iter().flatten().collect()
@@ -113,9 +130,17 @@ fn orderby_field_mapper<'a>(
         // To-many relation field.
         ModelField::Relation(rf) if rf.is_list() && options.include_relations => {
             let related_model = rf.related_model();
-            let to_many_aggregate_type = order_by_to_many_aggregate_object_type(&related_model.into());
+            let to_many_aggregate_type =
+                order_by_to_many_aggregate_object_type(&related_model.into());
 
-            Some(simple_input_field(rf.name().to_owned(), InputType::object(to_many_aggregate_type), None).optional())
+            Some(
+                simple_input_field(
+                    rf.name().to_owned(),
+                    InputType::object(to_many_aggregate_type),
+                    None,
+                )
+                .optional(),
+            )
         }
 
         // To-one relation field.
@@ -123,14 +148,24 @@ fn orderby_field_mapper<'a>(
             let related_model = rf.related_model();
             let related_object_type = order_by_object_type(ctx, related_model.into(), options);
 
-            Some(simple_input_field(rf.name().to_owned(), InputType::object(related_object_type), None).optional())
+            Some(
+                simple_input_field(
+                    rf.name().to_owned(),
+                    InputType::object(related_object_type),
+                    None,
+                )
+                .optional(),
+            )
         }
 
         // Scalar field.
         ModelField::Scalar(sf) => {
             let mut types = vec![InputType::Enum(sort_order_enum())];
 
-            if ctx.has_capability(ConnectorCapability::OrderByNullsFirstLast) && !sf.is_required() && !sf.is_list() {
+            if ctx.has_capability(ConnectorCapability::OrderByNullsFirstLast)
+                && !sf.is_required()
+                && !sf.is_list()
+            {
                 types.push(InputType::object(sort_nulls_object_type()));
             }
 
@@ -151,7 +186,12 @@ fn sort_nulls_object_type<'a>() -> InputObjectType<'a> {
 
         vec![
             simple_input_field(ordering::SORT, InputType::Enum(sort_order_enum_type), None),
-            simple_input_field(ordering::NULLS, InputType::Enum(nulls_order_enum_type), None).optional(),
+            simple_input_field(
+                ordering::NULLS,
+                InputType::Enum(nulls_order_enum_type),
+                None,
+            )
+            .optional(),
         ]
     });
     input_object
@@ -166,7 +206,11 @@ fn order_by_field_aggregate<'a>(
     if scalar_fields.is_empty() {
         None
     } else {
-        let ty = InputType::object(order_by_object_type_aggregate(suffix, container, scalar_fields));
+        let ty = InputType::object(order_by_object_type_aggregate(
+            suffix,
+            container,
+            scalar_fields,
+        ));
         Some(simple_input_field(name, ty, None).optional())
     }
 }
@@ -188,7 +232,9 @@ fn order_by_object_type_aggregate<'a>(
         let sort_order_enum = InputType::Enum(sort_order_enum());
         scalar_fields
             .into_iter()
-            .map(|sf| simple_input_field(sf.name().to_owned(), sort_order_enum.clone(), None).optional())
+            .map(|sf| {
+                simple_input_field(sf.name().to_owned(), sort_order_enum.clone(), None).optional()
+            })
             .collect()
     });
 
@@ -196,7 +242,9 @@ fn order_by_object_type_aggregate<'a>(
 }
 
 fn order_by_to_many_aggregate_object_type<'a>(container: &ParentContainer) -> InputObjectType<'a> {
-    let ident = Identifier::new_prisma(IdentifierType::OrderByToManyAggregateInput(container.clone()));
+    let ident = Identifier::new_prisma(IdentifierType::OrderByToManyAggregateInput(
+        container.clone(),
+    ));
     let mut input_object = init_input_object_type(ident);
     input_object.set_container(container.clone());
     input_object.require_exactly_one_field();
@@ -236,7 +284,10 @@ fn order_by_object_type_text_search<'a>(
     input_object.set_fields(move || {
         let fields_enum_type = InputType::enum_type(order_by_relevance_enum(
             container.clone(),
-            scalar_fields.into_iter().map(|sf| sf.name().to_owned()).collect(),
+            scalar_fields
+                .into_iter()
+                .map(|sf| sf.name().to_owned())
+                .collect(),
         ));
         let sort_order_enum = sort_order_enum();
 

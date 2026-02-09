@@ -1,18 +1,20 @@
-use crate::{
-    flavour::postgres::Circumstances,
-    sql_schema_calculator::{
-        Context, SqlSchemaCalculatorFlavour, sql_schema_calculator_flavour::JoinTableUniquenessConstraint,
-    },
-};
 use either::Either;
 use enumflags2::BitFlags;
-use psl::{
-    builtin_connectors::{PostgresDatasourceProperties, SequenceFunction},
-    datamodel_connector::walker_ext_traits::IndexWalkerExt,
-    parser_database::{walkers::EnumWalker, ExtensionTypes, IndexAlgorithm, OperatorClass},
-};
+use psl::builtin_connectors::PostgresDatasourceProperties;
+use psl::builtin_connectors::SequenceFunction;
+use psl::datamodel_connector::walker_ext_traits::IndexWalkerExt;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::IndexAlgorithm;
+use psl::parser_database::OperatorClass;
+use psl::parser_database::walkers::EnumWalker;
 use sql::postgres::DatabaseExtension;
-use sql_schema_describer::{self as sql, postgres::PostgresSchemaExt};
+use sql_schema_describer::postgres::PostgresSchemaExt;
+use sql_schema_describer::{self as sql};
+
+use crate::flavour::postgres::Circumstances;
+use crate::sql_schema_calculator::Context;
+use crate::sql_schema_calculator::SqlSchemaCalculatorFlavour;
+use crate::sql_schema_calculator::sql_schema_calculator_flavour::JoinTableUniquenessConstraint;
 
 #[derive(Debug, Default)]
 pub struct PostgresSchemaCalculatorFlavour {
@@ -36,15 +38,18 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
                 .schema()
                 .and_then(|(name, _)| ctx.schemas.get(name).cloned())
                 .unwrap_or_default();
-            let sql_enum_id =
-                ctx.schema
-                    .describer_schema
-                    .push_enum(sql_namespace_id, prisma_enum.database_name().to_owned(), None);
+            let sql_enum_id = ctx.schema.describer_schema.push_enum(
+                sql_namespace_id,
+                prisma_enum.database_name().to_owned(),
+                None,
+            );
             ctx.enum_ids.insert(prisma_enum.id, sql_enum_id);
 
             for value in prisma_enum.values() {
                 let value_name = value.database_name().to_owned();
-                ctx.schema.describer_schema.push_enum_variant(sql_enum_id, value_name);
+                ctx.schema
+                    .describer_schema
+                    .push_enum_variant(sql_enum_id, value_name);
             }
         }
     }
@@ -59,16 +64,23 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
                 .db_namespace
                 .and_then(|name| ctx.schemas.get(name).cloned())
                 .unwrap_or_default();
-            let udt_id = ctx
-                .schema
-                .describer_schema
-                .push_udt(sql_namespace_id, entry.db_name.to_owned(), None);
+            let udt_id = ctx.schema.describer_schema.push_udt(
+                sql_namespace_id,
+                entry.db_name.to_owned(),
+                None,
+            );
             ctx.extension_type_ids.insert(entry.id, udt_id);
         }
     }
 
-    fn column_type_for_enum(&self, enm: EnumWalker<'_>, ctx: &Context<'_>) -> Option<sql::ColumnTypeFamily> {
-        ctx.enum_ids.get(&enm.id).map(|id| sql::ColumnTypeFamily::Enum(*id))
+    fn column_type_for_enum(
+        &self,
+        enm: EnumWalker<'_>,
+        ctx: &Context<'_>,
+    ) -> Option<sql::ColumnTypeFamily> {
+        ctx.enum_ids
+            .get(&enm.id)
+            .map(|id| sql::ColumnTypeFamily::Enum(*id))
     }
 
     fn column_default_value_for_autoincrement(&self) -> Option<sql::DefaultValue> {
@@ -95,7 +107,10 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
                     .to_owned();
 
                 let schema = extension.schema().map(|s| s.to_owned()).unwrap_or_default();
-                let version = extension.version().map(|s| s.to_owned()).unwrap_or_default();
+                let version = extension
+                    .version()
+                    .map(|s| s.to_owned())
+                    .unwrap_or_default();
 
                 postgres_ext.push_extension(DatabaseExtension {
                     name,
@@ -126,7 +141,9 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
                     Some(IndexAlgorithm::Gist) => sql::postgres::SqlIndexAlgorithm::Gist,
                     Some(IndexAlgorithm::Brin) => sql::postgres::SqlIndexAlgorithm::Brin,
                 };
-                postgres_ext.indexes.push((sql_index.id, sql_index_algorithm));
+                postgres_ext
+                    .indexes
+                    .push((sql_index.id, sql_index_algorithm));
 
                 for (field_idx, attrs) in index.scalar_field_attributes().enumerate() {
                     if let Some(opclass) = attrs.operator_class() {
@@ -158,7 +175,11 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
                 }
 
                 let mut sequence = sql::postgres::Sequence {
-                    name: format!("prisma_sequence_{}_{}", model.database_name(), field.database_name()),
+                    name: format!(
+                        "prisma_sequence_{}_{}",
+                        model.database_name(),
+                        field.database_name()
+                    ),
                     ..Default::default()
                 };
                 let sequence_fn = field_default.ast_attribute().arguments.arguments[0]
@@ -206,7 +227,10 @@ impl SqlSchemaCalculatorFlavour for PostgresSchemaCalculatorFlavour {
     }
 }
 
-fn convert_opclass(opclass: OperatorClass, algo: Option<IndexAlgorithm>) -> sql::postgres::SQLOperatorClass {
+fn convert_opclass(
+    opclass: OperatorClass,
+    algo: Option<IndexAlgorithm>,
+) -> sql::postgres::SQLOperatorClass {
     match opclass {
         OperatorClass::InetOps => sql::postgres::SQLOperatorClass {
             kind: sql::postgres::SQLOperatorClassKind::InetOps,
@@ -434,4 +458,3 @@ fn convert_opclass(opclass: OperatorClass, algo: Option<IndexAlgorithm>) -> sql:
         },
     }
 }
-

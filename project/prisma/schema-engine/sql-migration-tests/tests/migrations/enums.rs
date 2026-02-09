@@ -17,7 +17,9 @@ enum CatMood {
 
 #[test_connector(capabilities(Enums))]
 fn an_enum_can_be_turned_into_a_model(api: TestApi) {
-    api.schema_push_w_datasource(BASIC_ENUM_DM).send().assert_green();
+    api.schema_push_w_datasource(BASIC_ENUM_DM)
+        .send()
+        .assert_green();
 
     let enum_name = if api.lower_cases_table_names() {
         "cat_mood"
@@ -53,7 +55,9 @@ fn an_enum_can_be_turned_into_a_model(api: TestApi) {
     api.schema_push_w_datasource(dm2).send().assert_green();
 
     api.assert_schema()
-        .assert_table("Cat", |table| table.assert_columns_count(2).assert_has_column("moodId"))
+        .assert_table("Cat", |table| {
+            table.assert_columns_count(2).assert_has_column("moodId")
+        })
         .assert_table("CatMood", |table| table.assert_column_count(3))
         .assert_has_no_enum("CatMood");
 }
@@ -110,8 +114,9 @@ fn variants_can_be_added_to_an_existing_enum(api: TestApi) {
             table.assert_column("mood", |col| col.assert_type_is_string())
         });
     } else {
-        api.assert_schema()
-            .assert_enum(enum_name, |enm| enm.assert_values(&["HUNGRY", "HAPPY", "JOYJOY"]));
+        api.assert_schema().assert_enum(enum_name, |enm| {
+            enm.assert_values(&["HUNGRY", "HAPPY", "JOYJOY"])
+        });
     }
 }
 
@@ -185,11 +190,16 @@ fn variants_can_be_removed_from_an_existing_enum(api: TestApi) {
 
 #[test_connector(capabilities(Enums))]
 fn models_with_enum_values_can_be_dropped(api: TestApi) {
-    api.schema_push_w_datasource(BASIC_ENUM_DM).send().assert_green();
+    api.schema_push_w_datasource(BASIC_ENUM_DM)
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_tables_count(1);
 
-    api.insert("Cat").value("id", 1).value("mood", "HAPPY").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("mood", "HAPPY")
+        .result_raw();
 
     let warn = if api.lower_cases_table_names() {
         "You are about to drop the `cat` table, which is not empty (1 rows)."
@@ -232,7 +242,10 @@ fn enum_field_to_string_field_works(api: TestApi) {
         })
     });
 
-    api.insert("Cat").value("id", 1).value("mood", "HAPPY").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("mood", "HAPPY")
+        .result_raw();
 
     let dm2 = r#"
         model Cat {
@@ -241,7 +254,10 @@ fn enum_field_to_string_field_works(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm2).force(true).send().assert_executable();
+    api.schema_push_w_datasource(dm2)
+        .force(true)
+        .send()
+        .assert_executable();
 
     api.assert_schema().assert_table("Cat", |table| {
         table.assert_column("mood", |col| col.assert_type_is_string())
@@ -263,7 +279,10 @@ fn string_field_to_enum_field_works(api: TestApi) {
         table.assert_column("mood", |col| col.assert_type_is_string())
     });
 
-    api.insert("Cat").value("id", 1).value("mood", "HAPPY").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("mood", "HAPPY")
+        .result_raw();
 
     let dm2 = r#"
         model Cat {
@@ -453,7 +472,10 @@ fn changing_all_values_of_enums_used_in_defaults_works(api: TestApi) {
     });
 
     // Check that the migration is idempotent.
-    api.schema_push_w_datasource(dm2).force(true).send().assert_no_steps();
+    api.schema_push_w_datasource(dm2)
+        .force(true)
+        .send()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Sqlite))]
@@ -481,7 +503,10 @@ fn sqlite_text_is_picked_up_as_enum(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -511,7 +536,10 @@ fn existing_enums_are_picked_up(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 // Bug: https://github.com/prisma/prisma/issues/8137
@@ -537,7 +565,8 @@ fn enum_array_modification_should_work(api: TestApi) {
         }
     "#;
 
-    api.create_migration("01init", dm, &migrations_directory).send_sync();
+    api.create_migration("01init", dm, &migrations_directory)
+        .send_sync();
 
     api.apply_migrations(&migrations_directory)
         .send_sync()
@@ -560,13 +589,15 @@ fn enum_array_modification_should_work(api: TestApi) {
         }
     "#;
 
-    api.create_migration("02remove", dm, &migrations_directory).send_sync();
+    api.create_migration("02remove", dm, &migrations_directory)
+        .send_sync();
 
     api.apply_migrations(&migrations_directory)
         .send_sync()
         .assert_applied_migrations(&["02remove"]);
 
-    api.create_migration("03empty", dm, &migrations_directory).send_sync();
+    api.create_migration("03empty", dm, &migrations_directory)
+        .send_sync();
 
     api.apply_migrations(&migrations_directory)
         .send_sync()
@@ -613,7 +644,10 @@ fn mapped_enum_defaults_must_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &expect);
 
     api.schema_push(schema).send().assert_green();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Postgres))]
@@ -654,11 +688,16 @@ fn alter_enum_and_change_default_must_work(api: TestApi) {
     api.schema_push(custom_dm).force(true).send().assert_warnings(&[Cow::from(
         "The values [MOODY] on the enum `Mood` will be removed. If these variants are still used in the database, this will fail.",
     )]);
-    api.schema_push(custom_dm).send().assert_green().assert_no_steps();
+    api.schema_push(custom_dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 
     api.assert_schema().assert_table("Cat", |table| {
         table.assert_column("moods", |col| {
-            col.assert_default_value(&PrismaValue::List(vec![PrismaValue::Enum("SLEEPY".to_string())]))
+            col.assert_default_value(&PrismaValue::List(vec![PrismaValue::Enum(
+                "SLEEPY".to_string(),
+            )]))
         })
     });
 

@@ -8,7 +8,10 @@ use query_engine_tests::*;
 //   operators applied. For a good confidence, we choose `equals`, `in`, `not equals`, `endsWith` (where applicable).
 #[test_suite(schema(schemas::common_text_and_numeric_types_optional))]
 mod aggr_group_by_having {
-    use query_engine_tests::{Runner, assert_error, match_connector_result, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     // This is just basic confirmation that scalar filters are applied correctly.
     // The assumption is that we don't need to test all normal scalar filters as they share the exact same code path
@@ -21,9 +24,21 @@ mod aggr_group_by_having {
             r#"{ id: 1, float: 10.1, int: 5, bInt: "12", string: "group1" }"#,
         )
         .await?;
-        create_row(&runner, r#"{ id: 2, float: 5.5, int: 0, bInt: "3", string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 10, int: 5, bInt: "3", string: "group2" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 10, int: 5, bInt: "3", string: "group3" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 5.5, int: 0, bInt: "3", string: "group1" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 10, int: 5, bInt: "3", string: "group2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 10, int: 5, bInt: "3", string: "group3" }"#,
+        )
+        .await?;
 
         // Group [string, int] produces:
         // group1, 5
@@ -125,7 +140,11 @@ mod aggr_group_by_having {
 
     #[connector_test]
     async fn having_sum_scalar_filter(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10, int: 10, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10, int: 10, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 2, float: 6, int: 6, string: "group1" }"#).await?;
         create_row(&runner, r#"{ id: 3, float: 5, int: 5, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, string: "group2" }"#).await?;
@@ -191,7 +210,11 @@ mod aggr_group_by_having {
 
     #[connector_test]
     async fn having_min_scalar_filter(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10, int: 10, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10, int: 10, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 2, float: 0, int: 0, string: "group1" }"#).await?;
         create_row(&runner, r#"{ id: 3, float: 0, int: 0, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 4, string: "group2" }"#).await?;
@@ -257,9 +280,17 @@ mod aggr_group_by_having {
 
     #[connector_test]
     async fn having_max_scalar_filter(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10, int: 10, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10, int: 10, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 2, float: 0, int: 0, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 10, int: 10, string: "group2" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 10, int: 10, string: "group2" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 4, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 5, string: "group3" }"#).await?;
         create_row(&runner, r#"{ id: 6, string: "group3" }"#).await?;
@@ -323,7 +354,11 @@ mod aggr_group_by_having {
 
     #[connector_test]
     async fn having_count_non_numerical_field(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10, int: 10, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10, int: 10, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 2, float: 0, int: 0, string: "group1" }"#).await?;
 
         insta::assert_snapshot!(
@@ -341,9 +376,17 @@ mod aggr_group_by_having {
 
     #[connector_test]
     async fn having_without_aggr_sel(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 10, int: 10, string: "group1" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 10, int: 10, string: "group1" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 2, float: 0, int: 0, string: "group1" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 10, int: 10, string: "group2" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 10, int: 10, string: "group2" }"#,
+        )
+        .await?;
         create_row(&runner, r#"{ id: 4, string: "group2" }"#).await?;
         create_row(&runner, r#"{ id: 5, string: "group3" }"#).await?;
         create_row(&runner, r#"{ id: 6, string: "group3" }"#).await?;
@@ -401,7 +444,9 @@ mod aggr_group_by_having {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -410,7 +455,9 @@ mod aggr_group_by_having {
 
 #[test_suite(schema(schema), capabilities(DecimalType))]
 mod decimal_aggregation_group_by_having {
-    use query_engine_tests::{Runner, match_connector_result, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -639,7 +686,9 @@ mod decimal_aggregation_group_by_having {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

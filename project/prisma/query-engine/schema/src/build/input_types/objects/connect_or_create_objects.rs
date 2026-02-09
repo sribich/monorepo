@@ -1,6 +1,7 @@
-use super::*;
 use constants::args;
 use mutations::create_one;
+
+use super::*;
 
 /// Builds "<x>CreateOrConnectNestedInput" input object types.
 pub(crate) fn nested_connect_or_create_input_object(
@@ -19,9 +20,17 @@ pub(crate) fn nested_connect_or_create_input_object(
     let mut input_object = init_input_object_type(ident);
     input_object.set_container(related_model.clone());
     input_object.set_fields(move || {
-        let create_types = create_one::create_one_input_types(ctx, related_model.clone(), Some(parent_field.clone()));
+        let create_types = create_one::create_one_input_types(
+            ctx,
+            related_model.clone(),
+            Some(parent_field.clone()),
+        );
         vec![
-            input_field(args::WHERE, vec![InputType::object(where_object.clone())], None),
+            input_field(
+                args::WHERE,
+                vec![InputType::object(where_object.clone())],
+                None,
+            ),
             input_field(args::CREATE, create_types, None),
         ]
     });

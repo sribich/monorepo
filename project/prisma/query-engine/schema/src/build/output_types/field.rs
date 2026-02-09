@@ -1,6 +1,7 @@
-use super::*;
 use input_types::fields::arguments;
-use query_structure::{ScalarFieldRef};
+use query_structure::ScalarFieldRef;
+
+use super::*;
 
 pub(crate) fn map_output_field(ctx: &'_ QuerySchema, model_field: ModelField) -> OutputField<'_> {
     let cloned_model_field = model_field.clone();
@@ -14,18 +15,28 @@ pub(crate) fn map_output_field(ctx: &'_ QuerySchema, model_field: ModelField) ->
     .nullable_if(!model_field_is_required)
 }
 
-pub(crate) fn map_field_output_type(ctx: &'_ QuerySchema, model_field: ModelField) -> OutputType<'_> {
+pub(crate) fn map_field_output_type(
+    ctx: &'_ QuerySchema,
+    model_field: ModelField,
+) -> OutputType<'_> {
     match model_field {
         ModelField::Scalar(sf) => map_scalar_output_type_for_field(ctx, sf),
         ModelField::Relation(rf) => map_relation_output_type(ctx, rf),
     }
 }
 
-pub(crate) fn map_scalar_output_type_for_field(ctx: &'_ QuerySchema, field: ScalarFieldRef) -> OutputType<'_> {
+pub(crate) fn map_scalar_output_type_for_field(
+    ctx: &'_ QuerySchema,
+    field: ScalarFieldRef,
+) -> OutputType<'_> {
     map_scalar_output_type(ctx, &field.type_identifier(), field.is_list())
 }
 
-pub(crate) fn map_scalar_output_type<'a>(ctx: &'a QuerySchema, typ: &TypeIdentifier, list: bool) -> OutputType<'a> {
+pub(crate) fn map_scalar_output_type<'a>(
+    ctx: &'a QuerySchema,
+    typ: &TypeIdentifier,
+    list: bool,
+) -> OutputType<'a> {
     let output_type = match typ {
         TypeIdentifier::String => OutputType::string(),
         TypeIdentifier::Float => OutputType::float(),
@@ -49,8 +60,12 @@ pub(crate) fn map_scalar_output_type<'a>(ctx: &'a QuerySchema, typ: &TypeIdentif
     }
 }
 
-pub(crate) fn map_relation_output_type(ctx: &'_ QuerySchema, rf: RelationFieldRef) -> OutputType<'_> {
-    let related_model_obj = InnerOutputType::Object(objects::model::model_object_type(ctx, rf.related_model()));
+pub(crate) fn map_relation_output_type(
+    ctx: &'_ QuerySchema,
+    rf: RelationFieldRef,
+) -> OutputType<'_> {
+    let related_model_obj =
+        InnerOutputType::Object(objects::model::model_object_type(ctx, rf.related_model()));
 
     if rf.is_list() {
         OutputType::list(related_model_obj)

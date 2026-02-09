@@ -4,23 +4,34 @@
 //! multiple schema engines.
 
 use std::time::Duration;
-pub use test_macros::test_connector;
-pub use test_setup::sqlite_test_url;
-pub use test_setup::{BitFlags, Capabilities, Tags, runtime::run_with_thread_local_runtime as tok};
 
-use crate::{
-    assertions::SchemaAssertion,
-    commands::{ApplyMigrations, CreateMigration, DiagnoseMigrationHistory, Reset, SchemaPush},
-};
 use psl::PreviewFeature;
-use quaint::{
-    prelude::{ConnectionInfo, NativeConnectionInfo, Queryable, ResultSet},
-    single::Quaint,
-};
-use schema_core::schema_connector::{self, ConnectorParams, ConnectorResult, SchemaConnector};
+use quaint::prelude::ConnectionInfo;
+use quaint::prelude::NativeConnectionInfo;
+use quaint::prelude::Queryable;
+use quaint::prelude::ResultSet;
+use quaint::single::Quaint;
+use schema_core::schema_connector::ConnectorParams;
+use schema_core::schema_connector::ConnectorResult;
+use schema_core::schema_connector::SchemaConnector;
+use schema_core::schema_connector::{self};
 use sql_schema_connector::SqlSchemaConnector;
 use tempfile::TempDir;
-use test_setup::{DatasourceBlock, TestApiArgs};
+pub use test_macros::test_connector;
+pub use test_setup::BitFlags;
+pub use test_setup::Capabilities;
+use test_setup::DatasourceBlock;
+pub use test_setup::Tags;
+use test_setup::TestApiArgs;
+pub use test_setup::runtime::run_with_thread_local_runtime as tok;
+pub use test_setup::sqlite_test_url;
+
+use crate::assertions::SchemaAssertion;
+use crate::commands::ApplyMigrations;
+use crate::commands::CreateMigration;
+use crate::commands::DiagnoseMigrationHistory;
+use crate::commands::Reset;
+use crate::commands::SchemaPush;
 
 /// The multi-engine test API.
 pub struct TestApi {
@@ -103,7 +114,8 @@ impl TestApi {
 
     /// Render a valid datasource block, including database URL.
     pub fn datasource_block(&self) -> DatasourceBlock<'_> {
-        self.args.datasource_block(self.args.database_url(), &[], &[])
+        self.args
+            .datasource_block(self.args.database_url(), &[], &[])
     }
 
     /// Returns true only when testing on MySQL.
@@ -164,7 +176,11 @@ impl TestApi {
 
     /// Instantiate a new schema engine for the current database.
     pub fn new_engine(&self) -> EngineTestApi {
-        let shadow_db = self.args.shadow_database_url().as_ref().map(ToString::to_string);
+        let shadow_db = self
+            .args
+            .shadow_database_url()
+            .as_ref()
+            .map(ToString::to_string);
         self.new_engine_with_connection_strings(self.connection_string.clone(), shadow_db)
     }
 
@@ -174,8 +190,11 @@ impl TestApi {
         connection_string: String,
         shadow_database_connection_string: Option<String>,
     ) -> EngineTestApi {
-        self.new_engine_with_connection_strings_or_err(connection_string, shadow_database_connection_string)
-            .unwrap()
+        self.new_engine_with_connection_strings_or_err(
+            connection_string,
+            shadow_database_connection_string,
+        )
+        .unwrap()
     }
 
     /// Instantiate a new migration with the provided connection string or return an error.
@@ -196,7 +215,9 @@ impl TestApi {
             ConnectionInfo::Native(NativeConnectionInfo::Postgres(_)) => {
                 SqlSchemaConnector::new_postgres(params)?
             }
-            ConnectionInfo::Native(NativeConnectionInfo::Mysql(_)) => SqlSchemaConnector::new_mysql(params)?,
+            ConnectionInfo::Native(NativeConnectionInfo::Mysql(_)) => {
+                SqlSchemaConnector::new_mysql(params)?
+            }
             ConnectionInfo::Native(NativeConnectionInfo::Sqlite { .. }) => {
                 SqlSchemaConnector::new_sqlite(params).unwrap()
             }
@@ -244,7 +265,8 @@ impl TestApi {
         write!(
             out,
             "{}",
-            self.args.datasource_block(self.args.database_url(), &[], &[])
+            self.args
+                .datasource_block(self.args.database_url(), &[], &[])
         )
         .unwrap()
     }
@@ -289,7 +311,10 @@ pub struct EngineTestApi {
 
 impl EngineTestApi {
     /// Plan an `applyMigrations` command
-    pub fn apply_migrations<'a>(&'a mut self, migrations_directory: &'a TempDir) -> ApplyMigrations<'a> {
+    pub fn apply_migrations<'a>(
+        &'a mut self,
+        migrations_directory: &'a TempDir,
+    ) -> ApplyMigrations<'a> {
         let mut namespaces = vec![self.connection_info.schema_name().unwrap().to_string()];
 
         for namespace in self.namespaces {
@@ -325,7 +350,10 @@ impl EngineTestApi {
 
     /// Assert facts about the database schema
     pub fn assert_schema(&mut self) -> SchemaAssertion {
-        SchemaAssertion::new(tok(self.connector.describe_schema(None)).unwrap(), self.tags)
+        SchemaAssertion::new(
+            tok(self.connector.describe_schema(None)).unwrap(),
+            self.tags,
+        )
     }
 
     /// Plan a `reset` command

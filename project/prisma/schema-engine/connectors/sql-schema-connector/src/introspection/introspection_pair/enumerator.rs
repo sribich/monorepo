@@ -1,15 +1,16 @@
-use crate::introspection::{
-    datamodel_calculator::DatamodelCalculatorContext,
-    sanitize_datamodel_names::{EnumVariantName, ModelName},
-};
+use std::borrow::Cow;
+
 use indexmap::IndexMap;
 use itertools::EitherOrBoth;
-use psl::{
-    parser_database::{self as db, walkers},
-    psl_ast::ast::{WithDocumentation, WithName},
-};
+use psl::parser_database::walkers;
+use psl::parser_database::{self as db};
+use psl::psl_ast::ast::WithDocumentation;
+use psl::psl_ast::ast::WithName;
 use sql_schema_describer as sql;
-use std::borrow::Cow;
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use crate::introspection::sanitize_datamodel_names::EnumVariantName;
+use crate::introspection::sanitize_datamodel_names::ModelName;
 
 /// Pairing of a PSL enum to a database enum.
 pub(crate) struct EnumPair<'a> {
@@ -18,7 +19,10 @@ pub(crate) struct EnumPair<'a> {
 }
 
 impl<'a> EnumPair<'a> {
-    pub fn from_model(previous: walkers::EnumWalker<'a>, ctx: &'a DatamodelCalculatorContext<'a>) -> Self {
+    pub fn from_model(
+        previous: walkers::EnumWalker<'a>,
+        ctx: &'a DatamodelCalculatorContext<'a>,
+    ) -> Self {
         Self {
             previous_and_next: EitherOrBoth::Left(previous),
             ctx,
@@ -38,13 +42,17 @@ impl<'a> EnumPair<'a> {
 
     /// The documentation on top of the enum.
     pub fn documentation(&self) -> Option<&'a str> {
-        self.as_pair_ref().left().and_then(|enm| enm.ast_enum().documentation())
+        self.as_pair_ref()
+            .left()
+            .and_then(|enm| enm.ast_enum().documentation())
     }
 
     /// The mapped name, if defined, is the actual name of the enum in
     /// the database.
     pub fn mapped_name(&self) -> Option<&'a str> {
-        self.ctx.enum_prisma_name(self.as_pair_ref().right()?.id).mapped_name()
+        self.ctx
+            .enum_prisma_name(self.as_pair_ref().right()?.id)
+            .mapped_name()
     }
 
     /// Name of the enum in the PSL. The value can be sanitized if it
@@ -62,7 +70,9 @@ impl<'a> EnumPair<'a> {
     /// The name of the variant is taken from the PSL.
     pub fn name_from_psl(&self) -> bool {
         matches!(
-            self.as_pair_ref().right().map(|e| self.ctx.enum_prisma_name(e.id)),
+            self.as_pair_ref()
+                .right()
+                .map(|e| self.ctx.enum_prisma_name(e.id)),
             Some(ModelName::FromPsl {
                 mapped_name: Some(_),
                 ..
@@ -109,20 +119,36 @@ impl<'a> EnumPair<'a> {
         let mut variants = IndexMap::<Cow<'_, str>, EnumVariantPair<'a>>::new();
 
         // Start with the variants we found in the database.
-        for variant in self.as_pair_ref().right().into_iter().flat_map(|enm| enm.variants()) {
+        for variant in self
+            .as_pair_ref()
+            .right()
+            .into_iter()
+            .flat_map(|enm| enm.variants())
+        {
             let name = self.ctx.enum_variant_name(variant.id);
             variants
-                .entry(name.mapped_name().map(Cow::Borrowed).unwrap_or(name.prisma_name()))
+                .entry(
+                    name.mapped_name()
+                        .map(Cow::Borrowed)
+                        .unwrap_or(name.prisma_name()),
+                )
                 .or_insert(EnumVariantPair::from_db(variant, self.ctx));
         }
 
         let has_next = self.as_pair_ref().right().is_some();
         // Next, add the variants that we have in the model.
-        for value in self.as_pair_ref().left().into_iter().flat_map(|enm| enm.values()) {
-            let entry = variants.entry(value.database_name().into()).and_modify(|pair| {
-                // If the variant has been found in the database, we insert its pair from the model.
-                pair.previous_and_next.insert_left(value);
-            });
+        for value in self
+            .as_pair_ref()
+            .left()
+            .into_iter()
+            .flat_map(|enm| enm.values())
+        {
+            let entry = variants
+                .entry(value.database_name().into())
+                .and_modify(|pair| {
+                    // If the variant has been found in the database, we insert its pair from the model.
+                    pair.previous_and_next.insert_left(value);
+                });
             // If the variant was not found in the database, we insert it as a new pair, but only
             // if the introspection produced no enum at all (needed for databases where enums are
             // not natively supported).
@@ -146,7 +172,10 @@ pub struct EnumVariantPair<'a> {
 }
 
 impl<'a> EnumVariantPair<'a> {
-    fn from_model(previous: walkers::EnumValueWalker<'a>, ctx: &'a DatamodelCalculatorContext<'a>) -> Self {
+    fn from_model(
+        previous: walkers::EnumValueWalker<'a>,
+        ctx: &'a DatamodelCalculatorContext<'a>,
+    ) -> Self {
         Self {
             previous_and_next: EitherOrBoth::Left(previous),
             ctx,
@@ -162,19 +191,25 @@ impl<'a> EnumVariantPair<'a> {
 
     /// The documentation on top of the enum.
     pub fn documentation(&self) -> Option<&'a str> {
-        self.as_pair_ref().left().and_then(|variant| variant.documentation())
+        self.as_pair_ref()
+            .left()
+            .and_then(|variant| variant.documentation())
     }
 
     /// The mapped name, if defined, is the actual name of the variant in
     /// the database.
     pub fn mapped_name(&self) -> Option<&'a str> {
-        self.ctx.enum_variant_name(self.as_pair_ref().right()?.id).mapped_name()
+        self.ctx
+            .enum_variant_name(self.as_pair_ref().right()?.id)
+            .mapped_name()
     }
 
     /// The name of the variant is taken from the PSL.
     pub fn name_from_psl(&self) -> bool {
         matches!(
-            self.as_pair_ref().right().map(|e| self.ctx.enum_variant_name(e.id)),
+            self.as_pair_ref()
+                .right()
+                .map(|e| self.ctx.enum_variant_name(e.id)),
             Some(EnumVariantName::FromPsl {
                 mapped_name: Some(_),
                 ..
@@ -207,7 +242,9 @@ impl<'a> EnumVariantPair<'a> {
             .reduce(|_from_model, from_sql| from_sql)
     }
 
-    fn as_pair_ref(&self) -> EitherOrBoth<&walkers::EnumValueWalker<'a>, &sql::EnumVariantWalker<'a>> {
+    fn as_pair_ref(
+        &self,
+    ) -> EitherOrBoth<&walkers::EnumValueWalker<'a>, &sql::EnumVariantWalker<'a>> {
         self.previous_and_next.as_ref()
     }
 }

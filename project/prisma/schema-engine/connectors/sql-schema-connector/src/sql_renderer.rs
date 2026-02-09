@@ -11,24 +11,34 @@
 mod common;
 
 pub(crate) use common::*;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::walkers::EnumWalker;
+use sql_schema_describer::walkers::ForeignKeyWalker;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableWalker;
+use sql_schema_describer::walkers::UserDefinedTypeWalker;
+use sql_schema_describer::walkers::ViewWalker;
+use sql_schema_describer::{self as sql};
 
-use crate::{
-    migration_pair::MigrationPair,
-    sql_migration::{
-        AlterEnum, AlterExtension, AlterTable, CreateExtension, DropExtension, RedefineTable, SequenceChanges,
-    },
-};
-use sql_schema_describer::{
-    self as sql, SqlSchema,
-    walkers::{EnumWalker, ForeignKeyWalker, IndexWalker, TableWalker, UserDefinedTypeWalker, ViewWalker},
-};
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::AlterEnum;
+use crate::sql_migration::AlterExtension;
+use crate::sql_migration::AlterTable;
+use crate::sql_migration::CreateExtension;
+use crate::sql_migration::DropExtension;
+use crate::sql_migration::RedefineTable;
+use crate::sql_migration::SequenceChanges;
 
 pub(crate) trait SqlRenderer: Send + Sync {
     fn quote<'a>(&self, name: &'a str) -> Quoted<&'a str>;
 
     fn render_add_foreign_key(&self, foreign_key: ForeignKeyWalker<'_>) -> String;
 
-    fn render_alter_enum(&self, alter_enum: &AlterEnum, schemas: MigrationPair<&SqlSchema>) -> Vec<String>;
+    fn render_alter_enum(
+        &self,
+        alter_enum: &AlterEnum,
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String>;
 
     fn render_alter_primary_key(&self, _tables: MigrationPair<TableWalker<'_>>) -> Vec<String> {
         unreachable!("unreachable render_alter_primary_key()")
@@ -47,7 +57,11 @@ pub(crate) trait SqlRenderer: Send + Sync {
         unreachable!("unreachable render_alter_index")
     }
 
-    fn render_alter_table(&self, alter_table: &AlterTable, schemas: MigrationPair<&SqlSchema>) -> Vec<String>;
+    fn render_alter_table(
+        &self,
+        alter_table: &AlterTable,
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String>;
 
     /// Render a `CreateEnum` step.
     fn render_create_enum(&self, create_enum: EnumWalker<'_>) -> Vec<String>;
@@ -58,17 +72,32 @@ pub(crate) trait SqlRenderer: Send + Sync {
     fn render_create_table(&self, table: TableWalker<'_>) -> String;
 
     /// Render a table creation with the provided table name.
-    fn render_create_table_as(&self, table: TableWalker<'_>, table_name: QuotedWithPrefix<&str>) -> String;
+    fn render_create_table_as(
+        &self,
+        table: TableWalker<'_>,
+        table_name: QuotedWithPrefix<&str>,
+    ) -> String;
 
-    fn render_drop_and_recreate_index(&self, _indexes: MigrationPair<IndexWalker<'_>>) -> Vec<String> {
+    fn render_drop_and_recreate_index(
+        &self,
+        _indexes: MigrationPair<IndexWalker<'_>>,
+    ) -> Vec<String> {
         unreachable!("unreachable render_drop_and_recreate_index")
     }
 
     /// Render a `DropEnum` step.
-    fn render_drop_enum(&self, namespace: Option<&str>, dropped_enum: EnumWalker<'_>) -> Vec<String>;
+    fn render_drop_enum(
+        &self,
+        namespace: Option<&str>,
+        dropped_enum: EnumWalker<'_>,
+    ) -> Vec<String>;
 
     /// Render a `DropForeignKey` step.
-    fn render_drop_foreign_key(&self, namespace: Option<&str>, foreign_key: ForeignKeyWalker<'_>) -> String;
+    fn render_drop_foreign_key(
+        &self,
+        namespace: Option<&str>,
+        foreign_key: ForeignKeyWalker<'_>,
+    ) -> String;
 
     /// Render a `DropIndex` step.
     fn render_drop_index(&self, namespace: Option<&str>, index: IndexWalker<'_>) -> String;
@@ -83,7 +112,11 @@ pub(crate) trait SqlRenderer: Send + Sync {
     }
 
     /// Render a `RedefineTables` step.
-    fn render_redefine_tables(&self, tables: &[RedefineTable], schemas: MigrationPair<&SqlSchema>) -> Vec<String>;
+    fn render_redefine_tables(
+        &self,
+        tables: &[RedefineTable],
+        schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String>;
 
     /// Render a table renaming step.
     fn render_rename_table(&self, namespace: Option<&str>, name: &str, new_name: &str) -> String;
@@ -92,7 +125,11 @@ pub(crate) trait SqlRenderer: Send + Sync {
     fn render_drop_view(&self, namespace: Option<&str>, view: ViewWalker<'_>) -> String;
 
     /// Render a drop type step.
-    fn render_drop_user_defined_type(&self, namespace: Option<&str>, udt: &UserDefinedTypeWalker<'_>) -> String;
+    fn render_drop_user_defined_type(
+        &self,
+        namespace: Option<&str>,
+        udt: &UserDefinedTypeWalker<'_>,
+    ) -> String;
 
     /// Render a transaction start.
     fn render_begin_transaction(&self) -> Option<&'static str> {
@@ -111,11 +148,19 @@ pub(crate) trait SqlRenderer: Send + Sync {
         vec![] // On databases that do not support multiple schemas we do not create namespaces
     }
 
-    fn render_create_extension(&self, _create: &CreateExtension, _schema: &SqlSchema) -> Vec<String> {
+    fn render_create_extension(
+        &self,
+        _create: &CreateExtension,
+        _schema: &SqlSchema,
+    ) -> Vec<String> {
         unreachable!("render_create_extension")
     }
 
-    fn render_alter_extension(&self, _alter: &AlterExtension, _schemas: MigrationPair<&SqlSchema>) -> Vec<String> {
+    fn render_alter_extension(
+        &self,
+        _alter: &AlterExtension,
+        _schemas: MigrationPair<&SqlSchema>,
+    ) -> Vec<String> {
         unreachable!("render_alter_extension")
     }
 

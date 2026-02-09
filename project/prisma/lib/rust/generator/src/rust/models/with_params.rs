@@ -1,14 +1,15 @@
 use convert_case::Case;
 use generator_shared::casing::cased_ident;
 use proc_macro2::TokenStream;
-use query_structure::{
-    FieldArity,
-    walkers::{ModelWalker, RelationFieldWalker},
-};
+use query_structure::FieldArity;
+use query_structure::walkers::ModelWalker;
+use query_structure::walkers::RelationFieldWalker;
 use quote::quote;
 
-use super::{order_by, pagination};
-use crate::{args::GeneratorArgs, rust::module::FieldModule};
+use super::order_by;
+use super::pagination;
+use crate::args::GeneratorArgs;
+use crate::rust::module::FieldModule;
 
 pub fn generate_module(model: ModelWalker, _args: &GeneratorArgs) -> FieldModule {
     let variants = model.relation_fields().map(enum_variant);

@@ -1,5 +1,7 @@
-use crate::{RelationFieldRef, ScalarFieldRef};
 use std::fmt::Display;
+
+use crate::RelationFieldRef;
+use crate::ScalarFieldRef;
 
 #[derive(Clone, Copy, PartialEq, Debug, Eq, Hash)]
 pub enum SortOrder {
@@ -60,7 +62,9 @@ impl OrderBy {
 
     pub fn contains_relation_hops(&self) -> bool {
         match self.path() {
-            Some(path) => path.iter().any(|hop| matches!(hop, &OrderByHop::Relation(_))),
+            Some(path) => path
+                .iter()
+                .any(|hop| matches!(hop, &OrderByHop::Relation(_))),
             None => false,
         }
     }
@@ -79,7 +83,11 @@ impl OrderBy {
         })
     }
 
-    pub fn scalar_aggregation(field: ScalarFieldRef, sort_order: SortOrder, sort_aggregation: SortAggregation) -> Self {
+    pub fn scalar_aggregation(
+        field: ScalarFieldRef,
+        sort_order: SortOrder,
+        sort_aggregation: SortAggregation,
+    ) -> Self {
         Self::ScalarAggregation(OrderByScalarAggregation {
             field,
             sort_order,

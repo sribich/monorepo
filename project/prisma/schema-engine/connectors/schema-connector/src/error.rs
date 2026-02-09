@@ -1,15 +1,18 @@
 //! The migration connector ConnectorError type.
 
-use crate::migrations_directory::ReadMigrationScriptError;
-use std::{
-    error::Error as StdError,
-    fmt::{Debug, Display, Write},
-    sync::Arc,
-};
+use std::error::Error as StdError;
+use std::fmt::Debug;
+use std::fmt::Display;
+use std::fmt::Write;
+use std::sync::Arc;
+
 use tracing_error::SpanTrace;
-use user_facing_errors::{
-    KnownError, UserFacingError, common::SchemaParserError, schema_engine::MigrationFileNotFound,
-};
+use user_facing_errors::KnownError;
+use user_facing_errors::UserFacingError;
+use user_facing_errors::common::SchemaParserError;
+use user_facing_errors::schema_engine::MigrationFileNotFound;
+
+use crate::migrations_directory::ReadMigrationScriptError;
 
 /// The general error reporting type for migration connectors.
 #[derive(Clone)]
@@ -72,7 +75,10 @@ impl ConnectorError {
 
     /// The user-facing error code for this error.
     pub fn error_code(&self) -> Option<&str> {
-        self.0.user_facing_error.as_ref().map(|err| err.error_code.as_ref())
+        self.0
+            .user_facing_error
+            .as_ref()
+            .map(|err| err.error_code.as_ref())
     }
 
     /// The error message. Unlike the [`Display`] implementation, this does not include the source
@@ -92,7 +98,10 @@ impl ConnectorError {
     }
 
     /// Build a generic unknown error from a source error, with some additional context.
-    pub fn from_source_with_context<E: StdError + Send + Sync + 'static>(source: E, context: Box<str>) -> Self {
+    pub fn from_source_with_context<E: StdError + Send + Sync + 'static>(
+        source: E,
+        context: Box<str>,
+    ) -> Self {
         ConnectorError(Box::new(ConnectorErrorImpl {
             user_facing_error: None,
             message: Some(context),
@@ -102,7 +111,10 @@ impl ConnectorError {
     }
 
     /// Build a generic unknown error from a source error, with some additional context.
-    pub fn from_source<E: StdError + Send + Sync + 'static>(source: E, context: &'static str) -> Self {
+    pub fn from_source<E: StdError + Send + Sync + 'static>(
+        source: E,
+        context: &'static str,
+    ) -> Self {
         ConnectorError(Box::new(ConnectorErrorImpl {
             user_facing_error: None,
             message: Some(context.into()),
@@ -254,6 +266,9 @@ mod tests {
 
     #[test]
     fn connector_error_has_the_expected_size() {
-        assert_eq!(std::mem::size_of::<ConnectorError>(), std::mem::size_of::<*mut ()>());
+        assert_eq!(
+            std::mem::size_of::<ConnectorError>(),
+            std::mem::size_of::<*mut ()>()
+        );
     }
 }

@@ -1,4 +1,5 @@
 use std::time;
+
 use tracing::Id as SpanId;
 
 /// Gather and display timings of tracing spans.

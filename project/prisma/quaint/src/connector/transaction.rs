@@ -21,11 +21,7 @@ pub trait Transaction: Queryable {
     fn as_queryable(&self) -> &dyn Queryable;
 }
 
-#[cfg(any(
-    feature = "sqlite-native",
-    feature = "postgresql-native",
-    feature = "mysql-native"
-))]
+#[cfg(any(feature = "sqlite-native", feature = "postgresql-native", feature = "mysql-native"))]
 pub(crate) struct TransactionOptions {
     /// The isolation level to use.
     pub(crate) isolation_level: Option<IsolationLevel>,
@@ -34,11 +30,7 @@ pub(crate) struct TransactionOptions {
     pub(crate) isolation_first: bool,
 }
 
-#[cfg(any(
-    feature = "sqlite-native",
-    feature = "postgresql-native",
-    feature = "mysql-native"
-))]
+#[cfg(any(feature = "sqlite-native", feature = "postgresql-native", feature = "mysql-native"))]
 impl TransactionOptions {
     pub fn new(isolation_level: Option<IsolationLevel>, isolation_first: bool) -> Self {
         Self {
@@ -59,19 +51,11 @@ pub struct DefaultTransaction<'a> {
 }
 
 #[cfg_attr(
-    not(any(
-        feature = "sqlite-native",
-        feature = "postgresql-native",
-        feature = "mysql-native"
-    )),
+    not(any(feature = "sqlite-native", feature = "postgresql-native", feature = "mysql-native")),
     allow(clippy::needless_lifetimes)
 )]
 impl<'a> DefaultTransaction<'a> {
-    #[cfg(any(
-        feature = "sqlite-native",
-        feature = "postgresql-native",
-        feature = "mysql-native"
-    ))]
+    #[cfg(any(feature = "sqlite-native", feature = "postgresql-native", feature = "mysql-native"))]
     pub(crate) async fn new(
         inner: &'a dyn Queryable,
         begin_stmt: &str,

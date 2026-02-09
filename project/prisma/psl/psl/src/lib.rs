@@ -2,8 +2,14 @@
 #![deny(rust_2018_idioms, unsafe_code, missing_docs)]
 
 pub use psl_ast::SchemaParser;
+pub use psl_core::ConfiguredExt;
+pub use psl_core::IntoConfiguredExt;
+pub use psl_core::IntoValidatedExt;
+pub use psl_core::ValidatedExt;
 pub use psl_core::builtin_connectors;
-use psl_core::parser_database::{ExtensionTypes, Files, NoExtensionTypes};
+use psl_core::parser_database::ExtensionTypes;
+use psl_core::parser_database::Files;
+use psl_core::parser_database::NoExtensionTypes;
 pub use psl_core::{
     ALL_PREVIEW_FEATURES,
     Configuration,
@@ -33,12 +39,13 @@ pub use psl_core::{
     reformat_validated_schema_into_single,
     set_config_dir,
 };
-pub use psl_core::{ConfiguredExt, IntoConfiguredExt, IntoValidatedExt, ValidatedExt};
-pub use psl_schema::{Schema, SchemaRefiner};
+pub use psl_schema::Schema;
+pub use psl_schema::SchemaRefiner;
 
 /// The implementation of the CLI getConfig() utility and its JSON format.
 pub mod get_config {
-    pub use psl_core::mcf::{config_to_mcf_json_value as get_config, *};
+    pub use psl_core::mcf::config_to_mcf_json_value as get_config;
+    pub use psl_core::mcf::*;
 }
 
 ///
@@ -77,7 +84,9 @@ pub fn parse_configuration_multi_file(
 /// blocks. It never fails, but when the returned `Diagnostics` contains errors, it implies that the
 /// `Configuration` content is partial.
 /// Consumers may then decide  whether to convert `Diagnostics` into an error.
-pub fn error_tolerant_parse_configuration(files: &[(String, SourceFile)]) -> (Files, Configuration, Diagnostics) {
+pub fn error_tolerant_parse_configuration(
+    files: &[(String, SourceFile)],
+) -> (Files, Configuration, Diagnostics) {
     psl_core::error_tolerant_parse_configuration(files)
 }
 
@@ -96,7 +105,9 @@ pub fn parse_schema(
 
 /// Parse and analyze a Prisma schema.
 /// This variant does not support extensions.
-pub fn parse_schema_without_extensions(file: impl Into<SourceFile>) -> Result<ValidatedSchema, String> {
+pub fn parse_schema_without_extensions(
+    file: impl Into<SourceFile>,
+) -> Result<ValidatedSchema, String> {
     parse_schema(file, &NoExtensionTypes)
 }
 
@@ -117,7 +128,9 @@ pub fn parse_schema_multi(
 
 /// Parse and analyze a Prisma schema.
 /// This variant does not support extensions.
-pub fn parse_schema_multi_without_extensions(files: &[(String, SourceFile)]) -> Result<ValidatedSchema, String> {
+pub fn parse_schema_multi_without_extensions(
+    files: &[(String, SourceFile)],
+) -> Result<ValidatedSchema, String> {
     parse_schema_multi(files, &NoExtensionTypes)
 }
 
@@ -135,13 +148,19 @@ pub fn validate_without_extensions(file: SourceFile) -> ValidatedSchema {
 }
 
 /// Parse a Prisma schema, but skip validations.
-pub fn parse_without_validation(file: SourceFile, extension_types: &dyn ExtensionTypes) -> ValidatedSchema {
+pub fn parse_without_validation(
+    file: SourceFile,
+    extension_types: &dyn ExtensionTypes,
+) -> ValidatedSchema {
     psl_core::parse_without_validation(file, extension_types)
 }
 
 /// The most general API for dealing with Prisma schemas. It accumulates what analysis and
 /// validation information it can, and returns it along with any error and warning diagnostics.
-pub fn validate_multi_file(files: &[(String, SourceFile)], extension_types: &dyn ExtensionTypes) -> ValidatedSchema {
+pub fn validate_multi_file(
+    files: &[(String, SourceFile)],
+    extension_types: &dyn ExtensionTypes,
+) -> ValidatedSchema {
     psl_core::validate_multi_file(files, extension_types)
 }
 

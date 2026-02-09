@@ -2,16 +2,17 @@ use std::collections::HashMap;
 
 use convert_case::Case;
 use dmmf::serialization_ast::TypeLocation;
-use generator_shared::{
-    casing::cased_ident,
-    extensions::{DmmfSchemaExtension, DmmfTypeReferenceExt},
-};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::DmmfSchemaExtension;
+use generator_shared::extensions::DmmfTypeReferenceExt;
 use proc_macro2::TokenStream;
-use query_structure::{FieldArity, walkers::ModelWalker};
+use query_structure::FieldArity;
+use query_structure::walkers::ModelWalker;
 use quote::quote;
 use syn::Ident;
 
-use crate::{args::GeneratorArgs, rust::module::FieldModule};
+use crate::args::GeneratorArgs;
+use crate::rust::module::FieldModule;
 
 /// TODO: This probably doesn't need to be here. We can surely move it into the
 /// consumer.
@@ -188,10 +189,9 @@ pub fn generate_module(model: ModelWalker, args: &GeneratorArgs) -> FieldModule 
             })
             .into_iter()
             .map(|(name, data)| {
-                let Some(typ) = data
-                    .iter()
-                    .find_map(|(typ, _)| (typ.to_string() == data.first().unwrap().0.to_string()).then_some(typ))
-                else {
+                let Some(typ) = data.iter().find_map(|(typ, _)| {
+                    (typ.to_string() == data.first().unwrap().0.to_string()).then_some(typ)
+                }) else {
                     panic!();
                 };
 

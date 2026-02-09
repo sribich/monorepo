@@ -1,9 +1,19 @@
-use quaint::{connector::PostgresFlavour, prelude::*, single::Quaint};
-use schema_core::schema_connector::{ConnectorError, ConnectorParams, ConnectorResult, SchemaConnector};
 use std::collections::HashMap;
+
+use quaint::connector::PostgresFlavour;
+use quaint::prelude::*;
+use quaint::single::Quaint;
+use schema_core::schema_connector::ConnectorError;
+use schema_core::schema_connector::ConnectorParams;
+use schema_core::schema_connector::ConnectorResult;
+use schema_core::schema_connector::SchemaConnector;
 use url::Url;
 
-pub(crate) async fn postgres_setup(url: String, prisma_schema: &str, db_schemas: &[&str]) -> ConnectorResult<()> {
+pub(crate) async fn postgres_setup(
+    url: String,
+    prisma_schema: &str,
+    db_schemas: &[&str],
+) -> ConnectorResult<()> {
     let mut parsed_url = Url::parse(&url).map_err(ConnectorError::url_parse_error)?;
     let mut quaint_url = quaint::connector::PostgresNativeUrl::new(parsed_url.clone()).unwrap();
     quaint_url.set_flavour(PostgresFlavour::Postgres);
@@ -71,7 +81,10 @@ async fn create_postgres_admin_conn(mut url: Url) -> ConnectorResult<Quaint> {
 fn strip_schema_param_from_url(url: &mut Url) {
     let mut params: HashMap<String, String> = url.query_pairs().into_owned().collect();
     params.remove("schema");
-    let params: Vec<String> = params.into_iter().map(|(k, v)| format!("{k}={v}")).collect();
+    let params: Vec<String> = params
+        .into_iter()
+        .map(|(k, v)| format!("{k}={v}"))
+        .collect();
     let params: String = params.join("&");
     url.set_query(Some(&params));
 }

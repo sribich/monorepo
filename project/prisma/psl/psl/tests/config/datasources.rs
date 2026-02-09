@@ -197,8 +197,12 @@ fn postgresql_extension_parsing() {
     "#};
 
     let config = psl::parse_configuration(schema).unwrap();
-    let properties: &PostgresDatasourceProperties =
-        config.datasources.first().unwrap().downcast_connector_data().unwrap();
+    let properties: &PostgresDatasourceProperties = config
+        .datasources
+        .first()
+        .unwrap()
+        .downcast_connector_data()
+        .unwrap();
 
     assert!(properties.extensions().is_some());
 

@@ -1,8 +1,10 @@
-use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
-use psl::{
-    parser_database::walkers::CompleteInlineRelationWalker,
-    psl_ast::ast::{SourceConfig, WithIdentifier, WithName},
-};
+use lsp_types::CodeAction;
+use lsp_types::CodeActionKind;
+use lsp_types::CodeActionOrCommand;
+use psl::parser_database::walkers::CompleteInlineRelationWalker;
+use psl::psl_ast::ast::SourceConfig;
+use psl::psl_ast::ast::WithIdentifier;
+use psl::psl_ast::ast::WithName;
 
 use super::CodeActionsContext;
 
@@ -11,13 +13,19 @@ pub(crate) fn edit_referential_integrity(
     context: &CodeActionsContext<'_>,
     source: &SourceConfig,
 ) {
-    let prop = match source.properties.iter().find(|p| p.name() == "referentialIntegrity") {
+    let prop = match source
+        .properties
+        .iter()
+        .find(|p| p.name() == "referentialIntegrity")
+    {
         Some(prop) => prop,
         None => return,
     };
 
-    let diagnostics =
-        context.diagnostics_for_span_with_message(source.span, "The `referentialIntegrity` attribute is deprecated.");
+    let diagnostics = context.diagnostics_for_span_with_message(
+        source.span,
+        "The `referentialIntegrity` attribute is deprecated.",
+    );
 
     let Ok(edit) = super::create_text_edit(
         context.initiating_file_uri(),
@@ -76,7 +84,9 @@ pub(crate) fn replace_set_default_mysql(
         return;
     }
 
-    let Ok(edit) = super::create_text_edit(file_name, file_content, "NoAction".to_owned(), false, span) else {
+    let Ok(edit) =
+        super::create_text_edit(file_name, file_content, "NoAction".to_owned(), false, span)
+    else {
         return;
     };
 

@@ -6,7 +6,11 @@ pub trait ExtensionTypes: Sync {
 
     /// Look up an extension type by its database name and optional type modifiers.
     /// Returns `None` if the extension type is not known.
-    fn get_by_db_name_and_modifiers(&self, name: &str, modifiers: Option<&[String]>) -> Option<ExtensionTypeEntry<'_>>;
+    fn get_by_db_name_and_modifiers(
+        &self,
+        name: &str,
+        modifiers: Option<&[String]>,
+    ) -> Option<ExtensionTypeEntry<'_>>;
 
     /// Enumerate all known extension types.
     fn enumerate(&self) -> Box<dyn Iterator<Item = ExtensionTypeEntry<'_>> + '_>;

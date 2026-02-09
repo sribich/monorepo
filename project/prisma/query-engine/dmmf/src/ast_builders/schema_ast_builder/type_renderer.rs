@@ -1,10 +1,21 @@
-use super::{DmmfTypeReference, RenderContext, TypeLocation};
-use schema::{InnerOutputType, InputType, ObjectTag, OutputType, ScalarType};
+use schema::InnerOutputType;
+use schema::InputType;
+use schema::ObjectTag;
+use schema::OutputType;
+use schema::ScalarType;
 
-pub(super) fn render_output_type<'a>(output_type: &OutputType<'a>, ctx: &mut RenderContext<'a>) -> DmmfTypeReference {
+use super::DmmfTypeReference;
+use super::RenderContext;
+use super::TypeLocation;
+
+pub(super) fn render_output_type<'a>(
+    output_type: &OutputType<'a>,
+    ctx: &mut RenderContext<'a>,
+) -> DmmfTypeReference {
     match &output_type.inner {
         _ if output_type.is_list() => {
-            let mut type_reference = render_output_type(&OutputType::non_list(output_type.inner.clone()), ctx);
+            let mut type_reference =
+                render_output_type(&OutputType::non_list(output_type.inner.clone()), ctx);
             type_reference.is_list = true;
             type_reference
         }
@@ -69,7 +80,10 @@ pub(super) fn render_input_types<'a>(
         .collect()
 }
 
-pub(super) fn render_input_type<'a>(input_type: &InputType<'a>, ctx: &mut RenderContext<'a>) -> DmmfTypeReference {
+pub(super) fn render_input_type<'a>(
+    input_type: &InputType<'a>,
+    ctx: &mut RenderContext<'a>,
+) -> DmmfTypeReference {
     match input_type {
         InputType::Object(obj) => {
             ctx.mark_to_be_rendered(obj);

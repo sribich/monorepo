@@ -9,10 +9,12 @@ pub mod quaint;
 pub mod query_engine;
 pub mod schema_engine;
 
-use serde::{Deserialize, Serialize};
-use std::{backtrace::Backtrace, borrow::Cow};
+use std::backtrace::Backtrace;
+use std::borrow::Cow;
 
 pub use panic_hook::set_panic_hook;
+use serde::Deserialize;
+use serde::Serialize;
 
 pub trait UserFacingError: serde::Serialize {
     const ERROR_CODE: &'static str;
@@ -50,7 +52,8 @@ impl KnownError {
     pub fn new<T: UserFacingError>(inner: T) -> KnownError {
         KnownError {
             message: inner.message(),
-            meta: serde_json::to_value(&inner).expect("Failed to render user facing error metadata to JSON"),
+            meta: serde_json::to_value(&inner)
+                .expect("Failed to render user facing error metadata to JSON"),
             error_code: Cow::from(T::ERROR_CODE),
         }
     }
@@ -123,7 +126,8 @@ impl Error {
     /// panic hook. [`UnknownError`]s created with this constructor will have a
     /// proper, useful backtrace.
     pub fn new_in_panic_hook(panic_info: &std::panic::PanicHookInfo<'_>) -> Self {
-        let message = panic_utils::downcast_ref_to_string(panic_info.payload()).unwrap_or("<unknown panic>");
+        let message =
+            panic_utils::downcast_ref_to_string(panic_info.payload()).unwrap_or("<unknown panic>");
 
         let backtrace = Some(format!("{:?}", Backtrace::force_capture()));
         let location = panic_info
@@ -151,7 +155,8 @@ impl Error {
     }
 
     pub fn from_panic_payload(panic_payload: Box<dyn std::any::Any + Send + 'static>) -> Self {
-        let message = Self::extract_panic_message(panic_payload).unwrap_or_else(|| "<unknown panic>".to_owned());
+        let message = Self::extract_panic_message(panic_payload)
+            .unwrap_or_else(|| "<unknown panic>".to_owned());
 
         Error {
             inner: ErrorType::Unknown(UnknownError {
@@ -163,7 +168,9 @@ impl Error {
         }
     }
 
-    pub fn extract_panic_message(panic_payload: Box<dyn std::any::Any + Send + 'static>) -> Option<String> {
+    pub fn extract_panic_message(
+        panic_payload: Box<dyn std::any::Any + Send + 'static>,
+    ) -> Option<String> {
         panic_payload
             .downcast_ref::<&str>()
             .map(|s| -> String { (*s).to_owned() })

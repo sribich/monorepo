@@ -1,13 +1,21 @@
 //! All the quaint-wrangling for the sqlite connector should happen here.
 
-pub(crate) use quaint::connector::rusqlite;
-
-use quaint::connector::{ColumnType, DescribedColumn, DescribedParameter, GetRow, ToColumnNames};
-use schema_connector::{BoxFuture, ConnectorError, ConnectorParams, ConnectorResult};
-use sql_schema_describer::SqlSchema;
-use sqlx_core::{column::Column, type_info::TypeInfo};
-use sqlx_sqlite::SqliteColumn;
 use std::sync::Mutex;
+
+use quaint::connector::ColumnType;
+use quaint::connector::DescribedColumn;
+use quaint::connector::DescribedParameter;
+use quaint::connector::GetRow;
+use quaint::connector::ToColumnNames;
+pub(crate) use quaint::connector::rusqlite;
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorParams;
+use schema_connector::ConnectorResult;
+use sql_schema_describer::SqlSchema;
+use sqlx_core::column::Column;
+use sqlx_core::type_info::TypeInfo;
+use sqlx_sqlite::SqliteColumn;
 use user_facing_errors::schema_engine::ApplyMigrationError;
 
 use crate::flavour::validate_connection_infos_do_not_match;
@@ -22,7 +30,10 @@ pub struct Params {
 impl Params {
     pub fn new(connector_params: ConnectorParams) -> ConnectorResult<Self> {
         if let Some(shadow_db_url) = &connector_params.shadow_database_connection_string {
-            validate_connection_infos_do_not_match(&connector_params.connection_string, shadow_db_url)?;
+            validate_connection_infos_do_not_match(
+                &connector_params.connection_string,
+                shadow_db_url,
+            )?;
         }
 
         let quaint::connector::SqliteParams { file_path, .. } =
@@ -68,7 +79,10 @@ impl Connection {
         conn.execute_batch(sql).map_err(convert_error)
     }
 
-    pub async fn query(&self, query: quaint::ast::Query<'_>) -> ConnectorResult<quaint::prelude::ResultSet> {
+    pub async fn query(
+        &self,
+        query: quaint::ast::Query<'_>,
+    ) -> ConnectorResult<quaint::prelude::ResultSet> {
         use quaint::visitor::Visitor;
         let (sql, params) = quaint::visitor::Sqlite::build(query).unwrap();
         self.query_raw(&sql, &params).await
@@ -83,7 +97,11 @@ impl Connection {
         let conn = self.0.lock().unwrap();
         let mut stmt = conn.prepare_cached(sql).map_err(convert_error)?;
 
-        let column_types = stmt.columns().iter().map(ColumnType::from).collect::<Vec<_>>();
+        let column_types = stmt
+            .columns()
+            .iter()
+            .map(ColumnType::from)
+            .collect::<Vec<_>>();
         let mut rows = stmt
             .query(rusqlite::params_from_iter(params.iter()))
             .map_err(convert_error)?;
@@ -153,25 +171,33 @@ impl Connection {
         })
     }
 
-    pub async fn apply_migration_script(&self, migration_name: &str, script: &str) -> ConnectorResult<()> {
+    pub async fn apply_migration_script(
+        &self,
+        migration_name: &str,
+        script: &str,
+    ) -> ConnectorResult<()> {
         tracing::debug!(query_type = "raw_cmd", sql = script);
         let conn = self.0.lock().unwrap();
-        conn.execute_batch(script).map_err(|sqlite_error: rusqlite::Error| {
-            let database_error_code = match sqlite_error {
-                rusqlite::Error::SqliteFailure(rusqlite::ffi::Error { extended_code, .. }, _)
-                | rusqlite::Error::SqlInputError {
-                    error: rusqlite::ffi::Error { extended_code, .. },
-                    ..
-                } => extended_code.to_string(),
-                _ => "none".to_owned(),
-            };
+        conn.execute_batch(script)
+            .map_err(|sqlite_error: rusqlite::Error| {
+                let database_error_code = match sqlite_error {
+                    rusqlite::Error::SqliteFailure(
+                        rusqlite::ffi::Error { extended_code, .. },
+                        _,
+                    )
+                    | rusqlite::Error::SqlInputError {
+                        error: rusqlite::ffi::Error { extended_code, .. },
+                        ..
+                    } => extended_code.to_string(),
+                    _ => "none".to_owned(),
+                };
 
-            ConnectorError::user_facing(ApplyMigrationError {
-                migration_name: migration_name.to_owned(),
-                database_error_code,
-                database_error: sqlite_error.to_string(),
+                ConnectorError::user_facing(ApplyMigrationError {
+                    migration_name: migration_name.to_owned(),
+                    database_error_code,
+                    database_error: sqlite_error.to_string(),
+                })
             })
-        })
     }
 
     pub async fn reset(&self, params: &Params) -> ConnectorResult<()> {
@@ -208,8 +234,9 @@ pub async fn create_database(state: &State) -> ConnectorResult<String> {
     let dir = path.parent();
 
     if let Some((dir, false)) = dir.map(|dir| (dir, dir.exists())) {
-        std::fs::create_dir_all(dir)
-            .map_err(|err| ConnectorError::from_source(err, "Creating SQLite database parent directory."))?;
+        std::fs::create_dir_all(dir).map_err(|err| {
+            ConnectorError::from_source(err, "Creating SQLite database parent directory.")
+        })?;
     }
 
     Connection::new(params)?;
@@ -220,8 +247,11 @@ pub async fn create_database(state: &State) -> ConnectorResult<String> {
 pub async fn drop_database(state: &State) -> ConnectorResult<()> {
     let params = state.get_unwrapped_params();
     let file_path = &params.file_path;
-    std::fs::remove_file(file_path)
-        .map_err(|err| ConnectorError::from_msg(format!("Failed to delete SQLite database at `{file_path}`.\n{err}")))
+    std::fs::remove_file(file_path).map_err(|err| {
+        ConnectorError::from_msg(format!(
+            "Failed to delete SQLite database at `{file_path}`.\n{err}"
+        ))
+    })
 }
 
 pub async fn ensure_connection_validity(state: &mut State) -> ConnectorResult<()> {
@@ -232,15 +262,18 @@ pub async fn ensure_connection_validity(state: &mut State) -> ConnectorResult<()
     // that the file doesn't exist.
     match std::fs::metadata(path) {
         Ok(_) => Ok(()),
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Err(ConnectorError::user_facing(
-            user_facing_errors::common::DatabaseDoesNotExist {
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Err(
+            ConnectorError::user_facing(user_facing_errors::common::DatabaseDoesNotExist {
                 database_name: path
                     .file_name()
                     .map(|osstr| osstr.to_string_lossy().into_owned())
                     .unwrap_or_else(|| params.file_path.clone()),
-            },
+            }),
+        ),
+        Err(err) => Err(ConnectorError::from_source(
+            err,
+            "Failed to open SQLite database.",
         )),
-        Err(err) => Err(ConnectorError::from_source(err, "Failed to open SQLite database.")),
     }
 }
 
@@ -262,7 +295,9 @@ pub async fn introspect(state: &mut State) -> ConnectorResult<SqlSchema> {
     super::describe_schema(get_connection_and_params(state)?.0).await
 }
 
-pub fn get_connection_and_params(state: &mut State) -> ConnectorResult<(&mut Connection, &mut Params)> {
+pub fn get_connection_and_params(
+    state: &mut State,
+) -> ConnectorResult<(&mut Connection, &mut Params)> {
     match state {
         super::State::Initial => panic!("logic error: Initial"),
         super::State::Connected(params, conn) => Ok((conn, params)),
@@ -278,11 +313,16 @@ pub fn get_connection_and_params(state: &mut State) -> ConnectorResult<(&mut Con
     }
 }
 
-pub fn set_preview_features(state: &mut State, preview_features: enumflags2::BitFlags<psl::PreviewFeature>) {
+pub fn set_preview_features(
+    state: &mut State,
+    preview_features: enumflags2::BitFlags<psl::PreviewFeature>,
+) {
     match state {
         super::State::Initial => {
             if !preview_features.is_empty() {
-                tracing::warn!("set_preview_feature on Initial state has no effect ({preview_features}).");
+                tracing::warn!(
+                    "set_preview_feature on Initial state has no effect ({preview_features})."
+                );
             }
         }
         super::State::WithParams(params) | super::State::Connected(params, _) => {

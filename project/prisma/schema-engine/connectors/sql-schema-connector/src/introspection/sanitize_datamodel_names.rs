@@ -1,9 +1,13 @@
 //! Some SQL identifiers are not presentable in PSL. The sanitization
 //! of these strings happens in this module.
 
-use crate::introspection::{datamodel_calculator::DatamodelCalculatorContext, sanitize_datamodel_names};
+use std::borrow::Cow;
+use std::sync::LazyLock;
+
 use regex::Regex;
-use std::{borrow::Cow, sync::LazyLock};
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
+use crate::introspection::sanitize_datamodel_names;
 
 /// Regex to determine if an identifier starts with a character that
 /// is not supported.
@@ -62,10 +66,17 @@ impl<'a> ModelName<'a> {
     ) -> Self {
         match (name, namespace) {
             (mapped_name, Some(namespace)) if !context.name_is_unique(mapped_name) => {
-                ModelName::RenamedDuplicate { mapped_name, namespace }
+                ModelName::RenamedDuplicate {
+                    mapped_name,
+                    namespace,
+                }
             }
-            _ if psl::is_reserved_type_name(name) => ModelName::RenamedReserved { mapped_name: name },
-            _ if sanitize_datamodel_names::needs_sanitation(name) => ModelName::RenamedSanitized { mapped_name: name },
+            _ if psl::is_reserved_type_name(name) => {
+                ModelName::RenamedReserved { mapped_name: name }
+            }
+            _ if sanitize_datamodel_names::needs_sanitation(name) => {
+                ModelName::RenamedSanitized { mapped_name: name }
+            }
             (name, _) => ModelName::FromSql { name },
         }
     }
@@ -75,11 +86,16 @@ impl<'a> ModelName<'a> {
         match self {
             ModelName::FromPsl { name, .. } => Cow::Borrowed(name),
             ModelName::FromSql { name } => Cow::Borrowed(name),
-            ModelName::RenamedReserved { mapped_name } => Cow::Owned(format!("Renamed{mapped_name}")),
-            ModelName::RenamedSanitized { mapped_name } => sanitize_datamodel_names::sanitize_string(*mapped_name),
-            ModelName::RenamedDuplicate { mapped_name, namespace } => {
-                sanitize_datamodel_names::sanitize_string(format!("{namespace}_{mapped_name}"))
+            ModelName::RenamedReserved { mapped_name } => {
+                Cow::Owned(format!("Renamed{mapped_name}"))
             }
+            ModelName::RenamedSanitized { mapped_name } => {
+                sanitize_datamodel_names::sanitize_string(*mapped_name)
+            }
+            ModelName::RenamedDuplicate {
+                mapped_name,
+                namespace,
+            } => sanitize_datamodel_names::sanitize_string(format!("{namespace}_{mapped_name}")),
         }
     }
 
@@ -177,7 +193,9 @@ impl<'a> EnumVariantName<'a> {
             EnumVariantName::RenamedSanitized { mapped_name } => {
                 sanitize_datamodel_names::sanitize_string(*mapped_name)
             }
-            EnumVariantName::FromSql { name } | EnumVariantName::FromPsl { name, .. } => Cow::Borrowed(name),
+            EnumVariantName::FromSql { name } | EnumVariantName::FromPsl { name, .. } => {
+                Cow::Borrowed(name)
+            }
         }
     }
 
@@ -187,7 +205,10 @@ impl<'a> EnumVariantName<'a> {
             EnumVariantName::Empty => Some(""),
             EnumVariantName::RenamedSanitized { mapped_name } => Some(mapped_name),
             EnumVariantName::FromSql { name: _ } => None,
-            EnumVariantName::FromPsl { name: _, mapped_name } => *mapped_name,
+            EnumVariantName::FromPsl {
+                name: _,
+                mapped_name,
+            } => *mapped_name,
         }
     }
 }

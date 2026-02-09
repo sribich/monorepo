@@ -8,19 +8,17 @@ mod row;
 mod ser_raw;
 mod value;
 
-use self::{query_ext::QueryExt, row::*};
-use quaint::prelude::Queryable;
-
 pub use database::FromSource;
-pub use error::SqlError;
-
 #[cfg(feature = "mysql-native")]
 pub use database::Mysql;
-
 #[cfg(feature = "postgresql-native")]
 pub use database::PostgreSql;
-
 #[cfg(feature = "sqlite-native")]
 pub use database::Sqlite;
+pub use error::SqlError;
+use quaint::prelude::Queryable;
+
+use self::query_ext::QueryExt;
+use self::row::*;
 
 type Result<T> = std::result::Result<T, error::SqlError>;

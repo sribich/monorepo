@@ -32,7 +32,9 @@ mod prisma_12572 {
             .query(r#"mutation { createOneTest1(data: {id:"one", test2s: { create: {id: "two"}}}) { id }}"#)
             .await?
             .assert_success();
-        let testones = runner.query(r#"{ findManyTest1 { id up1 cr1 cr2 up2 } }"#).await?;
+        let testones = runner
+            .query(r#"{ findManyTest1 { id up1 cr1 cr2 up2 } }"#)
+            .await?;
         let testtwos = runner.query(r#"{ findManyTest2 { id up cr } }"#).await?;
         testones.assert_success();
         testtwos.assert_success();

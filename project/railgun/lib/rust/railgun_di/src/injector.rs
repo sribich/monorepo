@@ -1,15 +1,20 @@
-use core::any::{TypeId, type_name};
-use std::{collections::HashMap, sync::Arc};
+use core::any::TypeId;
+use core::any::type_name;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{
-    Builder, InjectionError, OneOf,
-    id::{ConcreteTypeId, DynTypeId},
-    injector_builder::InjectorBuilder,
-    spec::AllOf,
-    typecast_builder::{
-        Binding, BuilderList, TypeCaster, TypecastBuilder, TypecastBuilderIterator,
-    },
-};
+use crate::Builder;
+use crate::InjectionError;
+use crate::OneOf;
+use crate::id::ConcreteTypeId;
+use crate::id::DynTypeId;
+use crate::injector_builder::InjectorBuilder;
+use crate::spec::AllOf;
+use crate::typecast_builder::Binding;
+use crate::typecast_builder::BuilderList;
+use crate::typecast_builder::TypeCaster;
+use crate::typecast_builder::TypecastBuilder;
+use crate::typecast_builder::TypecastBuilderIterator;
 
 pub struct Injector(pub(crate) Arc<InjectorInner>);
 
@@ -74,13 +79,13 @@ impl InjectorInner {
                         binding_inner.builder.as_ref(),
                         caster,
                     ))
-                },
+                }
                 Binding::Collection(binding_inners) => {
                     // TODO: This doesn't need some()
                     BuilderList::Collection(Box::new(TypecastBuilderIterator::new(Some(
                         binding_inners,
                     ))))
-                },
+                }
             },
             None => {
                 return crate::error::UnregisteredContext {
@@ -88,7 +93,7 @@ impl InjectorInner {
                     type_name: type_name::<TDyn>(),
                 }
                 .fail();
-            },
+            }
         })
     }
 }

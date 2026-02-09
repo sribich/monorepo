@@ -1,19 +1,26 @@
-use super::update::*;
-use crate::row::ToSqlRow;
-use crate::value::to_prisma_value;
-use crate::{QueryExt, Queryable, error::SqlError};
-use itertools::Itertools;
-use quaint::prelude::ResultSet;
-use quaint::{
-    error::ErrorKind,
-    prelude::{Select, SqlFamily},
-};
-use query_structure::*;
-use sql_query_builder::write::defaults_for_mysql_write_args;
-use sql_query_builder::{Context, SelectionResultExt, SqlTraceComment, column_metadata, write};
 use std::borrow::Cow;
 use std::collections::HashMap;
+
+use itertools::Itertools;
+use quaint::error::ErrorKind;
+use quaint::prelude::ResultSet;
+use quaint::prelude::Select;
+use quaint::prelude::SqlFamily;
+use query_structure::*;
+use sql_query_builder::Context;
+use sql_query_builder::SelectionResultExt;
+use sql_query_builder::SqlTraceComment;
+use sql_query_builder::column_metadata;
+use sql_query_builder::write;
+use sql_query_builder::write::defaults_for_mysql_write_args;
 use user_facing_errors::query_engine::DatabaseConstraint;
+
+use super::update::*;
+use crate::QueryExt;
+use crate::Queryable;
+use crate::error::SqlError;
+use crate::row::ToSqlRow;
+use crate::value::to_prisma_value;
 
 async fn generate_id(
     conn: &dyn Queryable,
@@ -128,7 +135,10 @@ pub(crate) async fn create_record(
             let sql_row = row.to_sql_row(&meta)?;
             let record = Record::from(sql_row);
 
-            Ok(SingleRecord { record, field_names })
+            Ok(SingleRecord {
+                record,
+                field_names,
+            })
         }
 
         // All values provided in the write args
@@ -136,7 +146,10 @@ pub(crate) async fn create_record(
             let field_names = identifier.db_names().map(Cow::into_owned).collect();
             let record = Record::from(identifier);
 
-            Ok(SingleRecord { record, field_names })
+            Ok(SingleRecord {
+                record,
+                field_names,
+            })
         }
 
         // We have an auto-incremented id that we got from MySQL or SQLite
@@ -146,7 +159,10 @@ pub(crate) async fn create_record(
             let field_names = identifier.db_names().map(Cow::into_owned).collect();
             let record = Record::from(identifier);
 
-            Ok(SingleRecord { record, field_names })
+            Ok(SingleRecord {
+                record,
+                field_names,
+            })
         }
 
         (_, _, _) => panic!("Could not figure out an ID in create"),
@@ -184,7 +200,13 @@ pub(crate) async fn create_records_returning(
     let idents = selected_fields.type_identifiers_with_arities();
     let meta = column_metadata::create(&field_names, &idents);
     let mut records = ManyRecords::new(field_names.clone());
-    let inserts = write::generate_insert_statements(model, args, skip_duplicates, Some(&selected_fields.into()), ctx);
+    let inserts = write::generate_insert_statements(
+        model,
+        args,
+        skip_duplicates,
+        Some(&selected_fields.into()),
+        ctx,
+    );
 
     for insert in inserts {
         let result_set = conn.query(insert.into()).await?;
@@ -257,9 +279,14 @@ pub(crate) async fn update_records_returning(
     let meta = column_metadata::create(&field_names, &idents);
     let mut records = ManyRecords::new(field_names.clone());
 
-    for update in
-        write::generate_update_statements(model, record_filter, args, Some(&selected_fields.into()), limit, ctx)
-    {
+    for update in write::generate_update_statements(
+        model,
+        record_filter,
+        args,
+        Some(&selected_fields.into()),
+        limit,
+        ctx,
+    ) {
         let result_set = conn.query(update).await?;
 
         for result_row in result_set {
@@ -386,11 +413,17 @@ pub(crate) async fn execute_raw(
 
 /// Execute a plain SQL query with the given parameters, returning the answer as
 /// a JSON `Value`.
-pub(crate) async fn query_raw(conn: &dyn Queryable, inputs: HashMap<String, PrismaValue>) -> crate::Result<RawJson> {
+pub(crate) async fn query_raw(
+    conn: &dyn Queryable,
+    inputs: HashMap<String, PrismaValue>,
+) -> crate::Result<RawJson> {
     Ok(conn.raw_json(inputs).await?)
 }
 
-fn try_convert(model_projection: &ModelProjection, result_set: ResultSet) -> crate::Result<SelectionResult> {
+fn try_convert(
+    model_projection: &ModelProjection,
+    result_set: ResultSet,
+) -> crate::Result<SelectionResult> {
     let columns: Vec<String> = result_set.columns().iter().map(|c| c.to_string()).collect();
     let mut record_projection = SelectionResult::default();
 

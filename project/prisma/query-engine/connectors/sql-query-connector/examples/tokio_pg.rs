@@ -1,5 +1,6 @@
-use quaint::connector::tokio_postgres;
 use std::time::Instant;
+
+use quaint::connector::tokio_postgres;
 
 #[tokio::main]
 async fn main() {
@@ -7,7 +8,9 @@ async fn main() {
     let start = Instant::now();
 
     let now = Instant::now();
-    let (client, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls).await.unwrap();
+    let (client, connection) = tokio_postgres::connect(&url, tokio_postgres::NoTls)
+        .await
+        .unwrap();
     println!("Connect: {:?}", now.elapsed());
 
     tokio::spawn(async move {

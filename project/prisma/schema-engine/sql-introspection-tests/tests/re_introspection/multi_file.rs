@@ -43,7 +43,8 @@ async fn reintrospect_new_model_single_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -104,7 +105,8 @@ async fn reintrospect_new_model_multi_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     Ok(())
 }
@@ -140,7 +142,8 @@ async fn reintrospect_removed_model_single_file(api: &mut TestApi) -> TestResult
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -194,7 +197,8 @@ async fn reintrospect_removed_model_multi_file(api: &mut TestApi) -> TestResult 
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     Ok(())
 }
@@ -243,7 +247,8 @@ async fn reintrospect_force_single_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_force_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_force_datamodels(&input_dms, expected)
+        .await;
 
     Ok(())
 }
@@ -300,7 +305,8 @@ async fn reintrospect_force_multi_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_force_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_force_datamodels(&input_dms, expected)
+        .await;
 
     Ok(())
 }
@@ -351,7 +357,8 @@ async fn reintrospect_new_enum_single_file(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#).await;
+    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#)
+        .await;
 
     let main_dm = indoc! {r#"
       model User {
@@ -373,7 +380,8 @@ async fn reintrospect_new_enum_single_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -411,7 +419,8 @@ async fn reintrospect_removed_enum_single_file(api: &mut TestApi) -> TestResult 
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -434,7 +443,8 @@ async fn reintrospect_new_enum_multi_file(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#).await;
+    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#)
+        .await;
 
     let config = &api.pure_config();
     let user_dm = indoc! {r#"
@@ -471,7 +481,8 @@ async fn reintrospect_new_enum_multi_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -517,7 +528,8 @@ async fn reintrospect_removed_enum_multi_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     api.expect_no_warnings().await;
 
@@ -607,7 +619,8 @@ async fn reintrospect_new_view_single_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     let expected = expect![[r#"
         SELECT
@@ -665,7 +678,8 @@ async fn reintrospect_removed_view_single_file(api: &mut TestApi) -> TestResult 
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     let expected = expect![""];
     api.expect_warnings(&expected).await;
@@ -706,7 +720,10 @@ async fn reintrospect_new_view_multi_file(api: &mut TestApi) -> TestResult {
         id Int @id @default(autoincrement())
       }
     "#};
-    let input_dms = [("user.prisma", user_dm), ("post.prisma", post_dm.to_string())];
+    let input_dms = [
+        ("user.prisma", user_dm),
+        ("post.prisma", post_dm.to_string()),
+    ];
 
     let expected = expect![[r#"
         // file: introspected.prisma
@@ -729,7 +746,8 @@ async fn reintrospect_new_view_multi_file(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     let expected = expect![[r#"
         SELECT
@@ -739,7 +757,8 @@ async fn reintrospect_new_view_multi_file(api: &mut TestApi) -> TestResult {
         FROM
           "User";"#]];
 
-    api.expect_view_definition_multi("Schwuser", &expected).await;
+    api.expect_view_definition_multi("Schwuser", &expected)
+        .await;
 
     let expected = expect![""];
     api.expect_warnings(&expected).await;
@@ -777,7 +796,10 @@ async fn reintrospect_removed_view_multi_file(api: &mut TestApi) -> TestResult {
         @@ignore
       }
     "#};
-    let input_dms = [("user.prisma", user_dm), ("view.prisma", view_dm.to_string())];
+    let input_dms = [
+        ("user.prisma", user_dm),
+        ("view.prisma", view_dm.to_string()),
+    ];
 
     let expected = expect![[r#"
         // file: user.prisma
@@ -791,7 +813,8 @@ async fn reintrospect_removed_view_multi_file(api: &mut TestApi) -> TestResult {
 
     "#]];
 
-    api.expect_re_introspected_datamodels(&input_dms, expected).await;
+    api.expect_re_introspected_datamodels(&input_dms, expected)
+        .await;
 
     let expected = expect![""];
     api.expect_warnings(&expected).await;
@@ -940,8 +963,14 @@ async fn reintrospect_keep_configuration_when_spread_across_files(api: &mut Test
 
     api.expect_re_introspected_datamodels_with_config(
         &[
-            ("user.prisma", format!("{}\n{user_dm}", api.datasource_block_string())),
-            ("post.prisma", format!("{}\n{post_dm}", api.generator_block_string())),
+            (
+                "user.prisma",
+                format!("{}\n{user_dm}", api.datasource_block_string()),
+            ),
+            (
+                "post.prisma",
+                format!("{}\n{post_dm}", api.generator_block_string()),
+            ),
         ],
         expected,
     )
@@ -970,8 +999,14 @@ async fn reintrospect_keep_configuration_when_spread_across_files(api: &mut Test
 
     api.expect_re_introspected_datamodels_with_config(
         &[
-            ("user.prisma", format!("{}\n{user_dm}", api.generator_block_string())),
-            ("post.prisma", format!("{}\n{post_dm}", api.datasource_block_string())),
+            (
+                "user.prisma",
+                format!("{}\n{user_dm}", api.generator_block_string()),
+            ),
+            (
+                "post.prisma",
+                format!("{}\n{post_dm}", api.datasource_block_string()),
+            ),
         ],
         expected,
     )
@@ -1021,8 +1056,14 @@ async fn reintrospect_keep_configuration_when_no_models(api: &mut TestApi) -> Te
 
     api.expect_re_introspected_datamodels_with_config(
         &[
-            ("user.prisma", format!("{}\n{user_dm}", api.datasource_block_string())),
-            ("post.prisma", format!("{}\n{post_dm}", api.generator_block_string())),
+            (
+                "user.prisma",
+                format!("{}\n{user_dm}", api.datasource_block_string()),
+            ),
+            (
+                "post.prisma",
+                format!("{}\n{post_dm}", api.generator_block_string()),
+            ),
         ],
         expected,
     )
@@ -1047,8 +1088,14 @@ async fn reintrospect_keep_configuration_when_no_models(api: &mut TestApi) -> Te
 
     api.expect_re_introspected_datamodels_with_config(
         &[
-            ("user.prisma", format!("{}\n{user_dm}", api.generator_block_string())),
-            ("post.prisma", format!("{}\n{post_dm}", api.datasource_block_string())),
+            (
+                "user.prisma",
+                format!("{}\n{user_dm}", api.generator_block_string()),
+            ),
+            (
+                "post.prisma",
+                format!("{}\n{post_dm}", api.datasource_block_string()),
+            ),
         ],
         expected,
     )

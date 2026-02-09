@@ -1,13 +1,22 @@
+use std::fmt::Display;
+use std::str::FromStr;
+
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+
 use super::*;
-use crate::{BoxFuture, SqlDatamodelRenderer};
-use quaint::{prelude::Queryable, single::Quaint};
-use std::{fmt::Display, str::FromStr};
+use crate::BoxFuture;
+use crate::SqlDatamodelRenderer;
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct VitessConnectorTag;
 
 impl ConnectorTagInterface for VitessConnectorTag {
-    fn raw_execute<'a>(&'a self, query: &'a str, connection_url: &'a str) -> BoxFuture<'a, Result<(), TestError>> {
+    fn raw_execute<'a>(
+        &'a self,
+        query: &'a str,
+        connection_url: &'a str,
+    ) -> BoxFuture<'a, Result<(), TestError>> {
         Box::pin(async move {
             let conn = Quaint::new(connection_url).await?;
             Ok(conn.raw_cmd(query).await?)
@@ -42,7 +51,11 @@ impl FromStr for VitessVersion {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let version = match s {
             "8.0" => Self::V8_0,
-            _ => return Err(TestError::parse_error(format!("Unknown Vitess version `{s}`"))),
+            _ => {
+                return Err(TestError::parse_error(format!(
+                    "Unknown Vitess version `{s}`"
+                )));
+            }
         };
 
         Ok(version)

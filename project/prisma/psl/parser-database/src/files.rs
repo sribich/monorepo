@@ -1,7 +1,9 @@
-use crate::FileId;
+use std::ops::Index;
+
 use diagnostics::Diagnostics;
 use psl_ast::ast;
-use std::ops::Index;
+
+use crate::FileId;
 
 /// The content is a list of (file path, file source text, file AST).
 ///
@@ -27,7 +29,9 @@ impl Files {
 
     /// Iterate all parsed files.
     #[allow(clippy::should_implement_trait)]
-    pub fn iter(&self) -> impl Iterator<Item = (FileId, &String, &psl_ast::SourceFile, &ast::SchemaAst)> {
+    pub fn iter(
+        &self,
+    ) -> impl Iterator<Item = (FileId, &String, &psl_ast::SourceFile, &ast::SchemaAst)> {
         self.0
             .iter()
             .enumerate()
@@ -36,7 +40,9 @@ impl Files {
 
     /// Iterate all parsed files, consuming the parser database.
     #[allow(clippy::should_implement_trait)]
-    pub fn into_iter(self) -> impl Iterator<Item = (FileId, String, psl_ast::SourceFile, ast::SchemaAst)> {
+    pub fn into_iter(
+        self,
+    ) -> impl Iterator<Item = (FileId, String, psl_ast::SourceFile, ast::SchemaAst)> {
         self.0
             .into_iter()
             .enumerate()
@@ -50,7 +56,9 @@ impl Files {
 
         for error in diagnostics.errors() {
             let (file_name, source, _) = &self[error.span().file_id];
-            error.pretty_print(&mut out, file_name, source.as_str()).unwrap();
+            error
+                .pretty_print(&mut out, file_name, source.as_str())
+                .unwrap();
         }
 
         String::from_utf8(out).unwrap()

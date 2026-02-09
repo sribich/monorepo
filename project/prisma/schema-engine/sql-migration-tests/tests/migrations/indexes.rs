@@ -1,6 +1,7 @@
 mod postgres;
 
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::SQLSortOrder;
 
@@ -32,7 +33,9 @@ fn index_on_compound_relation_fields_must_work(api: TestApi) {
         table
             .assert_has_column("authorName")
             .assert_has_column("authorEmail")
-            .assert_index_on_columns(&["authorEmail", "authorName"], |idx| idx.assert_name("testIndex"))
+            .assert_index_on_columns(&["authorEmail", "authorName"], |idx| {
+                idx.assert_name("testIndex")
+            })
     });
 }
 
@@ -222,7 +225,8 @@ fn index_renaming_must_work(api: TestApi) {
                 idx.assert_is_unique().assert_name("customName")
             })
             .assert_index_on_columns(&["secondField", "field"], |idx| {
-                idx.assert_is_not_unique().assert_name("customNameNonUnique")
+                idx.assert_is_not_unique()
+                    .assert_name("customNameNonUnique")
             })
     });
 
@@ -246,7 +250,8 @@ fn index_renaming_must_work(api: TestApi) {
                 idx.assert_is_unique().assert_name("customNameA")
             })
             .assert_index_on_columns(&["secondField", "field"], |idx| {
-                idx.assert_is_not_unique().assert_name("customNameNonUniqueA")
+                idx.assert_is_not_unique()
+                    .assert_name("customNameNonUniqueA")
             })
     });
 }
@@ -283,7 +288,8 @@ fn index_renaming_must_work_when_renaming_to_default(api: TestApi) {
     api.schema_push_w_datasource(dm2).send();
     api.assert_schema().assert_table("A", |t| {
         t.assert_index_on_columns(&["field", "secondField"], |idx| {
-            idx.assert_is_unique().assert_name("A_field_secondField_key")
+            idx.assert_is_unique()
+                .assert_name("A_field_secondField_key")
         })
     });
 }
@@ -356,7 +362,10 @@ fn index_updates_with_rename_must_work(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm2).force(true).send().assert_executable();
+    api.schema_push_w_datasource(dm2)
+        .force(true)
+        .send()
+        .assert_executable();
 
     api.assert_schema().assert_table("A", |t| {
         t.assert_indexes_count(1)
@@ -401,26 +410,30 @@ fn indexes_with_an_automatically_truncated_name_are_idempotent(api: TestApi) {
 
     api.schema_push_w_datasource(dm).send().assert_green();
 
-    api.assert_schema().assert_table("TestModelWithALongName", |table| {
-        table.assert_index_on_columns(
-            &[
-                "looooooooooooongfield",
-                "evenLongerFieldNameWth",
-                "omgWhatEvenIsThatLongFieldName",
-            ],
-            |idx| {
-                idx.assert_name(if api.is_mysql() {
-                    // The size limit of identifiers is 64 bytes on MySQL
-                    // and 63 on Postgres.
-                    "TestModelWithALongName_looooooooooooongfield_evenLongerField_idx"
-                } else {
-                    "TestModelWithALongName_looooooooooooongfield_evenLongerFiel_idx"
-                })
-            },
-        )
-    });
+    api.assert_schema()
+        .assert_table("TestModelWithALongName", |table| {
+            table.assert_index_on_columns(
+                &[
+                    "looooooooooooongfield",
+                    "evenLongerFieldNameWth",
+                    "omgWhatEvenIsThatLongFieldName",
+                ],
+                |idx| {
+                    idx.assert_name(if api.is_mysql() {
+                        // The size limit of identifiers is 64 bytes on MySQL
+                        // and 63 on Postgres.
+                        "TestModelWithALongName_looooooooooooongfield_evenLongerField_idx"
+                    } else {
+                        "TestModelWithALongName_looooooooooooongfield_evenLongerFiel_idx"
+                    })
+                },
+            )
+        });
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -873,7 +886,9 @@ fn fulltext_index(api: TestApi) {
     api.schema_push(&dm).send().assert_green();
 
     api.assert_schema().assert_table("A", |table| {
-        table.assert_index_on_columns(&["a", "b"], |index| index.assert_is_fulltext().assert_name("A_a_b_idx"))
+        table.assert_index_on_columns(&["a", "b"], |index| {
+            index.assert_is_fulltext().assert_name("A_a_b_idx")
+        })
     });
 }
 
@@ -901,7 +916,9 @@ fn fulltext_index_with_map(api: TestApi) {
     api.schema_push(dm).send().assert_green();
 
     api.assert_schema().assert_table("A", |table| {
-        table.assert_index_on_columns(&["a", "b"], |index| index.assert_is_fulltext().assert_name("with_map"))
+        table.assert_index_on_columns(&["a", "b"], |index| {
+            index.assert_is_fulltext().assert_name("with_map")
+        })
     });
 }
 
@@ -915,7 +932,9 @@ fn adding_fulltext_index_to_an_existing_column(api: TestApi) {
         }
     "#};
 
-    api.schema_push(api.datamodel_with_provider(dm)).send().assert_green();
+    api.schema_push(api.datamodel_with_provider(dm))
+        .send()
+        .assert_green();
 
     api.assert_schema()
         .assert_table("A", |table| table.assert_indexes_count(0));
@@ -930,7 +949,9 @@ fn adding_fulltext_index_to_an_existing_column(api: TestApi) {
         }
     "#};
 
-    api.schema_push(api.datamodel_with_provider(dm)).send().assert_green();
+    api.schema_push(api.datamodel_with_provider(dm))
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("A", |table| {
         table.assert_index_on_columns(&["a", "b"], |index| index.assert_is_fulltext())
@@ -949,7 +970,9 @@ fn changing_normal_index_to_a_fulltext_index(api: TestApi) {
         }
     "#};
 
-    api.schema_push(api.datamodel_with_provider(dm)).send().assert_green();
+    api.schema_push(api.datamodel_with_provider(dm))
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("A", |table| {
         table.assert_indexes_count(1);
@@ -966,7 +989,9 @@ fn changing_normal_index_to_a_fulltext_index(api: TestApi) {
         }
     "#};
 
-    api.schema_push(api.datamodel_with_provider(dm)).send().assert_green();
+    api.schema_push(api.datamodel_with_provider(dm))
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("A", |table| {
         table.assert_indexes_count(1);
@@ -1016,6 +1041,10 @@ fn changing_unique_to_pk_works(api: TestApi) {
     api.schema_push_w_datasource(dm2).send().assert_green();
 
     api.assert_schema()
-        .assert_table("A", |table| table.assert_pk(|pk| pk.assert_columns(&["id"])))
-        .assert_table("B", |table| table.assert_pk(|pk| pk.assert_columns(&["x", "y"])));
+        .assert_table("A", |table| {
+            table.assert_pk(|pk| pk.assert_columns(&["id"]))
+        })
+        .assert_table("B", |table| {
+            table.assert_pk(|pk| pk.assert_columns(&["x", "y"]))
+        });
 }

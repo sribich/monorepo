@@ -1,9 +1,8 @@
 use std::any::Any;
 
-use psl::{
-    datamodel_connector::NativeTypeInstance,
-    parser_database::{NoExtensionTypes, ScalarType},
-};
+use psl::datamodel_connector::NativeTypeInstance;
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::ScalarType;
 use sql_migration_tests::test_api::TestApi;
 
 pub(crate) const SIMPLE_SCHEMA: &str = r#"

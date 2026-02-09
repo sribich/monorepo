@@ -84,7 +84,9 @@ mod one_relation {
         );
 
         runner
-            .query(r#"mutation { createOnePost(data: { title: "Post 4" popularity: 5 }) { title } }"#)
+            .query(
+                r#"mutation { createOnePost(data: { title: "Post 4" popularity: 5 }) { title } }"#,
+            )
             .await?
             .assert_success();
 
@@ -132,7 +134,9 @@ mod one_relation {
         );
 
         runner
-            .query(r#"mutation { createOnePost(data: { title: "Post 4" popularity: 5 }) { title } }"#)
+            .query(
+                r#"mutation { createOnePost(data: { title: "Post 4" popularity: 5 }) { title } }"#,
+            )
             .await?
             .assert_success();
 

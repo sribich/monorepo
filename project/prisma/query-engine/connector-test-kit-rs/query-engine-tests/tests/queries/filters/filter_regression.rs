@@ -223,7 +223,9 @@ mod fr_m_to_n {
 
 async fn test_location(runner: &Runner, data: &str) -> TestResult<()> {
     runner
-        .query(format!("mutation {{ createOneLocation(data: {data}) {{ id }} }}"))
+        .query(format!(
+            "mutation {{ createOneLocation(data: {data}) {{ id }} }}"
+        ))
         .await?
         .assert_success();
 
@@ -232,7 +234,9 @@ async fn test_location(runner: &Runner, data: &str) -> TestResult<()> {
 
 async fn test_company(runner: &Runner, data: &str) -> TestResult<()> {
     runner
-        .query(format!("mutation {{ createOneCompany(data: {data}) {{ id }} }}"))
+        .query(format!(
+            "mutation {{ createOneCompany(data: {data}) {{ id }} }}"
+        ))
         .await?
         .assert_success();
 

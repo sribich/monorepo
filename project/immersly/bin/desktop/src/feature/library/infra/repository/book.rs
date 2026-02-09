@@ -42,7 +42,8 @@ impl BookReader for SqliteBookReader {
                     ExistingPath::new_unchecked(it.rendered_path),
                     ExistingPath::new_unchecked(it.rendered_audio_path.unwrap()),
                     Muid::from_slice_unchecked(&it.audio_resource_id.unwrap()),
-                    it.image_resource_id.map(|it| Muid::from_slice_unchecked(&it)),
+                    it.image_resource_id
+                        .map(|it| Muid::from_slice_unchecked(&it)),
                 )
             })
             .collect::<Vec<_>>()

@@ -1,16 +1,27 @@
-use super::{SqlSchemaDifferFlavour, column, enums::EnumDiffer, table::TableDiffer};
-use crate::{SqlDatabaseSchema, migration_pair::MigrationPair};
+use std::borrow::Cow;
+use std::collections::BTreeMap;
+use std::collections::BTreeSet;
+use std::collections::HashMap;
+use std::ops::Bound;
+
 use indexmap::IndexMap;
-use sql_schema_describer::{
-    NamespaceId, NamespaceWalker, TableColumnId, TableId,
-    postgres::{ExtensionId, ExtensionWalker, PostgresSchemaExt},
-    walkers::{EnumWalker, TableColumnWalker, TableWalker},
-};
-use std::{
-    borrow::Cow,
-    collections::{BTreeMap, BTreeSet, HashMap},
-    ops::Bound,
-};
+use sql_schema_describer::NamespaceId;
+use sql_schema_describer::NamespaceWalker;
+use sql_schema_describer::TableColumnId;
+use sql_schema_describer::TableId;
+use sql_schema_describer::postgres::ExtensionId;
+use sql_schema_describer::postgres::ExtensionWalker;
+use sql_schema_describer::postgres::PostgresSchemaExt;
+use sql_schema_describer::walkers::EnumWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+
+use super::SqlSchemaDifferFlavour;
+use super::column;
+use super::enums::EnumDiffer;
+use super::table::TableDiffer;
+use crate::SqlDatabaseSchema;
+use crate::migration_pair::MigrationPair;
 
 type Table<'a> = (Option<Cow<'a, str>>, Cow<'a, str>);
 
@@ -61,7 +72,8 @@ impl<'a> DifferDatabase<'a> {
 
         let mut columns_cache = HashMap::new();
         let table_is_ignored = |table_name: &str| {
-            table_name == crate::MIGRATIONS_TABLE_NAME || flavour.table_should_be_ignored(table_name)
+            table_name == crate::MIGRATIONS_TABLE_NAME
+                || flavour.table_should_be_ignored(table_name)
         };
 
         // First insert all namespaces from the previous schema.
@@ -160,7 +172,9 @@ impl<'a> DifferDatabase<'a> {
         db
     }
 
-    pub(crate) fn all_column_pairs(&self) -> impl Iterator<Item = MigrationPair<TableColumnId>> + '_ {
+    pub(crate) fn all_column_pairs(
+        &self,
+    ) -> impl Iterator<Item = MigrationPair<TableColumnId>> + '_ {
         self.columns.iter().filter_map(|(_, cols)| cols.transpose())
     }
 
@@ -168,10 +182,14 @@ impl<'a> DifferDatabase<'a> {
         &self,
         table: MigrationPair<TableId>,
     ) -> impl Iterator<Item = MigrationPair<TableColumnId>> + '_ {
-        self.range_columns(table).filter_map(|(_k, v)| v.transpose())
+        self.range_columns(table)
+            .filter_map(|(_k, v)| v.transpose())
     }
 
-    pub(crate) fn column_changes(&self, column: MigrationPair<TableColumnId>) -> column::ColumnChanges {
+    pub(crate) fn column_changes(
+        &self,
+        column: MigrationPair<TableColumnId>,
+    ) -> column::ColumnChanges {
         self.column_changes[&column]
     }
 
@@ -182,7 +200,10 @@ impl<'a> DifferDatabase<'a> {
         self.column_changes(walkers.map(|c| c.id))
     }
 
-    pub(crate) fn created_columns(&self, table: MigrationPair<TableId>) -> impl Iterator<Item = TableColumnId> + '_ {
+    pub(crate) fn created_columns(
+        &self,
+        table: MigrationPair<TableId>,
+    ) -> impl Iterator<Item = TableColumnId> + '_ {
         self.range_columns(table)
             .filter(|(_k, v)| v.previous.is_none())
             .filter_map(|(_k, v)| v.next)
@@ -205,7 +226,10 @@ impl<'a> DifferDatabase<'a> {
             .filter(|namespace| !self.is_namespace_external(namespace))
     }
 
-    pub(crate) fn dropped_columns(&self, table: MigrationPair<TableId>) -> impl Iterator<Item = TableColumnId> + '_ {
+    pub(crate) fn dropped_columns(
+        &self,
+        table: MigrationPair<TableId>,
+    ) -> impl Iterator<Item = TableColumnId> + '_ {
         self.range_columns(table)
             .filter(|(_k, v)| v.next.is_none())
             .filter_map(|(_k, v)| v.previous)
@@ -245,12 +269,18 @@ impl<'a> DifferDatabase<'a> {
     }
 
     /// Same as `table_pairs()`, but with the redefined tables filtered out.
-    pub(crate) fn non_redefined_table_pairs<'db>(&'db self) -> impl Iterator<Item = TableDiffer<'a, 'db>> + 'db {
+    pub(crate) fn non_redefined_table_pairs<'db>(
+        &'db self,
+    ) -> impl Iterator<Item = TableDiffer<'a, 'db>> + 'db {
         self.table_pairs()
             .filter(move |differ| !self.tables_to_redefine.contains(&differ.table_ids()))
     }
 
-    pub(crate) fn table_is_redefined(&self, namespace: Option<Cow<'_, str>>, table_name: Cow<'_, str>) -> bool {
+    pub(crate) fn table_is_redefined(
+        &self,
+        namespace: Option<Cow<'_, str>>,
+        table_name: Cow<'_, str>,
+    ) -> bool {
         self.tables
             .get(&(namespace, table_name))
             .and_then(|pair| pair.transpose())
@@ -269,8 +299,11 @@ impl<'a> DifferDatabase<'a> {
     }
 
     pub(crate) fn created_enums<'db>(&'db self) -> impl Iterator<Item = EnumWalker<'a>> + 'db {
-        self.next_enums()
-            .filter(move |next| !self.previous_enums().any(|previous| enums_match(&previous, next)))
+        self.next_enums().filter(move |next| {
+            !self
+                .previous_enums()
+                .any(|previous| enums_match(&previous, next))
+        })
     }
 
     pub(crate) fn dropped_enums<'db>(&'db self) -> impl Iterator<Item = EnumWalker<'a>> + 'db {
@@ -318,7 +351,7 @@ impl<'a> DifferDatabase<'a> {
 
     /// A namespace is external if it contains only external tables.
     /// If a a namespace is fully external we don't want to create `CREATE SCHEMA` statements for it.
-    /// 
+    ///
     /// TODO(sr): This is actually a misnomer because an empty namespace will be "external"
     ///           even though it just has no tables, which is expected behavior.
     fn is_namespace_external(&self, namespace: &NamespaceWalker<'_>) -> bool {
@@ -329,31 +362,32 @@ impl<'a> DifferDatabase<'a> {
             .next()
             .is_none();
 
-        let has_enums = self.created_enums().any(|e| e.namespace() == Some(namespace.name()));
+        let has_enums = self
+            .created_enums()
+            .any(|e| e.namespace() == Some(namespace.name()));
         all_tables_are_external && !has_enums
     }
 
     fn previous_enums(&self) -> impl Iterator<Item = EnumWalker<'a>> {
-        self.schemas
-            .previous
-            .describer_schema
-            .enum_walkers()
+        self.schemas.previous.describer_schema.enum_walkers()
     }
 
     fn next_enums(&self) -> impl Iterator<Item = EnumWalker<'a>> {
-        self.schemas
-            .next
-            .describer_schema
-            .enum_walkers()
+        self.schemas.next.describer_schema.enum_walkers()
     }
 
     fn previous_extensions(&self) -> impl Iterator<Item = ExtensionWalker<'a>> {
-        let conn_data: &PostgresSchemaExt = self.schemas.previous.describer_schema.downcast_connector_data();
+        let conn_data: &PostgresSchemaExt = self
+            .schemas
+            .previous
+            .describer_schema
+            .downcast_connector_data();
         conn_data.extension_walkers()
     }
 
     fn next_extensions(&self) -> impl Iterator<Item = ExtensionWalker<'a>> {
-        let conn_data: &PostgresSchemaExt = self.schemas.next.describer_schema.downcast_connector_data();
+        let conn_data: &PostgresSchemaExt =
+            self.schemas.next.describer_schema.downcast_connector_data();
         conn_data.extension_walkers()
     }
 }
@@ -361,10 +395,13 @@ impl<'a> DifferDatabase<'a> {
 pub(crate) fn extensions_match(previous: ExtensionWalker<'_>, next: ExtensionWalker<'_>) -> bool {
     let names_match = previous.name() == next.name();
 
-    let versions_match =
-        previous.version() == next.version() || previous.version().is_empty() || next.version().is_empty();
+    let versions_match = previous.version() == next.version()
+        || previous.version().is_empty()
+        || next.version().is_empty();
 
-    let schemas_match = previous.schema() == next.schema() || previous.schema().is_empty() || next.schema().is_empty();
+    let schemas_match = previous.schema() == next.schema()
+        || previous.schema().is_empty()
+        || next.schema().is_empty();
 
     names_match && versions_match && schemas_match
 }

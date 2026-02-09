@@ -1,13 +1,20 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_comments::*,
-    parse_expression::parse_expression,
-};
-use crate::ast::{self, *};
-use diagnostics::{DatamodelError, Diagnostics, FileId};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
 
-pub(crate) fn parse_config_block(pair: Pair<'_>, diagnostics: &mut Diagnostics, file_id: FileId) -> Top {
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_comments::*;
+use super::parse_expression::parse_expression;
+use crate::ast::*;
+use crate::ast::{self};
+
+pub(crate) fn parse_config_block(
+    pair: Pair<'_>,
+    diagnostics: &mut Diagnostics,
+    file_id: FileId,
+) -> Top {
     let pair_span = pair.as_span();
     let mut name: Option<Identifier> = None;
     let mut properties = Vec::new();
@@ -21,7 +28,9 @@ pub(crate) fn parse_config_block(pair: Pair<'_>, diagnostics: &mut Diagnostics, 
                 inner_span = Some((file_id, current.as_span()).into());
                 for item in current.into_inner() {
                     match item.as_rule() {
-                        Rule::key_value => properties.push(parse_key_value(item, diagnostics, file_id)),
+                        Rule::key_value => {
+                            properties.push(parse_key_value(item, diagnostics, file_id))
+                        }
                         Rule::comment_block => comment = parse_comment_block(item),
                         Rule::BLOCK_LEVEL_CATCH_ALL => {
                             let msg = format!(
@@ -29,7 +38,10 @@ pub(crate) fn parse_config_block(pair: Pair<'_>, diagnostics: &mut Diagnostics, 
                                 kw.unwrap_or("configuration block")
                             );
 
-                            let err = DatamodelError::new_validation_error(&msg, (file_id, item.as_span()).into());
+                            let err = DatamodelError::new_validation_error(
+                                &msg,
+                                (file_id, item.as_span()).into(),
+                            );
                             diagnostics.push_error(err);
                         }
                         _ => parsing_catch_all(&item, "source"),
@@ -62,7 +74,11 @@ pub(crate) fn parse_config_block(pair: Pair<'_>, diagnostics: &mut Diagnostics, 
     }
 }
 
-fn parse_key_value(pair: Pair<'_>, diagnostics: &mut Diagnostics, file_id: FileId) -> ConfigBlockProperty {
+fn parse_key_value(
+    pair: Pair<'_>,
+    diagnostics: &mut Diagnostics,
+    file_id: FileId,
+) -> ConfigBlockProperty {
     let mut name: Option<Identifier> = None;
     let mut value: Option<Expression> = None;
     let (pair_span, pair_str) = (pair.as_span(), pair.as_str());

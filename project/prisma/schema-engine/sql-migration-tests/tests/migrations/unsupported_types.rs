@@ -26,7 +26,8 @@ fn adding_an_unsupported_type_must_work(api: TestApi) {
         table
             .assert_columns_count(2)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_ip", |c| {
                 c.assert_is_required()
@@ -38,7 +39,8 @@ fn adding_an_unsupported_type_must_work(api: TestApi) {
         table
             .assert_columns_count(2)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("balance", |c| {
                 c.assert_is_required()
@@ -63,7 +65,8 @@ fn switching_an_unsupported_type_to_supported_must_work(api: TestApi) {
         table
             .assert_columns_count(3)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_home", |c| {
                 c.assert_is_required()
@@ -89,13 +92,16 @@ fn switching_an_unsupported_type_to_supported_must_work(api: TestApi) {
         table
             .assert_columns_count(3)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_home", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::String)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::String)
             })
             .assert_column("user_location", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::String)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::String)
             })
     });
 }
@@ -122,7 +128,8 @@ fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
         table
             .assert_columns_count(2)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_ip", |c| {
                 c.assert_is_required()
@@ -134,7 +141,8 @@ fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
         table
             .assert_columns_count(4)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("number", |c| {
                 c.assert_is_nullable()
@@ -167,7 +175,8 @@ fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
             .assert_columns_count(2)
             .assert_index_on_columns(&["user_ip"], |index| index.assert_is_unique())
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_ip", |c| {
                 c.assert_is_nullable()
@@ -188,7 +197,8 @@ fn adding_and_removing_properties_on_unsupported_should_work(api: TestApi) {
         table
             .assert_columns_count(2)
             .assert_column("id", |c| {
-                c.assert_is_required().assert_type_family(ColumnTypeFamily::Int)
+                c.assert_is_required()
+                    .assert_type_family(ColumnTypeFamily::Int)
             })
             .assert_column("user_ip", |c| {
                 c.assert_is_required()

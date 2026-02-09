@@ -1,5 +1,7 @@
+use diagnostics::DatamodelError;
+use diagnostics::Span;
+
 use crate::datamodel_connector::Connector;
-use diagnostics::{DatamodelError, Span};
 
 pub struct ConstraintNames;
 
@@ -29,7 +31,6 @@ impl ConstraintNames {
     /// check for a Check constraint
     /// excl for an Exclusion constraint
     /// seq for sequences
-    ///
     pub fn primary_key_name(table_name: &str, connector: &dyn Connector) -> String {
         let suffix = "_pkey";
         let limit = connector.max_identifier_length();
@@ -45,13 +46,21 @@ impl ConstraintNames {
         format!("{table_name}{suffix}")
     }
 
-    pub fn unique_index_name(table_name: &str, column_names: &[&str], connector: &dyn Connector) -> String {
+    pub fn unique_index_name(
+        table_name: &str,
+        column_names: &[&str],
+        connector: &dyn Connector,
+    ) -> String {
         const UNIQUE_SUFFIX: &str = "_key";
 
         Self::index_name_impl(table_name, column_names, UNIQUE_SUFFIX, connector)
     }
 
-    pub fn non_unique_index_name(table_name: &str, column_names: &[&str], connector: &dyn Connector) -> String {
+    pub fn non_unique_index_name(
+        table_name: &str,
+        column_names: &[&str],
+        connector: &dyn Connector,
+    ) -> String {
         const INDEX_SUFFIX: &str = "_idx";
 
         Self::index_name_impl(table_name, column_names, INDEX_SUFFIX, connector)
@@ -97,7 +106,11 @@ impl ConstraintNames {
     ///
     /// - table_name: the name of the _constrained_/_referencing_ table, not the referenced one.
     /// - column names: the _constrained_ column names
-    pub fn foreign_key_constraint_name(table_name: &str, column_names: &[&str], connector: &dyn Connector) -> String {
+    pub fn foreign_key_constraint_name(
+        table_name: &str,
+        column_names: &[&str],
+        connector: &dyn Connector,
+    ) -> String {
         let fk_suffix = "_fkey";
         let limit = connector.max_identifier_length();
 

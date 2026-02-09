@@ -1,8 +1,14 @@
-use super::*;
-use crate::{AggregateRecordsQuery, query_document::ParsedField};
-use query_structure::{Model, RelationLoadStrategy};
+use query_structure::Model;
+use query_structure::RelationLoadStrategy;
 
-pub(crate) fn aggregate(field: ParsedField<'_>, model: Model) -> QueryGraphBuilderResult<ReadQuery> {
+use super::*;
+use crate::AggregateRecordsQuery;
+use crate::query_document::ParsedField;
+
+pub(crate) fn aggregate(
+    field: ParsedField<'_>,
+    model: Model,
+) -> QueryGraphBuilderResult<ReadQuery> {
     let name = field.name;
     let alias = field.alias;
     let model = model;

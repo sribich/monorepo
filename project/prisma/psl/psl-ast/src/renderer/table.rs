@@ -1,5 +1,6 @@
-use super::LineWriteable;
 use std::cmp::max;
+
+use super::LineWriteable;
 
 const COLUMN_SPACING: usize = 1;
 

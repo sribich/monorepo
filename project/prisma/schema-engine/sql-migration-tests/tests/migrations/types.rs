@@ -16,7 +16,10 @@ fn bytes_columns_are_idempotent(api: TestApi) {
         .assert_green()
         .assert_has_executed_steps();
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -33,7 +36,10 @@ fn float_columns_are_idempotent(api: TestApi) {
         .assert_green()
         .assert_has_executed_steps();
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -50,7 +56,10 @@ fn decimal_columns_are_idempotent(api: TestApi) {
         .assert_green()
         .assert_has_executed_steps();
 
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector]
@@ -65,7 +74,9 @@ fn float_to_decimal_works(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Cat", |table| {
-        table.assert_column("meowFrequency", |col| col.assert_type_family(ColumnTypeFamily::Float))
+        table.assert_column("meowFrequency", |col| {
+            col.assert_type_family(ColumnTypeFamily::Float)
+        })
     });
 
     let dm2 = r#"
@@ -81,7 +92,9 @@ fn float_to_decimal_works(api: TestApi) {
         .assert_has_executed_steps();
 
     api.assert_schema().assert_table("Cat", |table| {
-        table.assert_column("meowFrequency", |col| col.assert_type_family(ColumnTypeFamily::Decimal))
+        table.assert_column("meowFrequency", |col| {
+            col.assert_type_family(ColumnTypeFamily::Decimal)
+        })
     });
 }
 
@@ -97,7 +110,9 @@ fn decimal_to_float_works(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Cat", |table| {
-        table.assert_column("meowFrequency", |col| col.assert_type_family(ColumnTypeFamily::Decimal))
+        table.assert_column("meowFrequency", |col| {
+            col.assert_type_family(ColumnTypeFamily::Decimal)
+        })
     });
 
     let dm2 = r#"
@@ -113,7 +128,9 @@ fn decimal_to_float_works(api: TestApi) {
         .assert_has_executed_steps();
 
     api.assert_schema().assert_table("Cat", |table| {
-        table.assert_column("meowFrequency", |col| col.assert_type_family(ColumnTypeFamily::Float))
+        table.assert_column("meowFrequency", |col| {
+            col.assert_type_family(ColumnTypeFamily::Float)
+        })
     });
 }
 
@@ -193,7 +210,9 @@ fn decimal_to_decimal_array_works(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("decFloat", |col| col.assert_type_is_decimal().assert_is_required())
+        table.assert_column("decFloat", |col| {
+            col.assert_type_is_decimal().assert_is_required()
+        })
     });
 
     let dm2 = r#"
@@ -209,13 +228,17 @@ fn decimal_to_decimal_array_works(api: TestApi) {
         .assert_has_executed_steps();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("decFloat", |col| col.assert_type_is_decimal().assert_is_list())
+        table.assert_column("decFloat", |col| {
+            col.assert_type_is_decimal().assert_is_list()
+        })
     });
 
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("decFloat", |col| col.assert_type_is_decimal().assert_is_required())
+        table.assert_column("decFloat", |col| {
+            col.assert_type_is_decimal().assert_is_required()
+        })
     });
 }
 
@@ -231,7 +254,9 @@ fn bytes_to_bytes_array_works(api: TestApi) {
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("bytesCol", |col| col.assert_type_is_bytes().assert_is_required())
+        table.assert_column("bytesCol", |col| {
+            col.assert_type_is_bytes().assert_is_required()
+        })
     });
 
     let dm2 = r#"
@@ -247,13 +272,17 @@ fn bytes_to_bytes_array_works(api: TestApi) {
         .assert_has_executed_steps();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("bytesCol", |col| col.assert_type_is_bytes().assert_is_list())
+        table.assert_column("bytesCol", |col| {
+            col.assert_type_is_bytes().assert_is_list()
+        })
     });
 
     api.schema_push_w_datasource(dm1).send().assert_green();
 
     api.assert_schema().assert_table("Test", |table| {
-        table.assert_column("bytesCol", |col| col.assert_type_is_bytes().assert_is_required())
+        table.assert_column("bytesCol", |col| {
+            col.assert_type_is_bytes().assert_is_required()
+        })
     });
 }
 

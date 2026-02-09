@@ -1,6 +1,9 @@
-use std::{borrow::Cow, sync::LazyLock};
+use std::borrow::Cow;
+use std::sync::LazyLock;
 
-use tracing_subscriber::{EnvFilter, filter::filter_fn, layer::Filter};
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::filter::filter_fn;
+use tracing_subscriber::layer::Filter;
 
 pub static SHOW_ALL_TRACES: LazyLock<bool> = LazyLock::new(|| {
     std::env::var("PRISMA_SHOW_ALL_TRACES")
@@ -71,8 +74,7 @@ impl<'a> EnvFilterBuilder<'a> {
             .add_directive(format!("sql_query_connector={level}").parse().unwrap());
 
         if self.log_queries {
-            filter = filter
-                .add_directive("quaint[{is_query}]=trace".parse().unwrap());
+            filter = filter.add_directive("quaint[{is_query}]=trace".parse().unwrap());
         }
 
         filter

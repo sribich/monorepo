@@ -1,8 +1,11 @@
+use std::io::Write as _;
+use std::path::Path;
+use std::sync::Arc;
+
 use psl::ALL_PREVIEW_FEATURES;
 use query_core::query_graph_builder::QueryGraphBuilder;
 use request_handlers::JsonSingleQuery;
 use serde_json::json;
-use std::{io::Write as _, path::Path, sync::Arc};
 
 const TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/query_validation_tests");
 
@@ -19,10 +22,16 @@ fn run_query_validation_test(query_file_path: &str) {
         .chain(ALL_PREVIEW_FEATURES.hidden_features())
         .collect();
     let parsed_schema = psl::parse_schema_without_extensions(schema).unwrap();
-    let schema = Arc::new(schema::build_with_features(Arc::new(parsed_schema), all_features, true));
+    let schema = Arc::new(schema::build_with_features(
+        Arc::new(parsed_schema),
+        all_features,
+        true,
+    ));
 
     let err_string = match validate(&query, &schema) {
-        Ok(()) => panic!("these tests are only for errors, the query should fail to validate, but it did not"),
+        Ok(()) => panic!(
+            "these tests are only for errors, the query should fail to validate, but it did not"
+        ),
         Err(err) => {
             let value = json!(user_facing_errors::Error::from(err));
             serde_json::to_string_pretty(&value).unwrap()
@@ -83,7 +92,10 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk<'_>>) -> String {
     buf
 }
 
-fn validate(query: &str, schema: &schema::QuerySchema) -> Result<(), request_handlers::HandlerError> {
+fn validate(
+    query: &str,
+    schema: &schema::QuerySchema,
+) -> Result<(), request_handlers::HandlerError> {
     let json_request: JsonSingleQuery = serde_json::from_str(query).unwrap();
     let mut adapter = request_handlers::JsonProtocolAdapter::new(schema);
     let operation = adapter.convert_single(json_request)?;

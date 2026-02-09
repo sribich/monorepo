@@ -1,15 +1,26 @@
-pub use expect_test::expect;
-pub use indoc::{formatdoc, indoc};
-pub use quaint::{prelude::Queryable, single::Quaint};
-pub use test_macros::test_connector;
-pub use test_setup::{BitFlags, Tags, runtime::run_with_thread_local_runtime as tok};
-
-use quaint::prelude::SqlFamily;
-use sql_schema_describer::{
-    ColumnTypeFamily, DescriberError, ForeignKeyAction, SqlSchema, SqlSchemaDescriberBackend, mysql, postgres,
-    walkers::{ForeignKeyWalker, IndexWalker, TableColumnWalker, TableWalker},
-};
 use std::future::Future;
+
+pub use expect_test::expect;
+pub use indoc::formatdoc;
+pub use indoc::indoc;
+pub use quaint::prelude::Queryable;
+use quaint::prelude::SqlFamily;
+pub use quaint::single::Quaint;
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::DescriberError;
+use sql_schema_describer::ForeignKeyAction;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::SqlSchemaDescriberBackend;
+use sql_schema_describer::mysql;
+use sql_schema_describer::postgres;
+use sql_schema_describer::walkers::ForeignKeyWalker;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+pub use test_macros::test_connector;
+pub use test_setup::BitFlags;
+pub use test_setup::Tags;
+pub use test_setup::runtime::run_with_thread_local_runtime as tok;
 use test_setup::*;
 
 pub struct TestApi {
@@ -223,7 +234,10 @@ impl TableAssertion<'_> {
             .indexes()
             .find(|i| {
                 let lengths_match = i.columns().len() == columns.len();
-                let columns_match = i.columns().zip(columns.iter()).all(|(a, b)| a.as_column().name() == *b);
+                let columns_match = i
+                    .columns()
+                    .zip(columns.iter())
+                    .all(|(a, b)| a.as_column().name() == *b);
 
                 lengths_match && columns_match
             })
@@ -276,7 +290,10 @@ impl ColumnAssertion<'_> {
 
     pub fn assert_type_is_int_or_bigint(&self) -> &Self {
         let fam = self.column.column_type_family();
-        assert!(fam.is_int() || fam.is_bigint(), "Expected int or bigint, got {fam:?}");
+        assert!(
+            fam.is_int() || fam.is_bigint(),
+            "Expected int or bigint, got {fam:?}"
+        );
         self
     }
 

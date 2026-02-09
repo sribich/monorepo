@@ -1,10 +1,14 @@
-use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
-use schema_connector::{
-    Warnings,
-    warnings::{IndexedColumn, Model, ModelAndConstraint},
-};
-use sql::{ForeignKeyWalker, IndexWalker, TableWalker, postgres::PostgresSchemaExt};
+use schema_connector::Warnings;
+use schema_connector::warnings::IndexedColumn;
+use schema_connector::warnings::Model;
+use schema_connector::warnings::ModelAndConstraint;
+use sql::ForeignKeyWalker;
+use sql::IndexWalker;
+use sql::TableWalker;
+use sql::postgres::PostgresSchemaExt;
 use sql_schema_describer as sql;
+
+use crate::introspection::datamodel_calculator::DatamodelCalculatorContext;
 
 pub(crate) struct PostgresIntrospectionFlavour;
 
@@ -18,11 +22,16 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
 
         for table in ctx.sql_schema.table_walkers() {
             for index in table.indexes() {
-                for column in index.columns().filter(|c| self.uses_non_default_null_position(ctx, *c)) {
-                    warnings.non_default_index_null_sort_order.push(IndexedColumn {
-                        index_name: index.name().to_string(),
-                        column_name: column.name().to_string(),
-                    });
+                for column in index
+                    .columns()
+                    .filter(|c| self.uses_non_default_null_position(ctx, *c))
+                {
+                    warnings
+                        .non_default_index_null_sort_order
+                        .push(IndexedColumn {
+                            index_name: index.name().to_string(),
+                            column_name: column.name().to_string(),
+                        });
                 }
 
                 if self.uses_non_default_index_deferring(ctx, index) {
@@ -61,11 +70,19 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
     }
 
     // TODO(sr): is_cockroach
-    fn uses_row_level_ttl(&self, ctx: &DatamodelCalculatorContext<'_>, table: TableWalker<'_>) -> bool {
+    fn uses_row_level_ttl(
+        &self,
+        ctx: &DatamodelCalculatorContext<'_>,
+        table: TableWalker<'_>,
+    ) -> bool {
         false
     }
 
-    fn uses_non_default_index_deferring(&self, ctx: &DatamodelCalculatorContext<'_>, index: IndexWalker<'_>) -> bool {
+    fn uses_non_default_index_deferring(
+        &self,
+        ctx: &DatamodelCalculatorContext<'_>,
+        index: IndexWalker<'_>,
+    ) -> bool {
         let pg_ext: &PostgresSchemaExt = ctx.sql_schema.downcast_connector_data();
 
         pg_ext.non_default_index_constraint_deferring(index.id)
@@ -91,7 +108,11 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
         pg_ext.non_default_null_position(column)
     }
 
-    fn uses_exclude_constraint(&self, ctx: &DatamodelCalculatorContext<'_>, table: TableWalker<'_>) -> bool {
+    fn uses_exclude_constraint(
+        &self,
+        ctx: &DatamodelCalculatorContext<'_>,
+        table: TableWalker<'_>,
+    ) -> bool {
         let pg_ext: &PostgresSchemaExt = ctx.sql_schema.downcast_connector_data();
         pg_ext.uses_exclude_constraint(table.id)
     }

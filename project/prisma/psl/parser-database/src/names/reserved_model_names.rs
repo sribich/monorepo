@@ -1,14 +1,19 @@
-use crate::{
-    DatamodelError, Diagnostics,
-    ast::{self, WithName, WithSpan},
-};
+use crate::DatamodelError;
+use crate::Diagnostics;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
 
 /// Is this a valid type name for the Prisma Client API?
 pub fn is_reserved_type_name(name: &str) -> bool {
     RESERVED_NAMES.contains(&name)
 }
 
-pub(crate) fn validate_model_name(ast_model: &ast::Model, block_type: &'static str, diagnostics: &mut Diagnostics) {
+pub(crate) fn validate_model_name(
+    ast_model: &ast::Model,
+    block_type: &'static str,
+    diagnostics: &mut Diagnostics,
+) {
     if !is_reserved_type_name(ast_model.name()) {
         return;
     }

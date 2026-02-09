@@ -2,7 +2,8 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod upsert_inside_update {
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "a PM to C1!  relation with a child already in a relation" should "work with create"

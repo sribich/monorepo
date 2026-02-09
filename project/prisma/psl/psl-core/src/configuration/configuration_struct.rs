@@ -1,10 +1,11 @@
-use super::{Datasource, Generator};
-use crate::{
-    PreviewFeature,
-    datamodel_connector::RelationMode,
-    diagnostics::{DatamodelError, Diagnostics},
-};
 use enumflags2::BitFlags;
+
+use super::Datasource;
+use super::Generator;
+use crate::PreviewFeature;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
 
 #[derive(Clone, Debug, Default)]
 pub struct Configuration {
@@ -45,7 +46,9 @@ impl Configuration {
     }
 
     pub fn relation_mode(&self) -> Option<RelationMode> {
-        self.datasources.first().map(|source| source.relation_mode())
+        self.datasources
+            .first()
+            .map(|source| source.relation_mode())
     }
 
     pub fn max_identifier_length(&self) -> usize {
@@ -56,9 +59,11 @@ impl Configuration {
     }
 
     pub fn preview_features(&self) -> BitFlags<PreviewFeature> {
-        self.generators.iter().fold(BitFlags::empty(), |acc, generator| {
-            acc | generator.preview_features.unwrap_or_default()
-        })
+        self.generators
+            .iter()
+            .fold(BitFlags::empty(), |acc, generator| {
+                acc | generator.preview_features.unwrap_or_default()
+            })
     }
 
     /// Resolve datasource url for query engine.
@@ -75,7 +80,10 @@ impl Configuration {
         F: Fn(&str) -> Option<String> + Copy,
     {
         for datasource in &mut self.datasources {
-            if let Some((_, url)) = url_overrides.iter().find(|(name, _url)| name == &datasource.name) {
+            if let Some((_, url)) = url_overrides
+                .iter()
+                .find(|(name, _url)| name == &datasource.name)
+            {
                 datasource.url.value = Some(url.clone());
                 datasource.url.from_env_var = None;
             }
@@ -118,14 +126,19 @@ impl Configuration {
         F: Fn(&str) -> Option<String> + Copy,
     {
         for datasource in &mut self.datasources {
-            if let Some((_, url)) = url_overrides.iter().find(|(name, _url)| name == &datasource.name) {
+            if let Some((_, url)) = url_overrides
+                .iter()
+                .find(|(name, _url)| name == &datasource.name)
+            {
                 datasource.url.value = Some(url.clone());
                 datasource.url.from_env_var = None;
             }
 
             let mut has_direct_url = false;
 
-            if let (Some(direct_url), Some(span)) = (&datasource.direct_url, &datasource.direct_url_span) {
+            if let (Some(direct_url), Some(span)) =
+                (&datasource.direct_url, &datasource.direct_url_span)
+            {
                 let result = match super::from_url(direct_url, env) {
                     Err(err) => match err {
                         super::UrlValidationError::EmptyUrlValue => {
@@ -145,9 +158,11 @@ impl Configuration {
                                 *span,
                             ))
                         }
-                        super::UrlValidationError::NoEnvValue(env_var) => Err(
-                            DatamodelError::new_environment_functional_evaluation_error(env_var, *span),
-                        ),
+                        super::UrlValidationError::NoEnvValue(env_var) => {
+                            Err(DatamodelError::new_environment_functional_evaluation_error(
+                                env_var, *span,
+                            ))
+                        }
                         super::UrlValidationError::NoUrlOrEnv => Ok(None),
                     },
                     Ok(res) => Ok(Some(res)),
@@ -176,6 +191,8 @@ impl Configuration {
     }
 
     pub fn first_datasource(&self) -> &Datasource {
-        self.datasources.first().expect("Expected a datasource to exist.")
+        self.datasources
+            .first()
+            .expect("Expected a datasource to exist.")
     }
 }

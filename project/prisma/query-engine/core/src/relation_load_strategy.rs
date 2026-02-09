@@ -1,11 +1,13 @@
-use connector::error::{ConnectorError, ErrorKind};
+use connector::error::ConnectorError;
+use connector::error::ErrorKind;
 
 use crate::CoreError;
 
 /// Returns whether the database supports joins given its version.
 /// Only versions of the MySQL connector are currently parsed at runtime.
 pub fn db_version_supports_joins_strategy(db_version: Option<String>) -> crate::Result<bool> {
-    DatabaseVersion::try_from(db_version.as_deref()).map(|version| version.supports_join_relation_load_strategy())
+    DatabaseVersion::try_from(db_version.as_deref())
+        .map(|version| version.supports_join_relation_load_strategy())
 }
 
 /// Parsed database version.
@@ -37,10 +39,12 @@ impl TryFrom<Option<&str>> for DatabaseVersion {
         match version {
             Some(version) => {
                 let build_err = |reason: &str| {
-                    CoreError::ConnectorError(ConnectorError::from_kind(ErrorKind::UnexpectedDatabaseVersion {
-                        version: version.into(),
-                        reason: reason.into(),
-                    }))
+                    CoreError::ConnectorError(ConnectorError::from_kind(
+                        ErrorKind::UnexpectedDatabaseVersion {
+                            version: version.into(),
+                            reason: reason.into(),
+                        },
+                    ))
                 };
 
                 let mut iter = version.split('-');
@@ -54,15 +58,31 @@ impl TryFrom<Option<&str>> for DatabaseVersion {
 
                 let mut version_iter = version.split('.');
 
-                let major = version_iter.next().ok_or_else(|| build_err("Missing major version"))?;
-                let minor = version_iter.next().ok_or_else(|| build_err("Missing minor version"))?;
-                let patch = version_iter.next().ok_or_else(|| build_err("Missing patch version"))?;
+                let major = version_iter
+                    .next()
+                    .ok_or_else(|| build_err("Missing major version"))?;
+                let minor = version_iter
+                    .next()
+                    .ok_or_else(|| build_err("Missing minor version"))?;
+                let patch = version_iter
+                    .next()
+                    .ok_or_else(|| build_err("Missing patch version"))?;
 
-                let parsed_major = major.parse().map_err(|_| build_err("Major version is not a number"))?;
-                let parsed_minor = minor.parse().map_err(|_| build_err("Minor version is not a number"))?;
-                let parsed_patch = patch.parse().map_err(|_| build_err("Patch version is not a number"))?;
+                let parsed_major = major
+                    .parse()
+                    .map_err(|_| build_err("Major version is not a number"))?;
+                let parsed_minor = minor
+                    .parse()
+                    .map_err(|_| build_err("Minor version is not a number"))?;
+                let parsed_patch = patch
+                    .parse()
+                    .map_err(|_| build_err("Patch version is not a number"))?;
 
-                Ok(DatabaseVersion::Mysql(parsed_major, parsed_minor, parsed_patch))
+                Ok(DatabaseVersion::Mysql(
+                    parsed_major,
+                    parsed_minor,
+                    parsed_patch,
+                ))
             }
             None => Ok(DatabaseVersion::Unknown),
         }

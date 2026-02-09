@@ -1,7 +1,18 @@
-use quaint::ast::{Query, Update};
-use query_structure::{Filter, IntoFilter, Model, ModelProjection, RecordFilter, SelectionResult, WriteArgs};
+use quaint::ast::Query;
+use quaint::ast::Update;
+use query_structure::Filter;
+use query_structure::IntoFilter;
+use query_structure::Model;
+use query_structure::ModelProjection;
+use query_structure::RecordFilter;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
 
-use crate::{AsColumns, Context, FilterBuilder, limit, write};
+use crate::AsColumns;
+use crate::Context;
+use crate::FilterBuilder;
+use crate::limit;
+use crate::write;
 
 // Generates a query like this:
 //  UPDATE "public"."User" SET "name" = $1 WHERE "public"."User"."age" > $1
@@ -24,7 +35,11 @@ pub fn update_many_from_filter(
     let update = update.so_that(filter_condition);
     if let Some(selected_fields) = selected_fields {
         update
-            .returning(selected_fields.as_columns(ctx).map(|c| c.set_is_selected(true)))
+            .returning(
+                selected_fields
+                    .as_columns(ctx)
+                    .map(|c| c.set_is_selected(true)),
+            )
             .into()
     } else {
         update.into()
@@ -59,7 +74,8 @@ pub fn update_one_with_selection(
     selected_fields: &ModelProjection,
     ctx: &Context<'_>,
 ) -> Update<'static> {
-    let cond = FilterBuilder::without_top_level_joins().visit_filter(build_update_one_filter(record_filter), ctx);
+    let cond = FilterBuilder::without_top_level_joins()
+        .visit_filter(build_update_one_filter(record_filter), ctx);
     write::build_update_and_set_query(model, args, Some(selected_fields), ctx).so_that(cond)
 }
 

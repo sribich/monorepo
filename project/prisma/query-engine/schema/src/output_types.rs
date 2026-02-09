@@ -1,7 +1,11 @@
-use super::*;
+use std::borrow::Cow;
+use std::fmt;
+use std::sync::LazyLock;
+
 use fmt::Debug;
 use psl::parser_database as db;
-use std::{borrow::Cow, fmt, sync::LazyLock};
+
+use super::*;
 
 #[derive(Debug, Clone)]
 pub struct OutputType<'a> {
@@ -18,7 +22,10 @@ pub enum InnerOutputType<'a> {
 
 impl<'a> OutputType<'a> {
     pub fn non_list(inner: InnerOutputType<'a>) -> Self {
-        OutputType { is_list: false, inner }
+        OutputType {
+            is_list: false,
+            inner,
+        }
     }
 
     pub(crate) fn list(containing: InnerOutputType<'a>) -> Self {
@@ -110,8 +117,9 @@ impl<'a> OutputType<'a> {
     }
 }
 
-type OutputObjectFields<'a> =
-    Arc<LazyLock<Vec<OutputField<'a>>, Box<dyn FnOnce() -> Vec<OutputField<'a>> + Send + Sync + 'a>>>;
+type OutputObjectFields<'a> = Arc<
+    LazyLock<Vec<OutputField<'a>>, Box<dyn FnOnce() -> Vec<OutputField<'a>> + Send + Sync + 'a>>,
+>;
 
 #[derive(Clone)]
 pub struct ObjectType<'a> {
@@ -163,8 +171,9 @@ impl<'a> ObjectType<'a> {
     }
 }
 
-type OutputFieldArguments<'a> =
-    Option<Arc<LazyLock<Vec<InputField<'a>>, Box<dyn FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a>>>>;
+type OutputFieldArguments<'a> = Option<
+    Arc<LazyLock<Vec<InputField<'a>>, Box<dyn FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a>>>,
+>;
 
 #[derive(Clone)]
 pub struct OutputField<'a> {
@@ -196,7 +205,10 @@ impl<'a> OutputField<'a> {
     }
 
     pub fn arguments(&self) -> &[InputField<'a>] {
-        self.arguments.as_ref().map(|f| (**f).as_slice()).unwrap_or(&[])
+        self.arguments
+            .as_ref()
+            .map(|f| (**f).as_slice())
+            .unwrap_or(&[])
     }
 
     pub(crate) fn nullable(mut self) -> Self {

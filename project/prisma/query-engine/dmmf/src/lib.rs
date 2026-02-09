@@ -4,12 +4,15 @@ pub mod serialization_ast;
 #[cfg(test)]
 mod tests;
 
-use psl::{Schema, Validated, ValidatedSchema};
-pub use serialization_ast::{DataModelMetaFormat, Datamodel};
+use std::sync::Arc;
 
 use ast_builders::schema_to_dmmf;
+use psl::Schema;
+use psl::Validated;
+use psl::ValidatedSchema;
 use schema::QuerySchema;
-use std::sync::Arc;
+pub use serialization_ast::DataModelMetaFormat;
+pub use serialization_ast::Datamodel;
 
 pub trait ValidatedSchemaDmmfExt {
     fn into_dmmf(self) -> DataModelMetaFormat;

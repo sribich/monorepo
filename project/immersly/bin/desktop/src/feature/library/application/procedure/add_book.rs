@@ -179,7 +179,6 @@ let data_path = self.setting_service.get_setting::<DataPath>().await;
         file.write_all(fit_data.as_bytes()).await.unwrap();
 */
 
-
 /*
 OLD ADD_AUDIO
 

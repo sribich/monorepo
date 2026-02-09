@@ -1,5 +1,8 @@
-use crate::{Provider, common::*, with_header};
 use psl::parser_database::ScalarType;
+
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn parse_scalar_types() {

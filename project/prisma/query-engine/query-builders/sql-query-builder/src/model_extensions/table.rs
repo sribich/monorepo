@@ -1,6 +1,9 @@
-use crate::{Context, model_extensions::AsColumns};
-use quaint::ast::{Column, Table};
+use quaint::ast::Column;
+use quaint::ast::Table;
 use query_structure::Model;
+
+use crate::Context;
+use crate::model_extensions::AsColumns;
 
 pub(crate) fn db_name_with_schema(model: &Model, ctx: &Context<'_>) -> Table<'static> {
     let schema_prefix = model

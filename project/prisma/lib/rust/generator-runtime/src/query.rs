@@ -1,14 +1,17 @@
 use std::future::Future;
 
 use futures_util::FutureExt;
-use query_core::{Operation, Selection, SelectionArgument};
-use serde::{
-    Deserialize, Serialize,
-    de::{DeserializeOwned, IntoDeserializer},
-};
+use query_core::Operation;
+use query_core::Selection;
+use query_core::SelectionArgument;
+use serde::Deserialize;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
+use serde::de::IntoDeserializer;
 use thiserror::Error;
 
-use super::{client::InternalClient, model::Model};
+use super::client::InternalClient;
+use super::model::Model;
 
 pub trait QueryData: DeserializeOwned + 'static {}
 
@@ -82,7 +85,7 @@ pub fn query<'db, TQuery: Query<'db> + 'db>(
                     .map_err(|e| e.to_string())
                     .map_err(QueryError::Deserialize)
                     .and_then(TQuery::convert)?
-            },
+            }
         })
     })
 }

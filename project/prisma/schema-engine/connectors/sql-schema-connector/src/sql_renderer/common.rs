@@ -1,5 +1,8 @@
-use sql_schema_describer::{walkers::TableColumnWalker, *};
-use std::fmt::{Display, Write as _};
+use std::fmt::Display;
+use std::fmt::Write as _;
+
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::*;
 
 pub(crate) const SQL_INDENTATION: &str = "    ";
 
@@ -8,8 +11,14 @@ pub(crate) const SQL_INDENTATION: &str = "    ";
 pub(crate) struct QuotedWithPrefix<T>(pub(crate) Option<Quoted<T>>, pub(crate) Quoted<T>);
 
 impl QuotedWithPrefix<&str> {
-    pub(crate) fn pg_new<'a>(namespace: Option<&'a str>, name: &'a str) -> QuotedWithPrefix<&'a str> {
-        QuotedWithPrefix(namespace.map(Quoted::postgres_ident), Quoted::postgres_ident(name))
+    pub(crate) fn pg_new<'a>(
+        namespace: Option<&'a str>,
+        name: &'a str,
+    ) -> QuotedWithPrefix<&'a str> {
+        QuotedWithPrefix(
+            namespace.map(Quoted::postgres_ident),
+            Quoted::postgres_ident(name),
+        )
     }
 
     pub(crate) fn pg_from_table_walker(table: TableWalker<'_>) -> QuotedWithPrefix<&str> {
@@ -82,7 +91,11 @@ where
 }
 
 pub fn render_nullability(column: TableColumnWalker<'_>) -> &'static str {
-    if column.arity().is_required() { " NOT NULL" } else { "" }
+    if column.arity().is_required() {
+        " NOT NULL"
+    } else {
+        ""
+    }
 }
 
 pub fn render_referential_action(action: ForeignKeyAction) -> &'static str {

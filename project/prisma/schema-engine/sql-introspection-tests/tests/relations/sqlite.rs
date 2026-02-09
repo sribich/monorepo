@@ -261,7 +261,9 @@ async fn one_to_one_relation_on_a_singular_primary_key(api: &mut TestApi) -> Tes
 }
 
 #[test_connector(tags(Sqlite))]
-async fn multiple_foreign_key_constraints_are_taken_always_in_the_same_order(api: &mut TestApi) -> TestResult {
+async fn multiple_foreign_key_constraints_are_taken_always_in_the_same_order(
+    api: &mut TestApi,
+) -> TestResult {
     let migration = indoc! {r#"
         CREATE TABLE A
         (
@@ -403,7 +405,13 @@ async fn relations_should_avoid_name_clashes_2(api: &mut TestApi) -> TestResult 
                 migration.change_table("y", |t| {
                     t.add_constraint(
                         "y_fkey",
-                        types::foreign_constraint(&["fk_x_1", "fk_x_2"], "x", &["id", "y"], None, None),
+                        types::foreign_constraint(
+                            &["fk_x_1", "fk_x_2"],
+                            "x",
+                            &["id", "y"],
+                            None,
+                            None,
+                        ),
                     );
                 });
             }

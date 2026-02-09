@@ -1,19 +1,26 @@
 pub mod sql_schema_calculator_flavour;
 
+use std::collections::HashMap;
+
+use psl::ValidatedSchema;
+use psl::datamodel_connector::walker_ext_traits::*;
+use psl::parser_database::ExtensionTypeId;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::ReferentialAction;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::ScalarType;
+use psl::parser_database::SortOrder;
+use psl::parser_database::ast;
+use psl::parser_database::walkers::ModelWalker;
+use psl::parser_database::walkers::ScalarFieldWalker;
+use psl::parser_database::{self as db};
 use sql_schema_calculator_flavour::JoinTableUniquenessConstraint;
 pub(super) use sql_schema_calculator_flavour::SqlSchemaCalculatorFlavour;
+use sql_schema_describer::PrismaValue;
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::{self as sql};
 
 use crate::SqlDatabaseSchema;
-use psl::{
-    ValidatedSchema,
-    datamodel_connector::walker_ext_traits::*,
-    parser_database::{
-        self as db, ExtensionTypeId, ExtensionTypes, ReferentialAction, ScalarFieldType, ScalarType, SortOrder, ast,
-        walkers::{ModelWalker, ScalarFieldWalker},
-    },
-};
-use sql_schema_describer::{self as sql, PrismaValue, SqlSchema};
-use std::collections::HashMap;
 
 pub(crate) fn calculate_sql_schema(
     datamodel: &ValidatedSchema,
@@ -55,8 +62,10 @@ fn push_namespaces<'a>(ctx: &mut Context<'a>, default_namespace: Option<&'a str>
     // Define the explicit namespaces from the datamodel
     if let Some(ds) = ctx.datamodel.configuration.datasources.first() {
         for (schema, _) in ds.namespaces.iter() {
-            ctx.schemas
-                .insert(schema, ctx.schema.describer_schema.push_namespace(schema.clone()));
+            ctx.schemas.insert(
+                schema,
+                ctx.schema.describer_schema.push_namespace(schema.clone()),
+            );
         }
     }
 
@@ -74,10 +83,11 @@ fn push_model_tables(ctx: &mut Context<'_>) {
             .and_then(|(name, _)| ctx.schemas.get(name))
             .copied()
             .unwrap_or_default();
-        let table_id = ctx
-            .schema
-            .describer_schema
-            .push_table(model.database_name().to_owned(), namespace_id, None);
+        let table_id = ctx.schema.describer_schema.push_table(
+            model.database_name().to_owned(),
+            namespace_id,
+            None,
+        );
         ctx.model_id_to_table_id.insert(model.id, table_id);
 
         for field in model.scalar_fields() {
@@ -94,27 +104,34 @@ fn push_model_indexes(model: ModelWalker<'_>, table_id: sql::TableId, ctx: &mut 
             .constraint_name(ctx.flavour.datamodel_connector())
             .map(String::from)
             .unwrap_or_else(String::new);
-        let pkid = ctx.schema.describer_schema.push_primary_key(table_id, constraint_name);
+        let pkid = ctx
+            .schema
+            .describer_schema
+            .push_primary_key(table_id, constraint_name);
         for field in pk.scalar_field_attributes() {
             let column_id = ctx
                 .walk(table_id)
                 .column(field.as_index_field().database_name())
                 .unwrap()
                 .id;
-            ctx.schema.describer_schema.push_index_column(sql::IndexColumn {
-                index_id: pkid,
-                column_id,
-                sort_order: field.sort_order().map(|so| match so {
-                    SortOrder::Asc => sql::SQLSortOrder::Asc,
-                    SortOrder::Desc => sql::SQLSortOrder::Desc,
-                }),
-                length: field.length(),
-            });
+            ctx.schema
+                .describer_schema
+                .push_index_column(sql::IndexColumn {
+                    index_id: pkid,
+                    column_id,
+                    sort_order: field.sort_order().map(|so| match so {
+                        SortOrder::Asc => sql::SQLSortOrder::Asc,
+                        SortOrder::Desc => sql::SQLSortOrder::Desc,
+                    }),
+                    length: field.length(),
+                });
         }
     }
 
     for index in model.indexes() {
-        let constraint_name = index.constraint_name(ctx.flavour.datamodel_connector()).into_owned();
+        let constraint_name = index
+            .constraint_name(ctx.flavour.datamodel_connector())
+            .into_owned();
         let index_id = if index.is_unique() {
             ctx.schema
                 .describer_schema
@@ -124,7 +141,9 @@ fn push_model_indexes(model: ModelWalker<'_>, table_id: sql::TableId, ctx: &mut 
                 .describer_schema
                 .push_fulltext_index(table_id, constraint_name)
         } else {
-            ctx.schema.describer_schema.push_index(table_id, constraint_name)
+            ctx.schema
+                .describer_schema
+                .push_index(table_id, constraint_name)
         };
 
         for sf in index.scalar_field_attributes() {
@@ -133,22 +152,31 @@ fn push_model_indexes(model: ModelWalker<'_>, table_id: sql::TableId, ctx: &mut 
                 .column(sf.as_index_field().database_name())
                 .unwrap()
                 .id;
-            ctx.schema.describer_schema.push_index_column(sql::IndexColumn {
-                index_id,
-                column_id,
-                sort_order: sf.sort_order().map(|s| match s {
-                    SortOrder::Asc => sql::SQLSortOrder::Asc,
-                    SortOrder::Desc => sql::SQLSortOrder::Desc,
-                }),
-                length: sf.length(),
-            });
+            ctx.schema
+                .describer_schema
+                .push_index_column(sql::IndexColumn {
+                    index_id,
+                    column_id,
+                    sort_order: sf.sort_order().map(|s| match s {
+                        SortOrder::Asc => sql::SQLSortOrder::Asc,
+                        SortOrder::Desc => sql::SQLSortOrder::Desc,
+                    }),
+                    length: sf.length(),
+                });
         }
     }
 }
 
 fn push_inline_relations(ctx: &mut Context<'_>) {
-    for relation in ctx.datamodel.db.walk_relations().filter_map(|r| r.refine().as_inline()) {
-        if relation.referencing_model().ast_model().is_view() || relation.referenced_model().ast_model().is_view() {
+    for relation in ctx
+        .datamodel
+        .db
+        .walk_relations()
+        .filter_map(|r| r.refine().as_inline())
+    {
+        if relation.referencing_model().ast_model().is_view()
+            || relation.referenced_model().ast_model().is_view()
+        {
             continue;
         }
 
@@ -159,7 +187,10 @@ fn push_inline_relations(ctx: &mut Context<'_>) {
         let referenced_model = ctx.model_id_to_table_id[&relation.referenced_model().id];
         let on_delete_action = relation_field.explicit_on_delete().unwrap_or_else(|| {
             relation_field.default_on_delete_action(
-                ctx.datamodel.configuration.relation_mode().unwrap_or_default(),
+                ctx.datamodel
+                    .configuration
+                    .relation_mode()
+                    .unwrap_or_default(),
                 ctx.flavour.datamodel_connector(),
             )
         });
@@ -169,9 +200,16 @@ fn push_inline_relations(ctx: &mut Context<'_>) {
             .unwrap_or_else(|| sql::ForeignKeyAction::Cascade);
 
         let fkid = ctx.schema.describer_schema.push_foreign_key(
-            Some(relation.constraint_name(ctx.flavour.datamodel_connector()).into_owned()),
+            Some(
+                relation
+                    .constraint_name(ctx.flavour.datamodel_connector())
+                    .into_owned(),
+            ),
             [referencing_model, referenced_model],
-            [convert_referential_action(on_delete_action), on_update_action],
+            [
+                convert_referential_action(on_delete_action),
+                on_update_action,
+            ],
         );
 
         let columns = relation_field
@@ -190,7 +228,9 @@ fn push_inline_relations(ctx: &mut Context<'_>) {
                     .unwrap()
                     .id,
             ];
-            ctx.schema.describer_schema.push_foreign_key_column(fkid, column);
+            ctx.schema
+                .describer_schema
+                .push_foreign_key_column(fkid, column);
         }
     }
 }
@@ -237,10 +277,10 @@ fn push_relation_tables(ctx: &mut Context<'_>) {
         };
 
         let namespace_id = ctx.walk(model_a_table_id).namespace_id(); // we put the join table in the schema of table A.
-        let table_id = ctx
-            .schema
-            .describer_schema
-            .push_table(table_name.clone(), namespace_id, None);
+        let table_id =
+            ctx.schema
+                .describer_schema
+                .push_table(table_name.clone(), namespace_id, None);
         let column_a_type = ctx
             .walk(model_a_table_id)
             .primary_key_columns()
@@ -283,8 +323,12 @@ fn push_relation_tables(ctx: &mut Context<'_>) {
         {
             let (constraint_suffix, push_constraint): (_, fn(_, _, _) -> _) =
                 match ctx.flavour.m2m_join_table_constraint() {
-                    JoinTableUniquenessConstraint::PrimaryKey => ("_AB_pkey", SqlSchema::push_primary_key),
-                    JoinTableUniquenessConstraint::UniqueIndex => ("_AB_unique", SqlSchema::push_unique_constraint),
+                    JoinTableUniquenessConstraint::PrimaryKey => {
+                        ("_AB_pkey", SqlSchema::push_primary_key)
+                    }
+                    JoinTableUniquenessConstraint::UniqueIndex => {
+                        ("_AB_unique", SqlSchema::push_unique_constraint)
+                    }
                 };
 
             let constraint_name = format!(
@@ -295,35 +339,45 @@ fn push_relation_tables(ctx: &mut Context<'_>) {
                     .collect::<String>()
             );
 
-            let index_id = push_constraint(&mut ctx.schema.describer_schema, table_id, constraint_name);
+            let index_id =
+                push_constraint(&mut ctx.schema.describer_schema, table_id, constraint_name);
 
-            ctx.schema.describer_schema.push_index_column(sql::IndexColumn {
-                index_id,
-                column_id: column_a_id,
-                sort_order: None,
-                length: None,
-            });
-            ctx.schema.describer_schema.push_index_column(sql::IndexColumn {
-                index_id,
-                column_id: column_b_id,
-                sort_order: None,
-                length: None,
-            });
+            ctx.schema
+                .describer_schema
+                .push_index_column(sql::IndexColumn {
+                    index_id,
+                    column_id: column_a_id,
+                    sort_order: None,
+                    length: None,
+                });
+            ctx.schema
+                .describer_schema
+                .push_index_column(sql::IndexColumn {
+                    index_id,
+                    column_id: column_b_id,
+                    sort_order: None,
+                    length: None,
+                });
         }
 
         // Index on B
         {
             let index_name = format!(
                 "{}_B_index",
-                table_name.chars().take(max_identifier_length - 8).collect::<String>()
+                table_name
+                    .chars()
+                    .take(max_identifier_length - 8)
+                    .collect::<String>()
             );
             let index_id = ctx.schema.describer_schema.push_index(table_id, index_name);
-            ctx.schema.describer_schema.push_index_column(sql::IndexColumn {
-                index_id,
-                column_id: column_b_id,
-                sort_order: None,
-                length: None,
-            });
+            ctx.schema
+                .describer_schema
+                .push_index_column(sql::IndexColumn {
+                    index_id,
+                    column_id: column_b_id,
+                    sort_order: None,
+                    length: None,
+                });
         }
 
         if ctx.datamodel.relation_mode().uses_foreign_keys() {
@@ -368,14 +422,22 @@ fn push_relation_tables(ctx: &mut Context<'_>) {
     }
 }
 
-fn push_column_for_scalar_field(field: ScalarFieldWalker<'_>, table_id: sql::TableId, ctx: &mut Context<'_>) {
+fn push_column_for_scalar_field(
+    field: ScalarFieldWalker<'_>,
+    table_id: sql::TableId,
+    ctx: &mut Context<'_>,
+) {
     match field.scalar_field_type() {
-        ScalarFieldType::Enum(enum_id) => push_column_for_model_enum_scalar_field(field, enum_id, table_id, ctx),
+        ScalarFieldType::Enum(enum_id) => {
+            push_column_for_model_enum_scalar_field(field, enum_id, table_id, ctx)
+        }
         ScalarFieldType::Extension(id) => push_column_for_extension_type(field, id, table_id, ctx),
         ScalarFieldType::BuiltInScalar(scalar_type) => {
             push_column_for_builtin_scalar_type(field, scalar_type, table_id, ctx)
         }
-        ScalarFieldType::Unsupported(_) => push_column_for_model_unsupported_scalar_field(field, table_id, ctx),
+        ScalarFieldType::Unsupported(_) => {
+            push_column_for_model_unsupported_scalar_field(field, table_id, ctx)
+        }
     }
 }
 
@@ -387,7 +449,11 @@ fn push_column_for_model_enum_scalar_field(
 ) {
     let r#enum = ctx.datamodel.db.walk(enum_id);
     let value_for_name = |name: &str| -> PrismaValue {
-        match r#enum.values().find(|v| v.name() == name).map(|v| v.database_name()) {
+        match r#enum
+            .values()
+            .find(|v| v.name() == name)
+            .map(|v| v.database_name())
+        {
             Some(v) => PrismaValue::Enum(v.to_owned()),
             None => panic!("Expected enum field default to reference existing value."),
         }
@@ -414,13 +480,16 @@ fn push_column_for_model_enum_scalar_field(
             Some(default_value)
         }
         other => unwrap_dbgenerated(other).map(|value| {
-            sql::DefaultValue::db_generated(value).with_constraint_name(ctx.flavour.default_constraint_name(def))
+            sql::DefaultValue::db_generated(value)
+                .with_constraint_name(ctx.flavour.default_constraint_name(def))
         }),
     });
 
     if let Some(default) = default {
         let column_id = ctx.schema.describer_schema.next_table_column_id();
-        ctx.schema.describer_schema.push_table_default_value(column_id, default);
+        ctx.schema
+            .describer_schema
+            .push_table_default_value(column_id, default);
     }
 
     let column = sql::Column {
@@ -435,7 +504,9 @@ fn push_column_for_model_enum_scalar_field(
         description: None,
     };
 
-    ctx.schema.describer_schema.push_table_column(table_id, column);
+    ctx.schema
+        .describer_schema
+        .push_table_column(table_id, column);
 }
 
 fn push_column_for_model_unsupported_scalar_field(
@@ -451,20 +522,30 @@ fn push_column_for_model_unsupported_scalar_field(
 
     if let Some(default) = default {
         let column_id = ctx.schema.describer_schema.next_table_column_id();
-        ctx.schema.describer_schema.push_table_default_value(column_id, default);
+        ctx.schema
+            .describer_schema
+            .push_table_default_value(column_id, default);
     }
 
     let column = sql::Column {
         name: field.database_name().to_owned(),
         tpe: ctx.flavour.column_type_for_unsupported_type(
             field,
-            field.ast_field().field_type.as_unsupported().unwrap().0.to_owned(),
+            field
+                .ast_field()
+                .field_type
+                .as_unsupported()
+                .unwrap()
+                .0
+                .to_owned(),
         ),
         auto_increment: false,
         description: None,
     };
 
-    ctx.schema.describer_schema.push_table_column(table_id, column);
+    ctx.schema
+        .describer_schema
+        .push_table_column(table_id, column);
 }
 
 fn push_column_for_extension_type(
@@ -474,9 +555,9 @@ fn push_column_for_extension_type(
     ctx: &mut Context<'_>,
 ) {
     let connector = ctx.flavour.datamodel_connector();
-    let native_type = field
-        .native_type_instance(connector)
-        .or_else(|| connector.default_native_type_for_scalar_type(&field.scalar_field_type(), ctx.datamodel));
+    let native_type = field.native_type_instance(connector).or_else(|| {
+        connector.default_native_type_for_scalar_type(&field.scalar_field_type(), ctx.datamodel)
+    });
 
     let default = field.default_value().map(|def| {
         // This is validated as @default(dbgenerated("...")), we can unwrap.
@@ -486,7 +567,9 @@ fn push_column_for_extension_type(
 
     if let Some(default) = default {
         let column_id = ctx.schema.describer_schema.next_table_column_id();
-        ctx.schema.describer_schema.push_table_default_value(column_id, default);
+        ctx.schema
+            .describer_schema
+            .push_table_default_value(column_id, default);
     }
 
     let column = sql::Column {
@@ -497,11 +580,16 @@ fn push_column_for_extension_type(
             arity: column_arity(field.ast_field().arity),
             native_type,
         },
-        auto_increment: field.is_autoincrement() || ctx.flavour.field_is_implicit_autoincrement_primary_key(field),
+        auto_increment: field.is_autoincrement()
+            || ctx
+                .flavour
+                .field_is_implicit_autoincrement_primary_key(field),
         description: None,
     };
 
-    ctx.schema.describer_schema.push_table_column(table_id, column);
+    ctx.schema
+        .describer_schema
+        .push_table_column(table_id, column);
 }
 
 fn push_column_for_builtin_scalar_type(
@@ -524,7 +612,10 @@ fn push_column_for_builtin_scalar_type(
     };
 
     let native_type = field.native_type_instance(connector).or_else(|| {
-        connector.default_native_type_for_scalar_type(&ScalarFieldType::BuiltInScalar(scalar_type), ctx.datamodel)
+        connector.default_native_type_for_scalar_type(
+            &ScalarFieldType::BuiltInScalar(scalar_type),
+            ctx.datamodel,
+        )
     });
 
     enum ColumnDefault {
@@ -537,7 +628,9 @@ fn push_column_for_builtin_scalar_type(
         let column_default = {
             if v.is_dbgenerated() {
                 let value = unwrap_dbgenerated(v.value());
-                ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::DbGenerated(value)))
+                ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::DbGenerated(
+                    value,
+                )))
             } else if v.is_now() {
                 ColumnDefault::Available(sql::DefaultValue::now())
             } else if v.is_autoincrement() {
@@ -546,24 +639,28 @@ fn push_column_for_builtin_scalar_type(
                     .map(ColumnDefault::Available)
                     .unwrap_or(ColumnDefault::NA)
             } else if v.is_sequence() {
-                ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::Sequence(format!(
-                    "prisma_sequence_{}_{}",
-                    field.model().database_name(),
-                    field.database_name()
-                ))))
+                ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::Sequence(
+                    format!(
+                        "prisma_sequence_{}_{}",
+                        field.model().database_name(),
+                        field.database_name()
+                    ),
+                )))
             } else {
                 match v.value() {
                     ast::Expression::Function(_, _, _) => ColumnDefault::PrismaGenerated,
-                    constant => ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::Value(
-                        constant_expression_to_sql_default(constant, scalar_type),
-                    ))),
+                    constant => {
+                        ColumnDefault::Available(sql::DefaultValue::new(sql::DefaultKind::Value(
+                            constant_expression_to_sql_default(constant, scalar_type),
+                        )))
+                    }
                 }
             }
         };
         match column_default {
-            ColumnDefault::Available(df) => {
-                ColumnDefault::Available(df.with_constraint_name(ctx.flavour.default_constraint_name(v)))
-            }
+            ColumnDefault::Available(df) => ColumnDefault::Available(
+                df.with_constraint_name(ctx.flavour.default_constraint_name(v)),
+            ),
             other => other,
         }
     });
@@ -572,7 +669,9 @@ fn push_column_for_builtin_scalar_type(
 
     if let Some(ColumnDefault::Available(d)) = default {
         let column_id = ctx.schema.describer_schema.next_table_column_id();
-        ctx.schema.describer_schema.push_table_default_value(column_id, d);
+        ctx.schema
+            .describer_schema
+            .push_table_default_value(column_id, d);
     }
 
     let column = sql::Column {
@@ -583,18 +682,27 @@ fn push_column_for_builtin_scalar_type(
             arity: column_arity(field.ast_field().arity),
             native_type,
         },
-        auto_increment: field.is_autoincrement() || ctx.flavour.field_is_implicit_autoincrement_primary_key(field),
+        auto_increment: field.is_autoincrement()
+            || ctx
+                .flavour
+                .field_is_implicit_autoincrement_primary_key(field),
         description: None,
     };
 
-    let column_id = ctx.schema.describer_schema.push_table_column(table_id, column);
+    let column_id = ctx
+        .schema
+        .describer_schema
+        .push_table_column(table_id, column);
 
     if default_is_prisma_level {
         ctx.schema.prisma_level_defaults.push(column_id);
     }
 }
 
-fn constant_expression_to_sql_default(expr: &ast::Expression, scalar_type: ScalarType) -> PrismaValue {
+fn constant_expression_to_sql_default(
+    expr: &ast::Expression,
+    scalar_type: ScalarType,
+) -> PrismaValue {
     match expr {
         ast::Expression::NumericValue(val, _) => match scalar_type {
             ScalarType::Int => PrismaValue::Int(val.parse().unwrap()),

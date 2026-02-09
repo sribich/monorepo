@@ -485,17 +485,6 @@ wildcard_in_or_patterns = "allow"
 ## Pedantic
 ##
 
-## The _or methods have an unintuitive parameter order stemming from the
-## old `do` notation which is no longer supported in this language.
-##
-## This put closures in final position and pushed other parameters forward.
-## It is true that closures tend to be more readable in final position if
-## other parameters are short expressions, but it's much more readable to
-## just use normal method chaining than using unintuitive parameter orders.
-##
-## These methods are additionally blacklisted.
-map_unwrap_or = "allow"
-
 ## While this is good to have most of the time, it is more stylistic and there
 ## are too many cases where something might be named similarly enough to the
 ## struct name while having a good reason for the name.

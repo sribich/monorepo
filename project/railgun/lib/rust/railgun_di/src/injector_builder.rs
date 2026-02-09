@@ -1,15 +1,19 @@
-use core::{
-    any::{TypeId, type_name},
-    marker::Unsize,
-};
-use std::{collections::HashMap, sync::Arc};
+use core::any::TypeId;
+use core::any::type_name;
+use core::marker::Unsize;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{
-    Builder, Component, Injector, InjectorError, TypedBuilder,
-    error::AlreadyRegisteredContext,
-    id::{ConcreteTypeId, DynTypeId},
-    typecast_builder::{Binding, TypeCaster},
-};
+use crate::Builder;
+use crate::Component;
+use crate::Injector;
+use crate::InjectorError;
+use crate::TypedBuilder;
+use crate::error::AlreadyRegisteredContext;
+use crate::id::ConcreteTypeId;
+use crate::id::DynTypeId;
+use crate::typecast_builder::Binding;
+use crate::typecast_builder::TypeCaster;
 
 #[derive(Clone, Default)]
 pub struct InjectorBuilder {

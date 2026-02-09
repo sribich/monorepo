@@ -1,7 +1,9 @@
-use psl::{datamodel_connector::constraint_names::ConstraintNames, parser_database::walkers};
+use psl::datamodel_connector::constraint_names::ConstraintNames;
+use psl::parser_database::walkers;
 use sql_schema_describer as sql;
 
-use super::{IndexFieldPair, IntrospectionPair};
+use super::IndexFieldPair;
+use super::IntrospectionPair;
 
 /// Pairing PSL id to database primary keys. Both values are
 /// optional, due to in some cases we plainly just copy
@@ -10,7 +12,8 @@ use super::{IndexFieldPair, IntrospectionPair};
 /// This happens with views, where we need at least one unique
 /// field in the view definition, but the database does not
 /// hold constraints on views.
-pub(crate) type IdPair<'a> = IntrospectionPair<'a, Option<walkers::PrimaryKeyWalker<'a>>, Option<sql::IndexWalker<'a>>>;
+pub(crate) type IdPair<'a> =
+    IntrospectionPair<'a, Option<walkers::PrimaryKeyWalker<'a>>, Option<sql::IndexWalker<'a>>>;
 
 impl<'a> IdPair<'a> {
     /// The user-facing name of the identifier, defined solely in the
@@ -23,7 +26,10 @@ impl<'a> IdPair<'a> {
     pub(crate) fn mapped_name(self) -> Option<&'a str> {
         match self.next {
             Some(next) => {
-                let default = ConstraintNames::primary_key_name(next.table().name(), self.context.active_connector());
+                let default = ConstraintNames::primary_key_name(
+                    next.table().name(),
+                    self.context.active_connector(),
+                );
                 let name = next.name();
 
                 (!name.is_empty() && name != default).then_some(name)
@@ -46,7 +52,8 @@ impl<'a> IdPair<'a> {
 
     /// If defined in a single field, returns the given field.
     pub(crate) fn field(self) -> Option<IndexFieldPair<'a>> {
-        self.defined_in_a_field().then(|| self.fields().next().unwrap())
+        self.defined_in_a_field()
+            .then(|| self.fields().next().unwrap())
     }
 
     /// The fields the primary key is consisting of.
@@ -56,12 +63,11 @@ impl<'a> IdPair<'a> {
                 let previous = self.previous.and_then(|prev| prev.fields().nth(i));
                 IntrospectionPair::new(self.context, previous, Some(c))
             })),
-            None => Box::new(
-                self.previous
-                    .unwrap()
-                    .fields()
-                    .map(move |previous| IntrospectionPair::new(self.context, Some(previous), None)),
-            ),
+            None => {
+                Box::new(self.previous.unwrap().fields().map(move |previous| {
+                    IntrospectionPair::new(self.context, Some(previous), None)
+                }))
+            }
         }
     }
 }

@@ -1,4 +1,7 @@
-use std::{env, fs, io::Write as _, path};
+use std::env;
+use std::fs;
+use std::io::Write as _;
+use std::path;
 
 const QUERY_VALIDATIONS_ROOT_DIR: &str = "tests/query_validation_tests";
 const CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");

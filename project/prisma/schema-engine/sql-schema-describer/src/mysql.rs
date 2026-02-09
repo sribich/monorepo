@@ -1,15 +1,20 @@
 //! MySQL schema description.
 
-use crate::{getters::Getter, parsers::Parser, *};
+use std::borrow::Cow;
+use std::sync::LazyLock;
+
 use indexmap::IndexMap;
 use indoc::indoc;
-use psl::{builtin_connectors::MySqlType, datamodel_connector::NativeTypeInstance};
-use quaint::{
-    Value,
-    prelude::{Queryable, ResultRow},
-};
-use std::{borrow::Cow, sync::LazyLock};
+use psl::builtin_connectors::MySqlType;
+use psl::datamodel_connector::NativeTypeInstance;
+use quaint::Value;
+use quaint::prelude::Queryable;
+use quaint::prelude::ResultRow;
 use tracing::trace;
+
+use crate::getters::Getter;
+use crate::parsers::Parser;
+use crate::*;
 
 /// Matches a default value in the schema, wrapped single quotes.
 ///
@@ -199,8 +204,14 @@ impl Parser for SqlSchemaDescriber<'_> {}
 
 impl<'a> SqlSchemaDescriber<'a> {
     /// Constructor.
-    pub fn new(conn: &'a dyn Queryable, circumstances: BitFlags<Circumstances>) -> SqlSchemaDescriber<'a> {
-        SqlSchemaDescriber { conn, circumstances }
+    pub fn new(
+        conn: &'a dyn Queryable,
+        circumstances: BitFlags<Circumstances>,
+    ) -> SqlSchemaDescriber<'a> {
+        SqlSchemaDescriber {
+            conn,
+            circumstances,
+        }
     }
 
     #[tracing::instrument(skip(self))]
@@ -271,7 +282,10 @@ impl<'a> SqlSchemaDescriber<'a> {
                 -- Exclude views.
                 AND table_info.table_type = 'BASE TABLE'
             ORDER BY BINARY table_info.table_name"#;
-        let rows = self.conn.query_raw(sql, &[schema.into(), schema.into()]).await?;
+        let rows = self
+            .conn
+            .query_raw(sql, &[schema.into(), schema.into()])
+            .await?;
         let names = rows.into_iter().map(|row| {
             (
                 row.get_expect_string("table_name"),
@@ -406,52 +420,71 @@ impl<'a> SqlSchemaDescriber<'a> {
                         Some(match &tpe.family {
                             ColumnTypeFamily::Int => match Self::parse_int(&default_string) {
                                 Some(int_value) => DefaultValue::value(int_value),
-                                None if default_expression => Self::dbgenerated_expression(&default_string),
+                                None if default_expression => {
+                                    Self::dbgenerated_expression(&default_string)
+                                }
                                 None => DefaultValue::db_generated(default_string),
                             },
-                            ColumnTypeFamily::BigInt => match Self::parse_big_int(&default_string) {
-                                Some(int_value) => DefaultValue::value(int_value),
-                                None if default_expression => Self::dbgenerated_expression(&default_string),
-                                None => DefaultValue::db_generated(default_string),
-                            },
+                            ColumnTypeFamily::BigInt => {
+                                match Self::parse_big_int(&default_string) {
+                                    Some(int_value) => DefaultValue::value(int_value),
+                                    None if default_expression => {
+                                        Self::dbgenerated_expression(&default_string)
+                                    }
+                                    None => DefaultValue::db_generated(default_string),
+                                }
+                            }
                             ColumnTypeFamily::Float => match Self::parse_float(&default_string) {
                                 Some(float_value) => DefaultValue::value(float_value),
-                                None if default_expression => Self::dbgenerated_expression(&default_string),
+                                None if default_expression => {
+                                    Self::dbgenerated_expression(&default_string)
+                                }
                                 None => DefaultValue::db_generated(default_string),
                             },
                             ColumnTypeFamily::Decimal => match Self::parse_float(&default_string) {
                                 Some(float_value) => DefaultValue::value(float_value),
-                                None if default_expression => Self::dbgenerated_expression(&default_string),
+                                None if default_expression => {
+                                    Self::dbgenerated_expression(&default_string)
+                                }
                                 None => DefaultValue::db_generated(default_string),
                             },
                             ColumnTypeFamily::Boolean => match Self::parse_int(&default_string) {
                                 Some(PrismaValue::Int(1)) => DefaultValue::value(true),
                                 Some(PrismaValue::Int(0)) => DefaultValue::value(false),
-                                _ if default_expression => Self::dbgenerated_expression(&default_string),
+                                _ if default_expression => {
+                                    Self::dbgenerated_expression(&default_string)
+                                }
                                 _ => DefaultValue::db_generated(default_string),
                             },
                             ColumnTypeFamily::String => {
                                 // See https://dev.mysql.com/doc/refman/8.0/en/information-schema-columns-table.html
                                 // and https://mariadb.com/kb/en/information-schema-columns-table/
                                 if default_generated
-                                    || (maria_db && !matches!(default_string.chars().next(), Some('\'')))
+                                    || (maria_db
+                                        && !matches!(default_string.chars().next(), Some('\'')))
                                 {
                                     Self::dbgenerated_expression(&default_string)
                                 } else {
-                                    DefaultValue::value(PrismaValue::String(Self::unescape_and_unquote_default_string(
-                                        default_string,
-                                        flavour,
-                                    )))
+                                    DefaultValue::value(PrismaValue::String(
+                                        Self::unescape_and_unquote_default_string(
+                                            default_string,
+                                            flavour,
+                                        ),
+                                    ))
                                 }
                             }
-                            ColumnTypeFamily::DateTime => match Self::default_is_current_timestamp(&default_string) {
-                                true => DefaultValue::now(),
-                                _ if default_expression => Self::dbgenerated_expression(&default_string),
-                                _ if DEFAULT_QUOTES.is_match(&default_string) => {
-                                    DefaultValue::db_generated(default_string)
+                            ColumnTypeFamily::DateTime => {
+                                match Self::default_is_current_timestamp(&default_string) {
+                                    true => DefaultValue::now(),
+                                    _ if default_expression => {
+                                        Self::dbgenerated_expression(&default_string)
+                                    }
+                                    _ if DEFAULT_QUOTES.is_match(&default_string) => {
+                                        DefaultValue::db_generated(default_string)
+                                    }
+                                    _ => DefaultValue::db_generated(format!("'{default_string}'")),
                                 }
-                                _ => DefaultValue::db_generated(format!("'{default_string}'")),
-                            },
+                            }
                             ColumnTypeFamily::Binary => match default_expression {
                                 true => Self::dbgenerated_expression(&default_string),
                                 false => DefaultValue::db_generated(default_string),
@@ -466,7 +499,8 @@ impl<'a> SqlSchemaDescriber<'a> {
                             },
                             ColumnTypeFamily::Enum(_) => {
                                 if default_generated
-                                    || (maria_db && !matches!(default_string.chars().next(), Some('\'')))
+                                    || (maria_db
+                                        && !matches!(default_string.chars().next(), Some('\'')))
                                 {
                                     Self::dbgenerated_expression(&default_string)
                                 } else {
@@ -478,10 +512,12 @@ impl<'a> SqlSchemaDescriber<'a> {
                                     )))
                                 }
                             }
-                            ColumnTypeFamily::Udt(_) | ColumnTypeFamily::Unsupported(_) => match default_expression {
-                                true => Self::dbgenerated_expression(&default_string),
-                                false => DefaultValue::db_generated(default_string),
-                            },
+                            ColumnTypeFamily::Udt(_) | ColumnTypeFamily::Unsupported(_) => {
+                                match default_expression {
+                                    true => Self::dbgenerated_expression(&default_string),
+                                    false => DefaultValue::db_generated(default_string),
+                                }
+                            }
                         })
                     }
                 },
@@ -515,7 +551,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             }
         }
 
-        sql_schema.table_columns.sort_by_key(|(table_id, _)| *table_id);
+        sql_schema
+            .table_columns
+            .sort_by_key(|(table_id, _)| *table_id);
         sql_schema.view_columns.sort_by_key(|(view_id, _)| *view_id);
 
         table_defaults.sort_by_key(|(table_id, _)| *table_id);
@@ -557,19 +595,24 @@ impl<'a> SqlSchemaDescriber<'a> {
         default: Option<&Value<'_>>,
         sql_schema: &mut SqlSchema,
     ) -> ColumnType {
-        static UNSIGNEDNESS_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new("(?i)unsigned$").unwrap());
+        static UNSIGNEDNESS_RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new("(?i)unsigned$").unwrap());
         let is_tinyint1 = || Self::extract_precision(full_data_type) == Some(1);
         let invalid_bool_default = || {
             default
                 .and_then(|default| default.to_string())
                 .filter(|default_string| default_string != "NULL")
                 .and_then(|default_string| Self::parse_int(&default_string))
-                .filter(|default_int| *default_int != PrismaValue::Int(0) && *default_int != PrismaValue::Int(1))
+                .filter(|default_int| {
+                    *default_int != PrismaValue::Int(0) && *default_int != PrismaValue::Int(1)
+                })
                 .is_some()
         };
 
         let (family, native_type) = match data_type {
-            "int" if UNSIGNEDNESS_RE.is_match(full_data_type) => (ColumnTypeFamily::Int, Some(MySqlType::UnsignedInt)),
+            "int" if UNSIGNEDNESS_RE.is_match(full_data_type) => {
+                (ColumnTypeFamily::Int, Some(MySqlType::UnsignedInt))
+            }
             "int" => (ColumnTypeFamily::Int, Some(MySqlType::Int)),
             "smallint" if UNSIGNEDNESS_RE.is_match(full_data_type) => {
                 (ColumnTypeFamily::Int, Some(MySqlType::UnsignedSmallInt))
@@ -606,7 +649,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             ),
             "varchar" => (
                 ColumnTypeFamily::String,
-                Some(MySqlType::VarChar(precision.character_maximum_length.unwrap())),
+                Some(MySqlType::VarChar(
+                    precision.character_maximum_length.unwrap(),
+                )),
             ),
             "text" => (ColumnTypeFamily::String, Some(MySqlType::Text)),
             "tinytext" => (ColumnTypeFamily::String, Some(MySqlType::TinyText)),
@@ -647,11 +692,15 @@ impl<'a> SqlSchemaDescriber<'a> {
             ),
             "binary" => (
                 ColumnTypeFamily::Binary,
-                Some(MySqlType::Binary(precision.character_maximum_length.unwrap())),
+                Some(MySqlType::Binary(
+                    precision.character_maximum_length.unwrap(),
+                )),
             ),
             "varbinary" => (
                 ColumnTypeFamily::Binary,
-                Some(MySqlType::VarBinary(precision.character_maximum_length.unwrap())),
+                Some(MySqlType::VarBinary(
+                    precision.character_maximum_length.unwrap(),
+                )),
             ),
             "blob" => (ColumnTypeFamily::Binary, Some(MySqlType::Blob)),
             "tinyblob" => (ColumnTypeFamily::Binary, Some(MySqlType::TinyBlob)),
@@ -705,7 +754,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             };
 
             if constraint_type.as_str() == "check" {
-                sql_schema.check_constraints.push((table_id, constraint_name));
+                sql_schema
+                    .check_constraints
+                    .push((table_id, constraint_name));
             }
         }
 
@@ -716,8 +767,10 @@ impl<'a> SqlSchemaDescriber<'a> {
 
     fn extract_precision(input: &str) -> Option<u32> {
         static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r".*\(([1-9])\)").unwrap());
-        RE.captures(input)
-            .and_then(|cap| cap.get(1).map(|precision| precision.as_str().parse::<u32>().unwrap()))
+        RE.captures(input).and_then(|cap| {
+            cap.get(1)
+                .map(|precision| precision.as_str().parse::<u32>().unwrap())
+        })
     }
 
     // See https://dev.mysql.com/doc/refman/8.0/en/string-literals.html
@@ -725,9 +778,11 @@ impl<'a> SqlSchemaDescriber<'a> {
     // In addition, MariaDB will return string literals with the quotes and extra backslashes around
     // control characters like `\n`.
     fn unescape_and_unquote_default_string(default: String, flavour: &Flavour) -> String {
-        static MYSQL_ESCAPING_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\\('|\\[^\\])|'(')").unwrap());
+        static MYSQL_ESCAPING_RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r"\\('|\\[^\\])|'(')").unwrap());
         static MARIADB_NEWLINE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\\n").unwrap());
-        static MARIADB_DEFAULT_QUOTE_UNESCAPE_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"'(.*)'"#).unwrap());
+        static MARIADB_DEFAULT_QUOTE_UNESCAPE_RE: LazyLock<Regex> =
+            LazyLock::new(|| Regex::new(r#"'(.*)'"#).unwrap());
 
         let maybe_unquoted: Cow<'_, str> = if matches!(flavour, Flavour::MariaDb) {
             let unquoted = MARIADB_DEFAULT_QUOTE_UNESCAPE_RE
@@ -740,7 +795,9 @@ impl<'a> SqlSchemaDescriber<'a> {
             default.into()
         };
 
-        MYSQL_ESCAPING_RE.replace_all(&maybe_unquoted, "$1$2").into()
+        MYSQL_ESCAPING_RE
+            .replace_all(&maybe_unquoted, "$1$2")
+            .into()
     }
 
     /// Tests whether an introspected default value should be categorized as current_timestamp.
@@ -804,12 +861,22 @@ async fn push_foreign_keys(
         let table_id = *table_ids.get(&table_name)?;
         let referenced_table_id = *table_ids.get(&referenced_table_name)?;
         let column_id = sql_schema.walk(table_id).column(&column_name)?.id;
-        let referenced_column_id = sql_schema.walk(referenced_table_id).column(&referenced_column_name)?.id;
+        let referenced_column_id = sql_schema
+            .walk(referenced_table_id)
+            .column(&referenced_column_name)?
+            .id;
 
-        Some((table_id, column_id, referenced_table_id, referenced_column_id))
+        Some((
+            table_id,
+            column_id,
+            referenced_table_id,
+            referenced_column_id,
+        ))
     }
 
-    let result_set = conn.query_raw(sql, &[schema_name.into(), schema_name.into()]).await?;
+    let result_set = conn
+        .query_raw(sql, &[schema_name.into(), schema_name.into()])
+        .await?;
     let mut current_fk: Option<(TableId, String, ForeignKeyId)> = None;
 
     for row in result_set.into_iter() {

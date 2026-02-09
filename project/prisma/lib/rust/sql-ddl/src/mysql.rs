@@ -1,8 +1,11 @@
-use crate::common::{Indented, IndexColumn, IteratorJoin, SQL_INDENTATION};
-use std::{
-    borrow::Cow,
-    fmt::{Display, Write as _},
-};
+use std::borrow::Cow;
+use std::fmt::Display;
+use std::fmt::Write as _;
+
+use crate::common::Indented;
+use crate::common::IndexColumn;
+use crate::common::IteratorJoin;
+use crate::common::SQL_INDENTATION;
 
 struct Ident<'a>(&'a str);
 
@@ -63,8 +66,12 @@ impl Display for AlterTableClause<'_> {
                 previous_name,
                 next_name,
             } => write!(f, "RENAME INDEX `{previous_name}` TO `{next_name}`"),
-            AlterTableClause::DropColumn { column_name } => write!(f, "DROP COLUMN `{column_name}`"),
-            AlterTableClause::DropForeignKey { constraint_name } => write!(f, "DROP FOREIGN KEY `{constraint_name}`"),
+            AlterTableClause::DropColumn { column_name } => {
+                write!(f, "DROP COLUMN `{column_name}`")
+            }
+            AlterTableClause::DropForeignKey { constraint_name } => {
+                write!(f, "DROP FOREIGN KEY `{constraint_name}`")
+            }
             AlterTableClause::DropPrimaryKey => f.write_str("DROP PRIMARY KEY"),
             AlterTableClause::AddForeignKey(fk) => write!(f, "ADD {fk}"),
         }
@@ -89,11 +96,17 @@ impl Display for ForeignKey<'_> {
 
         f.write_str("FOREIGN KEY (")?;
 
-        self.constrained_columns.iter().map(|s| Ident(s)).join(", ", f)?;
+        self.constrained_columns
+            .iter()
+            .map(|s| Ident(s))
+            .join(", ", f)?;
 
         write!(f, ") REFERENCES `{}`(", self.referenced_table)?;
 
-        self.referenced_columns.iter().map(|s| Ident(s)).join(", ", f)?;
+        self.referenced_columns
+            .iter()
+            .map(|s| Ident(s))
+            .join(", ", f)?;
 
         f.write_str(")")?;
 
@@ -310,7 +323,11 @@ pub struct DropIndex<'a> {
 
 impl Display for DropIndex<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "DROP INDEX `{}` ON `{}`", self.index_name, self.table_name)
+        write!(
+            f,
+            "DROP INDEX `{}` ON `{}`",
+            self.index_name, self.table_name
+        )
     }
 }
 
@@ -374,8 +391,9 @@ impl Display for IndexClause<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use indoc::indoc;
+
+    use super::*;
 
     #[test]
     fn alter_table_add_foreign_key() {

@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn implicit_many_to_many_relation_fields_with_referential_actions() {

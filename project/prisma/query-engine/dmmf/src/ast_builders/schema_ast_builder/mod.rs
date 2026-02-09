@@ -4,15 +4,18 @@ mod object_renderer;
 mod schema_renderer;
 mod type_renderer;
 
-use crate::serialization_ast::{mappings_ast::*, schema_ast::*};
+use std::collections::HashSet;
+
 use enum_renderer::*;
 use field_renderer::*;
 use indexmap::map::Entry;
 use object_renderer::*;
 use schema::*;
 use schema_renderer::*;
-use std::collections::HashSet;
 use type_renderer::*;
+
+use crate::serialization_ast::mappings_ast::*;
+use crate::serialization_ast::schema_ast::*;
 
 pub(crate) fn render(query_schema: &QuerySchema) -> (DmmfSchema, DmmfOperationMappings) {
     let mut ctx = RenderContext::new(query_schema);
@@ -72,7 +75,11 @@ impl<'a> RenderContext<'a> {
 
     fn add_enum(&mut self, identifier: Identifier, dmmf_enum: DmmfEnum) {
         // Enums from the namespace
-        match self.schema.enum_types.entry(identifier.namespace().to_owned()) {
+        match self
+            .schema
+            .enum_types
+            .entry(identifier.namespace().to_owned())
+        {
             Entry::Occupied(mut v) => v.get_mut().push(dmmf_enum),
             Entry::Vacant(v) => {
                 v.insert(vec![dmmf_enum]);
@@ -84,7 +91,11 @@ impl<'a> RenderContext<'a> {
 
     fn add_input_type(&mut self, identifier: Identifier, input_type: DmmfInputType) {
         // Input types from the namespace
-        match self.schema.input_object_types.entry(identifier.namespace().to_owned()) {
+        match self
+            .schema
+            .input_object_types
+            .entry(identifier.namespace().to_owned())
+        {
             Entry::Occupied(mut v) => v.get_mut().push(input_type),
             Entry::Vacant(v) => {
                 v.insert(vec![input_type]);
@@ -96,7 +107,11 @@ impl<'a> RenderContext<'a> {
 
     fn add_output_type(&mut self, identifier: Identifier, output_type: DmmfOutputType) {
         // Output types from the namespace
-        match self.schema.output_object_types.entry(identifier.namespace().to_owned()) {
+        match self
+            .schema
+            .output_object_types
+            .entry(identifier.namespace().to_owned())
+        {
             Entry::Occupied(mut v) => v.get_mut().push(output_type),
             Entry::Vacant(v) => {
                 v.insert(vec![output_type]);
@@ -108,7 +123,11 @@ impl<'a> RenderContext<'a> {
 
     fn add_field_ref_type(&mut self, identifier: Identifier, ref_type: DmmfFieldRefType) {
         // Field ref types from the namespace
-        match self.schema.field_ref_types.entry(identifier.namespace().to_owned()) {
+        match self
+            .schema
+            .field_ref_types
+            .entry(identifier.namespace().to_owned())
+        {
             Entry::Occupied(mut v) => v.get_mut().push(ref_type),
             Entry::Vacant(v) => {
                 v.insert(vec![ref_type]);
@@ -142,7 +161,10 @@ impl<'a> RenderContext<'a> {
             } else {
                 match &info.tag {
                     QueryTag::ExecuteRaw | QueryTag::QueryRaw | QueryTag::RunCommandRaw => {
-                        self.mappings.other_operations.write.push(info.tag.to_string());
+                        self.mappings
+                            .other_operations
+                            .write
+                            .push(info.tag.to_string());
                     }
                     _ => unreachable!("Invalid operations mapping."),
                 }

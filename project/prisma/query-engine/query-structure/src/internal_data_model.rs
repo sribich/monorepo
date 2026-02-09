@@ -1,6 +1,9 @@
-use crate::{InternalEnum, prelude::*};
-use psl::parser_database as db;
 use std::sync::Arc;
+
+use psl::parser_database as db;
+
+use crate::InternalEnum;
+use crate::prelude::*;
 
 pub(crate) type InternalDataModelRef = InternalDataModel;
 
@@ -32,7 +35,9 @@ impl InternalDataModel {
             .db
             .find_enum(name)
             .map(|enum_walker| self.clone().zip(enum_walker.id))
-            .ok_or_else(|| DomainError::EnumNotFound { name: name.to_string() })
+            .ok_or_else(|| DomainError::EnumNotFound {
+                name: name.to_string(),
+            })
     }
 
     pub fn find_model(&self, name: &str) -> crate::Result<Model> {
@@ -42,7 +47,9 @@ impl InternalDataModel {
             .chain(self.schema.db.walk_views())
             .find(|model| model.name() == name)
             .map(|m| self.clone().zip(m.id))
-            .ok_or_else(|| DomainError::ModelNotFound { name: name.to_string() })
+            .ok_or_else(|| DomainError::ModelNotFound {
+                name: name.to_string(),
+            })
     }
 
     pub fn find_model_by_id(&self, model_id: db::ModelId) -> Model {
@@ -50,7 +57,10 @@ impl InternalDataModel {
     }
 
     /// Finds all inline relation fields pointing to the given model.
-    pub fn fields_pointing_to_model(&self, model: &Model) -> impl Iterator<Item = RelationFieldRef> + '_ {
+    pub fn fields_pointing_to_model(
+        &self,
+        model: &Model,
+    ) -> impl Iterator<Item = RelationFieldRef> + '_ {
         self.walk(model.id)
             .relations_to()
             .filter_map(|rel| rel.refine().as_inline())

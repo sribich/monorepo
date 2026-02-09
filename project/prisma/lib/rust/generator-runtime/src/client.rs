@@ -1,25 +1,28 @@
-use std::{path::Path, sync::Arc};
+use std::path::Path;
+use std::sync::Arc;
 
 use psl::parser_database::NoExtensionTypes;
+use query_core::Operation;
+use query_core::QueryExecutor;
 pub use query_core::TxId;
-use query_core::{Operation, QueryExecutor, protocol::EngineProtocol, schema::QuerySchema};
+use query_core::protocol::EngineProtocol;
+use query_core::schema::QuerySchema;
 use request_handlers::ConnectorKind;
-use schema_core::{
-    commands::{
-        self,
-        apply_migrations::{ApplyMigrationsInput, apply_migrations},
-    },
-    json_rpc::types::{MigrationDirectory, MigrationFile, MigrationList, MigrationLockfile},
-    state::EngineState,
-};
+use schema_core::commands::apply_migrations::ApplyMigrationsInput;
+use schema_core::commands::apply_migrations::apply_migrations;
+use schema_core::commands::{self};
+use schema_core::json_rpc::types::MigrationDirectory;
+use schema_core::json_rpc::types::MigrationFile;
+use schema_core::json_rpc::types::MigrationList;
+use schema_core::json_rpc::types::MigrationLockfile;
+use schema_core::state::EngineState;
 use thiserror::Error;
 use tokio::fs::remove_dir_all;
 use tracing::debug;
 
-use super::{
-    RuntimeError,
-    query::{QueryError, QueryResult},
-};
+use super::RuntimeError;
+use super::query::QueryError;
+use super::query::QueryResult;
 
 pub trait PrismaClient {
     fn with_tx_id(&self, tx_id: Option<TxId>) -> Self;
@@ -87,10 +90,9 @@ impl InternalClient {
         let schema = Arc::new(psl::validate(datamodel.into(), &NoExtensionTypes));
         let config = &schema.configuration;
 
-        let source = config
-            .datasources
-            .first()
-            .ok_or_else(|| RuntimeError::InvalidConfig("Missing datasource in schema.prisma config.".into()))?;
+        let source = config.datasources.first().ok_or_else(|| {
+            RuntimeError::InvalidConfig("Missing datasource in schema.prisma config.".into())
+        })?;
 
         let url = if let Some(url) = url {
             url
@@ -170,7 +172,11 @@ pub struct Migrator {
 }
 
 impl Migrator {
-    pub fn new(datamodel: &'static str, migrations: &'static include_dir::Dir<'static>, url: String) -> Self {
+    pub fn new(
+        datamodel: &'static str,
+        migrations: &'static include_dir::Dir<'static>,
+        url: String,
+    ) -> Self {
         Self {
             datamodel,
             migrations,
@@ -230,7 +236,8 @@ pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList
 
     let lockfile = MigrationLockfile {
         path: "migration_lock.toml".to_string(),
-        content: std::fs::read_to_string(migrations_directory_path.join("migration_lock.toml")).ok(),
+        content: std::fs::read_to_string(migrations_directory_path.join("migration_lock.toml"))
+            .ok(),
     };
 
     let mut entries: Vec<MigrationDirectory> = Vec::new();
@@ -257,7 +264,9 @@ pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList
             // Relative path to a migration directory from `baseDir`.
             // E.g., `20201117144659_test`.
             // This will return a &Path that is the relative path
-            let entry_relative = entry.strip_prefix(&base_dir).expect("entry is not inside base_dir");
+            let entry_relative = entry
+                .strip_prefix(&base_dir)
+                .expect("entry is not inside base_dir");
 
             let path = entry_relative.to_string_lossy().into_owned();
 
@@ -268,7 +277,10 @@ pub fn list_migrations(migrations_directory_path: &Path) -> Result<MigrationList
                     .into(),
             };
 
-            let migration_directory = MigrationDirectory { path, migration_file };
+            let migration_directory = MigrationDirectory {
+                path,
+                migration_file,
+            };
             entries.push(migration_directory);
         }
     }

@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// The identifier for a table in a SqlSchema.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -33,7 +34,9 @@ pub struct IndexColumnId(pub(crate) u32);
 pub struct ForeignKeyId(pub(crate) u32);
 
 /// The identifier for a namespace in the schema.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize, Default,
+)]
 pub struct NamespaceId(pub(crate) u32);
 
 /// The identifier for a user defined type in the database.

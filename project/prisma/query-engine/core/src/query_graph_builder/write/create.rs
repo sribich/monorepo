@@ -1,15 +1,26 @@
-use super::*;
-use crate::{
-    ArgumentListLookup, DataExpectation, ParsedField, ParsedInputList, ParsedInputMap, RowSink,
-    inputs::RecordQueryFilterInput,
-    query_ast::*,
-    query_graph::{NodeRef, QueryGraph, QueryGraphDependency},
-};
-use psl::{datamodel_connector::ConnectorCapability, parser_database::RelationFieldId};
-use query_structure::{Model, WriteArgs, Zipper};
-use schema::{QuerySchema, constants::args};
 use std::convert::TryInto;
+
+use psl::datamodel_connector::ConnectorCapability;
+use psl::parser_database::RelationFieldId;
+use query_structure::Model;
+use query_structure::WriteArgs;
+use query_structure::Zipper;
+use schema::QuerySchema;
+use schema::constants::args;
 use write_args_parser::*;
+
+use super::*;
+use crate::ArgumentListLookup;
+use crate::DataExpectation;
+use crate::ParsedField;
+use crate::ParsedInputList;
+use crate::ParsedInputMap;
+use crate::RowSink;
+use crate::inputs::RecordQueryFilterInput;
+use crate::query_ast::*;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Creates a create record query and adds it to the query graph, together with it's nested queries and companion read query.
 pub(crate) fn create_record(
@@ -24,7 +35,8 @@ pub(crate) fn create_record(
     };
 
     if can_use_atomic_create(query_schema, &model, &data_map, &field) {
-        let create_node = create::atomic_create_record_node(graph, query_schema, model, data_map, field)?;
+        let create_node =
+            create::atomic_create_record_node(graph, query_schema, model, data_map, field)?;
 
         graph.add_result_node(&create_node);
     } else {
@@ -44,7 +56,9 @@ pub(crate) fn create_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::ExactlyOneFilter(&RecordQueryFilterInput),
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Query).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Query)
+                        .build(),
                 )),
             ),
         )?;
@@ -86,7 +100,11 @@ pub(crate) fn create_many_records(
 
     let selected_fields = if with_field_selection {
         let (selected_fields, selection_order, nested_read) =
-            super::read::utils::extract_selected_fields(field.nested_fields.unwrap().fields, &model, query_schema)?;
+            super::read::utils::extract_selected_fields(
+                field.nested_fields.unwrap().fields,
+                &model,
+                query_schema,
+            )?;
 
         Some(CreateManyRecordsFields {
             fields: selected_fields,

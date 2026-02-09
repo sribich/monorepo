@@ -1,6 +1,7 @@
 use expect_test::expect;
 use quaint::connector::rusqlite;
-use schema_core::{commands::introspect::IntrospectParams, json_rpc::types::SchemasContainer};
+use schema_core::commands::introspect::IntrospectParams;
+use schema_core::json_rpc::types::SchemasContainer;
 use sql_migration_tests::test_api::SchemaContainer;
 use test_setup::runtime::run_with_thread_local_runtime as tok;
 
@@ -12,7 +13,8 @@ fn introspect_force_with_invalid_schema() {
 
     {
         let conn = rusqlite::Connection::open(&db_path).unwrap();
-        conn.execute_batch("CREATE TABLE corgis (bites BOOLEAN)").unwrap();
+        conn.execute_batch("CREATE TABLE corgis (bites BOOLEAN)")
+            .unwrap();
     }
 
     let schema = format!(
@@ -76,7 +78,8 @@ fn introspect_no_force_with_invalid_schema() {
 
     {
         let conn = rusqlite::Connection::open(&db_path).unwrap();
-        conn.execute_batch("CREATE TABLE corgis (bites BOOLEAN)").unwrap();
+        conn.execute_batch("CREATE TABLE corgis (bites BOOLEAN)")
+            .unwrap();
     }
 
     let schema = indoc::formatdoc!(

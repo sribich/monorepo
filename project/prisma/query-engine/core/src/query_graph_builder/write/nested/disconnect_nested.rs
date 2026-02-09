@@ -1,12 +1,22 @@
-use super::*;
-use crate::{
-    ParsedInputMap, ParsedInputValue, RowSink,
-    inputs::UpdateManyRecordsSelectorsInput,
-    query_graph::{NodeRef, QueryGraph, QueryGraphDependency},
-};
-use itertools::Itertools;
-use query_structure::{Filter, Model, PrismaValue, RelationCompare, RelationFieldRef, SelectionResult, WriteArgs};
 use std::convert::TryInto;
+
+use itertools::Itertools;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::PrismaValue;
+use query_structure::RelationCompare;
+use query_structure::RelationFieldRef;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+
+use super::*;
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::RowSink;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Handles nested disconnect cases.
 ///
@@ -34,7 +44,12 @@ pub fn nested_disconnect(
             .unique()
             .collect();
 
-        handle_many_to_many(graph, &parent_node, parent_relation_field, Filter::or(filters))
+        handle_many_to_many(
+            graph,
+            &parent_node,
+            parent_relation_field,
+            Filter::or(filters),
+        )
     } else {
         let filter: Filter = if relation.is_one_to_one() {
             // One-to-one relations can simply specify if they want to disconnect the child or not as a bool.
@@ -111,10 +126,19 @@ fn handle_many_to_many(
         return Ok(());
     }
 
-    let find_child_records_node =
-        utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, filter)?;
+    let find_child_records_node = utils::insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        filter,
+    )?;
 
-    disconnect::disconnect_records_node(graph, parent_node, &find_child_records_node, parent_relation_field)?;
+    disconnect::disconnect_records_node(
+        graph,
+        parent_node,
+        &find_child_records_node,
+        parent_relation_field,
+    )?;
     Ok(())
 }
 
@@ -153,15 +177,21 @@ fn handle_one_to_x(
     filter: Filter,
 ) -> QueryGraphBuilderResult<()> {
     // Fetches the children to be disconnected.
-    let find_child_records_node =
-        utils::insert_find_children_by_parent_node(graph, parent_node, parent_relation_field, filter.clone())?;
+    let find_child_records_node = utils::insert_find_children_by_parent_node(
+        graph,
+        parent_node,
+        parent_relation_field,
+        filter.clone(),
+    )?;
 
     let child_relation_field = parent_relation_field.related_field();
 
     // If we're in a 1:m scenario and either relation side is required, a disconnect is impossible, as some
     // relation requirement would be violated with the disconnect.
     if parent_relation_field.is_required() || child_relation_field.is_required() {
-        return Err(QueryGraphBuilderError::RelationViolation(parent_relation_field.into()));
+        return Err(QueryGraphBuilderError::RelationViolation(
+            parent_relation_field.into(),
+        ));
     }
 
     // Depending on where the relation is inlined, we update the parent or the child nodes.
@@ -179,7 +209,13 @@ fn handle_one_to_x(
                 filter
             };
 
-            (parent_node, parent_model, extractor_model_id, null_record_id, filter)
+            (
+                parent_node,
+                parent_model,
+                extractor_model_id,
+                null_record_id,
+                filter,
+            )
         } else {
             // Inlined on child
             let child_model = child_relation_field.model();
@@ -196,7 +232,12 @@ fn handle_one_to_x(
         };
 
     let write_args = WriteArgs::from_result(null_record_id, crate::executor::get_request_now());
-    let update_node = utils::update_records_node_placeholder_with_args(graph, filter, model_to_update, write_args);
+    let update_node = utils::update_records_node_placeholder_with_args(
+        graph,
+        filter,
+        model_to_update,
+        write_args,
+    );
 
     // Edge to inject the correct data into the update (either from the parent or child).
     graph.create_edge(

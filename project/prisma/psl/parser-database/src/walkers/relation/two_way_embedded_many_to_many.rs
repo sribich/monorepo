@@ -1,7 +1,8 @@
-use crate::{
-    relations::{Relation, RelationAttributes},
-    walkers::{ModelWalker, RelationFieldWalker, RelationWalker},
-};
+use crate::relations::Relation;
+use crate::relations::RelationAttributes;
+use crate::walkers::ModelWalker;
+use crate::walkers::RelationFieldWalker;
+use crate::walkers::RelationWalker;
 
 /// Describes an explicit m:n relation between two models. Both sides define
 /// `fields` which must be a single array scalar field, and `references` that
@@ -29,7 +30,10 @@ impl<'db> TwoWayEmbeddedManyToManyRelationWalker<'db> {
     pub fn field_a(self) -> RelationFieldWalker<'db> {
         let rel = self.get();
         match rel.attributes {
-            RelationAttributes::TwoWayEmbeddedManyToMany { field_a, field_b: _ } => self.0.walk(field_a),
+            RelationAttributes::TwoWayEmbeddedManyToMany {
+                field_a,
+                field_b: _,
+            } => self.0.walk(field_a),
             _ => unreachable!(),
         }
     }
@@ -38,7 +42,10 @@ impl<'db> TwoWayEmbeddedManyToManyRelationWalker<'db> {
     pub fn field_b(self) -> RelationFieldWalker<'db> {
         let rel = self.get();
         match rel.attributes {
-            RelationAttributes::TwoWayEmbeddedManyToMany { field_a: _, field_b } => self.0.walk(field_b),
+            RelationAttributes::TwoWayEmbeddedManyToMany {
+                field_a: _,
+                field_b,
+            } => self.0.walk(field_b),
 
             _ => unreachable!(),
         }

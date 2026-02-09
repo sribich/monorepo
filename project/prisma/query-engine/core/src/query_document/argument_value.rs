@@ -1,5 +1,6 @@
 use bigdecimal::BigDecimal;
-use chrono::{DateTime, FixedOffset};
+use chrono::DateTime;
+use chrono::FixedOffset;
 use indexmap::IndexMap;
 use query_structure::PrismaValue;
 use serde::Serialize;
@@ -92,10 +93,14 @@ impl ArgumentValue {
 impl From<PrismaValue> for ArgumentValue {
     fn from(value: PrismaValue) -> Self {
         match value {
-            PrismaValue::List(list) => Self::List(list.into_iter().map(ArgumentValue::from).collect()),
-            PrismaValue::Object(obj) => {
-                Self::Object(obj.into_iter().map(|(k, v)| (k, ArgumentValue::from(v))).collect())
+            PrismaValue::List(list) => {
+                Self::List(list.into_iter().map(ArgumentValue::from).collect())
             }
+            PrismaValue::Object(obj) => Self::Object(
+                obj.into_iter()
+                    .map(|(k, v)| (k, ArgumentValue::from(v)))
+                    .collect(),
+            ),
             _ => Self::Scalar(value),
         }
     }

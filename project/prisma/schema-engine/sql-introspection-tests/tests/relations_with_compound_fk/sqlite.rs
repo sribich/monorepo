@@ -4,13 +4,18 @@ use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 
 #[test_connector(tags(Sqlite))]
-async fn compound_foreign_keys_for_duplicate_one_to_many_relations(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_duplicate_one_to_many_relations(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(move |migration| {
             migration.create_table("User", move |t| {
                 t.add_column("id", types::primary());
                 t.add_column("age", types::integer());
-                t.add_constraint("sqlite_autoindex_User_1", types::unique_constraint(["id", "age"]));
+                t.add_constraint(
+                    "sqlite_autoindex_User_1",
+                    types::unique_constraint(["id", "age"]),
+                );
             });
 
             migration.create_table("Post", |t| {
@@ -53,14 +58,19 @@ async fn compound_foreign_keys_for_duplicate_one_to_many_relations(api: &mut Tes
 }
 
 #[test_connector(tags(Sqlite))]
-async fn compound_foreign_keys_for_one_to_many_relations_with_non_unique_index(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_one_to_many_relations_with_non_unique_index(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(move |migration| {
             migration.create_table("User", move |t| {
                 t.add_column("id", types::primary());
                 t.add_column("age", types::integer());
 
-                t.add_constraint("sqlite_autoindex_User_1", types::unique_constraint(vec!["id", "age"]));
+                t.add_constraint(
+                    "sqlite_autoindex_User_1",
+                    types::unique_constraint(vec!["id", "age"]),
+                );
             });
 
             migration.create_table("Post", |t| {
@@ -240,7 +250,10 @@ async fn compound_foreign_keys_for_self_relations(api: &mut TestApi) -> TestResu
                 t.add_column("partner_age", types::integer().nullable(true));
 
                 t.add_foreign_key(&["partner_id", "partner_age"], "Person", &["id", "age"]);
-                t.add_constraint("post_user_unique", types::unique_constraint(vec!["id", "age"]));
+                t.add_constraint(
+                    "post_user_unique",
+                    types::unique_constraint(vec!["id", "age"]),
+                );
             });
         })
         .await?;
@@ -273,7 +286,10 @@ async fn compound_foreign_keys_with_defaults(api: &mut TestApi) -> TestResult {
                 t.add_column("partner_id", types::integer().default(0));
                 t.add_column("partner_age", types::integer().default(0));
 
-                t.add_constraint("post_user_unique", types::unique_constraint(vec!["id", "age"]));
+                t.add_constraint(
+                    "post_user_unique",
+                    types::unique_constraint(vec!["id", "age"]),
+                );
                 t.add_foreign_key(&["partner_id", "partner_age"], "Person", &["id", "age"]);
             });
         })
@@ -316,7 +332,13 @@ async fn compound_foreign_keys_for_one_to_many_relations(api: &mut TestApi) -> T
 
                 t.add_constraint(
                     "Post_fk",
-                    types::foreign_constraint(&["user_id", "user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["user_id", "user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
                 t.add_constraint("Post_pkey", types::primary_constraint(["id"]));
             });
@@ -346,7 +368,9 @@ async fn compound_foreign_keys_for_one_to_many_relations(api: &mut TestApi) -> T
 }
 
 #[test_connector(tags(Sqlite))]
-async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness(api: &mut TestApi) -> TestResult {
+async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {
@@ -363,7 +387,13 @@ async fn compound_foreign_keys_for_one_to_many_relations_with_mixed_requiredness
 
                 t.add_constraint(
                     "Post_user_id_user_age",
-                    types::foreign_constraint(&["user_id", "user_age"], "User", &["id", "age"], None, None),
+                    types::foreign_constraint(
+                        &["user_id", "user_age"],
+                        "User",
+                        &["id", "age"],
+                        None,
+                        None,
+                    ),
                 );
             });
         })

@@ -1,5 +1,6 @@
-use crate::TestError;
 use std::convert::TryFrom;
+
+use crate::TestError;
 
 #[derive(Debug, Clone)]
 pub enum RelationField {

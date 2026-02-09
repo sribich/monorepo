@@ -1,13 +1,19 @@
-use crate::database::{catch, connection::SqlConnection};
-use crate::{FromSource, SqlError};
-use async_trait::async_trait;
-use connector_interface::{
-    self as connector, Connection, Connector,
-    error::{ConnectorError, ErrorKind},
-};
-use quaint::connector::Queryable;
-use quaint::{pooled::Quaint, prelude::ConnectionInfo};
 use std::time::Duration;
+
+use async_trait::async_trait;
+use connector_interface::Connection;
+use connector_interface::Connector;
+use connector_interface::error::ConnectorError;
+use connector_interface::error::ErrorKind;
+use connector_interface::{self as connector};
+use quaint::connector::Queryable;
+use quaint::pooled::Quaint;
+use quaint::prelude::ConnectionInfo;
+
+use crate::FromSource;
+use crate::SqlError;
+use crate::database::catch;
+use crate::database::connection::SqlConnection;
 
 pub struct Mysql {
     pool: Quaint,
@@ -65,7 +71,9 @@ impl FromSource for Mysql {
 
 #[async_trait]
 impl Connector for Mysql {
-    async fn get_connection<'a>(&'a self) -> connector::Result<Box<dyn Connection + Send + Sync + 'static>> {
+    async fn get_connection<'a>(
+        &'a self,
+    ) -> connector::Result<Box<dyn Connection + Send + Sync + 'static>> {
         catch(&self.connection_info, async move {
             let runtime_conn = self.pool.check_out().await?;
 
@@ -78,7 +86,9 @@ impl Connector for Mysql {
             // Vitess routes queries to the correct MySQL database based on which keyspace
             // each table belongs to and on shard key values.
             // Otherwise, we use `mysql` as the default database.
-            if self.connection_info.dbname().is_none() && !db_version.as_ref().is_some_and(|v| v.contains("Vitess")) {
+            if self.connection_info.dbname().is_none()
+                && !db_version.as_ref().is_some_and(|v| v.contains("Vitess"))
+            {
                 runtime_conn.execute_raw("USE mysql", &[]).await?;
             }
 

@@ -1,17 +1,18 @@
 use std::collections::BTreeMap;
 
 use convert_case::Case;
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::DmmfInputFieldExt;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::format_ident;
+use quote::quote;
 use syn::Ident;
 
 use super::Module;
-use crate::{
-    PrismaError,
-    args::{Filter, GeneratorArgs},
-    error::StringErrorContext,
-};
-use generator_shared::{casing::cased_ident, extensions::DmmfInputFieldExt};
+use crate::PrismaError;
+use crate::args::Filter;
+use crate::args::GeneratorArgs;
+use crate::error::StringErrorContext;
 
 pub fn write_param_name(filter: &Filter) -> Ident {
     format_ident!("{}Param", &filter.name)

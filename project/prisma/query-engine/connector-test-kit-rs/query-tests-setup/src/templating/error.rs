@@ -1,5 +1,6 @@
-use nom::error::Error as NomError;
 use std::fmt::Display;
+
+use nom::error::Error as NomError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

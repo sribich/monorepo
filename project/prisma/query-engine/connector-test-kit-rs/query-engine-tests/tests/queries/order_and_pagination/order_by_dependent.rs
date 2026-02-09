@@ -429,7 +429,11 @@ mod order_by_dependent {
         };
 
         let model_c = match c_id {
-            Some(id) => format!("c: {{ create: {{ id: {} \n {} }} }}", id, inline.unwrap_or_default()),
+            Some(id) => format!(
+                "c: {{ create: {{ id: {} \n {} }} }}",
+                id,
+                inline.unwrap_or_default()
+            ),
             None => "".to_string(),
         };
 
@@ -441,7 +445,9 @@ mod order_by_dependent {
         let model_a = format!("{{ id: {a_id} \n {model_b} }}");
 
         runner
-            .query(format!("mutation {{ createOneModelA(data: {model_a}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneModelA(data: {model_a}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

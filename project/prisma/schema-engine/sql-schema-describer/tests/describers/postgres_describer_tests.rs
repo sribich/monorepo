@@ -1,7 +1,9 @@
-use crate::test_api::*;
 use pretty_assertions::assert_eq;
 use prisma_value::PrismaValue;
-use sql_schema_describer::{postgres::PostgresSchemaExt, *};
+use sql_schema_describer::postgres::PostgresSchemaExt;
+use sql_schema_describer::*;
+
+use crate::test_api::*;
 
 #[test_connector(tags(Postgres))]
 fn postgres_skips_nonexisting_namespaces(api: TestApi) {
@@ -38,7 +40,9 @@ fn postgres_skips_public_when_ignored_namespaces(api: TestApi) {
     api.raw_cmd(full_sql);
     let schema = api.describe_with_schemas(&["one"]);
 
-    schema.assert_namespace("one").assert_not_namespace("public");
+    schema
+        .assert_namespace("one")
+        .assert_not_namespace("public");
 }
 
 #[test_connector(tags(Postgres))]
@@ -68,7 +72,10 @@ fn views_can_be_described(api: TestApi) {
 
     api.raw_cmd(full_sql);
     let result = api.describe();
-    let view = result.get_view("ab").expect("couldn't get ab view").to_owned();
+    let view = result
+        .get_view("ab")
+        .expect("couldn't get ab view")
+        .to_owned();
 
     let expected_sql = " SELECT a.a_id\n   FROM a\nUNION ALL\n SELECT b.b_id AS a_id\n   FROM b;";
 
@@ -1200,7 +1207,10 @@ fn postgres_enums_must_work(api: TestApi) {
 
 #[test_connector(tags(Postgres))]
 fn postgres_sequences_must_work(api: TestApi) {
-    api.raw_cmd(&format!("CREATE SEQUENCE \"{}\".\"test\"", api.schema_name()));
+    api.raw_cmd(&format!(
+        "CREATE SEQUENCE \"{}\".\"test\"",
+        api.schema_name()
+    ));
 
     let schema = api.describe();
     let ext = extract_ext(&schema);
@@ -1261,7 +1271,13 @@ fn postgres_multi_field_indexes_must_be_inferred_in_the_right_order(api: TestApi
         .next()
         .unwrap()
         .indexes()
-        .map(|idx| (idx.name(), idx.is_unique(), idx.column_names().collect::<Vec<_>>()))
+        .map(|idx| {
+            (
+                idx.name(),
+                idx.is_unique(),
+                idx.column_names().collect::<Vec<_>>(),
+            )
+        })
         .collect();
 
     let expectation = expect![[r#"

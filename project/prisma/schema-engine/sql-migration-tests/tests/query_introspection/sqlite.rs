@@ -1,13 +1,12 @@
-use super::utils::*;
-
 use sql_migration_tests::test_api::*;
+
+use super::utils::*;
 
 #[test_connector(tags(Sqlite))]
 fn insert_sqlite(api: TestApi) {
     api.schema_push(SIMPLE_SCHEMA).send().assert_green();
 
-    let query =
-        "INSERT INTO `model` (`int`, `string`, `bigint`, `float`, `bytes`, `bool`, `dt`) VALUES (?, ?, ?, ?, ?, ?, ?);";
+    let query = "INSERT INTO `model` (`int`, `string`, `bigint`, `float`, `bytes`, `bool`, `dt`) VALUES (?, ?, ?, ?, ?, ?, ?);";
 
     let res = api.introspect_sql("test_1", query).send_sync();
 
@@ -129,7 +128,9 @@ fn select_sqlite(api: TestApi) {
 
 #[test_connector(tags(Sqlite))]
 fn select_nullable_sqlite(api: TestApi) {
-    api.schema_push(SIMPLE_NULLABLE_SCHEMA).send().assert_green();
+    api.schema_push(SIMPLE_NULLABLE_SCHEMA)
+        .send()
+        .assert_green();
 
     let res = api
         .introspect_sql(
@@ -473,12 +474,15 @@ fn unnamed_expr_real(api: TestApi) {
         .send_sync()
         .expect_result(expected);
 
-    api.query_raw("SELECT 1.2 AS a, 2.34567891023 AS b, round(2.345) AS c;", &[])
-        .assert_single_row(|row| {
-            row.assert_float_value("a", 1.2)
-                .assert_float_value("b", 2.34567891023)
-                .assert_float_value("c", 2.0)
-        });
+    api.query_raw(
+        "SELECT 1.2 AS a, 2.34567891023 AS b, round(2.345) AS c;",
+        &[],
+    )
+    .assert_single_row(|row| {
+        row.assert_float_value("a", 1.2)
+            .assert_float_value("b", 2.34567891023)
+            .assert_float_value("c", 2.0)
+    });
 }
 
 #[test_connector(tags(Sqlite))]

@@ -1,18 +1,19 @@
 use convert_case::Casing;
-use macro_util::ast::{Enum, Unresolved, variant::Variant};
-use quote::{format_ident, quote};
-use syn::{Fields, GenericParam};
+use macro_util::ast::Enum;
+use macro_util::ast::Unresolved;
+use macro_util::ast::variant::Variant;
+use quote::format_ident;
+use quote::quote;
+use syn::Fields;
+use syn::GenericParam;
 
-use crate::{
-    attributes::{
-        common::tokenize_deprecation,
-        container::{ContainerAttributes, Tagged},
-        field::FieldAttributes,
-        variant::VariantAttributes,
-    },
-    typegen::datatype,
-    util::get_crate_name,
-};
+use crate::attributes::common::tokenize_deprecation;
+use crate::attributes::container::ContainerAttributes;
+use crate::attributes::container::Tagged;
+use crate::attributes::field::FieldAttributes;
+use crate::attributes::variant::VariantAttributes;
+use crate::typegen::datatype;
+use crate::util::get_crate_name;
 
 pub(super) fn impl_enum(
     container_name: &String,
@@ -170,10 +171,10 @@ pub(super) fn impl_enum(
         Tagged::Externally => quote!(#crate_name::datatype::r#enum::EnumRepr::External),
         Tagged::Adjacently { tag, content } => {
             quote!(#crate_name::datatype::r#enum::EnumRepr::Adjacent { tag: #tag.into(), content: #content.into() })
-        },
+        }
         Tagged::Internally { tag } => {
             quote!(#crate_name::datatype::r#enum::EnumRepr::Internal { tag: #tag.into() })
-        },
+        }
         Tagged::Untagged => quote!(#crate_name::datatype::r#enum::EnumRepr::Untagged),
     };
 

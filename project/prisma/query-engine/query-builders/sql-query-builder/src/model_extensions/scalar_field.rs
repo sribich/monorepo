@@ -1,15 +1,19 @@
-use crate::{
-    context::Context,
-    convert,
-    value::{GeneratorCall, Placeholder},
-};
 use chrono::Utc;
-use prisma_value::{Placeholder as PrismaValuePlaceholder, PrismaValue};
-use quaint::{
-    ast::{EnumName, Value, ValueType},
-    prelude::{EnumVariant, TypeDataLength, TypeFamily},
-};
-use query_structure::{ScalarField, TypeIdentifier};
+use prisma_value::Placeholder as PrismaValuePlaceholder;
+use prisma_value::PrismaValue;
+use quaint::ast::EnumName;
+use quaint::ast::Value;
+use quaint::ast::ValueType;
+use quaint::prelude::EnumVariant;
+use quaint::prelude::TypeDataLength;
+use quaint::prelude::TypeFamily;
+use query_structure::ScalarField;
+use query_structure::TypeIdentifier;
+
+use crate::context::Context;
+use crate::convert;
+use crate::value::GeneratorCall;
+use crate::value::Placeholder;
 
 pub(crate) trait ScalarFieldExt {
     fn value<'a>(&self, pv: PrismaValue, ctx: &Context<'_>) -> Value<'a>;
@@ -26,7 +30,10 @@ impl ScalarFieldExt for ScalarField {
             (PrismaValue::Enum(e), TypeIdentifier::Enum(enum_id)) => {
                 let enum_walker = self.dm.clone().zip(enum_id);
                 let enum_name = enum_walker.db_name().to_owned();
-                let schema_name = enum_walker.schema_name().or(ctx.schema_name()).map(ToOwned::to_owned);
+                let schema_name = enum_walker
+                    .schema_name()
+                    .or(ctx.schema_name())
+                    .map(ToOwned::to_owned);
                 Value::enum_variant_with_name(e, EnumName::new(enum_name, schema_name))
             }
             (PrismaValue::List(vals), TypeIdentifier::Enum(enum_id)) => {
@@ -38,7 +45,10 @@ impl ScalarFieldExt for ScalarField {
                     .collect();
 
                 let enum_name = enum_walker.db_name().to_owned();
-                let schema_name = enum_walker.schema_name().or(ctx.schema_name()).map(ToOwned::to_owned);
+                let schema_name = enum_walker
+                    .schema_name()
+                    .or(ctx.schema_name())
+                    .map(ToOwned::to_owned);
 
                 Value::enum_array_with_name(variants, EnumName::new(enum_name, schema_name))
             }
@@ -47,7 +57,9 @@ impl ScalarFieldExt for ScalarField {
             (PrismaValue::BigInt(i), _) => i.into(),
             (PrismaValue::Uuid(u), _) => u.to_string().into(),
             (PrismaValue::List(l), _) => Value::array(l.into_iter().map(|x| self.value(x, ctx))),
-            (PrismaValue::Json(s), _) => Value::json(serde_json::from_str::<serde_json::Value>(&s).unwrap()),
+            (PrismaValue::Json(s), _) => {
+                Value::json(serde_json::from_str::<serde_json::Value>(&s).unwrap())
+            }
             (PrismaValue::Bytes(b), _) => Value::bytes(b),
             (PrismaValue::Object(_), _) => unimplemented!(),
             (PrismaValue::Null, ident) => match ident {
@@ -58,20 +70,30 @@ impl ScalarFieldExt for ScalarField {
                 TypeIdentifier::Enum(enum_id) => {
                     let enum_walker = self.dm.clone().zip(enum_id);
                     let enum_name = enum_walker.db_name().to_owned();
-                    let schema_name = enum_walker.schema_name().or(ctx.schema_name()).map(ToOwned::to_owned);
+                    let schema_name = enum_walker
+                        .schema_name()
+                        .or(ctx.schema_name())
+                        .map(ToOwned::to_owned);
                     ValueType::Enum(None, Some(EnumName::new(enum_name, schema_name))).into_value()
                 }
-                TypeIdentifier::Extension(_) => unreachable!("No extension field should reach this path"),
+                TypeIdentifier::Extension(_) => {
+                    unreachable!("No extension field should reach this path")
+                }
                 TypeIdentifier::Json => Value::null_json(),
                 TypeIdentifier::DateTime => Value::null_datetime(),
                 TypeIdentifier::UUID => Value::null_uuid(),
                 TypeIdentifier::Int => Value::null_int32(),
                 TypeIdentifier::BigInt => Value::null_int64(),
                 TypeIdentifier::Bytes => Value::null_bytes(),
-                TypeIdentifier::Unsupported => unreachable!("No unsupported field should reach this path"),
+                TypeIdentifier::Unsupported => {
+                    unreachable!("No unsupported field should reach this path")
+                }
             },
             (PrismaValue::Placeholder(PrismaValuePlaceholder { name, .. }), ident) => {
-                Value::opaque(Placeholder::new(name), convert::type_identifier_to_opaque_type(&ident))
+                Value::opaque(
+                    Placeholder::new(name),
+                    convert::type_identifier_to_opaque_type(&ident),
+                )
             }
             (PrismaValue::GeneratorCall { name, args, .. }, ident) => Value::opaque(
                 GeneratorCall::new(name, args),
@@ -102,12 +124,16 @@ impl ScalarFieldExt for ScalarField {
             }
             TypeIdentifier::Boolean => TypeFamily::Boolean,
             TypeIdentifier::Enum(_) => TypeFamily::Text(Some(TypeDataLength::Constant(8000))),
-            TypeIdentifier::Extension(_) => unreachable!("No extension field should reach this path"),
+            TypeIdentifier::Extension(_) => {
+                unreachable!("No extension field should reach this path")
+            }
             TypeIdentifier::UUID => TypeFamily::Uuid,
             TypeIdentifier::Json => TypeFamily::Text(Some(TypeDataLength::Maximum)),
             TypeIdentifier::DateTime => TypeFamily::DateTime,
             TypeIdentifier::Bytes => TypeFamily::Text(parse_scalar_length(self)),
-            TypeIdentifier::Unsupported => unreachable!("No unsupported field should reach this path"),
+            TypeIdentifier::Unsupported => {
+                unreachable!("No unsupported field should reach this path")
+            }
         }
     }
 }

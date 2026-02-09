@@ -1,5 +1,6 @@
 use convert_case::Case;
-use generator_shared::{casing::cased_ident, extensions::FieldExtension};
+use generator_shared::casing::cased_ident;
+use generator_shared::extensions::FieldExtension;
 use proc_macro2::TokenStream;
 use psl::parser_database::ScalarFieldType;
 use query_structure::walkers::ModelWalker;

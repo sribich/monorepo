@@ -2,15 +2,19 @@ mod create;
 mod update;
 
 pub(crate) use create::*;
+use query_structure::prelude::*;
 pub(crate) use update::*;
 
 use super::*;
-use query_structure::prelude::*;
 
 // Todo: This isn't final, this is only the first draft to get structure into the
 // wild cross-dependency waste that was the create/update inputs.
 pub(crate) trait DataInputFieldMapper {
-    fn map_all<'a>(&self, ctx: &'a QuerySchema, fields: impl Iterator<Item = Field>) -> Vec<InputField<'a>> {
+    fn map_all<'a>(
+        &self,
+        ctx: &'a QuerySchema,
+        fields: impl Iterator<Item = Field>,
+    ) -> Vec<InputField<'a>> {
         fields
             .into_iter()
             .map(|field| match field {

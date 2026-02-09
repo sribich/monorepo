@@ -2,26 +2,48 @@ mod datasource;
 mod native_types;
 mod validations;
 
-use diagnostics::DatamodelError;
-pub use native_types::{KnownPostgresType, PostgresType};
-use parser_database::{coerce, ExtensionTypes, ScalarFieldType};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-use crate::{
-    Configuration, Datasource, DatasourceConnectorData, PreviewFeature, ValidatedSchema,
-    datamodel_connector::{
-        Connector, ConnectorCapabilities, ConnectorCapability, ConstraintScope, Flavour, NativeTypeConstructor,
-        NativeTypeInstance, NativeTypeParseError, RelationMode, StringFilter,
-    },
-    diagnostics::Diagnostics,
-    parser_database::{IndexAlgorithm, OperatorClass, ParserDatabase, ReferentialAction, ScalarType, ast, walkers},
-};
 use KnownPostgresType::*;
 use chrono::*;
+use diagnostics::DatamodelError;
 use enumflags2::BitFlags;
-use lsp_types::{CompletionItem, CompletionItemKind, CompletionList, InsertTextFormat};
-use std::{borrow::Cow, collections::HashMap, sync::Arc};
+use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
+use lsp_types::CompletionList;
+use lsp_types::InsertTextFormat;
+pub use native_types::KnownPostgresType;
+pub use native_types::PostgresType;
+use parser_database::ExtensionTypes;
+use parser_database::ScalarFieldType;
+use parser_database::coerce;
 
 use super::completions;
+use crate::Configuration;
+use crate::Datasource;
+use crate::DatasourceConnectorData;
+use crate::PreviewFeature;
+use crate::ValidatedSchema;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapabilities;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::ConstraintScope;
+use crate::datamodel_connector::Flavour;
+use crate::datamodel_connector::NativeTypeConstructor;
+use crate::datamodel_connector::NativeTypeInstance;
+use crate::datamodel_connector::NativeTypeParseError;
+use crate::datamodel_connector::RelationMode;
+use crate::datamodel_connector::StringFilter;
+use crate::diagnostics::Diagnostics;
+use crate::parser_database::IndexAlgorithm;
+use crate::parser_database::OperatorClass;
+use crate::parser_database::ParserDatabase;
+use crate::parser_database::ReferentialAction;
+use crate::parser_database::ScalarType;
+use crate::parser_database::ast;
+use crate::parser_database::walkers;
 
 const CONSTRAINT_SCOPES: &[ConstraintScope] = &[
     ConstraintScope::GlobalPrimaryKeyKeyIndex,
@@ -86,7 +108,10 @@ const SCALAR_TYPE_DEFAULTS: &[(ScalarType, KnownPostgresType)] = &[
     (ScalarType::Int, KnownPostgresType::Integer),
     (ScalarType::BigInt, KnownPostgresType::BigInt),
     (ScalarType::Float, KnownPostgresType::DoublePrecision),
-    (ScalarType::Decimal, KnownPostgresType::Decimal(Some((65, 30)))),
+    (
+        ScalarType::Decimal,
+        KnownPostgresType::Decimal(Some((65, 30))),
+    ),
     (ScalarType::Boolean, KnownPostgresType::Boolean),
     (ScalarType::String, KnownPostgresType::Text),
     (ScalarType::DateTime, DATE_TIME_DEFAULT),
@@ -297,7 +322,10 @@ impl Connector for PostgresDatamodelConnector {
 
     /// Postgres accepts table definitions with a SET NULL referential action referencing a non-nullable field,
     /// although that would lead to a runtime error once the action is actually triggered.
-    fn allows_set_null_referential_action_on_non_nullable_fields(&self, relation_mode: RelationMode) -> bool {
+    fn allows_set_null_referential_action_on_non_nullable_fields(
+        &self,
+        relation_mode: RelationMode,
+    ) -> bool {
         relation_mode.uses_foreign_keys()
     }
 
@@ -366,7 +394,11 @@ impl Connector for PostgresDatamodelConnector {
                     .iter()
                     .find(|(st, _)| st == scalar_type)
                     .map(|(_, native_type)| native_type)
-                    .ok_or_else(|| format!("Could not find scalar type {scalar_type:?} in SCALAR_TYPE_DEFAULTS"))
+                    .ok_or_else(|| {
+                        format!(
+                            "Could not find scalar type {scalar_type:?} in SCALAR_TYPE_DEFAULTS"
+                        )
+                    })
                     .unwrap(),
             ),
             ScalarFieldType::Extension(id) => {
@@ -404,11 +436,15 @@ impl Connector for PostgresDatamodelConnector {
                     span,
                 ))
             }
-            Bit(Some(0)) | VarBit(Some(0)) => {
-                errors.push_error(error.new_argument_m_out_of_range_error("M must be a positive integer.", span))
-            }
-            Timestamp(Some(p)) | Timestamptz(Some(p)) | Time(Some(p)) | Timetz(Some(p)) if *p > 6 => {
-                errors.push_error(error.new_argument_m_out_of_range_error("M can range from 0 to 6.", span))
+            Bit(Some(0)) | VarBit(Some(0)) => errors.push_error(
+                error.new_argument_m_out_of_range_error("M must be a positive integer.", span),
+            ),
+            Timestamp(Some(p)) | Timestamptz(Some(p)) | Time(Some(p)) | Timetz(Some(p))
+                if *p > 6 =>
+            {
+                errors.push_error(
+                    error.new_argument_m_out_of_range_error("M can range from 0 to 6.", span),
+                )
             }
             _ => (),
         }
@@ -423,7 +459,12 @@ impl Connector for PostgresDatamodelConnector {
         }
     }
 
-    fn validate_model(&self, model: walkers::ModelWalker<'_>, _: RelationMode, errors: &mut Diagnostics) {
+    fn validate_model(
+        &self,
+        model: walkers::ModelWalker<'_>,
+        _: RelationMode,
+        errors: &mut Diagnostics,
+    ) {
         for index in model.indexes() {
             validations::compatible_native_types(index, self, errors);
             validations::generalized_index_validations(index, self, errors);
@@ -439,7 +480,11 @@ impl Connector for PostgresDatamodelConnector {
     ) {
         if let Some(props) = ds.downcast_connector_data::<PostgresDatasourceProperties>() {
             validations::extensions_preview_flag_must_be_set(preview_features, props, errors);
-            validations::extension_names_follow_prisma_syntax_rules(preview_features, props, errors);
+            validations::extension_names_follow_prisma_syntax_rules(
+                preview_features,
+                props,
+                errors,
+            );
         }
     }
 
@@ -470,7 +515,9 @@ impl Connector for PostgresDatamodelConnector {
     ) -> Option<NativeTypeInstance> {
         let nt = match KnownPostgresType::from_parts(name, args) {
             Ok(res) => PostgresType::Known(res),
-            Err(NativeTypeParseError::UnknownType { .. }) => PostgresType::Unknown(name.to_owned(), args.to_owned()),
+            Err(NativeTypeParseError::UnknownType { .. }) => {
+                PostgresType::Unknown(name.to_owned(), args.to_owned())
+            }
             Err(err) => {
                 diagnostics.push_error(err.into_datamodel_error(span));
                 return None;
@@ -479,11 +526,18 @@ impl Connector for PostgresDatamodelConnector {
         Some(NativeTypeInstance::new(nt))
     }
 
-    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>) {
+    fn native_type_to_parts<'t>(
+        &self,
+        native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, Cow<'t, [String]>) {
         native_type.downcast_ref::<PostgresType>().to_parts()
     }
 
-    fn scalar_filter_name(&self, scalar_type_name: String, native_type_name: Option<&str>) -> Cow<'_, str> {
+    fn scalar_filter_name(
+        &self,
+        scalar_type_name: String,
+        native_type_name: Option<&str>,
+    ) -> Cow<'_, str> {
         match native_type_name {
             Some(name) if name.eq_ignore_ascii_case("uuid") => "Uuid".into(),
             _ => scalar_type_name.into(),
@@ -502,7 +556,9 @@ impl Connector for PostgresDatamodelConnector {
             && !url.starts_with("postgresql://")
             && !url.starts_with("prisma+postgres://")
         {
-            return Err("must start with the protocol `postgresql://` or `postgres://`.".to_owned());
+            return Err(
+                "must start with the protocol `postgresql://` or `postgres://`.".to_owned(),
+            );
         }
 
         Ok(())
@@ -517,7 +573,11 @@ impl Connector for PostgresDatamodelConnector {
         match position {
             ast::SchemaPosition::Model(
                 _,
-                ast::ModelPosition::ModelAttribute("index", _, ast::AttributePosition::Argument("type")),
+                ast::ModelPosition::ModelAttribute(
+                    "index",
+                    _,
+                    ast::AttributePosition::Argument("type"),
+                ),
             ) => {
                 for index_type in self.supported_index_types() {
                     completions.items.push(CompletionItem {
@@ -548,7 +608,10 @@ impl Connector for PostgresDatamodelConnector {
                     .and_then(|model| {
                         model.indexes().find(|index| {
                             index.attribute_id()
-                                == ast::AttributeId::new_in_container(ast::AttributeContainer::Model(model_id), attr_id)
+                                == ast::AttributeId::new_in_container(
+                                    ast::AttributeContainer::Model(model_id),
+                                    attr_id,
+                                )
                         })
                     })
                     .and_then(|index| {
@@ -594,7 +657,9 @@ impl Connector for PostgresDatamodelConnector {
             .downcast_ref::<PostgresDatasourceProperties>()
             .unwrap();
 
-        if config.preview_features().contains(PreviewFeature::PostgresqlExtensions)
+        if config
+            .preview_features()
+            .contains(PreviewFeature::PostgresqlExtensions)
             && !connector_data.extensions_defined()
         {
             completions::extensions_completion(completion_list);
@@ -625,7 +690,9 @@ impl Connector for PostgresDatamodelConnector {
         str: &str,
         nt: Option<NativeTypeInstance>,
     ) -> chrono::ParseResult<chrono::DateTime<FixedOffset>> {
-        let native_type = nt.as_ref().and_then(|nt| nt.downcast_ref::<PostgresType>().as_known());
+        let native_type = nt
+            .as_ref()
+            .and_then(|nt| nt.downcast_ref::<PostgresType>().as_known());
 
         match native_type {
             Some(pt) => match pt {
@@ -638,30 +705,46 @@ impl Connector for PostgresDatamodelConnector {
             },
             None => self.parse_json_datetime(
                 str,
-                Some(NativeTypeInstance::new(PostgresType::Known(DATE_TIME_DEFAULT))),
+                Some(NativeTypeInstance::new(PostgresType::Known(
+                    DATE_TIME_DEFAULT,
+                ))),
             ),
         }
     }
 
-    fn parse_json_bytes(&self, str: &str, nt: Option<NativeTypeInstance>) -> prisma_value::PrismaValueResult<Vec<u8>> {
-        let native_type = nt.as_ref().and_then(|nt| nt.downcast_ref::<PostgresType>().as_known());
+    fn parse_json_bytes(
+        &self,
+        str: &str,
+        nt: Option<NativeTypeInstance>,
+    ) -> prisma_value::PrismaValueResult<Vec<u8>> {
+        let native_type = nt
+            .as_ref()
+            .and_then(|nt| nt.downcast_ref::<PostgresType>().as_known());
 
         match native_type {
             Some(ct) => match ct {
                 KnownPostgresType::ByteA => {
-                    super::utils::postgres::parse_bytes(str).map_err(|_| prisma_value::ConversionFailure {
-                        from: "hex".into(),
-                        to: "bytes".into(),
+                    super::utils::postgres::parse_bytes(str).map_err(|_| {
+                        prisma_value::ConversionFailure {
+                            from: "hex".into(),
+                            to: "bytes".into(),
+                        }
                     })
                 }
                 _ => unreachable!(),
             },
-            None => self.parse_json_bytes(str, Some(NativeTypeInstance::new(PostgresType::Known(BYTES_DEFAULT)))),
+            None => self.parse_json_bytes(
+                str,
+                Some(NativeTypeInstance::new(PostgresType::Known(BYTES_DEFAULT))),
+            ),
         }
     }
 }
 
-fn allowed_index_operator_classes(algo: IndexAlgorithm, field: walkers::ScalarFieldWalker<'_>) -> Vec<OperatorClass> {
+fn allowed_index_operator_classes(
+    algo: IndexAlgorithm,
+    field: walkers::ScalarFieldWalker<'_>,
+) -> Vec<OperatorClass> {
     let scalar_type = field.scalar_type();
     let native_type = field.raw_native_type().map(|t| t.1);
 
@@ -683,7 +766,11 @@ fn allowed_index_operator_classes(algo: IndexAlgorithm, field: walkers::ScalarFi
         (IndexAlgorithm::SpGist, _, Some("Inet")) => {
             classes.push(OperatorClass::InetOps);
         }
-        (IndexAlgorithm::SpGist, Some(ScalarType::String), None | Some("Text") | Some("VarChar")) => {
+        (
+            IndexAlgorithm::SpGist,
+            Some(ScalarType::String),
+            None | Some("Text") | Some("VarChar"),
+        ) => {
             classes.push(OperatorClass::TextOps);
         }
 

@@ -3,7 +3,9 @@ use query_engine_tests::*;
 #[test_suite]
 mod rel_defaults {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query, run_query_json};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -95,7 +97,11 @@ mod rel_defaults {
     // "Not providing a value for a required relation with multiple fields with one default value" should "not work"
     #[connector_test(schema(schema_2), capabilities(CompoundIds))]
     async fn no_val_required_rel_one_default_val(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, name: "A", todo: { create: { id: 1, name: "B"}}}"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, name: "A", todo: { create: { id: 1, name: "B"}}}"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query { findManyList { name, todo { name } } }"#),
@@ -226,7 +232,9 @@ mod rel_defaults {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneList(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneList(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

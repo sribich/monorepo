@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod set_inside_update {
-    use query_engine_tests::{DatamodelWithParams, run_query, run_query_json};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // "a PM to C1  relation with the child already in a relation" should "be setable through a nested mutation by unique"
@@ -63,7 +65,10 @@ mod set_inside_update {
 
     // "a PM to C1  relation with the child already in a relation" should "be setable through a nested mutation by unique"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_child_inrel_with_filters(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_child_inrel_with_filters(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         run_query!(
             runner,
             format!(
@@ -118,7 +123,10 @@ mod set_inside_update {
     }
 
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_child_inrel_fails_if_no_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_child_inrel_fails_if_no_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         run_query!(
             runner,
             format!(
@@ -356,7 +364,10 @@ mod set_inside_update {
 
     // "a PM to CM  relation with the children already in a relation" should "be setable to empty"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_child_inrel_set_empty(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_child_inrel_set_empty(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         run_query_json!(
             runner,
             format!(

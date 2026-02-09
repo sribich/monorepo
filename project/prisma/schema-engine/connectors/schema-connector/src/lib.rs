@@ -20,22 +20,32 @@ mod schema_connector;
 pub mod migrations_directory;
 pub mod warnings;
 
-pub use crate::namespaces::Namespaces;
-pub use crate::schema_connector::{ExternalShadowDatabase, SchemaConnector, SchemaDialect};
-pub use connector_host::{ConnectorHost, EmptyHost};
+pub use connector_host::ConnectorHost;
+pub use connector_host::EmptyHost;
 pub use connector_params::ConnectorParams;
 pub use database_schema::DatabaseSchema;
-pub use destructive_change_checker::{
-    DestructiveChangeChecker, DestructiveChangeDiagnostics, MigrationWarning, UnexecutableMigration,
-};
+pub use destructive_change_checker::DestructiveChangeChecker;
+pub use destructive_change_checker::DestructiveChangeDiagnostics;
+pub use destructive_change_checker::MigrationWarning;
+pub use destructive_change_checker::UnexecutableMigration;
 pub use diff::DiffTarget;
-pub use error::{ConnectorError, ConnectorResult};
+pub use error::ConnectorError;
+pub use error::ConnectorResult;
 pub use introspect_sql::*;
 pub use introspection_context::IntrospectionContext;
-pub use introspection_result::{IntrospectionResult, ViewDefinition};
+pub use introspection_result::IntrospectionResult;
+pub use introspection_result::ViewDefinition;
 pub use migration::Migration;
-pub use migration_persistence::{MigrationPersistence, MigrationRecord, PersistenceNotInitializedError, Timestamp};
+pub use migration_persistence::MigrationPersistence;
+pub use migration_persistence::MigrationRecord;
+pub use migration_persistence::PersistenceNotInitializedError;
+pub use migration_persistence::Timestamp;
 pub use warnings::Warnings;
+
+pub use crate::namespaces::Namespaces;
+pub use crate::schema_connector::ExternalShadowDatabase;
+pub use crate::schema_connector::SchemaConnector;
+pub use crate::schema_connector::SchemaDialect;
 
 /// Alias for a pinned, boxed future, used by the traits.
 pub type BoxFuture<'a, O> = std::pin::Pin<Box<dyn std::future::Future<Output = O> + Send + 'a>>;

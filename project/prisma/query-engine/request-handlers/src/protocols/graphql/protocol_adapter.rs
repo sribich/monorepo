@@ -1,9 +1,14 @@
-use crate::HandlerError;
-use bigdecimal::{BigDecimal, FromPrimitive};
-use graphql_parser::query::{
-    Definition, Document, OperationDefinition, Selection as GqlSelection, SelectionSet, Value,
-};
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use graphql_parser::query::Definition;
+use graphql_parser::query::Document;
+use graphql_parser::query::OperationDefinition;
+use graphql_parser::query::Selection as GqlSelection;
+use graphql_parser::query::SelectionSet;
+use graphql_parser::query::Value;
 use query_core::query_document::*;
+
+use crate::HandlerError;
 
 /// Protocol adapter for GraphQL -> Query Document.
 ///
@@ -22,12 +27,19 @@ use query_core::query_document::*;
 pub struct GraphQLProtocolAdapter;
 
 impl GraphQLProtocolAdapter {
-    pub fn convert_query_to_operation(query: &str, operation_name: Option<String>) -> crate::Result<Operation> {
+    pub fn convert_query_to_operation(
+        query: &str,
+        operation_name: Option<String>,
+    ) -> crate::Result<Operation> {
         let gql_doc = match graphql_parser::parse_query(query) {
             Ok(doc) => doc,
             Err(err)
-                if err.to_string().contains("number too large to fit in target type")
-                    | err.to_string().contains("number too small to fit in target type") =>
+                if err
+                    .to_string()
+                    .contains("number too large to fit in target type")
+                    | err
+                        .to_string()
+                        .contains("number too small to fit in target type") =>
             {
                 return Err(HandlerError::ValueFitError("Query parsing failure: A number used in the query does not fit into a 64 bit signed integer. Consider using `BigInt` as field type if you're trying to store large integers.".to_owned()));
             }
@@ -37,13 +49,20 @@ impl GraphQLProtocolAdapter {
         Self::convert(gql_doc, operation_name)
     }
 
-    pub fn convert(gql_doc: Document<String>, operation: Option<String>) -> crate::Result<Operation> {
+    pub fn convert(
+        gql_doc: Document<String>,
+        operation: Option<String>,
+    ) -> crate::Result<Operation> {
         let mut operations: Vec<Operation> = match operation {
             Some(ref op) => gql_doc
                 .definitions
                 .into_iter()
                 .find(|def| Self::matches_operation(def, op))
-                .ok_or_else(|| HandlerError::query_conversion(format!("Operation '{op}' does not match any query.")))
+                .ok_or_else(|| {
+                    HandlerError::query_conversion(format!(
+                        "Operation '{op}' does not match any query."
+                    ))
+                })
                 .and_then(Self::convert_definition),
 
             None => gql_doc
@@ -81,11 +100,13 @@ impl GraphQLProtocolAdapter {
     }
 
     fn convert_query(selection_set: SelectionSet<String>) -> crate::Result<Vec<Operation>> {
-        Self::convert_selection_set(selection_set).map(|fields| fields.into_iter().map(Operation::Read).collect())
+        Self::convert_selection_set(selection_set)
+            .map(|fields| fields.into_iter().map(Operation::Read).collect())
     }
 
     fn convert_mutation(selection_set: SelectionSet<String>) -> crate::Result<Vec<Operation>> {
-        Self::convert_selection_set(selection_set).map(|fields| fields.into_iter().map(Operation::Write).collect())
+        Self::convert_selection_set(selection_set)
+            .map(|fields| fields.into_iter().map(Operation::Write).collect())
     }
 
     fn convert_selection_set(selection_set: SelectionSet<String>) -> crate::Result<Vec<Selection>> {
@@ -102,12 +123,20 @@ impl GraphQLProtocolAdapter {
 
                     let nested_selections = Self::convert_selection_set(f.selection_set)?;
 
-                    Ok(Selection::new(f.name, f.alias, arguments, nested_selections))
+                    Ok(Selection::new(
+                        f.name,
+                        f.alias,
+                        arguments,
+                        nested_selections,
+                    ))
                 }
 
                 GqlSelection::FragmentSpread(fs) => Err(HandlerError::unsupported_feature(
                     "Fragment spread",
-                    format!("Fragment '{}', at position {}.", fs.fragment_name, fs.position),
+                    format!(
+                        "Fragment '{}', at position {}.",
+                        fs.fragment_name, fs.position
+                    ),
                 )),
 
                 GqlSelection::InlineFragment(i) => Err(HandlerError::unsupported_feature(
@@ -141,11 +170,15 @@ impl GraphQLProtocolAdapter {
             )),
             Value::Int(i) => match i.as_i64() {
                 Some(i) => Ok(ArgumentValue::int(i)),
-                None => Err(HandlerError::query_conversion(format!("Invalid 64 bit integer: {i:?}"))),
+                None => Err(HandlerError::query_conversion(format!(
+                    "Invalid 64 bit integer: {i:?}"
+                ))),
             },
             Value::Float(f) => match BigDecimal::from_f64(f) {
                 Some(dec) => Ok(ArgumentValue::float(dec)),
-                None => Err(HandlerError::query_conversion(format!("invalid 64-bit float: {f:?}"))),
+                None => Err(HandlerError::query_conversion(format!(
+                    "invalid 64-bit float: {f:?}"
+                ))),
             },
             Value::String(s) => Ok(ArgumentValue::string(s)),
             Value::Boolean(b) => Ok(ArgumentValue::bool(b)),
@@ -206,7 +239,12 @@ mod tests {
         let selections = Vec::from([
             Selection::new("id", None, [], Vec::new()),
             Selection::new("large_number", None, [], Vec::new()),
-            Selection::new("other", None, [], Vec::from([Selection::new("name", None, [], [])])),
+            Selection::new(
+                "other",
+                None,
+                [],
+                Vec::from([Selection::new("name", None, [], [])]),
+            ),
         ]);
 
         assert_eq!(read.nested_selections(), selections);

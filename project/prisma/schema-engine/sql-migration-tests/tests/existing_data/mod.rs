@@ -189,7 +189,11 @@ fn altering_a_column_with_non_null_values_should_warn(api: TestApi) {
 fn column_defaults_can_safely_be_changed(api: TestApi) {
     let combinations = &[
         ("Meow", Some(PrismaValue::String("Cats".to_string())), None),
-        ("Freedom", None, Some(PrismaValue::String("Braveheart".to_string()))),
+        (
+            "Freedom",
+            None,
+            Some(PrismaValue::String("Braveheart".to_string())),
+        ),
         (
             "OutstandingMovies",
             Some(PrismaValue::String("Cats".to_string())),
@@ -250,8 +254,11 @@ fn column_defaults_can_safely_be_changed(api: TestApi) {
             let names: Vec<PrismaValue> = data
                 .into_iter()
                 .filter_map(|row| {
-                    row.get("name")
-                        .map(|val| val.to_string().map(PrismaValue::String).unwrap_or(PrismaValue::Null))
+                    row.get("name").map(|val| {
+                        val.to_string()
+                            .map(PrismaValue::String)
+                            .unwrap_or(PrismaValue::Null)
+                    })
                 })
                 .collect();
 
@@ -289,8 +296,11 @@ fn column_defaults_can_safely_be_changed(api: TestApi) {
             let names: Vec<PrismaValue> = data
                 .into_iter()
                 .filter_map(|row| {
-                    row.get("name")
-                        .map(|val| val.to_string().map(PrismaValue::String).unwrap_or(PrismaValue::Null))
+                    row.get("name").map(|val| {
+                        val.to_string()
+                            .map(PrismaValue::String)
+                            .unwrap_or(PrismaValue::Null)
+                    })
                 })
                 .collect();
             assert_eq!(
@@ -430,7 +440,9 @@ fn dropping_a_table_referenced_by_foreign_keys_must_work(api: TestApi) {
     api.assert_schema()
         .assert_table("Category", |table| table.assert_columns_count(2))
         .assert_table("Recipe", |table| {
-            table.assert_fk_on_columns(&["categoryId"], |fk| fk.assert_references("Category", &["id"]))
+            table.assert_fk_on_columns(&["categoryId"], |fk| {
+                fk.assert_references("Category", &["id"])
+            })
         });
 
     let id: i32 = 1;
@@ -491,7 +503,10 @@ fn string_columns_do_not_get_arbitrarily_migrated(api: TestApi) {
         }
     "#;
 
-    api.schema_push_w_datasource(dm2).send().assert_green().assert_green();
+    api.schema_push_w_datasource(dm2)
+        .send()
+        .assert_green()
+        .assert_green();
 
     // Check that the string values are still there.
     let select = Select::from_table(api.render_table_name("User"))
@@ -508,7 +523,10 @@ fn string_columns_do_not_get_arbitrarily_migrated(api: TestApi) {
         row.get("kindle_email").unwrap().as_str().unwrap(),
         "george+kindle@prisma.io"
     );
-    assert_eq!(row.get("email").unwrap().as_str().unwrap(), "george@prisma.io");
+    assert_eq!(
+        row.get("email").unwrap().as_str().unwrap(),
+        "george@prisma.io"
+    );
 }
 
 #[test_connector]
@@ -534,7 +552,9 @@ fn altering_the_type_of_a_column_in_an_empty_table_should_not_warn(api: TestApi)
     api.schema_push_w_datasource(dm2).send().assert_green();
 
     api.assert_schema().assert_table("User", |table| {
-        table.assert_column("dogs", |col| col.assert_type_is_string().assert_is_required())
+        table.assert_column("dogs", |col| {
+            col.assert_type_is_string().assert_is_required()
+        })
     });
 }
 
@@ -592,9 +612,10 @@ fn enum_variants_can_be_added_without_data_loss(api: TestApi) {
         .assert_green();
 
     {
-        let cat_inserts = quaint::ast::Insert::multi_into(api.render_table_name("Cat"), vec!["id", "mood"])
-            .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
-            .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
+        let cat_inserts =
+            quaint::ast::Insert::multi_into(api.render_table_name("Cat"), vec!["id", "mood"])
+                .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
+                .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
 
         api.query(cat_inserts.into());
     }
@@ -625,8 +646,10 @@ fn enum_variants_can_be_added_without_data_loss(api: TestApi) {
     // Assertions
     {
         let cat_data = api.dump_table("Cat");
-        let cat_data: Vec<Vec<quaint::ast::Value>> =
-            cat_data.into_iter().map(|row| row.into_iter().collect()).collect();
+        let cat_data: Vec<Vec<quaint::ast::Value>> = cat_data
+            .into_iter()
+            .map(|row| row.into_iter().collect())
+            .collect();
 
         let expected_cat_data = &[
             &[
@@ -650,7 +673,10 @@ fn enum_variants_can_be_added_without_data_loss(api: TestApi) {
         assert_eq!(cat_data, expected_cat_data);
 
         let human_data = api.dump_table("Human");
-        let human_data: Vec<Vec<Value>> = human_data.into_iter().map(|row| row.into_iter().collect()).collect();
+        let human_data: Vec<Vec<Value>> = human_data
+            .into_iter()
+            .map(|row| row.into_iter().collect())
+            .collect();
         let expected_human_data: Vec<Vec<Value>> = Vec::new();
         assert_eq!(human_data, expected_human_data);
 
@@ -698,9 +724,10 @@ fn enum_variants_can_be_dropped_without_data_loss(api: TestApi) {
         .assert_green();
 
     {
-        let cat_inserts = quaint::ast::Insert::multi_into(api.render_table_name("Cat"), ["id", "mood"])
-            .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
-            .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
+        let cat_inserts =
+            quaint::ast::Insert::multi_into(api.render_table_name("Cat"), ["id", "mood"])
+                .values((Value::text("felix"), Value::enum_variant("HUNGRY")))
+                .values((Value::text("mittens"), Value::enum_variant("HAPPY")));
 
         api.query(cat_inserts.into());
     }
@@ -737,8 +764,10 @@ fn enum_variants_can_be_dropped_without_data_loss(api: TestApi) {
     // Assertions
     {
         let cat_data = api.dump_table("Cat");
-        let cat_data: Vec<Vec<quaint::ast::Value>> =
-            cat_data.into_iter().map(|row| row.into_iter().collect()).collect();
+        let cat_data: Vec<Vec<quaint::ast::Value>> = cat_data
+            .into_iter()
+            .map(|row| row.into_iter().collect())
+            .collect();
 
         let expected_cat_data = &[
             &[
@@ -762,7 +791,10 @@ fn enum_variants_can_be_dropped_without_data_loss(api: TestApi) {
         assert_eq!(cat_data, expected_cat_data);
 
         let human_data = api.dump_table("Human");
-        let human_data: Vec<Vec<Value>> = human_data.into_iter().map(|row| row.into_iter().collect()).collect();
+        let human_data: Vec<Vec<Value>> = human_data
+            .into_iter()
+            .map(|row| row.into_iter().collect())
+            .collect();
         let expected_human_data: Vec<Vec<Value>> = Vec::new();
         assert_eq!(human_data, expected_human_data);
 
@@ -794,7 +826,10 @@ fn set_default_current_timestamp_on_existing_column_works(api: TestApi) {
 
     let insert = Insert::single_into(api.render_table_name("User"))
         .value("id", 5)
-        .value("created_at", Value::datetime("2020-06-15T14:50:00Z".parse().unwrap()));
+        .value(
+            "created_at",
+            Value::datetime("2020-06-15T14:50:00Z".parse().unwrap()),
+        );
     api.query(insert.into());
 
     let dm2 = r#"
@@ -896,6 +931,10 @@ fn primary_key_migrations_do_not_cause_data_loss(api: TestApi) {
 
     assert_eq!(
         puppy_row,
-        &[Value::text("12345"), Value::text("Marnie"), Value::text("8000")]
+        &[
+            Value::text("12345"),
+            Value::text("Marnie"),
+            Value::text("8000")
+        ]
     );
 }

@@ -1,8 +1,10 @@
 pub mod test_api;
 
 use barrel::Migration;
-use quaint::{prelude::Queryable, single::Quaint};
-use test_setup::{BitFlags, Tags};
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+use test_setup::BitFlags;
+use test_setup::Tags;
 
 pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync + 'static>>;
 pub type TestResult = Result<()>;
@@ -19,7 +21,8 @@ impl BarrelMigrationExecutor {
     where
         F: FnOnce(&mut Migration),
     {
-        self.execute_with_schema(migration_fn, &self.schema_name).await?;
+        self.execute_with_schema(migration_fn, &self.schema_name)
+            .await?;
 
         Ok(())
     }

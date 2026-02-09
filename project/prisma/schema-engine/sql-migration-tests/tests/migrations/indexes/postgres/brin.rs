@@ -1,5 +1,6 @@
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
+use sql_schema_describer::postgres::SQLOperatorClassKind;
+use sql_schema_describer::postgres::SqlIndexAlgorithm;
 
 #[test_connector(tags(Postgres))]
 fn brin_change_from_btree(api: TestApi) {
@@ -17,7 +18,9 @@ fn brin_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::BTree))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::BTree)
+            })
     });
 
     let dm = r#"
@@ -34,7 +37,9 @@ fn brin_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::Brin))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::Brin)
+            })
     });
 }
 
@@ -56,7 +61,9 @@ fn brin_bit_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::BitMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::BitMinMaxOps)
+                    })
             })
     });
 
@@ -81,7 +88,9 @@ fn brin_bit_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::BitMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::BitMinMaxOps)
+                    })
             })
     });
 
@@ -106,7 +115,9 @@ fn brin_varbit_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::VarBitMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::VarBitMinMaxOps)
+                    })
             })
     });
 
@@ -131,7 +142,9 @@ fn brin_varbit_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::VarBitMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::VarBitMinMaxOps)
+                    })
             })
     });
 
@@ -156,7 +169,9 @@ fn brin_bpchar_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::BpcharMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::BpcharMinMaxOps)
+                    })
             })
     });
 
@@ -181,7 +196,9 @@ fn brin_bpchar_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::BpcharMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::BpcharMinMaxOps)
+                    })
             })
     });
 
@@ -206,7 +223,9 @@ fn brin_bpchar_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::BpcharBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::BpcharBloomOps)
+                    })
             })
     });
 
@@ -231,7 +250,9 @@ fn brin_bytea_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ByteaMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ByteaMinMaxOps)
+                    })
             })
     });
 
@@ -256,7 +277,9 @@ fn brin_bytea_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ByteaMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ByteaMinMaxOps)
+                    })
             })
     });
 
@@ -281,7 +304,9 @@ fn brin_bytea_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ByteaBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ByteaBloomOps)
+                    })
             })
     });
 
@@ -306,7 +331,9 @@ fn brin_date_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::DateMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::DateMinMaxOps)
+                    })
             })
     });
 
@@ -331,7 +358,9 @@ fn brin_date_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::DateMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::DateMinMaxOps)
+                    })
             })
     });
 
@@ -356,7 +385,9 @@ fn brin_date_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::DateBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::DateBloomOps)
+                    })
             })
     });
 
@@ -408,7 +439,9 @@ fn brin_real_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float4MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float4MinMaxOps)
+                    })
             })
     });
 
@@ -433,7 +466,9 @@ fn brin_real_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float4MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float4MinMaxOps)
+                    })
             })
     });
 
@@ -458,7 +493,9 @@ fn brin_real_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float4BloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float4BloomOps)
+                    })
             })
     });
 
@@ -510,7 +547,9 @@ fn brin_double_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float8MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float8MinMaxOps)
+                    })
             })
     });
 
@@ -535,7 +574,9 @@ fn brin_double_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float8MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float8MinMaxOps)
+                    })
             })
     });
 
@@ -560,7 +601,9 @@ fn brin_double_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Float8BloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Float8BloomOps)
+                    })
             })
     });
 
@@ -612,7 +655,9 @@ fn brin_inet_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::InetMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::InetMinMaxOps)
+                    })
             })
     });
 
@@ -637,7 +682,9 @@ fn brin_inet_inclusion_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::InetInclusionOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::InetInclusionOps)
+                    })
             })
     });
 
@@ -662,7 +709,9 @@ fn brin_inet_inclusion_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::InetInclusionOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::InetInclusionOps)
+                    })
             })
     });
 
@@ -687,7 +736,9 @@ fn brin_inet_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::InetBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::InetBloomOps)
+                    })
             })
     });
 
@@ -739,7 +790,9 @@ fn brin_int2_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int2MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int2MinMaxOps)
+                    })
             })
     });
 
@@ -764,7 +817,9 @@ fn brin_int2_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int2MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int2MinMaxOps)
+                    })
             })
     });
 
@@ -789,7 +844,9 @@ fn brin_int2_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int2BloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int2BloomOps)
+                    })
             })
     });
 
@@ -841,7 +898,9 @@ fn brin_int4_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int4MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int4MinMaxOps)
+                    })
             })
     });
 
@@ -866,7 +925,9 @@ fn brin_int4_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int4MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int4MinMaxOps)
+                    })
             })
     });
 
@@ -891,7 +952,9 @@ fn brin_int4_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int4BloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int4BloomOps)
+                    })
             })
     });
 
@@ -943,7 +1006,9 @@ fn brin_int8_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int8MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int8MinMaxOps)
+                    })
             })
     });
 
@@ -968,7 +1033,9 @@ fn brin_int8_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int8MinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int8MinMaxOps)
+                    })
             })
     });
 
@@ -993,7 +1060,9 @@ fn brin_int8_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::Int8BloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::Int8BloomOps)
+                    })
             })
     });
 
@@ -1045,7 +1114,9 @@ fn brin_numeric_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::NumericMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::NumericMinMaxOps)
+                    })
             })
     });
 
@@ -1070,7 +1141,9 @@ fn brin_numeric_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::NumericMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::NumericMinMaxOps)
+                    })
             })
     });
 
@@ -1095,7 +1168,9 @@ fn brin_numeric_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::NumericBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::NumericBloomOps)
+                    })
             })
     });
 
@@ -1147,7 +1222,9 @@ fn brin_oid_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::OidMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::OidMinMaxOps)
+                    })
             })
     });
 
@@ -1172,7 +1249,9 @@ fn brin_oid_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::OidMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::OidMinMaxOps)
+                    })
             })
     });
 
@@ -1197,7 +1276,9 @@ fn brin_oid_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::OidBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::OidBloomOps)
+                    })
             })
     });
 
@@ -1249,7 +1330,9 @@ fn brin_text_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps)
+                    })
             })
     });
 
@@ -1274,7 +1357,9 @@ fn brin_text_minmax_ops_varchar(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps)
+                    })
             })
     });
 
@@ -1299,7 +1384,9 @@ fn brin_text_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps)
+                    })
             })
     });
 
@@ -1324,7 +1411,9 @@ fn brin_text_minmax_ops_default_varchar(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextMinMaxOps)
+                    })
             })
     });
 
@@ -1349,7 +1438,9 @@ fn brin_text_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextBloomOps)
+                    })
             })
     });
 
@@ -1374,7 +1465,9 @@ fn brin_text_bloom_ops_varchar(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TextBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TextBloomOps)
+                    })
             })
     });
 
@@ -1615,7 +1708,9 @@ fn brin_time_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeMinMaxOps)
+                    })
             })
     });
 
@@ -1640,7 +1735,9 @@ fn brin_time_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeMinMaxOps)
+                    })
             })
     });
 
@@ -1665,7 +1762,9 @@ fn brin_time_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeBloomOps)
+                    })
             })
     });
 
@@ -1717,7 +1816,9 @@ fn brin_timetz_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeTzMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeTzMinMaxOps)
+                    })
             })
     });
 
@@ -1742,7 +1843,9 @@ fn brin_timetz_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeTzMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeTzMinMaxOps)
+                    })
             })
     });
 
@@ -1767,7 +1870,9 @@ fn brin_timetz_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::TimeTzBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::TimeTzBloomOps)
+                    })
             })
     });
 
@@ -1819,7 +1924,9 @@ fn brin_uuid_minmax_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::UuidMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::UuidMinMaxOps)
+                    })
             })
     });
 
@@ -1844,7 +1951,9 @@ fn brin_uuid_minmax_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::UuidMinMaxOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::UuidMinMaxOps)
+                    })
             })
     });
 
@@ -1869,7 +1978,9 @@ fn brin_uuid_bloom_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Brin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::UuidBloomOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::UuidBloomOps)
+                    })
             })
     });
 

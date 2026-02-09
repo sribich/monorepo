@@ -1,4 +1,8 @@
-use crate::{BoxFuture, ConnectorError, ConnectorResult, Namespaces, checksum};
+use crate::BoxFuture;
+use crate::ConnectorError;
+use crate::ConnectorResult;
+use crate::Namespaces;
+use crate::checksum;
 
 /// A timestamp.
 pub type Timestamp = chrono::DateTime<chrono::Utc>;
@@ -14,10 +18,7 @@ pub trait MigrationPersistence: Send + Sync {
     /// If the migration persistence is not present in the target database,
     /// check whether the database schema is empty. If it is, initialize the
     /// migration persistence. If not, return a DatabaseSchemaNotEmpty error.
-    fn initialize(
-        &mut self,
-        namespaces: Option<Namespaces>,
-    ) -> BoxFuture<'_, ConnectorResult<()>>;
+    fn initialize(&mut self, namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<()>>;
 
     /// Implementation in the connector for the core's MarkMigrationApplied
     /// command. See the docs there. Note that the started_at and finished_at
@@ -47,7 +48,10 @@ pub trait MigrationPersistence: Send + Sync {
 
     /// Mark the failed instances of the migration in the persistence as rolled
     /// back, so they will be ignored by the engine in the future.
-    fn mark_migration_rolled_back_by_id<'a>(&'a mut self, migration_id: &'a str) -> BoxFuture<'a, ConnectorResult<()>>;
+    fn mark_migration_rolled_back_by_id<'a>(
+        &'a mut self,
+        migration_id: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// Record that a migration is about to be applied. Returns the unique
     /// identifier for the migration.
@@ -81,11 +85,18 @@ pub trait MigrationPersistence: Send + Sync {
 
     /// Report logs for a failed migration step. We assume the next steps in the
     /// migration will not be applied, and the error reported.
-    fn record_failed_step<'a>(&'a mut self, id: &'a str, logs: &'a str) -> BoxFuture<'a, ConnectorResult<()>>;
+    fn record_failed_step<'a>(
+        &'a mut self,
+        id: &'a str,
+        logs: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// Record that the migration completed *successfully*. This means
     /// populating the `finished_at` field in the migration record.
-    fn record_migration_finished<'a>(&'a mut self, id: &'a str) -> BoxFuture<'a, ConnectorResult<()>>;
+    fn record_migration_finished<'a>(
+        &'a mut self,
+        id: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>>;
 
     /// List all applied migrations, ordered by `started_at`. This should fail
     /// with a PersistenceNotInitializedError when the migration persistence is
@@ -102,7 +113,9 @@ pub struct PersistenceNotInitializedError;
 impl PersistenceNotInitializedError {
     /// Explicit conversion to a ConnectorError.
     pub fn into_connector_error(self) -> ConnectorError {
-        ConnectorError::from_msg("Invariant violation: migration persistence is not initialized.".into())
+        ConnectorError::from_msg(
+            "Invariant violation: migration persistence is not initialized.".into(),
+        )
     }
 }
 

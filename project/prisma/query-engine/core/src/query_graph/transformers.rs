@@ -1,5 +1,6 @@
-use super::*;
 use std::convert::TryFrom;
+
+use super::*;
 
 impl TryFrom<Node> for Query {
     type Error = QueryGraphError;

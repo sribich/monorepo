@@ -1,10 +1,12 @@
-use colored::{ColoredString, Colorize};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    Span,
-    pretty_print::{DiagnosticColorer, pretty_print},
-};
-use std::{borrow::Cow, fmt};
+use colored::ColoredString;
+use colored::Colorize;
+
+use crate::Span;
+use crate::pretty_print::DiagnosticColorer;
+use crate::pretty_print::pretty_print;
 
 #[derive(Debug, Clone)]
 pub struct DatamodelError {
@@ -22,7 +24,11 @@ impl DatamodelError {
         Self::new(message, span)
     }
 
-    pub fn new_literal_parser_error(literal_type: &str, raw_value: &str, span: Span) -> DatamodelError {
+    pub fn new_literal_parser_error(
+        literal_type: &str,
+        raw_value: &str,
+        span: Span,
+    ) -> DatamodelError {
         Self::new(
             format!("\"{raw_value}\" is not a valid value for {literal_type}."),
             span,
@@ -46,7 +52,9 @@ impl DatamodelError {
         given_count: usize,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Function \"{function_name}\" takes {required_count} arguments, but received {given_count}.");
+        let msg = format!(
+            "Function \"{function_name}\" takes {required_count} arguments, but received {given_count}."
+        );
         Self::new(msg, span)
     }
 
@@ -61,9 +69,15 @@ impl DatamodelError {
         )
     }
 
-    pub fn new_source_argument_not_found_error(argument_name: &str, source_name: &str, span: Span) -> DatamodelError {
+    pub fn new_source_argument_not_found_error(
+        argument_name: &str,
+        source_name: &str,
+        span: Span,
+    ) -> DatamodelError {
         Self::new(
-            format!("Argument \"{argument_name}\" is missing in data source block \"{source_name}\"."),
+            format!(
+                "Argument \"{argument_name}\" is missing in data source block \"{source_name}\"."
+            ),
             span,
         )
     }
@@ -74,13 +88,22 @@ impl DatamodelError {
         span: Span,
     ) -> DatamodelError {
         Self::new(
-            format!("Argument \"{argument_name}\" is missing in generator block \"{generator_name}\"."),
+            format!(
+                "Argument \"{argument_name}\" is missing in generator block \"{generator_name}\"."
+            ),
             span,
         )
     }
 
-    pub fn new_attribute_validation_error(message: &str, attribute_name: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Error parsing attribute \"{attribute_name}\": {message}"), span)
+    pub fn new_attribute_validation_error(
+        message: &str,
+        attribute_name: &str,
+        span: Span,
+    ) -> DatamodelError {
+        Self::new(
+            format!("Error parsing attribute \"{attribute_name}\": {message}"),
+            span,
+        )
     }
 
     pub fn new_duplicate_attribute_error(attribute_name: &str, span: Span) -> DatamodelError {
@@ -106,7 +129,8 @@ impl DatamodelError {
         expected: &str,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Invalid argument for type {native_type}: {got}. Allowed values: {expected}.");
+        let msg =
+            format!("Invalid argument for type {native_type}: {got}. Allowed values: {expected}.");
         Self::new(msg, span)
     }
 
@@ -159,20 +183,32 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
-    pub fn new_duplicate_top_error(name: &str, top_type: &str, existing_top_type: &str, span: Span) -> DatamodelError {
+    pub fn new_duplicate_top_error(
+        name: &str,
+        top_type: &str,
+        existing_top_type: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!(
             "The {top_type} \"{name}\" cannot be defined because a {existing_top_type} with that name already exists.",
         );
         Self::new(msg, span)
     }
 
-    pub fn new_duplicate_config_key_error(conf_block_name: &str, key_name: &str, span: Span) -> DatamodelError {
+    pub fn new_duplicate_config_key_error(
+        conf_block_name: &str,
+        key_name: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!("Key \"{key_name}\" is already defined in {conf_block_name}.");
         Self::new(msg, span)
     }
 
     pub fn new_duplicate_argument_error(arg_name: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Argument \"{arg_name}\" is already specified."), span)
+        Self::new(
+            format!("Argument \"{arg_name}\" is already specified."),
+            span,
+        )
     }
 
     pub fn new_unused_argument_error(span: Span) -> DatamodelError {
@@ -184,7 +220,11 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
-    pub fn new_duplicate_enum_value_error(enum_name: &str, value_name: &str, span: Span) -> DatamodelError {
+    pub fn new_duplicate_enum_value_error(
+        enum_name: &str,
+        value_name: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!("Value \"{value_name}\" is already defined on enum \"{enum_name}\".",);
         Self::new(msg, span)
     }
@@ -195,7 +235,8 @@ impl DatamodelError {
         container: &'static str,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Field \"{field_name}\" is already defined on {container} \"{model_name}\".",);
+        let msg =
+            format!("Field \"{field_name}\" is already defined on {container} \"{model_name}\".",);
         Self::new(msg, span)
     }
 
@@ -224,7 +265,10 @@ impl DatamodelError {
     }
 
     pub fn new_enum_validation_error(message: &str, enum_name: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Error validating enum `{enum_name}`: {message}"), span)
+        Self::new(
+            format!("Error validating enum `{enum_name}`: {message}"),
+            span,
+        )
     }
 
     pub fn new_field_validation_error(
@@ -234,19 +278,27 @@ impl DatamodelError {
         field: &str,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Error validating field `{field}` in {container_type} `{container_name}`: {message}",);
+        let msg = format!(
+            "Error validating field `{field}` in {container_type} `{container_name}`: {message}",
+        );
         Self::new(msg, span)
     }
 
     pub fn new_source_validation_error(message: &str, source: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Error validating datasource `{source}`: {message}"), span)
+        Self::new(
+            format!("Error validating datasource `{source}`: {message}"),
+            span,
+        )
     }
 
     pub fn new_validation_error(message: &str, span: Span) -> DatamodelError {
         Self::new(format!("Error validating: {message}"), span)
     }
 
-    pub fn new_legacy_parser_error(message: impl Into<Cow<'static, str>>, span: Span) -> DatamodelError {
+    pub fn new_legacy_parser_error(
+        message: impl Into<Cow<'static, str>>,
+        span: Span,
+    ) -> DatamodelError {
         Self::new(message.into(), span)
     }
 
@@ -264,14 +316,23 @@ impl DatamodelError {
     }
 
     pub fn new_parser_error(expected_str: String, span: Span) -> DatamodelError {
-        Self::new(format!("Unexpected token. Expected one of: {expected_str}"), span)
+        Self::new(
+            format!("Unexpected token. Expected one of: {expected_str}"),
+            span,
+        )
     }
 
-    pub fn new_functional_evaluation_error(message: impl Into<Cow<'static, str>>, span: Span) -> DatamodelError {
+    pub fn new_functional_evaluation_error(
+        message: impl Into<Cow<'static, str>>,
+        span: Span,
+    ) -> DatamodelError {
         Self::new(message.into(), span)
     }
 
-    pub fn new_environment_functional_evaluation_error(var_name: String, span: Span) -> DatamodelError {
+    pub fn new_environment_functional_evaluation_error(
+        var_name: String,
+        span: Span,
+    ) -> DatamodelError {
         Self::new(format!("Environment variable not found: {var_name}."), span)
     }
 
@@ -282,7 +343,11 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
-    pub fn new_type_for_case_not_found_error(type_name: &str, suggestion: &str, span: Span) -> DatamodelError {
+    pub fn new_type_for_case_not_found_error(
+        type_name: &str,
+        suggestion: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!(
             "Type \"{type_name}\" is neither a built-in type, nor refers to another model or enum. Did you mean \"{suggestion}\"?"
         );
@@ -290,7 +355,10 @@ impl DatamodelError {
     }
 
     pub fn new_scalar_type_not_found_error(type_name: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Type \"{type_name}\" is not a built-in type."), span)
+        Self::new(
+            format!("Type \"{type_name}\" is not a built-in type."),
+            span,
+        )
     }
 
     pub fn new_attribute_not_known_error(attribute_name: &str, span: Span) -> DatamodelError {
@@ -319,17 +387,26 @@ impl DatamodelError {
     }
 
     pub fn new_datasource_provider_not_known_error(provider: &str, span: Span) -> DatamodelError {
-        Self::new(format!("Datasource provider not known: \"{provider}\"."), span)
+        Self::new(
+            format!("Datasource provider not known: \"{provider}\"."),
+            span,
+        )
     }
 
-    pub fn new_shadow_database_is_same_as_main_url_error(source_name: &str, span: Span) -> DatamodelError {
+    pub fn new_shadow_database_is_same_as_main_url_error(
+        source_name: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!(
             "shadowDatabaseUrl is the same as url for datasource \"{source_name}\". Please specify a different database as shadow database to avoid data loss."
         );
         Self::new(msg, span)
     }
 
-    pub fn new_shadow_database_is_same_as_direct_url_error(source_name: &str, span: Span) -> DatamodelError {
+    pub fn new_shadow_database_is_same_as_direct_url_error(
+        source_name: &str,
+        span: Span,
+    ) -> DatamodelError {
         let msg = format!(
             "shadowDatabaseUrl is the same as directUrl for datasource \"{source_name}\". Please specify a different database as shadow database to avoid data loss."
         );
@@ -358,12 +435,19 @@ impl DatamodelError {
         given_count: usize,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Native type {native_type} takes {required_count} arguments, but received {given_count}.");
+        let msg = format!(
+            "Native type {native_type} takes {required_count} arguments, but received {given_count}."
+        );
         Self::new(msg, span)
     }
 
-    pub fn new_native_type_name_unknown(connector_name: &str, native_type: &str, span: Span) -> DatamodelError {
-        let msg = format!("Native type {native_type} is not supported for {connector_name} connector.");
+    pub fn new_native_type_name_unknown(
+        connector_name: &str,
+        native_type: &str,
+        span: Span,
+    ) -> DatamodelError {
+        let msg =
+            format!("Native type {native_type} is not supported for {connector_name} connector.");
         DatamodelError::new(msg, span)
     }
 
@@ -372,8 +456,15 @@ impl DatamodelError {
         Self::new(msg, span)
     }
 
-    pub fn new_type_mismatch_error(expected_type: &str, received_type: &str, raw: &str, span: Span) -> DatamodelError {
-        let msg = format!("Expected a {expected_type} value, but received {received_type} value `{raw}`.");
+    pub fn new_type_mismatch_error(
+        expected_type: &str,
+        received_type: &str,
+        raw: &str,
+        span: Span,
+    ) -> DatamodelError {
+        let msg = format!(
+            "Expected a {expected_type} value, but received {received_type} value `{raw}`."
+        );
         Self::new(msg, span)
     }
 
@@ -393,7 +484,9 @@ impl DatamodelError {
         config_kind: &str,
         span: Span,
     ) -> DatamodelError {
-        let msg = format!("Property {property_name} in {config_kind} {config_name} needs to be assigned a value");
+        let msg = format!(
+            "Property {property_name} in {config_kind} {config_name} needs to be assigned a value"
+        );
         Self::new(msg, span)
     }
 
@@ -405,7 +498,12 @@ impl DatamodelError {
         &self.message
     }
 
-    pub fn pretty_print(&self, f: &mut dyn std::io::Write, file_name: &str, text: &str) -> std::io::Result<()> {
+    pub fn pretty_print(
+        &self,
+        f: &mut dyn std::io::Write,
+        file_name: &str,
+        text: &str,
+    ) -> std::io::Result<()> {
         pretty_print(
             f,
             file_name,

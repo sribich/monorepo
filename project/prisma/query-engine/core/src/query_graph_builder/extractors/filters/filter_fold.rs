@@ -84,7 +84,10 @@ fn fold_not(filters: Vec<Filter>) -> Filter {
 
 #[test]
 fn ensure_and_folded() {
-    let input = fold_filter(Filter::And(vec![Filter::Empty, Filter::And(vec![Filter::Empty])]));
+    let input = fold_filter(Filter::And(vec![
+        Filter::Empty,
+        Filter::And(vec![Filter::Empty]),
+    ]));
     let expected_output = Filter::And(vec![Filter::Empty, Filter::Empty]);
 
     assert_eq!(input, expected_output)
@@ -92,7 +95,10 @@ fn ensure_and_folded() {
 
 #[test]
 fn ensure_or_folded() {
-    let input = fold_filter(Filter::Or(vec![Filter::Empty, Filter::Or(vec![Filter::Empty])]));
+    let input = fold_filter(Filter::Or(vec![
+        Filter::Empty,
+        Filter::Or(vec![Filter::Empty]),
+    ]));
     let expected_output = Filter::Or(vec![Filter::Empty, Filter::Empty]);
 
     assert_eq!(input, expected_output)
@@ -100,7 +106,10 @@ fn ensure_or_folded() {
 
 #[test]
 fn ensure_not_is_not_folded() {
-    let input = fold_filter(Filter::Not(vec![Filter::Empty, Filter::Not(vec![Filter::Empty])]));
+    let input = fold_filter(Filter::Not(vec![
+        Filter::Empty,
+        Filter::Not(vec![Filter::Empty]),
+    ]));
     let expected_output = Filter::Not(vec![Filter::Empty, Filter::Not(vec![Filter::Empty])]);
     assert_eq!(input, expected_output);
 
@@ -109,7 +118,10 @@ fn ensure_not_is_not_folded() {
         Filter::Not(vec![Filter::Not(vec![Filter::Empty])]),
     ]));
     // TODO: `Not(Not())` could be folded
-    let expected_output = Filter::Not(vec![Filter::Empty, Filter::Not(vec![Filter::Not(vec![Filter::Empty])])]);
+    let expected_output = Filter::Not(vec![
+        Filter::Empty,
+        Filter::Not(vec![Filter::Not(vec![Filter::Empty])]),
+    ]);
     assert_eq!(input, expected_output);
 }
 
@@ -119,8 +131,14 @@ fn ensure_nested_conditions_are_folded() {
         Filter::Empty,
         Filter::Not(vec![Filter::Not(vec![Filter::Empty])]),
         Filter::Or(vec![
-            Filter::And(vec![Filter::Empty, Filter::And(vec![Filter::Empty, Filter::Empty])]),
-            Filter::Or(vec![Filter::Empty, Filter::Or(vec![Filter::Empty, Filter::Empty])]),
+            Filter::And(vec![
+                Filter::Empty,
+                Filter::And(vec![Filter::Empty, Filter::Empty]),
+            ]),
+            Filter::Or(vec![
+                Filter::Empty,
+                Filter::Or(vec![Filter::Empty, Filter::Empty]),
+            ]),
         ]),
     ]));
     let expected_output = Filter::Not(vec![
@@ -292,7 +310,11 @@ impl FilterVisitor {
 #[cfg(test)]
 fn generate_filters() -> Vec<Filter> {
     let all_vars = combinations(vec![Filter::BoolFilter(true), Filter::BoolFilter(false)]);
-    let all_conditions = combinations(vec![Filter::And(vec![]), Filter::Or(vec![]), Filter::Not(vec![])]);
+    let all_conditions = combinations(vec![
+        Filter::And(vec![]),
+        Filter::Or(vec![]),
+        Filter::Not(vec![]),
+    ]);
     let mut filters: Vec<Filter> = vec![];
 
     for conditions in all_conditions {

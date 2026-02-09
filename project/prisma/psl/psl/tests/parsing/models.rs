@@ -1,5 +1,7 @@
+use psl::parser_database::ast::IndentationType;
+use psl::parser_database::ast::NewlineType;
+
 use crate::common::*;
-use psl::parser_database::ast::{IndentationType, NewlineType};
 
 #[test]
 fn default_spacing() {

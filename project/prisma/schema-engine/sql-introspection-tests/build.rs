@@ -1,4 +1,7 @@
-use std::{env, fs, io::Write as _, path};
+use std::env;
+use std::fs;
+use std::io::Write as _;
+use std::path;
 
 const ROOT_DIR: &str = "tests/simple";
 

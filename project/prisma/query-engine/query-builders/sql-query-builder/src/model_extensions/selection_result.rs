@@ -1,7 +1,10 @@
+use quaint::Value;
+use query_structure::PrismaValue;
+use query_structure::SelectedField;
+use query_structure::SelectionResult;
+
 use super::ScalarFieldExt;
 use crate::context::Context;
-use quaint::Value;
-use query_structure::{PrismaValue, SelectedField, SelectionResult};
 
 pub trait SelectionResultExt {
     fn misses_autogen_value(&self) -> bool;

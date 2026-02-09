@@ -16,29 +16,56 @@ pub mod update;
 pub mod value;
 pub mod write;
 
-use std::{collections::HashMap, iter, marker::PhantomData};
-
-use itertools::{Either, Itertools};
-use model_extensions::ScalarFieldExt;
-use prisma_value::{Placeholder, PrismaValue};
-use quaint::{
-    Value,
-    ast::{
-        Column, Comparable, ConditionTree, ExpressionKind, Insert, OnConflict, OpaqueType, Query, Row, Select, Values,
-    },
-    visitor::Visitor,
-};
-use query_builder::{Chunkable, CreateRecord, CreateRecordDefaultsQuery, DbQuery, QueryBuilder};
-use query_structure::{
-    AggregationSelection, DatasourceFieldName, FieldSelection, Filter, Model, ModelProjection, QueryArguments,
-    RecordFilter, RelationField, RelationLoadStrategy, ScalarField, SelectionResult, WriteArgs, WriteOperation,
-};
+use std::collections::HashMap;
+use std::iter;
+use std::marker::PhantomData;
 
 pub use column_metadata::ColumnMetadata;
 pub use context::Context;
 pub use convert::opaque_type_to_prisma_type;
 pub use filter::FilterBuilder;
-pub use model_extensions::{AsColumn, AsColumns, AsTable, RelationFieldExt, SelectionResultExt};
+use itertools::Either;
+use itertools::Itertools;
+pub use model_extensions::AsColumn;
+pub use model_extensions::AsColumns;
+pub use model_extensions::AsTable;
+pub use model_extensions::RelationFieldExt;
+use model_extensions::ScalarFieldExt;
+pub use model_extensions::SelectionResultExt;
+use prisma_value::Placeholder;
+use prisma_value::PrismaValue;
+use quaint::Value;
+use quaint::ast::Column;
+use quaint::ast::Comparable;
+use quaint::ast::ConditionTree;
+use quaint::ast::ExpressionKind;
+use quaint::ast::Insert;
+use quaint::ast::OnConflict;
+use quaint::ast::OpaqueType;
+use quaint::ast::Query;
+use quaint::ast::Row;
+use quaint::ast::Select;
+use quaint::ast::Values;
+use quaint::visitor::Visitor;
+use query_builder::Chunkable;
+use query_builder::CreateRecord;
+use query_builder::CreateRecordDefaultsQuery;
+use query_builder::DbQuery;
+use query_builder::QueryBuilder;
+use query_structure::AggregationSelection;
+use query_structure::DatasourceFieldName;
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::ModelProjection;
+use query_structure::QueryArguments;
+use query_structure::RecordFilter;
+use query_structure::RelationField;
+use query_structure::RelationLoadStrategy;
+use query_structure::ScalarField;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use query_structure::WriteOperation;
 pub use sql_trace::SqlTraceComment;
 use value::GeneratorCall;
 
@@ -118,7 +145,9 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
                     max_chunk_size - TAKE_AND_LIMIT_PARAM_COUNT
                 });
                 let query_arguments = match (chunkable, actual_max_chunk_size) {
-                    (Chunkable::Yes, Some(max_chunk_size)) if query_arguments.should_batch(max_chunk_size) => {
+                    (Chunkable::Yes, Some(max_chunk_size))
+                        if query_arguments.should_batch(max_chunk_size) =>
+                    {
                         query_arguments.batched(max_chunk_size)
                     }
                     _ => vec![query_arguments],
@@ -156,11 +185,13 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
     ) -> Result<DbQuery, Box<dyn std::error::Error + Send + Sync>> {
         use std::slice;
 
-        use crate::read::SelectDefinition;
         use filter::default_scalar_filter;
         use itertools::Itertools;
-        use quaint::ast::{Aliasable, Joinable};
+        use quaint::ast::Aliasable;
+        use quaint::ast::Joinable;
         use select::JoinConditionExt;
+
+        use crate::read::SelectDefinition;
 
         let chunkable = Chunkable::from(&query_arguments);
         let link_alias = linkage.to_string();
@@ -201,9 +232,14 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
 
         let join_condition = rf.m2m_join_conditions(Some(m2m_alias), None, &self.context);
 
-        let (select, additional_selection_set) =
-            query_arguments.into_select(&rf.related_model(), selected_fields.virtuals(), &self.context);
-        let select = select.columns(columns).inner_join(m2m_table.on(join_condition.clone()));
+        let (select, additional_selection_set) = query_arguments.into_select(
+            &rf.related_model(),
+            selected_fields.virtuals(),
+            &self.context,
+        );
+        let select = select
+            .columns(columns)
+            .inner_join(m2m_table.on(join_condition.clone()));
         let select = if let Some(filter) = filter {
             select.and_where(filter)
         } else {
@@ -242,43 +278,53 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
         let chunkable = Chunkable::Yes;
         let id_selection = model.shard_aware_primary_identifier();
 
-        let (select_defaults, last_insert_id_field, merge_values) = if self.context.sql_family().is_mysql() {
-            let (field_placeholders, query): (Vec<_>, Select<'static>) =
-                write::defaults_for_mysql_write_args(&id_selection, &args)
-                    .map(|(field, arg)| {
-                        let ph = Placeholder::new(field.name().to_owned(), field.type_info().to_prisma_type());
-                        ((field, ph), arg)
+        let (select_defaults, last_insert_id_field, merge_values) =
+            if self.context.sql_family().is_mysql() {
+                let (field_placeholders, query): (Vec<_>, Select<'static>) =
+                    write::defaults_for_mysql_write_args(&id_selection, &args)
+                        .map(|(field, arg)| {
+                            let ph = Placeholder::new(
+                                field.name().to_owned(),
+                                field.type_info().to_prisma_type(),
+                            );
+                            ((field, ph), arg)
+                        })
+                        .unzip();
+
+                let select_defaults = if !field_placeholders.is_empty() {
+                    // Set field defaults as placeholders in the arguments of the insert statement.
+                    for (field, ph) in &field_placeholders {
+                        let field = DatasourceFieldName(field.db_name().into());
+                        args.insert(
+                            field,
+                            WriteOperation::scalar_set(PrismaValue::Placeholder(ph.clone())),
+                        )
+                    }
+
+                    Some(CreateRecordDefaultsQuery {
+                        query: self.convert_query(query, Chunkable::No)?,
+                        field_placeholders,
                     })
-                    .unzip();
+                } else {
+                    None
+                };
 
-            let select_defaults = if !field_placeholders.is_empty() {
-                // Set field defaults as placeholders in the arguments of the insert statement.
-                for (field, ph) in &field_placeholders {
-                    let field = DatasourceFieldName(field.db_name().into());
-                    args.insert(field, WriteOperation::scalar_set(PrismaValue::Placeholder(ph.clone())))
-                }
+                let last_insert_id_field = id_selection
+                    .scalars()
+                    .find(|sf| sf.is_autoincrement())
+                    .cloned();
 
-                Some(CreateRecordDefaultsQuery {
-                    query: self.convert_query(query, Chunkable::No)?,
-                    field_placeholders,
-                })
+                // Return all arguments that are a part of the primary identifier as values to merge
+                // into the created record.
+                let merge_values = args
+                    .as_selection_result((&id_selection).into())
+                    .map(|res| res.pairs)
+                    .unwrap_or_default();
+
+                (select_defaults, last_insert_id_field, merge_values)
             } else {
-                None
+                (None, None, vec![])
             };
-
-            let last_insert_id_field = id_selection.scalars().find(|sf| sf.is_autoincrement()).cloned();
-
-            // Return all arguments that are a part of the primary identifier as values to merge
-            // into the created record.
-            let merge_values = args
-                .as_selection_result((&id_selection).into())
-                .map(|res| res.pairs)
-                .unwrap_or_default();
-
-            (select_defaults, last_insert_id_field, merge_values)
-        } else {
-            (None, None, vec![])
-        };
 
         let query = write::create_record(model, args, &selected_fields.into(), &self.context);
 
@@ -300,8 +346,17 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
         // Inserts are always chunkable.
         let chunkable = Chunkable::Yes;
         let projection = selected_fields.map(ModelProjection::from);
-        let query = write::generate_insert_statements(model, args, skip_duplicates, projection.as_ref(), &self.context);
-        query.into_iter().map(|q| self.convert_query(q, chunkable)).collect()
+        let query = write::generate_insert_statements(
+            model,
+            args,
+            skip_duplicates,
+            projection.as_ref(),
+            &self.context,
+        );
+        query
+            .into_iter()
+            .map(|q| self.convert_query(q, chunkable))
+            .collect()
     }
 
     fn build_update(
@@ -315,7 +370,13 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
         match selected_fields {
             Some(selected_fields) => {
                 let projection = ModelProjection::from(selected_fields);
-                let query = update::update_one_with_selection(model, record_filter, args, &projection, &self.context);
+                let query = update::update_one_with_selection(
+                    model,
+                    record_filter,
+                    args,
+                    &projection,
+                    &self.context,
+                );
                 self.convert_query(query, chunkable)
             }
             None => {
@@ -349,10 +410,17 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
     ) -> Result<Vec<DbQuery>, Box<dyn std::error::Error + Send + Sync>> {
         let chunkable = Chunkable::from(&record_filter.filter);
         let projection = selected_fields.map(ModelProjection::from);
-        write::generate_update_statements(model, record_filter, args, projection.as_ref(), limit, &self.context)
-            .into_iter()
-            .map(|query| self.convert_query(query, chunkable))
-            .collect::<Result<Vec<_>, _>>()
+        write::generate_update_statements(
+            model,
+            record_filter,
+            args,
+            projection.as_ref(),
+            limit,
+            &self.context,
+        )
+        .into_iter()
+        .map(|query| self.convert_query(query, chunkable))
+        .collect::<Result<Vec<_>, _>>()
     }
 
     fn build_upsert(
@@ -427,7 +495,8 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
     ) -> Result<DbQuery, Box<dyn std::error::Error + Send + Sync>> {
         // Delete by parent and child ids is always chunkable.
         let chunkable = Chunkable::Yes;
-        let query = write::delete_relation_table_records(&field, parent_id, child_ids, &self.context);
+        let query =
+            write::delete_relation_table_records(&field, parent_id, child_ids, &self.context);
         self.convert_query(query, chunkable)
     }
 
@@ -439,7 +508,12 @@ impl<'a, V: Visitor<'a>> QueryBuilder for SqlQueryBuilder<'a, V> {
     ) -> Result<DbQuery, Box<dyn std::error::Error + Send + Sync>> {
         let chunkable = Chunkable::from(&record_filter.filter);
         let query = if let Some(selected_fields) = selected_fields {
-            write::delete_returning(model, record_filter.filter, &selected_fields.into(), &self.context)
+            write::delete_returning(
+                model,
+                record_filter.filter,
+                &selected_fields.into(),
+                &self.context,
+            )
         } else {
             write::generate_delete_statements(model, record_filter, None, &self.context)
                 .into_iter()
@@ -518,10 +592,9 @@ pub fn in_conditions<'a>(
                 .into_iter()
                 .zip(columns)
                 .map(|((sf, value), col)| {
-                    ConditionTree::from(
-                        Row::from((col.clone(),))
-                            .in_selection(ExpressionKind::ParameterizedRow(sf.value(value.clone(), ctx))),
-                    )
+                    ConditionTree::from(Row::from((col.clone(),)).in_selection(
+                        ExpressionKind::ParameterizedRow(sf.value(value.clone(), ctx)),
+                    ))
                 })
                 .reduce(|l, r| l.and(r))
                 .expect("should have at least one column");

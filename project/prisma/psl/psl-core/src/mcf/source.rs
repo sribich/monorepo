@@ -1,7 +1,8 @@
 use parser_database::Files;
 use psl_ast::ast::WithSpan;
 
-use crate::configuration::{self, StringFromEnvVar};
+use crate::configuration::StringFromEnvVar;
+use crate::configuration::{self};
 
 #[derive(Debug, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -18,7 +19,10 @@ pub struct SourceConfig {
     pub source_file_path: String,
 }
 
-pub fn render_sources_to_json_value(sources: &[configuration::Datasource], files: &Files) -> serde_json::Value {
+pub fn render_sources_to_json_value(
+    sources: &[configuration::Datasource],
+    files: &Files,
+) -> serde_json::Value {
     let res = sources_to_json_structs(sources, files);
     serde_json::to_value(res).expect("Failed to render JSON.")
 }
@@ -28,7 +32,10 @@ pub fn render_sources_to_json(sources: &[configuration::Datasource], files: &Fil
     serde_json::to_string_pretty(&res).expect("Failed to render JSON.")
 }
 
-fn sources_to_json_structs(sources: &[configuration::Datasource], files: &Files) -> Vec<SourceConfig> {
+fn sources_to_json_structs(
+    sources: &[configuration::Datasource],
+    files: &Files,
+) -> Vec<SourceConfig> {
     let mut res: Vec<SourceConfig> = Vec::new();
 
     for source in sources {

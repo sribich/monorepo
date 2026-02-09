@@ -19,7 +19,11 @@ use std::collections::HashMap;
 ///     &doc
 /// );
 /// ```
-pub fn format_completion_docs(example: &str, description: &str, params: Option<HashMap<&str, &str>>) -> String {
+pub fn format_completion_docs(
+    example: &str,
+    description: &str,
+    params: Option<HashMap<&str, &str>>,
+) -> String {
     let param_docs: String = match params {
         Some(params) => params
             .into_iter()

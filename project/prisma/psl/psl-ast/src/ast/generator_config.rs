@@ -1,4 +1,9 @@
-use super::{Comment, Identifier, Span, WithDocumentation, WithIdentifier, WithSpan};
+use super::Comment;
+use super::Identifier;
+use super::Span;
+use super::WithDocumentation;
+use super::WithIdentifier;
+use super::WithSpan;
 use crate::ast::config::ConfigBlockProperty;
 
 /// A Generator block declaration.

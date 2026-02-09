@@ -11,27 +11,38 @@ mod postgres;
 #[cfg(feature = "sqlite")]
 mod sqlite;
 
-#[cfg(feature = "mysql")]
-pub(crate) use mysql::{MysqlConnector, MysqlDialect};
-
-#[cfg(any(feature = "postgresql"))]
-pub(crate) use postgres::{PostgresConnector, PostgresDialect};
-
-#[cfg(feature = "sqlite")]
-pub(crate) use sqlite::{SqliteConnector, SqliteDialect};
-
-use crate::{
-    sql_destructive_change_checker::DestructiveChangeCheckerFlavour, sql_renderer::SqlRenderer,
-    sql_schema_calculator::SqlSchemaCalculatorFlavour, sql_schema_differ::SqlSchemaDifferFlavour,
-};
-use psl::{PreviewFeatures, ValidatedSchema};
-use quaint::prelude::{NativeConnectionInfo, Table};
-use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, IntrospectionContext, MigrationRecord, Namespaces,
-    PersistenceNotInitializedError, migrations_directory::Migrations,
-};
-use sql_schema_describer::SqlSchema;
 use std::fmt::Debug;
+
+#[cfg(feature = "mysql")]
+pub(crate) use mysql::MysqlConnector;
+#[cfg(feature = "mysql")]
+pub(crate) use mysql::MysqlDialect;
+#[cfg(any(feature = "postgresql"))]
+pub(crate) use postgres::PostgresConnector;
+#[cfg(any(feature = "postgresql"))]
+pub(crate) use postgres::PostgresDialect;
+use psl::PreviewFeatures;
+use psl::ValidatedSchema;
+use quaint::prelude::NativeConnectionInfo;
+use quaint::prelude::Table;
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use schema_connector::IntrospectionContext;
+use schema_connector::MigrationRecord;
+use schema_connector::Namespaces;
+use schema_connector::PersistenceNotInitializedError;
+use schema_connector::migrations_directory::Migrations;
+use sql_schema_describer::SqlSchema;
+#[cfg(feature = "sqlite")]
+pub(crate) use sqlite::SqliteConnector;
+#[cfg(feature = "sqlite")]
+pub(crate) use sqlite::SqliteDialect;
+
+use crate::sql_destructive_change_checker::DestructiveChangeCheckerFlavour;
+use crate::sql_renderer::SqlRenderer;
+use crate::sql_schema_calculator::SqlSchemaCalculatorFlavour;
+use crate::sql_schema_differ::SqlSchemaDifferFlavour;
 
 /// P is the params, C is a connection.
 pub(crate) enum State<P, C> {
@@ -70,7 +81,9 @@ where
     #[track_caller]
     fn get_unwrapped_params(&self) -> &P {
         match self {
-            State::Initial => panic!("Internal logic error: get_unwrapped_params() on State::Initial"),
+            State::Initial => {
+                panic!("Internal logic error: get_unwrapped_params() on State::Initial")
+            }
             State::WithParams(p) => p,
             State::Connected(p, _) => p,
         }
@@ -171,7 +184,10 @@ pub(crate) trait SqlConnector: Send + Sync + Debug {
     /// Initialize the `_prisma_migrations` table.
     fn create_migrations_table(&mut self) -> BoxFuture<'_, ConnectorResult<()>>;
 
-    fn describe_schema(&mut self, namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<SqlSchema>>;
+    fn describe_schema(
+        &mut self,
+        namespaces: Option<Namespaces>,
+    ) -> BoxFuture<'_, ConnectorResult<SqlSchema>>;
 
     /// Drop the database.
     fn drop_database(&mut self) -> BoxFuture<'_, ConnectorResult<()>>;
@@ -207,7 +223,8 @@ pub(crate) trait SqlConnector: Send + Sync + Debug {
 
     fn load_migrations_table(
         &mut self,
-    ) -> BoxFuture<'_, ConnectorResult<Result<Vec<MigrationRecord>, PersistenceNotInitializedError>>> {
+    ) -> BoxFuture<'_, ConnectorResult<Result<Vec<MigrationRecord>, PersistenceNotInitializedError>>>
+    {
         use quaint::prelude::*;
         Box::pin(async move {
             let select = Select::from_table(self.dialect().migrations_table())

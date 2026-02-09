@@ -1,9 +1,11 @@
 use convert_case::Case;
-use darling::{FromAttributes, FromMeta};
+use darling::FromAttributes;
+use darling::FromMeta;
 use macro_util::ast::Attributes;
 use proc_macro2::Span;
 
-use super::common::{Deprecation, DocAttribute};
+use super::common::Deprecation;
+use super::common::DocAttribute;
 
 #[derive(Debug, FromMeta)]
 pub enum SerdeCase {
@@ -120,7 +122,7 @@ impl ContainerAttributes {
             (None, None, Some(_)) => Ok(Tagged::Untagged),
             (None, Some(_), None) => {
                 Err(syn::Error::new(span, "Content cannot be used without tag."))
-            },
+            }
             (None, Some(_), Some(_)) => Err(syn::Error::new(
                 span,
                 "Untagged cannot be used with content.",
@@ -132,7 +134,7 @@ impl ContainerAttributes {
             }),
             (Some(_), _, Some(_)) => {
                 Err(syn::Error::new(span, "Untagged cannot be used with tag."))
-            },
+            }
         }
     }
 }

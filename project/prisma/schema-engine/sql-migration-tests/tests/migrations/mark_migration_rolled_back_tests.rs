@@ -83,11 +83,14 @@ fn mark_migration_rolled_back_with_a_failed_migration_works(api: TestApi) {
         output_second_migration.generated_migration_name
     };
 
-    api.apply_migrations(&migrations_directory).send_unwrap_err();
+    api.apply_migrations(&migrations_directory)
+        .send_unwrap_err();
 
     // Check that the second migration failed.
     {
-        let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+        let applied_migrations = tok(api.migration_persistence().list_migrations())
+            .unwrap()
+            .unwrap();
 
         assert_eq!(applied_migrations.len(), 2);
         assert!(
@@ -102,15 +105,24 @@ fn mark_migration_rolled_back_with_a_failed_migration_works(api: TestApi) {
 
     // Mark the second migration as rolled back.
 
-    api.mark_migration_rolled_back(&second_migration_name).send();
+    api.mark_migration_rolled_back(&second_migration_name)
+        .send();
 
-    let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+    let applied_migrations = tok(api.migration_persistence().list_migrations())
+        .unwrap()
+        .unwrap();
 
     assert_eq!(applied_migrations.len(), 2);
-    assert_eq!(&applied_migrations[0].migration_name, &initial_migration_name);
+    assert_eq!(
+        &applied_migrations[0].migration_name,
+        &initial_migration_name
+    );
     assert!(&applied_migrations[0].finished_at.is_some());
 
-    assert_eq!(&applied_migrations[1].migration_name, &second_migration_name);
+    assert_eq!(
+        &applied_migrations[1].migration_name,
+        &second_migration_name
+    );
     assert!(&applied_migrations[1].finished_at.is_none());
     assert!(&applied_migrations[1].rolled_back_at.is_some());
 }
@@ -164,7 +176,9 @@ fn mark_migration_rolled_back_with_a_successful_migration_errors(api: TestApi) {
 
     // Check that the second migration succeeded.
     {
-        let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+        let applied_migrations = tok(api.migration_persistence().list_migrations())
+            .unwrap()
+            .unwrap();
 
         assert_eq!(applied_migrations.len(), 2);
         assert!(applied_migrations[1].finished_at.is_some(),);
@@ -173,19 +187,29 @@ fn mark_migration_rolled_back_with_a_successful_migration_errors(api: TestApi) {
 
     // Mark the second migration as rolled back.
 
-    let err = api.mark_migration_rolled_back(&second_migration_name).send_unwrap_err();
+    let err = api
+        .mark_migration_rolled_back(&second_migration_name)
+        .send_unwrap_err();
 
     assert!(err.to_string().starts_with(&format!(
         "Migration `{second_migration_name}` cannot be rolled back because it is not in a failed state.\n"
     )));
 
-    let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+    let applied_migrations = tok(api.migration_persistence().list_migrations())
+        .unwrap()
+        .unwrap();
 
     assert_eq!(applied_migrations.len(), 2);
-    assert_eq!(&applied_migrations[0].migration_name, &initial_migration_name);
+    assert_eq!(
+        &applied_migrations[0].migration_name,
+        &initial_migration_name
+    );
     assert!(&applied_migrations[0].finished_at.is_some());
 
-    assert_eq!(&applied_migrations[1].migration_name, &second_migration_name);
+    assert_eq!(
+        &applied_migrations[1].migration_name,
+        &second_migration_name
+    );
     assert!(&applied_migrations[1].finished_at.is_some());
     assert!(&applied_migrations[1].rolled_back_at.is_none());
 }
@@ -236,16 +260,22 @@ fn rolling_back_applying_again_then_rolling_back_again_should_error(api: TestApi
             });
 
         (
-            output_second_migration.output().generated_migration_name.clone(),
+            output_second_migration
+                .output()
+                .generated_migration_name
+                .clone(),
             output_second_migration.migration_script_path(),
         )
     };
 
-    api.apply_migrations(&migrations_directory).send_unwrap_err();
+    api.apply_migrations(&migrations_directory)
+        .send_unwrap_err();
 
     // Check that the second migration failed.
     {
-        let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+        let applied_migrations = tok(api.migration_persistence().list_migrations())
+            .unwrap()
+            .unwrap();
 
         assert_eq!(applied_migrations.len(), 2);
         assert!(applied_migrations[1].finished_at.is_none());
@@ -253,7 +283,8 @@ fn rolling_back_applying_again_then_rolling_back_again_should_error(api: TestApi
     }
 
     // Mark the second migration as rolled back.
-    api.mark_migration_rolled_back(&second_migration_name).send();
+    api.mark_migration_rolled_back(&second_migration_name)
+        .send();
 
     // Fix the migration
     std::fs::write(second_migration_path, "SELECT 'YOLO'").unwrap();
@@ -261,35 +292,55 @@ fn rolling_back_applying_again_then_rolling_back_again_should_error(api: TestApi
     // Reapply migration 2
     api.apply_migrations(&migrations_directory).send_sync();
 
-    let applied_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+    let applied_migrations = tok(api.migration_persistence().list_migrations())
+        .unwrap()
+        .unwrap();
 
     assert_eq!(applied_migrations.len(), 3);
-    assert_eq!(&applied_migrations[0].migration_name, &initial_migration_name);
+    assert_eq!(
+        &applied_migrations[0].migration_name,
+        &initial_migration_name
+    );
     assert!(&applied_migrations[0].finished_at.is_some());
 
-    assert_eq!(&applied_migrations[1].migration_name, &second_migration_name);
+    assert_eq!(
+        &applied_migrations[1].migration_name,
+        &second_migration_name
+    );
     assert!(&applied_migrations[1].finished_at.is_none());
     assert!(&applied_migrations[1].rolled_back_at.is_some());
 
-    assert_eq!(&applied_migrations[2].migration_name, &second_migration_name);
+    assert_eq!(
+        &applied_migrations[2].migration_name,
+        &second_migration_name
+    );
     assert!(&applied_migrations[2].finished_at.is_some());
     assert!(&applied_migrations[2].rolled_back_at.is_none());
 
     // Try to mark the second migration as rolled back again.
-    api.mark_migration_rolled_back(&second_migration_name).send();
+    api.mark_migration_rolled_back(&second_migration_name)
+        .send();
 
-    let final_migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+    let final_migrations = tok(api.migration_persistence().list_migrations())
+        .unwrap()
+        .unwrap();
 
     // Assert that the last two migration records did not change, except for things like checksums.
     assert_eq!(&final_migrations[1].migration_name, &second_migration_name);
-    assert_eq!(&final_migrations[1].finished_at, &applied_migrations[1].finished_at);
+    assert_eq!(
+        &final_migrations[1].finished_at,
+        &applied_migrations[1].finished_at
+    );
     assert_eq!(
         &final_migrations[1].rolled_back_at,
         &applied_migrations[1].rolled_back_at
     );
 
     assert_eq!(&final_migrations[2].migration_name, &second_migration_name);
-    assert_eq!(&final_migrations[2].finished_at, &applied_migrations[2].finished_at);
+    assert_eq!(
+        &final_migrations[2].finished_at,
+        &applied_migrations[2].finished_at
+    );
     assert_eq!(
         &final_migrations[2].rolled_back_at,
         &applied_migrations[2].rolled_back_at

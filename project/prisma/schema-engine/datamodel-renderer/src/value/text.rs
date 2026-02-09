@@ -1,6 +1,8 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use base64::display::Base64Display;
 use psl::PreviewFeature;
-use std::{borrow::Cow, fmt};
 
 /// Represents a string value in the PSL.
 #[derive(Debug, Clone, Copy)]

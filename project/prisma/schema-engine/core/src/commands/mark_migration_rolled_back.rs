@@ -1,6 +1,9 @@
-use crate::{CoreError, CoreResult};
 use schema_connector::SchemaConnector;
-use user_facing_errors::schema_engine::{CannotRollBackSucceededMigration, CannotRollBackUnappliedMigration};
+use user_facing_errors::schema_engine::CannotRollBackSucceededMigration;
+use user_facing_errors::schema_engine::CannotRollBackUnappliedMigration;
+
+use crate::CoreError;
+use crate::CoreResult;
 
 /// Mark an existing failed migration as rolled back in the migrations table. It
 /// will still be there, but ignored for all purposes except as audit trail.

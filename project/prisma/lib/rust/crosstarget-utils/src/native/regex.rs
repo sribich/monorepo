@@ -1,7 +1,10 @@
 use enumflags2::BitFlags;
-use regex::{Regex as NativeRegex, RegexBuilder};
+use regex::Regex as NativeRegex;
+use regex::RegexBuilder;
 
-use crate::common::regex::{RegExpCompat, RegExpError, RegExpFlags};
+use crate::common::regex::RegExpCompat;
+use crate::common::regex::RegExpError;
+use crate::common::regex::RegExpFlags;
 
 pub struct RegExp {
     inner: NativeRegex,
@@ -19,7 +22,9 @@ impl RegExp {
             builder.case_insensitive(true);
         }
 
-        let inner = builder.build().map_err(|e| RegExpError { message: e.to_string() })?;
+        let inner = builder.build().map_err(|e| RegExpError {
+            message: e.to_string(),
+        })?;
 
         Ok(Self { inner })
     }
@@ -30,7 +35,7 @@ impl RegExpCompat for RegExp {
         self.inner.captures(message).map(|captures| {
             captures
                 .iter()
-                .flat_map(|capture| capture.map(|cap| cap.as_str().to_owned()))
+                .filter_map(|capture| capture.map(|cap| cap.as_str().to_owned()))
                 .collect()
         })
     }

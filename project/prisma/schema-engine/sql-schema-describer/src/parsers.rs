@@ -1,13 +1,17 @@
 //! Functions for parsing values from resultrows using regexes
 
+use std::str::FromStr;
+use std::sync::LazyLock;
+
 use bigdecimal::BigDecimal;
 use prisma_value::PrismaValue;
 use regex::Regex;
-use std::{str::FromStr, sync::LazyLock};
 use tracing::debug;
 
-static RE_NUM: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^'?(-?\d+)'?$").expect("compile regex"));
-static RE_FLOAT: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"^'?([^']+)'?$").expect("compile regex"));
+static RE_NUM: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^'?(-?\d+)'?$").expect("compile regex"));
+static RE_FLOAT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^'?([^']+)'?$").expect("compile regex"));
 
 pub(crate) trait Parser {
     fn re_num() -> &'static Regex {

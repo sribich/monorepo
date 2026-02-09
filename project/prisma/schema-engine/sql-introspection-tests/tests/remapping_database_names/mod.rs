@@ -69,7 +69,10 @@ async fn remapping_tables_with_invalid_characters(api: &mut TestApi) -> TestResu
 
             migration.create_table("User with Space", |t| {
                 t.add_column("id", types::integer().increments(true));
-                t.add_constraint("User with Space_pkey", types::primary_constraint(vec!["id"]))
+                t.add_constraint(
+                    "User with Space_pkey",
+                    types::primary_constraint(vec!["id"]),
+                )
             });
         })
         .await?;
@@ -147,7 +150,9 @@ async fn remapping_models_in_relations(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(exclude(Sqlite, Vitess))]
-async fn remapping_models_in_relations_should_not_map_virtual_fields(api: &mut TestApi) -> TestResult {
+async fn remapping_models_in_relations_should_not_map_virtual_fields(
+    api: &mut TestApi,
+) -> TestResult {
     let sql_family = api.sql_family();
 
     api.barrel()
@@ -287,7 +292,11 @@ async fn remapping_enum_values(api: &mut TestApi) -> TestResult {
         })
         .await?;
 
-    let enum_name = if sql_family.is_mysql() { "Book_color" } else { "color" };
+    let enum_name = if sql_family.is_mysql() {
+        "Book_color"
+    } else {
+        "color"
+    };
 
     let dm = format!(
         r#"
@@ -330,12 +339,19 @@ async fn remapping_enum_default_values(api: &mut TestApi) -> TestResult {
                     "color"
                 };
 
-                t.add_column("color", types::custom(typ).nullable(false).default("b lack"));
+                t.add_column(
+                    "color",
+                    types::custom(typ).nullable(false).default("b lack"),
+                );
             });
         })
         .await?;
 
-    let enum_name = if sql_family.is_mysql() { "Book_color" } else { "color" };
+    let enum_name = if sql_family.is_mysql() {
+        "Book_color"
+    } else {
+        "color"
+    };
 
     let dm = format!(
         r#"
@@ -364,7 +380,10 @@ async fn remapping_compound_primary_keys(api: &mut TestApi) -> TestResult {
             migration.create_table("User", |t| {
                 t.add_column("first_name", types::integer());
                 t.add_column("last@name", types::integer());
-                t.add_constraint("User_pkey", types::primary_constraint(vec!["first_name", "last@name"]));
+                t.add_constraint(
+                    "User_pkey",
+                    types::primary_constraint(vec!["first_name", "last@name"]),
+                );
             });
         })
         .await?;
@@ -385,7 +404,9 @@ async fn remapping_compound_primary_keys(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector]
-async fn not_automatically_remapping_invalid_compound_unique_key_names(api: &mut TestApi) -> TestResult {
+async fn not_automatically_remapping_invalid_compound_unique_key_names(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {
@@ -418,7 +439,9 @@ async fn not_automatically_remapping_invalid_compound_unique_key_names(api: &mut
 }
 
 #[test_connector]
-async fn not_automatically_remapping_invalid_compound_primary_key_names(api: &mut TestApi) -> TestResult {
+async fn not_automatically_remapping_invalid_compound_primary_key_names(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {

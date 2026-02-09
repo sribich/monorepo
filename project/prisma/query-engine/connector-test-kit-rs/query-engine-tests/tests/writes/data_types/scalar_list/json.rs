@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema), capabilities(ScalarLists, Json, JsonLists))]
 mod json {
     use indoc::indoc;
-    use query_engine_tests::{Runner, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -205,7 +206,9 @@ mod json {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneScalarModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneScalarModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

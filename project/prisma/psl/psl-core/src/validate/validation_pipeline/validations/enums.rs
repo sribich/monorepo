@@ -1,13 +1,14 @@
-use crate::{
-    datamodel_connector::ConnectorCapability,
-    diagnostics::DatamodelError,
-    parser_database::{ast::WithSpan, walkers::EnumWalker},
-    validate::validation_pipeline::context::Context,
-};
 use std::collections::HashSet;
 
+use crate::datamodel_connector::ConnectorCapability;
+use crate::diagnostics::DatamodelError;
+use crate::parser_database::ast::WithSpan;
+use crate::parser_database::walkers::EnumWalker;
+use crate::validate::validation_pipeline::context::Context;
+
 pub(super) fn database_name_clashes(ctx: &mut Context<'_>) {
-    let mut database_names: HashSet<(Option<&str>, &str)> = HashSet::with_capacity(ctx.db.enums_count());
+    let mut database_names: HashSet<(Option<&str>, &str)> =
+        HashSet::with_capacity(ctx.db.enums_count());
 
     for enm in ctx.db.walk_enums() {
         if !database_names.insert((enm.schema().map(|(n, _)| n), enm.database_name())) {
@@ -43,7 +44,10 @@ pub(super) fn schema_is_defined_in_the_datasource(r#enum: EnumWalker<'_>, ctx: &
     ))
 }
 
-pub(super) fn schema_attribute_supported_in_connector(r#enum: EnumWalker<'_>, ctx: &mut Context<'_>) {
+pub(super) fn schema_attribute_supported_in_connector(
+    r#enum: EnumWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     if ctx.has_capability(ConnectorCapability::MultiSchema) {
         return;
     }

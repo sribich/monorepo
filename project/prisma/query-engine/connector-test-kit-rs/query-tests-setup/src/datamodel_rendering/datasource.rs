@@ -60,7 +60,11 @@ impl<'a> DatasourceBuilder<'a> {
 
     pub fn render(self) -> String {
         iter::once(format!("datasource {} {{", self.name))
-            .chain(self.properties.into_iter().map(|(k, v)| format!("    {k} = {v}")))
+            .chain(
+                self.properties
+                    .into_iter()
+                    .map(|(k, v)| format!("    {k} = {v}")),
+            )
             .chain(iter::once("}\n".into()))
             .join("\n")
     }

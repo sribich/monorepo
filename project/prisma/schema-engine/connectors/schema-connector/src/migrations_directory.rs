@@ -5,11 +5,18 @@
 //! It also contains multiple subfolders, named after the migration id, and each containing:
 //! - A migration script
 
-use crate::{ConnectorError, ConnectorResult, checksum};
-use json_rpc::types::{MigrationList, MigrationLockfile};
-use std::{borrow::Borrow, error::Error, fmt::Display};
+use std::borrow::Borrow;
+use std::error::Error;
+use std::fmt::Display;
+
+use json_rpc::types::MigrationList;
+use json_rpc::types::MigrationLockfile;
 use tracing_error::SpanTrace;
 use user_facing_errors::schema_engine::ProviderSwitchedError;
+
+use crate::ConnectorError;
+use crate::ConnectorResult;
+use crate::checksum;
 
 /// The file name for migration scripts, not including the file extension.
 pub const MIGRATION_SCRIPT_FILENAME: &str = "migration";
@@ -18,7 +25,10 @@ pub const MIGRATION_SCRIPT_FILENAME: &str = "migration";
 pub const MIGRATION_LOCK_FILENAME: &str = "migration_lock";
 
 /// Error if the provider in the schema does not match the one in the schema_lock.toml
-pub fn error_on_changed_provider(lockfile: &MigrationLockfile, provider: &str) -> ConnectorResult<()> {
+pub fn error_on_changed_provider(
+    lockfile: &MigrationLockfile,
+    provider: &str,
+) -> ConnectorResult<()> {
     match match_provider_in_lock_file(lockfile, provider) {
         None => Ok(()),
         Some(Err(expected_provider)) => Err(ConnectorError::user_facing(ProviderSwitchedError {
@@ -30,7 +40,10 @@ pub fn error_on_changed_provider(lockfile: &MigrationLockfile, provider: &str) -
 }
 
 /// Check whether provider matches. `None` means there was no migration_lock.toml file.
-fn match_provider_in_lock_file(lockfile: &MigrationLockfile, provider: &str) -> Option<Result<(), String>> {
+fn match_provider_in_lock_file(
+    lockfile: &MigrationLockfile,
+    provider: &str,
+) -> Option<Result<(), String>> {
     read_provider_from_lock_file(lockfile).map(|found_provider| {
         if found_provider == provider {
             Ok(())
@@ -96,15 +109,21 @@ impl MigrationDirectory {
     /// TODO: reduce clone usage here.
     pub fn matches_checksum(&self, checksum_str: &str) -> Result<bool, ReadMigrationScriptError> {
         let filesystem_script = self.read_migration_script()?;
-        Ok(checksum::script_matches_checksum(&filesystem_script, checksum_str))
+        Ok(checksum::script_matches_checksum(
+            &filesystem_script,
+            checksum_str,
+        ))
     }
 
     /// Read the migration script to a string.
     pub fn read_migration_script(&self) -> Result<String, ReadMigrationScriptError> {
         let migration_file_path = self.0.migration_file.path.clone();
-        let filesystem_script: Result<String, String> = self.0.migration_file.content.clone().into();
+        let filesystem_script: Result<String, String> =
+            self.0.migration_file.content.clone().into();
 
-        filesystem_script.map_err(|err| ReadMigrationScriptError::new(std::io::Error::other(err), migration_file_path))
+        filesystem_script.map_err(|err| {
+            ReadMigrationScriptError::new(std::io::Error::other(err), migration_file_path)
+        })
     }
 }
 

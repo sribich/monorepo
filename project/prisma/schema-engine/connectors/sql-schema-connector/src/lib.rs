@@ -17,21 +17,30 @@ mod sql_renderer;
 mod sql_schema_calculator;
 mod sql_schema_differ;
 
+use std::future;
+use std::sync::Arc;
+
 use database_schema::SqlDatabaseSchema;
 use enumflags2::BitFlags;
-use flavour::{SqlConnector, SqlDialect, UsingExternalShadowDb};
+use flavour::SqlConnector;
+use flavour::SqlDialect;
+use flavour::UsingExternalShadowDb;
 use migration_pair::MigrationPair;
-use psl::{
-    SourceFile, ValidatedSchema,
-    datamodel_connector::NativeTypeInstance,
-    parser_database::{ExtensionTypes, ScalarFieldType},
-};
+use psl::SourceFile;
+use psl::ValidatedSchema;
+use psl::datamodel_connector::NativeTypeInstance;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::ScalarFieldType;
 use quaint::connector::DescribedQuery;
-use schema_connector::{migrations_directory::Migrations, *};
-use sql_doc_parser::{parse_sql_doc, sanitize_sql};
-use sql_migration::{DropUserDefinedType, DropView, SqlMigration, SqlMigrationStep};
+use schema_connector::migrations_directory::Migrations;
+use schema_connector::*;
+use sql_doc_parser::parse_sql_doc;
+use sql_doc_parser::sanitize_sql;
+use sql_migration::DropUserDefinedType;
+use sql_migration::DropView;
+use sql_migration::SqlMigration;
+use sql_migration::SqlMigrationStep;
 use sql_schema_describer as sql;
-use std::{future, sync::Arc};
 
 const MIGRATIONS_TABLE_NAME: &str = "_prisma_migrations";
 
@@ -83,7 +92,9 @@ impl SchemaDialect for SqlSchemaDialect {
     }
 
     fn empty_database_schema(&self) -> DatabaseSchema {
-        DatabaseSchema::new(SqlDatabaseSchema::from(self.dialect.empty_database_schema()))
+        DatabaseSchema::new(SqlDatabaseSchema::from(
+            self.dialect.empty_database_schema(),
+        ))
     }
 
     fn default_namespace(&self) -> Option<&str> {
@@ -127,14 +138,17 @@ impl SchemaDialect for SqlSchemaDialect {
         default_namespace: Option<&str>,
         extension_types: &dyn ExtensionTypes,
     ) -> ConnectorResult<DatabaseSchema> {
-        let schema =
-            psl::parse_schema_multi(&sources, extension_types).map_err(ConnectorError::new_schema_parser_error)?;
+        let schema = psl::parse_schema_multi(&sources, extension_types)
+            .map_err(ConnectorError::new_schema_parser_error)?;
         self.dialect.check_schema_features(&schema)?;
         let calculator = self.dialect.schema_calculator();
-        Ok(
-            sql_schema_calculator::calculate_sql_schema(&schema, default_namespace, &*calculator, extension_types)
-                .into(),
+        Ok(sql_schema_calculator::calculate_sql_schema(
+            &schema,
+            default_namespace,
+            &*calculator,
+            extension_types,
         )
+        .into())
     }
 
     #[tracing::instrument(skip(self, migrations, target))]
@@ -179,7 +193,11 @@ impl SchemaDialect for SqlSchemaDialect {
                 }
             };
             let schema = connector
-                .sql_schema_from_migration_history(migrations, namespaces, UsingExternalShadowDb::Yes)
+                .sql_schema_from_migration_history(
+                    migrations,
+                    namespaces,
+                    UsingExternalShadowDb::Yes,
+                )
                 .await;
             // dispose of the connector regardless of the result
             connector.dispose().await?;
@@ -330,11 +348,21 @@ impl SchemaConnector for SqlSchemaConnector {
         Box::pin(self.inner.acquire_lock())
     }
 
-    fn apply_migration<'a>(&'a mut self, migration: &'a Migration) -> BoxFuture<'a, ConnectorResult<u32>> {
-        Box::pin(apply_migration::apply_migration(migration, self.inner.as_mut()))
+    fn apply_migration<'a>(
+        &'a mut self,
+        migration: &'a Migration,
+    ) -> BoxFuture<'a, ConnectorResult<u32>> {
+        Box::pin(apply_migration::apply_migration(
+            migration,
+            self.inner.as_mut(),
+        ))
     }
 
-    fn apply_script<'a>(&'a mut self, migration_name: &'a str, script: &'a str) -> BoxFuture<'a, ConnectorResult<()>> {
+    fn apply_script<'a>(
+        &'a mut self,
+        migration_name: &'a str,
+        script: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>> {
         Box::pin(apply_migration::apply_script(migration_name, script, self))
     }
 
@@ -349,10 +377,9 @@ impl SchemaConnector for SqlSchemaConnector {
 
     fn version(&mut self) -> BoxFuture<'_, ConnectorResult<String>> {
         Box::pin(async {
-            self.inner
-                .version()
-                .await
-                .map(|version| version.unwrap_or_else(|| "Database version information not available.".to_owned()))
+            self.inner.version().await.map(|version| {
+                version.unwrap_or_else(|| "Database version information not available.".to_owned())
+            })
         })
     }
 
@@ -391,7 +418,11 @@ impl SchemaConnector for SqlSchemaConnector {
                 }
                 None => self
                     .inner
-                    .sql_schema_from_migration_history(migrations, namespaces, UsingExternalShadowDb::No)
+                    .sql_schema_from_migration_history(
+                        migrations,
+                        namespaces,
+                        UsingExternalShadowDb::No,
+                    )
                     .await
                     .map(SqlDatabaseSchema::from)
                     .map(DatabaseSchema::new),
@@ -415,15 +446,24 @@ impl SchemaConnector for SqlSchemaConnector {
         Box::pin(async move {
             let mut namespace_names = match ctx.namespaces() {
                 Some(namespaces) => namespaces.iter().map(|s| s.to_string()).collect(),
-                None => ctx.datasource().namespaces.iter().map(|(s, _)| s.to_string()).collect(),
+                None => ctx
+                    .datasource()
+                    .namespaces
+                    .iter()
+                    .map(|(s, _)| s.to_string())
+                    .collect(),
             };
 
             let namespaces = Namespaces::from_vec(&mut namespace_names);
             let sql_schema = self.inner.introspect(namespaces, ctx).await?;
             let search_path = self.inner.search_path();
 
-            let datamodel =
-                introspection::datamodel_calculator::calculate(&sql_schema, ctx, search_path, extension_types);
+            let datamodel = introspection::datamodel_calculator::calculate(
+                &sql_schema,
+                ctx,
+                search_path,
+                extension_types,
+            );
 
             Ok(datamodel)
         })
@@ -503,13 +543,18 @@ impl SchemaConnector for SqlSchemaConnector {
                             .and_then(|p| p.alias())
                             .map(ToOwned::to_owned)
                             .unwrap_or_else(|| param.name),
-                        documentation: parsed_param.and_then(|p| p.documentation()).map(ToOwned::to_owned),
+                        documentation: parsed_param
+                            .and_then(|p| p.documentation())
+                            .map(ToOwned::to_owned),
                         // Params are required by default unless overridden by sql doc.
                         nullable: parsed_param.and_then(|p| p.nullable()).unwrap_or(false),
                     }
                 })
                 .collect();
-            let columns = columns.into_iter().map(IntrospectSqlQueryColumnOutput::from).collect();
+            let columns = columns
+                .into_iter()
+                .map(IntrospectSqlQueryColumnOutput::from)
+                .collect();
 
             Ok(IntrospectSqlQueryOutput {
                 name: input.name,
@@ -563,7 +608,8 @@ async fn best_effort_reset_impl(
 
     steps.extend(drop_views);
 
-    let diffables: MigrationPair<SqlDatabaseSchema> = MigrationPair::new(source_schema, target_schema).map(From::from);
+    let diffables: MigrationPair<SqlDatabaseSchema> =
+        MigrationPair::new(source_schema, target_schema).map(From::from);
     steps.extend(sql_schema_differ::calculate_steps(
         diffables.as_ref(),
         &*dialect.schema_differ(),
@@ -585,7 +631,11 @@ async fn best_effort_reset_impl(
         steps,
     };
 
-    if migration.before.table_walker(crate::MIGRATIONS_TABLE_NAME).is_some() {
+    if migration
+        .before
+        .table_walker(crate::MIGRATIONS_TABLE_NAME)
+        .is_some()
+    {
         connector.drop_migrations_table().await?;
     }
 

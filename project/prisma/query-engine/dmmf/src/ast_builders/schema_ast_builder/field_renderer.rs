@@ -1,10 +1,18 @@
-use super::{
-    DmmfInputField, DmmfOutputField, RenderContext,
-    type_renderer::{render_input_types, render_output_type},
-};
-use schema::{InputField, InputType, OutputField, ScalarType};
+use schema::InputField;
+use schema::InputType;
+use schema::OutputField;
+use schema::ScalarType;
 
-pub(super) fn render_input_field<'a>(input_field: &InputField<'a>, ctx: &mut RenderContext<'a>) -> DmmfInputField {
+use super::DmmfInputField;
+use super::DmmfOutputField;
+use super::RenderContext;
+use super::type_renderer::render_input_types;
+use super::type_renderer::render_output_type;
+
+pub(super) fn render_input_field<'a>(
+    input_field: &InputField<'a>,
+    ctx: &mut RenderContext<'a>,
+) -> DmmfInputField {
     let type_references = render_input_types(input_field.field_types(), ctx);
     let nullable = input_field
         .field_types()
@@ -25,7 +33,10 @@ pub(super) fn render_input_field<'a>(input_field: &InputField<'a>, ctx: &mut Ren
     }
 }
 
-pub(super) fn render_output_field<'a>(field: &OutputField<'a>, ctx: &mut RenderContext<'a>) -> DmmfOutputField {
+pub(super) fn render_output_field<'a>(
+    field: &OutputField<'a>,
+    ctx: &mut RenderContext<'a>,
+) -> DmmfOutputField {
     let rendered_inputs = field
         .arguments()
         .iter()

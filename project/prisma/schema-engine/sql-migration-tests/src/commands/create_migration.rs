@@ -1,9 +1,18 @@
+use std::path::Path;
+use std::path::PathBuf;
+
 use pretty_assertions::assert_eq;
-use psl::parser_database::{ExtensionTypes, NoExtensionTypes};
-use schema_core::{
-    CoreError, CoreResult, commands::create_migration::{self, CreateMigrationInput, CreateMigrationOutput, create_migration}, json_rpc::types::{SchemaContainer, SchemasContainer}, schema_connector::SchemaConnector
-};
-use std::path::{Path, PathBuf};
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::NoExtensionTypes;
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::create_migration::CreateMigrationInput;
+use schema_core::commands::create_migration::CreateMigrationOutput;
+use schema_core::commands::create_migration::create_migration;
+use schema_core::commands::create_migration::{self};
+use schema_core::json_rpc::types::SchemaContainer;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
 use test_setup::runtime::run_with_thread_local_runtime;
 
@@ -69,11 +78,16 @@ pub fn create_migration_directory(
 
     std::fs::create_dir_all(&directory_path)?;
 
-    Ok(MigrationDirectory { path: directory_path })
+    Ok(MigrationDirectory {
+        path: directory_path,
+    })
 }
 
 /// Write the migration_lock file to the directory.
-pub fn write_migration_lock_file(migrations_directory_path: &Path, provider: &str) -> std::io::Result<()> {
+pub fn write_migration_lock_file(
+    migrations_directory_path: &Path,
+    provider: &str,
+) -> std::io::Result<()> {
     let mut file_path = migrations_directory_path.join(MIGRATION_LOCK_FILENAME);
 
     file_path.set_extension("toml");
@@ -146,9 +160,13 @@ impl<'a> CreateMigration<'a> {
         .await?;
 
         if let Some(migration_script) = &output.migration_script {
-            let directory =
-                create_migration_directory(self.migrations_directory.path(), &output.generated_migration_name)
-                    .map_err(|_| CoreError::from_msg("Failed to create a new migration directory.".into()))?;
+            let directory = create_migration_directory(
+                self.migrations_directory.path(),
+                &output.generated_migration_name,
+            )
+            .map_err(|_| {
+                CoreError::from_msg("Failed to create a new migration directory.".into())
+            })?;
 
             // Write the migration script to a file.
             directory
@@ -161,13 +179,14 @@ impl<'a> CreateMigration<'a> {
                     ))
                 })?;
 
-            write_migration_lock_file(self.migrations_directory.path(), &output.connector_type).map_err(|err| {
-                CoreError::from_msg(format!(
-                    "Failed to write the migration lock file to `{:?}`\n{}",
-                    self.migrations_directory.path(),
-                    err
-                ))
-            })?;
+            write_migration_lock_file(self.migrations_directory.path(), &output.connector_type)
+                .map_err(|err| {
+                    CoreError::from_msg(format!(
+                        "Failed to write the migration lock file to `{:?}`\n{}",
+                        self.migrations_directory.path(),
+                        err
+                    ))
+                })?;
         }
 
         Ok(CreateMigrationAssertion {
@@ -207,8 +226,8 @@ impl CreateMigrationAssertion<'_> {
     pub fn assert_migration_directories_count(self, expected_count: usize) -> Self {
         let mut count = 0;
 
-        for entry in
-            std::fs::read_dir(self.migrations_directory.path()).expect("Counting directories in migrations directory.")
+        for entry in std::fs::read_dir(self.migrations_directory.path())
+            .expect("Counting directories in migrations directory.")
         {
             let entry = entry.unwrap();
 
@@ -249,11 +268,15 @@ impl CreateMigrationAssertion<'_> {
         match migration {
             Some(migration) => {
                 let path = migration.path();
-                let assertion = MigrationAssertion { path: path.as_ref() };
+                let assertion = MigrationAssertion {
+                    path: path.as_ref(),
+                };
 
                 assertions(assertion);
             }
-            None => panic!("Assertion error. Could not find migration with name matching `{name_matcher}`"),
+            None => panic!(
+                "Assertion error. Could not find migration with name matching `{name_matcher}`"
+            ),
         }
 
         self
@@ -279,7 +302,8 @@ impl CreateMigrationAssertion<'_> {
 
         let migration_script_path = self.migration_script_path();
         let new_contents = {
-            let mut contents = std::fs::read_to_string(&migration_script_path).expect("Reading migration script");
+            let mut contents =
+                std::fs::read_to_string(&migration_script_path).expect("Reading migration script");
 
             modify(&mut contents);
 

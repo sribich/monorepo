@@ -1,7 +1,9 @@
 use sql_introspection_tests::test_api::*;
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &mut TestApi) -> TestResult {
+async fn an_enum_with_invalid_value_names_should_have_them_commented_out(
+    api: &mut TestApi,
+) -> TestResult {
     let sql = r#"CREATE TABLE `test` ( `threechars` ENUM ('123', 'wow','$§!') );"#;
     api.raw_cmd(sql).await;
     let expected = expect![[r#"
@@ -32,7 +34,9 @@ async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &m
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
-async fn a_table_with_an_enum_default_value_that_is_an_empty_string(api: &mut TestApi) -> TestResult {
+async fn a_table_with_an_enum_default_value_that_is_an_empty_string(
+    api: &mut TestApi,
+) -> TestResult {
     let setup = indoc! {r#"
         CREATE TABLE `Book` (
             id INT NOT NULL AUTO_INCREMENT,

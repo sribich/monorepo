@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(dm_p1_to_c1))]
 mod non_embedded_upsert {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn dm_p1_to_c1() -> String {
         let schema = indoc! {
@@ -54,7 +55,10 @@ mod non_embedded_upsert {
     #[connector_test]
     async fn nested_connect_in_create(runner: Runner) -> TestResult<()> {
         // Seed data
-        run_query!(&runner, r#"mutation{createOneTodo(data:{id: 1, uTodo: "B"}){uTodo}}"#);
+        run_query!(
+            &runner,
+            r#"mutation{createOneTodo(data:{id: 1, uTodo: "B"}){uTodo}}"#
+        );
         run_query!(
             &runner,
             r#"mutation {upsertOneList(
@@ -84,8 +88,14 @@ mod non_embedded_upsert {
     #[connector_test]
     async fn nested_connect_in_update(runner: Runner) -> TestResult<()> {
         // Seed data
-        run_query!(&runner, r#"mutation{createOneTodo(data:{id: 1, uTodo: "B"}){uTodo}}"#);
-        run_query!(&runner, r#"mutation{createOneList(data:{id: 1, uList:"A"}){uList}}"#);
+        run_query!(
+            &runner,
+            r#"mutation{createOneTodo(data:{id: 1, uTodo: "B"}){uTodo}}"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation{createOneList(data:{id: 1, uList:"A"}){uList}}"#
+        );
         run_query!(
             &runner,
             r#"mutation {upsertOneList(
@@ -179,7 +189,10 @@ mod non_embedded_upsert {
     // "An upsert on the top level" should "only execute the nested create mutations of the correct update branch"
     #[connector_test]
     async fn execute_nested_create_of_correct_branch(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation {createOneList(data: {id:1, uList: "A"}){id}}"#);
+        run_query!(
+            &runner,
+            r#"mutation {createOneList(data: {id:1, uList: "A"}){id}}"#
+        );
         run_query!(
             &runner,
             r#"mutation {upsertOneList(
@@ -208,8 +221,14 @@ mod non_embedded_upsert {
     // "A nested upsert" should "execute the nested connect mutations of the correct create branch"
     #[connector_test(schema(dm_pm_to_cm))]
     async fn nested_connect_in_correct_create_branch(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation {createOneTag(data:{id: 1, uTag: "D"}){uTag}}"#);
-        run_query!(&runner, r#"mutation {createOneList(data:{id: 1, uList: "A"}){id}}"#);
+        run_query!(
+            &runner,
+            r#"mutation {createOneTag(data:{id: 1, uTag: "D"}){uTag}}"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation {createOneList(data:{id: 1, uList: "A"}){id}}"#
+        );
         run_query!(
             &runner,
             r#"mutation{updateOneList(
@@ -239,7 +258,10 @@ mod non_embedded_upsert {
     #[connector_test(schema(dm_pm_to_cm))]
     async fn nested_connect_in_correct_update_branch(runner: Runner) -> TestResult<()> {
         // Seed data
-        run_query!(&runner, r#"mutation { createOneTag(data:{id: 1, uTag: "D"}){uTag}}"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneTag(data:{id: 1, uTag: "D"}){uTag}}"#
+        );
         run_query!(
             &runner,
             r#"mutation {createOneList(data: {id: 1, uList: "A" todoes: {create: {id: 1, uTodo: "B"}}}){id}}"#

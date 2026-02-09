@@ -1,5 +1,11 @@
-use super::{ArgumentsList, EnumValueId, Identifier, Span, WithIdentifier, WithSpan};
 use std::ops::Index;
+
+use super::ArgumentsList;
+use super::EnumValueId;
+use super::Identifier;
+use super::Span;
+use super::WithIdentifier;
+use super::WithSpan;
 
 /// An attribute (following `@` or `@@``) on a model, model field, enum, enum value or composite
 /// type field.
@@ -94,9 +100,13 @@ impl Index<AttributeContainer> for super::SchemaAst {
     fn index(&self, index: AttributeContainer) -> &Self::Output {
         match index {
             AttributeContainer::Model(model_id) => &self[model_id].attributes,
-            AttributeContainer::ModelField(model_id, field_id) => &self[model_id][field_id].attributes,
+            AttributeContainer::ModelField(model_id, field_id) => {
+                &self[model_id][field_id].attributes
+            }
             AttributeContainer::Enum(enum_id) => &self[enum_id].attributes,
-            AttributeContainer::EnumValue(enum_id, value_idx) => &self[enum_id][value_idx].attributes,
+            AttributeContainer::EnumValue(enum_id, value_idx) => {
+                &self[enum_id][value_idx].attributes
+            }
         }
     }
 }

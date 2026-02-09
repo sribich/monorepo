@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema), capabilities(InsensitiveFilters))]
 mod insensitive {
     use indoc::indoc;
-    use query_engine_tests::{match_connector_result, run_query};
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {

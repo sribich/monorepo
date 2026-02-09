@@ -1,7 +1,13 @@
-use super::{field_ref_type::WithFieldRefInputExt, objects::*, *};
-use constants::{aggregations, filters};
+use constants::aggregations;
+use constants::filters;
 use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{DefaultKind, NativeTypeInstance, PrismaValue};
+use query_structure::DefaultKind;
+use query_structure::NativeTypeInstance;
+use query_structure::PrismaValue;
+
+use super::field_ref_type::WithFieldRefInputExt;
+use super::objects::*;
+use super::*;
 
 /// Builds filter types for the given model field.
 pub(crate) fn get_field_filter_types(
@@ -21,7 +27,9 @@ pub(crate) fn get_field_filter_types(
             ]
         }
 
-        ModelField::Scalar(sf) if field.is_list() => vec![InputType::object(scalar_list_filter_type(ctx, sf))],
+        ModelField::Scalar(sf) if field.is_list() => {
+            vec![InputType::object(scalar_list_filter_type(ctx, sf))]
+        }
 
         ModelField::Scalar(sf) => {
             let mut types = vec![InputType::object(full_scalar_filter_type(
@@ -44,15 +52,23 @@ pub(crate) fn get_field_filter_types(
 }
 
 /// Builds shorthand relation equality (`is`) filter for to-one: `where: { relation_field: { ... } }` (no `is` in between).
-fn to_one_relation_filter_shorthand_types<'a>(ctx: &'a QuerySchema, rf: &RelationFieldRef) -> InputType<'a> {
+fn to_one_relation_filter_shorthand_types<'a>(
+    ctx: &'a QuerySchema,
+    rf: &RelationFieldRef,
+) -> InputType<'a> {
     let related_model = rf.related_model();
     let related_input_type = filter_objects::where_object_type(ctx, related_model.into());
 
     InputType::object(related_input_type)
 }
 
-fn to_many_relation_filter_object(ctx: &'_ QuerySchema, rf: RelationFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::ToManyRelationFilterInput(rf.related_model()));
+fn to_many_relation_filter_object(
+    ctx: &'_ QuerySchema,
+    rf: RelationFieldRef,
+) -> InputObjectType<'_> {
+    let ident = Identifier::new_prisma(IdentifierType::ToManyRelationFilterInput(
+        rf.related_model(),
+    ));
 
     let mut object = init_input_object_type(ident);
     object.set_container(rf.related_model());
@@ -61,16 +77,33 @@ fn to_many_relation_filter_object(ctx: &'_ QuerySchema, rf: RelationFieldRef) ->
     object.set_fields(move || {
         let related_input_type = filter_objects::where_object_type(ctx, rf.related_model().into());
         vec![
-            simple_input_field(filters::EVERY, InputType::object(related_input_type.clone()), None).optional(),
-            simple_input_field(filters::SOME, InputType::object(related_input_type.clone()), None).optional(),
-            simple_input_field(filters::NONE, InputType::object(related_input_type), None).optional(),
+            simple_input_field(
+                filters::EVERY,
+                InputType::object(related_input_type.clone()),
+                None,
+            )
+            .optional(),
+            simple_input_field(
+                filters::SOME,
+                InputType::object(related_input_type.clone()),
+                None,
+            )
+            .optional(),
+            simple_input_field(filters::NONE, InputType::object(related_input_type), None)
+                .optional(),
         ]
     });
     object
 }
 
-fn to_one_relation_filter_object(ctx: &'_ QuerySchema, rf: RelationFieldRef) -> InputObjectType<'_> {
-    let ident = Identifier::new_prisma(IdentifierType::ToOneRelationFilterInput(rf.related_model(), rf.arity()));
+fn to_one_relation_filter_object(
+    ctx: &'_ QuerySchema,
+    rf: RelationFieldRef,
+) -> InputObjectType<'_> {
+    let ident = Identifier::new_prisma(IdentifierType::ToOneRelationFilterInput(
+        rf.related_model(),
+        rf.arity(),
+    ));
 
     let mut object = init_input_object_type(ident);
     object.set_container(rf.related_model());
@@ -79,9 +112,13 @@ fn to_one_relation_filter_object(ctx: &'_ QuerySchema, rf: RelationFieldRef) -> 
         let related_input_type = filter_objects::where_object_type(ctx, rf.related_model().into());
 
         vec![
-            simple_input_field(filters::IS, InputType::object(related_input_type.clone()), None)
-                .optional()
-                .nullable_if(!rf.is_required()),
+            simple_input_field(
+                filters::IS,
+                InputType::object(related_input_type.clone()),
+                None,
+            )
+            .optional()
+            .nullable_if(!rf.is_required()),
             simple_input_field(filters::IS_NOT, InputType::object(related_input_type), None)
                 .optional()
                 .nullable_if(!rf.is_required()),
@@ -103,7 +140,8 @@ fn scalar_list_filter_type(ctx: &'_ QuerySchema, sf: ScalarFieldRef) -> InputObj
     object.set_fields(move || {
         let mapped_nonlist_type = map_scalar_input_type(ctx, sf.type_identifier(), false);
         let mapped_list_type = InputType::list(mapped_nonlist_type.clone());
-        let mut fields: Vec<_> = equality_filters(mapped_list_type.clone(), !sf.is_required()).collect();
+        let mut fields: Vec<_> =
+            equality_filters(mapped_list_type.clone(), !sf.is_required()).collect();
 
         let mapped_nonlist_type_with_field_ref_input = mapped_nonlist_type.with_field_ref_input();
         fields.push(
@@ -113,8 +151,22 @@ fn scalar_list_filter_type(ctx: &'_ QuerySchema, sf: ScalarFieldRef) -> InputObj
         );
 
         let mapped_list_type_with_field_ref_input = mapped_list_type.with_field_ref_input();
-        fields.push(input_field(filters::HAS_EVERY, mapped_list_type_with_field_ref_input.clone(), None).optional());
-        fields.push(input_field(filters::HAS_SOME, mapped_list_type_with_field_ref_input, None).optional());
+        fields.push(
+            input_field(
+                filters::HAS_EVERY,
+                mapped_list_type_with_field_ref_input.clone(),
+                None,
+            )
+            .optional(),
+        );
+        fields.push(
+            input_field(
+                filters::HAS_SOME,
+                mapped_list_type_with_field_ref_input,
+                None,
+            )
+            .optional(),
+        );
         fields.push(simple_input_field(filters::IS_EMPTY, InputType::boolean(), None).optional());
         fields
     });
@@ -131,8 +183,15 @@ fn full_scalar_filter_type(
     include_aggregates: bool,
 ) -> InputObjectType<'_> {
     let native_type_name = native_type.as_ref().map(|nt| nt.name());
-    let scalar_type_name = ctx.internal_data_model.clone().zip(typ).type_name().into_owned();
-    let type_name = ctx.connector.scalar_filter_name(scalar_type_name, native_type_name);
+    let scalar_type_name = ctx
+        .internal_data_model
+        .clone()
+        .zip(typ)
+        .type_name()
+        .into_owned();
+    let type_name = ctx
+        .connector
+        .scalar_filter_name(scalar_type_name, native_type_name);
     let ident = Identifier::new_prisma(scalar_filter_name(
         &type_name,
         list,
@@ -146,12 +205,18 @@ fn full_scalar_filter_type(
     object.set_fields(move || {
         let mapped_scalar_type = map_scalar_input_type(ctx, typ, list);
         let mut fields: Vec<_> = match typ {
-            TypeIdentifier::String | TypeIdentifier::UUID => equality_filters(mapped_scalar_type.clone(), nullable)
-                .chain(inclusion_filters(ctx, mapped_scalar_type.clone(), nullable))
-                .chain(alphanumeric_filters(ctx, mapped_scalar_type.clone()))
-                .chain(string_filters(ctx, type_name.as_ref(), mapped_scalar_type.clone()))
-                .chain(query_mode_field(ctx, nested))
-                .collect(),
+            TypeIdentifier::String | TypeIdentifier::UUID => {
+                equality_filters(mapped_scalar_type.clone(), nullable)
+                    .chain(inclusion_filters(ctx, mapped_scalar_type.clone(), nullable))
+                    .chain(alphanumeric_filters(ctx, mapped_scalar_type.clone()))
+                    .chain(string_filters(
+                        ctx,
+                        type_name.as_ref(),
+                        mapped_scalar_type.clone(),
+                    ))
+                    .chain(query_mode_field(ctx, nested))
+                    .collect()
+            }
 
             TypeIdentifier::Int
             | TypeIdentifier::BigInt
@@ -180,15 +245,23 @@ fn full_scalar_filter_type(
                 filters
             }
 
-            TypeIdentifier::Boolean => equality_filters(mapped_scalar_type.clone(), nullable).collect(),
+            TypeIdentifier::Boolean => {
+                equality_filters(mapped_scalar_type.clone(), nullable).collect()
+            }
 
-            TypeIdentifier::Bytes | TypeIdentifier::Enum(_) => equality_filters(mapped_scalar_type.clone(), nullable)
-                .chain(inclusion_filters(ctx, mapped_scalar_type.clone(), nullable))
-                .collect(),
+            TypeIdentifier::Bytes | TypeIdentifier::Enum(_) => {
+                equality_filters(mapped_scalar_type.clone(), nullable)
+                    .chain(inclusion_filters(ctx, mapped_scalar_type.clone(), nullable))
+                    .collect()
+            }
 
-            TypeIdentifier::Extension(_) => unreachable!("No extension field should reach this path"),
+            TypeIdentifier::Extension(_) => {
+                unreachable!("No extension field should reach this path")
+            }
 
-            TypeIdentifier::Unsupported => unreachable!("No unsupported field should reach this path"),
+            TypeIdentifier::Unsupported => {
+                unreachable!("No unsupported field should reach this path")
+            }
         };
 
         fields.push(not_filter_field(
@@ -261,7 +334,10 @@ fn is_set_input_field<'a>() -> InputField<'a> {
     simple_input_field(filters::IS_SET, InputType::boolean(), None).optional()
 }
 
-fn equality_filters(mapped_type: InputType<'_>, nullable: bool) -> impl Iterator<Item = InputField<'_>> {
+fn equality_filters(
+    mapped_type: InputType<'_>,
+    nullable: bool,
+) -> impl Iterator<Item = InputField<'_>> {
     let types = mapped_type.with_field_ref_input();
 
     std::iter::once(
@@ -316,15 +392,19 @@ fn inclusion_filters<'a>(
     .into_iter()
 }
 
-fn alphanumeric_filters<'a>(ctx: &'a QuerySchema, mapped_type: InputType<'a>) -> impl Iterator<Item = InputField<'a>> {
+fn alphanumeric_filters<'a>(
+    ctx: &'a QuerySchema,
+    mapped_type: InputType<'a>,
+) -> impl Iterator<Item = InputField<'a>> {
     // We disable referencing fields on alphanumeric json filters for MySQL & MariaDB because we can't make it work
     // for both database without splitting them into their own connectors.
-    let field_types =
-        if !mapped_type.is_json() || ctx.has_capability(ConnectorCapability::JsonFilteringAlphanumericFieldRef) {
-            mapped_type.with_field_ref_input()
-        } else {
-            vec![mapped_type]
-        };
+    let field_types = if !mapped_type.is_json()
+        || ctx.has_capability(ConnectorCapability::JsonFilteringAlphanumericFieldRef)
+    {
+        mapped_type.with_field_ref_input()
+    } else {
+        vec![mapped_type]
+    };
 
     vec![
         input_field(filters::LOWER_THAN, field_types.clone(), None).optional(),
@@ -374,25 +454,49 @@ fn json_filters(ctx: &'_ QuerySchema) -> impl Iterator<Item = InputField<'_>> {
         input_field(
             filters::MODE,
             mode_enum_type,
-            Some(DefaultKind::Single(PrismaValue::Enum(filters::DEFAULT.to_owned()))),
+            Some(DefaultKind::Single(PrismaValue::Enum(
+                filters::DEFAULT.to_owned(),
+            ))),
         )
         .optional(),
-        input_field(filters::STRING_CONTAINS, string_with_field_ref_input.clone(), None).optional(),
-        input_field(filters::STRING_STARTS_WITH, string_with_field_ref_input.clone(), None).optional(),
+        input_field(
+            filters::STRING_CONTAINS,
+            string_with_field_ref_input.clone(),
+            None,
+        )
+        .optional(),
+        input_field(
+            filters::STRING_STARTS_WITH,
+            string_with_field_ref_input.clone(),
+            None,
+        )
+        .optional(),
         input_field(filters::STRING_ENDS_WITH, string_with_field_ref_input, None).optional(),
-        input_field(filters::ARRAY_STARTS_WITH, json_with_field_ref_input.clone(), None)
-            .optional()
-            .nullable(),
-        input_field(filters::ARRAY_ENDS_WITH, json_with_field_ref_input.clone(), None)
-            .optional()
-            .nullable(),
+        input_field(
+            filters::ARRAY_STARTS_WITH,
+            json_with_field_ref_input.clone(),
+            None,
+        )
+        .optional()
+        .nullable(),
+        input_field(
+            filters::ARRAY_ENDS_WITH,
+            json_with_field_ref_input.clone(),
+            None,
+        )
+        .optional()
+        .nullable(),
     ];
 
     if ctx.has_capability(ConnectorCapability::JsonArrayContains) {
         base.push(
-            input_field(filters::ARRAY_CONTAINS, json_with_field_ref_input.clone(), None)
-                .optional()
-                .nullable(),
+            input_field(
+                filters::ARRAY_CONTAINS,
+                json_with_field_ref_input.clone(),
+                None,
+            )
+            .optional()
+            .nullable(),
         )
     }
 
@@ -408,7 +512,9 @@ fn query_mode_field(ctx: &'_ QuerySchema, nested: bool) -> impl Iterator<Item = 
         let field = simple_input_field(
             filters::MODE,
             InputType::enum_type(enum_type),
-            Some(DefaultKind::Single(PrismaValue::Enum(filters::DEFAULT.to_owned()))),
+            Some(DefaultKind::Single(PrismaValue::Enum(
+                filters::DEFAULT.to_owned(),
+            ))),
         )
         .optional();
 
@@ -433,7 +539,9 @@ fn aggregate_filter_field(
 
 fn map_avg_type_ident(typ: TypeIdentifier) -> TypeIdentifier {
     match &typ {
-        TypeIdentifier::Int | TypeIdentifier::BigInt | TypeIdentifier::Float => TypeIdentifier::Float,
+        TypeIdentifier::Int | TypeIdentifier::BigInt | TypeIdentifier::Float => {
+            TypeIdentifier::Float
+        }
         _ => typ,
     }
 }
@@ -479,9 +587,13 @@ fn not_filter_field<'a>(
                 include_aggregates,
             ));
 
-            input_field(filters::NOT_LOWERCASE, vec![mapped_scalar_type, shorthand], None)
-                .optional()
-                .nullable_if(is_nullable)
+            input_field(
+                filters::NOT_LOWERCASE,
+                vec![mapped_scalar_type, shorthand],
+                None,
+            )
+            .optional()
+            .nullable_if(is_nullable)
         }
     }
 }

@@ -4,10 +4,13 @@ mod ext;
 mod meta;
 
 use proc_macro::TokenStream;
-use proc_macro_crate::{FoundCrate, crate_name};
+use proc_macro_crate::FoundCrate;
+use proc_macro_crate::crate_name;
 use proc_macro_error2::proc_macro_error;
 use proc_macro2::Span;
-use syn::{Ident, Path, parse_quote};
+use syn::Ident;
+use syn::Path;
+use syn::parse_quote;
 
 #[proc_macro_error]
 #[proc_macro_derive(Error, attributes(error))]
@@ -28,7 +31,7 @@ pub(crate) fn get_crate_path(span: Span) -> syn::Result<Path> {
             FoundCrate::Name(name) => {
                 let ident = Ident::new(&name, Span::call_site());
                 parse_quote!(::#ident::error)
-            },
+            }
         });
     }
 
@@ -40,7 +43,7 @@ pub(crate) fn get_crate_path(span: Span) -> syn::Result<Path> {
             FoundCrate::Name(name) => {
                 let ident = Ident::new(&name, Span::call_site());
                 parse_quote!(::#ident)
-            },
+            }
         });
     }
 

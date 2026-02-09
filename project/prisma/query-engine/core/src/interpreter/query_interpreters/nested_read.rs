@@ -1,9 +1,12 @@
-use super::inmemory_record_processor::InMemoryRecordProcessor;
-use crate::{interpreter::InterpretationResult, query_ast::*};
+use std::collections::HashMap;
+
 use connector::ConnectionLike;
 use query_structure::*;
-use std::collections::HashMap;
 use telemetry::TraceParent;
+
+use super::inmemory_record_processor::InMemoryRecordProcessor;
+use crate::interpreter::InterpretationResult;
+use crate::query_ast::*;
 
 pub(crate) async fn m2m(
     tx: &mut dyn ConnectionLike,
@@ -189,12 +192,15 @@ pub async fn one2m(
     // If we're fetching related records from a single parent, then we can apply normal pagination instead of in-memory processing.
     // However, we can't just apply a LIMIT/OFFSET for multiple parents as we need N related records PER parent.
     // We could use ROW_NUMBER() but it requires further refactoring so we're still using in-memory processing for now.
-    let processor =
-        if uniq_selections.len() == 1 && !query_args.requires_inmemory_processing(RelationLoadStrategy::Query) {
-            None
-        } else {
-            Some(InMemoryRecordProcessor::new_from_query_args(&mut query_args))
-        };
+    let processor = if uniq_selections.len() == 1
+        && !query_args.requires_inmemory_processing(RelationLoadStrategy::Query)
+    {
+        None
+    } else {
+        Some(InMemoryRecordProcessor::new_from_query_args(
+            &mut query_args,
+        ))
+    };
 
     let mut scalars = {
         let filter = child_link_id.is_in(ConditionListValue::list(uniq_selections));
@@ -221,9 +227,10 @@ pub async fn one2m(
         let mut additional_records = vec![];
 
         for record in scalars.records.iter_mut() {
-            let child_link: SelectionResult =
-                record.extract_selection_result_from_db_name(&scalars.field_names, &child_link_id)?;
-            let child_link_values: Vec<PrismaValue> = child_link.pairs.into_iter().map(|(_, v)| v).collect();
+            let child_link: SelectionResult = record
+                .extract_selection_result_from_db_name(&scalars.field_names, &child_link_id)?;
+            let child_link_values: Vec<PrismaValue> =
+                child_link.pairs.into_iter().map(|(_, v)| v).collect();
 
             if let Some(parent_ids) = link_mapping.get_mut(&child_link_values) {
                 parent_ids.reverse();
@@ -246,9 +253,10 @@ pub async fn one2m(
         let child_link_fields = parent_field.related_field().linking_fields();
 
         for record in scalars.records.iter_mut() {
-            let child_link: SelectionResult =
-                record.extract_selection_result_from_db_name(&scalars.field_names, &child_link_fields)?;
-            let child_link_values: Vec<PrismaValue> = child_link.pairs.into_iter().map(|(_, v)| v).collect();
+            let child_link: SelectionResult = record
+                .extract_selection_result_from_db_name(&scalars.field_names, &child_link_fields)?;
+            let child_link_values: Vec<PrismaValue> =
+                child_link.pairs.into_iter().map(|(_, v)| v).collect();
 
             if let Some(parent_ids) = link_mapping.get(&child_link_values) {
                 let parent_id = parent_ids.last().unwrap();

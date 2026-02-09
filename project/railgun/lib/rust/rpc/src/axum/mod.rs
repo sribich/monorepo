@@ -1,23 +1,26 @@
-use std::{
-    error::Error as StdError,
-    fmt,
-    future::Future,
-    marker::PhantomData,
-    pin::Pin,
-    task::{Context, Poll},
-};
+use std::error::Error as StdError;
+use std::fmt;
+use std::future::Future;
+use std::marker::PhantomData;
+use std::pin::Pin;
+use std::task::Context;
+use std::task::Poll;
 
-use axum::{
-    body::Bytes,
-    extract::{FromRequestParts, ws},
-    http::request::Parts,
-    response::IntoResponse,
-};
-use futures_util::{Sink, SinkExt, Stream, StreamExt};
-use serde::{Serialize, de::DeserializeOwned};
+use axum::body::Bytes;
+use axum::extract::FromRequestParts;
+use axum::extract::ws;
+use axum::http::request::Parts;
+use axum::response::IntoResponse;
+use futures_util::Sink;
+use futures_util::SinkExt;
+use futures_util::Stream;
+use futures_util::StreamExt;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use typegen::Type;
 
-use self::codec::{Codec, JsonCodec};
+use self::codec::Codec;
+use self::codec::JsonCodec;
 
 pub mod codec;
 
@@ -167,13 +170,13 @@ where
                 ws::Message::Binary(bytes) => bytes,
                 ws::Message::Close(frame) => {
                     return Poll::Ready(Some(Ok(TypedMessage::Close(frame))));
-                },
+                }
                 ws::Message::Ping(buf) => {
                     return Poll::Ready(Some(Ok(TypedMessage::Ping(buf))));
-                },
+                }
                 ws::Message::Pong(buf) => {
                     return Poll::Ready(Some(Ok(TypedMessage::Pong(buf))));
-                },
+                }
             };
 
             let msg = TCodec::decode(msg)
@@ -208,7 +211,7 @@ where
         let msg = match item {
             TypedMessage::Item(buf) => {
                 ws::Message::Binary(TCodec::encode(buf).map_err(SocketError::Codec)?)
-            },
+            }
             TypedMessage::Ping(buf) => ws::Message::Ping(buf),
             TypedMessage::Pong(buf) => ws::Message::Pong(buf),
             TypedMessage::Close(frame) => ws::Message::Close(frame),

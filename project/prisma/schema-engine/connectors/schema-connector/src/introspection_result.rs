@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
 /// Defines a view in the database.
 #[derive(Debug, Deserialize, Serialize)]

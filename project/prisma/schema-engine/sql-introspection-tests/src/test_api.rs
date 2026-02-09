@@ -1,28 +1,37 @@
-pub use super::TestResult;
+use std::fmt::Write;
+use std::path::PathBuf;
+
 pub use expect_test::expect;
-pub use indoc::{formatdoc, indoc};
+pub use indoc::formatdoc;
+pub use indoc::indoc;
 use itertools::Itertools;
+use psl::Configuration;
+use psl::PreviewFeature;
 use psl::parser_database::ExtensionTypes;
 use psl::parser_database::NoExtensionTypes;
 pub use quaint::prelude::Queryable;
+use quaint::prelude::SqlFamily;
+use quaint::single::Quaint;
 use schema_connector::ConnectorError;
+use schema_connector::ConnectorParams;
 use schema_connector::ConnectorResult;
 use schema_connector::IntrospectionContext;
 use schema_connector::IntrospectionResult;
+use schema_connector::SchemaConnector;
 use schema_connector::ViewDefinition;
-pub use test_macros::test_connector;
-pub use test_setup::{BitFlags, Capabilities, Tags};
-
-use crate::{BarrelMigrationExecutor, Result};
-use psl::Configuration;
-use psl::PreviewFeature;
-use quaint::{prelude::SqlFamily, single::Quaint};
-use schema_connector::{ConnectorParams, SchemaConnector};
 use sql_schema_connector::SqlSchemaConnector;
-use std::fmt::Write;
-use std::path::PathBuf;
-use test_setup::{DatasourceBlock, TestApiArgs, sqlite_test_url};
+pub use test_macros::test_connector;
+pub use test_setup::BitFlags;
+pub use test_setup::Capabilities;
+use test_setup::DatasourceBlock;
+pub use test_setup::Tags;
+use test_setup::TestApiArgs;
+use test_setup::sqlite_test_url;
 use tracing::Instrument;
+
+pub use super::TestResult;
+use crate::BarrelMigrationExecutor;
+use crate::Result;
 
 pub struct TestApi {
     pub api: SqlSchemaConnector,
@@ -45,61 +54,61 @@ impl TestApi {
             .collect();
 
         let namespaces: Vec<String> = args.namespaces().iter().map(|ns| ns.to_string()).collect();
-        let (database, connection_string, api): (Quaint, String, SqlSchemaConnector) = if tags.intersects(Tags::Vitess)
-        {
-            let params = ConnectorParams {
-                connection_string: connection_string.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
+        let (database, connection_string, api): (Quaint, String, SqlSchemaConnector) =
+            if tags.intersects(Tags::Vitess) {
+                let params = ConnectorParams {
+                    connection_string: connection_string.to_owned(),
+                    preview_features,
+                    shadow_database_connection_string: None,
+                };
+                let mut me = SqlSchemaConnector::new_mysql(params).unwrap();
+
+                me.reset(
+                    true,
+                    schema_connector::Namespaces::from_vec(&mut namespaces.clone()),
+                )
+                .await
+                .unwrap();
+
+                (
+                    Quaint::new(connection_string).await.unwrap(),
+                    connection_string.to_owned(),
+                    me,
+                )
+            } else if tags.contains(Tags::Mysql) {
+                let (_, cs) = args.create_mysql_database().await;
+                let params = ConnectorParams {
+                    connection_string: cs.to_owned(),
+                    preview_features,
+                    shadow_database_connection_string: None,
+                };
+                let me = SqlSchemaConnector::new_mysql(params).unwrap();
+
+                (Quaint::new(&cs).await.unwrap(), cs, me)
+            } else if tags.contains(Tags::Postgres) {
+                let (_, q, cs) = args.create_postgres_database().await;
+                let params = ConnectorParams {
+                    connection_string: cs.to_owned(),
+                    preview_features,
+                    shadow_database_connection_string: None,
+                };
+                let me = SqlSchemaConnector::new_postgres(params).unwrap();
+
+                (q, cs, me)
+            } else if tags.contains(Tags::Sqlite) {
+                let url = sqlite_test_url(args.test_function_name());
+
+                let params = ConnectorParams {
+                    connection_string: url.to_owned(),
+                    preview_features,
+                    shadow_database_connection_string: None,
+                };
+                let me = SqlSchemaConnector::new_sqlite(params).unwrap();
+
+                (Quaint::new(&url).await.unwrap(), url, me)
+            } else {
+                unreachable!()
             };
-            let mut me = SqlSchemaConnector::new_mysql(params).unwrap();
-
-            me.reset(
-                true,
-                schema_connector::Namespaces::from_vec(&mut namespaces.clone()),
-            )
-            .await
-            .unwrap();
-
-            (
-                Quaint::new(connection_string).await.unwrap(),
-                connection_string.to_owned(),
-                me,
-            )
-        } else if tags.contains(Tags::Mysql) {
-            let (_, cs) = args.create_mysql_database().await;
-            let params = ConnectorParams {
-                connection_string: cs.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
-            };
-            let me = SqlSchemaConnector::new_mysql(params).unwrap();
-
-            (Quaint::new(&cs).await.unwrap(), cs, me)
-        } else if tags.contains(Tags::Postgres) {
-            let (_, q, cs) = args.create_postgres_database().await;
-            let params = ConnectorParams {
-                connection_string: cs.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
-            };
-            let me = SqlSchemaConnector::new_postgres(params).unwrap();
-
-            (q, cs, me)
-        } else if tags.contains(Tags::Sqlite) {
-            let url = sqlite_test_url(args.test_function_name());
-
-            let params = ConnectorParams {
-                connection_string: url.to_owned(),
-                preview_features,
-                shadow_database_connection_string: None,
-            };
-            let me = SqlSchemaConnector::new_sqlite(params).unwrap();
-
-            (Quaint::new(&url).await.unwrap(), url, me)
-        } else {
-            unreachable!()
-        };
 
         TestApi {
             api,
@@ -129,7 +138,10 @@ impl TestApi {
         Ok(introspection_result.datamodel)
     }
 
-    pub async fn introspect_with_extensions(&mut self, extension_types: &dyn ExtensionTypes) -> Result<String> {
+    pub async fn introspect_with_extensions(
+        &mut self,
+        extension_types: &dyn ExtensionTypes,
+    ) -> Result<String> {
         let previous_schema = psl::validate(self.pure_config().into(), extension_types);
         let introspection_result = self
             .test_introspect_internal(previous_schema, true, extension_types)
@@ -225,9 +237,8 @@ impl TestApi {
         previous_schema: psl::ValidatedSchema,
         render_config: bool,
     ) -> ConnectorResult<IntrospectionResult> {
-        let mut ctx =
-            IntrospectionContext::new_config_only(previous_schema, None, PathBuf::new())
-                .map_err(ConnectorError::new_schema_parser_error)?;
+        let mut ctx = IntrospectionContext::new_config_only(previous_schema, None, PathBuf::new())
+            .map_err(ConnectorError::new_schema_parser_error)?;
         ctx.render_config = render_config;
 
         self.api
@@ -332,7 +343,11 @@ impl TestApi {
             ""
         };
 
-        let namespaces: Vec<String> = self.namespaces().iter().map(|ns| format!(r#""{ns}""#)).collect();
+        let namespaces: Vec<String> = self
+            .namespaces()
+            .iter()
+            .map(|ns| format!(r#""{ns}""#))
+            .collect();
 
         let namespaces = if namespaces.is_empty() {
             "".to_string()
@@ -400,8 +415,16 @@ impl TestApi {
         expectation.assert_eq(&view.definition);
     }
 
-    pub async fn expect_view_definition_multi(&mut self, view: &str, expectation: &expect_test::Expect) {
-        let views = self.introspect_views_multi().await.unwrap().unwrap_or_default();
+    pub async fn expect_view_definition_multi(
+        &mut self,
+        view: &str,
+        expectation: &expect_test::Expect,
+    ) {
+        let views = self
+            .introspect_views_multi()
+            .await
+            .unwrap()
+            .unwrap_or_default();
         let view = self.process_views(view, views);
 
         expectation.assert_eq(&view.definition);
@@ -445,7 +468,11 @@ impl TestApi {
         assert!(introspection_result.warnings.is_none())
     }
 
-    pub async fn expect_re_introspected_datamodel(&mut self, schema: &str, expectation: expect_test::Expect) {
+    pub async fn expect_re_introspected_datamodel(
+        &mut self,
+        schema: &str,
+        expectation: expect_test::Expect,
+    ) {
         let data_model = parse_datamodel(&format!("{}{}", self.pure_config(), schema));
         let reintrospected = self
             .test_introspect_internal_without_extensions(data_model, false)
@@ -492,7 +519,10 @@ impl TestApi {
         expectation: expect_test::Expect,
     ) {
         let schema = parse_datamodels(datamodels);
-        let reintrospected = self.test_introspect_force_internal(schema, false).await.unwrap_err();
+        let reintrospected = self
+            .test_introspect_force_internal(schema, false)
+            .await
+            .unwrap_err();
 
         expectation.assert_eq(&reintrospected.to_string());
     }
@@ -512,7 +542,11 @@ impl TestApi {
         expectation.assert_eq(&reintrospected.datamodels);
     }
 
-    pub async fn expect_re_introspect_warnings(&mut self, schema: &str, expectation: expect_test::Expect) {
+    pub async fn expect_re_introspect_warnings(
+        &mut self,
+        schema: &str,
+        expectation: expect_test::Expect,
+    ) {
         let data_model = parse_datamodel(&format!("{}{}", self.pure_config(), schema));
         let introspection_result = self
             .test_introspect_internal_without_extensions(data_model, false)
@@ -541,7 +575,8 @@ impl TestApi {
 
     pub fn assert_eq_datamodels(&self, expected_without_header: &str, result_with_header: &str) {
         let expected_with_source = self.dm_with_sources(expected_without_header);
-        let expected_with_generator = self.dm_with_generator_and_preview_flags(&expected_with_source);
+        let expected_with_generator =
+            self.dm_with_generator_and_preview_flags(&expected_with_source);
         let reformatted_expected = psl::reformat(&expected_with_generator, 2).unwrap();
 
         pretty_assertions::assert_eq!(reformatted_expected, result_with_header);
@@ -564,7 +599,11 @@ impl TestApi {
     }
 
     pub fn generator_block_string(&self) -> String {
-        let preview_features: Vec<String> = self.preview_features().iter().map(|pf| format!(r#""{pf}""#)).collect();
+        let preview_features: Vec<String> = self
+            .preview_features()
+            .iter()
+            .map(|pf| format!(r#""{pf}""#))
+            .collect();
 
         let preview_feature_string = if preview_features.is_empty() {
             "".to_string()

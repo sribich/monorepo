@@ -1,5 +1,7 @@
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::walkers::Walker;
+
 use crate::SqlDatabaseSchema;
-use sql_schema_describer::{SqlSchema, walkers::Walker};
 
 /// A pair of items that can exist in two schemas: previous is the item in the previous / old
 /// schema, next is the item in the next / new schema.
@@ -60,7 +62,8 @@ impl<T> MigrationPair<Option<T>> {
 
 impl<'a> MigrationPair<&'a SqlDatabaseSchema> {
     pub(crate) fn walk<I>(self, ids: MigrationPair<I>) -> MigrationPair<Walker<'a, I>> {
-        self.zip(ids).map(|(schema, id)| schema.describer_schema.walk(id))
+        self.zip(ids)
+            .map(|(schema, id)| schema.describer_schema.walk(id))
     }
 }
 

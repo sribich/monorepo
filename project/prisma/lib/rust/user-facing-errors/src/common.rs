@@ -1,7 +1,9 @@
-use crate::UserFacingError;
-use serde::Serialize;
 use std::fmt::Display;
+
+use serde::Serialize;
 use user_facing_error_macros::*;
+
+use crate::UserFacingError;
 
 #[derive(Debug, UserFacingError, Serialize)]
 #[user_facing(
@@ -82,7 +84,10 @@ pub struct DatabaseAlreadyExists {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P1010", message = "User was denied access on the database `{database_name}`")]
+#[user_facing(
+    code = "P1010",
+    message = "User was denied access on the database `{database_name}`"
+)]
 pub struct DatabaseAccessDenied {
     /// Database name, append `database_schema_name` when applicable
     /// `database_schema_name`: Database schema name (For Postgres for example)
@@ -102,7 +107,10 @@ pub struct SchemaParserError {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P1013", message = "The provided database string is invalid. {details}")]
+#[user_facing(
+    code = "P1013",
+    message = "The provided database string is invalid. {details}"
+)]
 pub struct InvalidConnectionString {
     pub details: String,
 }

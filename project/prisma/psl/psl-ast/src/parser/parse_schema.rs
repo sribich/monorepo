@@ -1,13 +1,22 @@
-use super::{
-    PrismaDatamodelParser, Rule, parse_enum::parse_enum,
-    parse_model::parse_model, parse_source_and_generator::parse_config_block,
-};
-use crate::{ast::*, parser::parse_view::parse_view};
-use diagnostics::{DatamodelError, Diagnostics, FileId};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
 use pest::Parser;
 
+use super::PrismaDatamodelParser;
+use super::Rule;
+use super::parse_enum::parse_enum;
+use super::parse_model::parse_model;
+use super::parse_source_and_generator::parse_config_block;
+use crate::ast::*;
+use crate::parser::parse_view::parse_view;
+
 /// Parse a PSL string and return its AST.
-pub fn parse_schema(datamodel_string: &str, diagnostics: &mut Diagnostics, file_id: FileId) -> SchemaAst {
+pub fn parse_schema(
+    datamodel_string: &str,
+    diagnostics: &mut Diagnostics,
+    file_id: FileId,
+) -> SchemaAst {
     let datamodel_result = PrismaDatamodelParser::parse(Rule::schema, datamodel_string);
 
     match datamodel_result {
@@ -69,16 +78,25 @@ pub fn parse_schema(datamodel_string: &str, diagnostics: &mut Diagnostics, file_
         }
         Err(err) => {
             let location: pest::Span<'_> = match err.location {
-                pest::error::InputLocation::Pos(pos) => pest::Span::new(datamodel_string, pos, pos).unwrap(),
-                pest::error::InputLocation::Span((from, to)) => pest::Span::new(datamodel_string, from, to).unwrap(),
+                pest::error::InputLocation::Pos(pos) => {
+                    pest::Span::new(datamodel_string, pos, pos).unwrap()
+                }
+                pest::error::InputLocation::Span((from, to)) => {
+                    pest::Span::new(datamodel_string, from, to).unwrap()
+                }
             };
 
             let expected = match err.variant {
-                pest::error::ErrorVariant::ParsingError { positives, .. } => get_expected_from_error(&positives),
+                pest::error::ErrorVariant::ParsingError { positives, .. } => {
+                    get_expected_from_error(&positives)
+                }
                 _ => panic!("Could not construct parsing error. This should never happend."),
             };
 
-            diagnostics.push_error(DatamodelError::new_parser_error(expected, (file_id, location).into()));
+            diagnostics.push_error(DatamodelError::new_parser_error(
+                expected,
+                (file_id, location).into(),
+            ));
 
             SchemaAst { tops: Vec::new() }
         }

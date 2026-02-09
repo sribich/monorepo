@@ -1,13 +1,14 @@
-use std::{cell::RefCell, marker::PhantomData, path::PathBuf};
+use std::cell::RefCell;
+use std::marker::PhantomData;
+use std::path::PathBuf;
 
 use diagnostics::Diagnostics;
 
-use crate::{
-    file::{SchemaFile, SchemaFiles},
-    locator::LocatedFiles,
-    migrations::Migrations,
-    sql::SqlFiles,
-};
+use crate::file::SchemaFile;
+use crate::file::SchemaFiles;
+use crate::locator::LocatedFiles;
+use crate::migrations::Migrations;
+use crate::sql::SqlFiles;
 
 pub trait SchemaRefiner {
     type From: SchemaRefiner;
@@ -29,9 +30,8 @@ pub trait SchemaRefiner {
 pub struct DefaultRefiner {}
 
 impl SchemaRefiner for DefaultRefiner {
-    type From = DefaultRefiner;
-
     type FileContext = ();
+    type From = DefaultRefiner;
     type SchemaContext = ();
 
     fn refine_context(&self, from: &Schema<Self::From>) -> Self::SchemaContext {}

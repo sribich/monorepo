@@ -90,11 +90,15 @@ macro_rules! run_query_pretty {
 #[macro_export]
 macro_rules! run_query_json {
     ($runner:expr, $q:expr) => {
-        serde_json::from_str::<serde_json::Value>($runner.query($q).await?.to_string().as_str()).unwrap()
+        serde_json::from_str::<serde_json::Value>($runner.query($q).await?.to_string().as_str())
+            .unwrap()
     };
     ($runner:expr, $q:expr, $path: expr) => {
         query_tests_setup::walk_json(
-            &serde_json::from_str::<serde_json::Value>($runner.query($q).await?.to_string().as_str()).unwrap(),
+            &serde_json::from_str::<serde_json::Value>(
+                $runner.query($q).await?.to_string().as_str(),
+            )
+            .unwrap(),
             $path,
         )
         .unwrap()
@@ -108,7 +112,10 @@ macro_rules! assert_error {
         $runner.query($q).await?.assert_failure($code, None);
     };
     ($runner:expr, $q:expr, $code:expr, $msg:expr) => {
-        $runner.query($q).await?.assert_failure($code, Some($msg.to_string()));
+        $runner
+            .query($q)
+            .await?
+            .assert_failure($code, Some($msg.to_string()));
     };
 }
 
@@ -116,6 +123,7 @@ macro_rules! assert_error {
 macro_rules! retry {
     ($body:block, $times:expr) => {{
         use std::time::Duration;
+
         use tokio::time::sleep;
 
         let mut retries = $times;
@@ -146,7 +154,10 @@ macro_rules! with_id_excess {
             .expect("Test expected to run only for relational databases.");
 
         let cycle = |argn: usize| (argn % 10 + 1).to_string();
-        let id_list = (0..=max_bind_values).map(cycle).collect::<Vec<_>>().join(",");
+        let id_list = (0..=max_bind_values)
+            .map(cycle)
+            .collect::<Vec<_>>()
+            .join(",");
         $query_template.replace(":id_list:", &id_list)
     }};
 }

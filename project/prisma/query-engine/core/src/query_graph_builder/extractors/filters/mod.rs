@@ -3,30 +3,39 @@ mod filter_grouping;
 mod relation;
 mod scalar;
 
-use super::utils;
-use crate::{
-    QueryGraphBuilderError, QueryGraphBuilderResult,
-    query_document::{ParsedInputMap, ParsedInputValue},
-};
+use std::borrow::Cow;
+use std::collections::HashMap;
+use std::convert::TryInto;
+use std::str::FromStr;
+
 use filter_fold::*;
 use filter_grouping::*;
 use indexmap::IndexMap;
-use query_structure::{prelude::ParentContainer, *};
+use query_structure::prelude::ParentContainer;
+use query_structure::*;
 use schema::constants::filters;
-use std::{borrow::Cow, collections::HashMap, convert::TryInto, str::FromStr};
+
+use super::utils;
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphBuilderResult;
+use crate::query_document::ParsedInputMap;
+use crate::query_document::ParsedInputValue;
 
 /// Extracts a filter for a unique selector, i.e. a filter that selects exactly one record.
-pub fn extract_unique_filter(value_map: ParsedInputMap<'_>, model: &Model) -> QueryGraphBuilderResult<Filter> {
+pub fn extract_unique_filter(
+    value_map: ParsedInputMap<'_>,
+    model: &Model,
+) -> QueryGraphBuilderResult<Filter> {
     let tag = value_map.tag.clone();
     // Partition the input into a map containing only the unique fields and one containing all the other filters
     // so that we can parse them separately and ensure we AND both filters
     let (unique_map, rest_map): (IndexMap<_, _>, IndexMap<_, _>) =
-        value_map
-            .into_iter()
-            .partition(|(field_name, _)| match model.fields().find_from_scalar(field_name) {
+        value_map.into_iter().partition(|(field_name, _)| {
+            match model.fields().find_from_scalar(field_name) {
                 Ok(field) => field.unique(),
                 Err(_) => utils::resolve_compound_field(field_name, model).is_some(),
-            });
+            }
+        });
     let mut unique_map = ParsedInputMap::from(unique_map);
     let mut rest_map = ParsedInputMap::from(rest_map);
     unique_map.set_tag(tag.clone());
@@ -40,7 +49,10 @@ pub fn extract_unique_filter(value_map: ParsedInputMap<'_>, model: &Model) -> Qu
 
 /// Extracts a filter for a unique selector, i.e. a filter that selects exactly one record.
 /// The input map must only contain unique & compound unique fields.
-fn internal_extract_unique_filter(value_map: ParsedInputMap<'_>, model: &Model) -> QueryGraphBuilderResult<Filter> {
+fn internal_extract_unique_filter(
+    value_map: ParsedInputMap<'_>,
+    model: &Model,
+) -> QueryGraphBuilderResult<Filter> {
     let filters = value_map
         .into_iter()
         .map(|(field_name, value): (Cow<'_, str>, ParsedInputValue<'_>)| {
@@ -66,7 +78,10 @@ fn internal_extract_unique_filter(value_map: ParsedInputMap<'_>, model: &Model) 
     Ok(Filter::and(filters))
 }
 
-fn handle_compound_field(fields: Vec<ScalarFieldRef>, value: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Filter> {
+fn handle_compound_field(
+    fields: Vec<ScalarFieldRef>,
+    value: ParsedInputValue<'_>,
+) -> QueryGraphBuilderResult<Filter> {
     let mut input_map: ParsedInputMap<'_> = value.try_into()?;
 
     let filters: Vec<Filter> = fields
@@ -92,7 +107,10 @@ fn handle_compound_field(fields: Vec<ScalarFieldRef>, value: ParsedInputValue<'_
 /// | OR   | return empty list | validate single filter | validate all filters |
 /// | AND  | return all items  | validate single filter | validate all filters |
 /// | NOT  | return all items  | validate single filter | validate all filters |
-pub fn extract_filter<T>(value_map: ParsedInputMap<'_>, container: T) -> QueryGraphBuilderResult<Filter>
+pub fn extract_filter<T>(
+    value_map: ParsedInputMap<'_>,
+    container: T,
+) -> QueryGraphBuilderResult<Filter>
 where
     T: Into<ParentContainer>,
 {
@@ -152,7 +170,10 @@ where
                         }
                     }
                     Err(_) => {
-                        let filters = match container.find_field(&key).expect("Invalid field passed validation.") {
+                        let filters = match container
+                            .find_field(&key)
+                            .expect("Invalid field passed validation.")
+                        {
                             Field::Relation(rf) => extract_relation_filters(&rf, value),
                             Field::Scalar(sf) => extract_scalar_filters(&sf, value),
                         }?;
@@ -269,7 +290,10 @@ fn fold_search_filters(filters: &[Filter]) -> Vec<Filter> {
 
 /// Field is the field the filter is refering to and `value` is the passed filter. E.g. `where: { <field>: <value> }.
 /// `value` can be either a flat scalar (for shorthand filter notation) or an object (full filter syntax).
-fn extract_scalar_filters(field: &ScalarFieldRef, value: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Vec<Filter>> {
+fn extract_scalar_filters(
+    field: &ScalarFieldRef,
+    value: ParsedInputValue<'_>,
+) -> QueryGraphBuilderResult<Vec<Filter>> {
     match value {
         ParsedInputValue::Single(pv) => Ok(vec![field.equals(pv)]),
         ParsedInputValue::Map(mut filter_map) => {
@@ -278,7 +302,8 @@ fn extract_scalar_filters(field: &ScalarFieldRef, value: ParsedInputValue<'_>) -
                 None => QueryMode::Default,
             };
 
-            let mut filters: Vec<Filter> = scalar::ScalarFilterParser::new(field, false).parse(filter_map)?;
+            let mut filters: Vec<Filter> =
+                scalar::ScalarFilterParser::new(field, false).parse(filter_map)?;
 
             filters.iter_mut().for_each(|f| f.set_mode(mode.clone()));
             Ok(filters)
@@ -306,9 +331,8 @@ fn extract_relation_filters(
             .collect::<QueryGraphBuilderResult<Vec<_>>>(),
 
         // Implicit is
-        ParsedInputValue::Map(filter_map) => {
-            extract_filter(filter_map, field.related_model()).map(|filter| vec![field.to_one_related(filter)])
-        }
+        ParsedInputValue::Map(filter_map) => extract_filter(filter_map, field.related_model())
+            .map(|filter| vec![field.to_one_related(filter)]),
 
         x => Err(QueryGraphBuilderError::InputError(format!(
             "Invalid relation filter input: {x:?}"

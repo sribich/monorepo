@@ -1,11 +1,15 @@
-use crate::{
-    Datasource, PreviewFeature,
-    builtin_connectors::has_capability,
-    datamodel_connector::{Connector, ConnectorCapability, RelationMode},
-};
-use diagnostics::{DatamodelError, DatamodelWarning, Diagnostics};
+use diagnostics::DatamodelError;
+use diagnostics::DatamodelWarning;
+use diagnostics::Diagnostics;
 use enumflags2::BitFlags;
 use parser_database::ExtensionTypes;
+
+use crate::Datasource;
+use crate::PreviewFeature;
+use crate::builtin_connectors::has_capability;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::RelationMode;
 
 /// The validation context. The lifetime parameter is _not_ the AST lifetime, but the subtype of
 /// all relevant lifetimes. No data escapes for validations, so the context only need to be valid

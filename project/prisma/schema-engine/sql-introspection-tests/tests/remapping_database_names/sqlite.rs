@@ -108,7 +108,9 @@ async fn remapping_models_in_relations(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(tags(Sqlite))]
-async fn remapping_models_in_relations_should_not_map_virtual_fields(api: &mut TestApi) -> TestResult {
+async fn remapping_models_in_relations_should_not_map_virtual_fields(
+    api: &mut TestApi,
+) -> TestResult {
     let sql_family = api.sql_family();
 
     api.barrel()

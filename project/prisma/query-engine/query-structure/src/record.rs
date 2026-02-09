@@ -1,8 +1,15 @@
-use crate::{
-    DomainError, FieldSelection, ModelProjection, OrderBy, PrismaValue, SelectedField, SelectionResult, SortOrder,
-};
-use itertools::Itertools;
 use std::collections::HashMap;
+
+use itertools::Itertools;
+
+use crate::DomainError;
+use crate::FieldSelection;
+use crate::ModelProjection;
+use crate::OrderBy;
+use crate::PrismaValue;
+use crate::SelectedField;
+use crate::SelectionResult;
+use crate::SortOrder;
 
 #[derive(Debug, Clone)]
 pub struct SingleRecord {
@@ -21,10 +28,16 @@ impl From<SingleRecord> for ManyRecords {
 
 impl SingleRecord {
     pub fn new(record: Record, field_names: Vec<String>) -> Self {
-        Self { record, field_names }
+        Self {
+            record,
+            field_names,
+        }
     }
 
-    pub fn extract_selection_result(&self, extraction_selection: &FieldSelection) -> crate::Result<SelectionResult> {
+    pub fn extract_selection_result(
+        &self,
+        extraction_selection: &FieldSelection,
+    ) -> crate::Result<SelectionResult> {
         self.record
             .extract_selection_result_from_db_name(&self.field_names, extraction_selection)
     }
@@ -101,7 +114,9 @@ impl ManyRecords {
     ) -> crate::Result<Vec<SelectionResult>> {
         self.records
             .iter()
-            .map(|record| record.extract_selection_result_from_db_name(&self.field_names, selections))
+            .map(|record| {
+                record.extract_selection_result_from_db_name(&self.field_names, selections)
+            })
             .collect()
     }
 
@@ -113,7 +128,9 @@ impl ManyRecords {
     ) -> crate::Result<Vec<SelectionResult>> {
         self.records
             .iter()
-            .map(|record| record.extract_selection_result_from_prisma_name(&self.field_names, selections))
+            .map(|record| {
+                record.extract_selection_result_from_prisma_name(&self.field_names, selections)
+            })
             .collect()
     }
 
@@ -197,7 +214,11 @@ impl Record {
         field_names: &[String],
         extraction_selection: &FieldSelection,
     ) -> crate::Result<SelectionResult> {
-        self.extract_selection_result(field_names, extraction_selection, SelectedField::prisma_name)
+        self.extract_selection_result(
+            field_names,
+            extraction_selection,
+            SelectedField::prisma_name,
+        )
     }
 
     fn extract_selection_result<'a, S: AsRef<str> + 'a>(
@@ -235,14 +256,25 @@ impl Record {
         Ok(x)
     }
 
-    pub fn get_field_value(&self, field_names: &[String], field: &str) -> crate::Result<&PrismaValue> {
-        let index = field_names.iter().position(|r| r == field).map(Ok).unwrap_or_else(|| {
-            Err(DomainError::FieldNotFound {
-                name: field.to_string(),
-                container_type: "field",
-                container_name: format!("Record values: {:?}. Field names: {:?}.", &self, &field_names),
-            })
-        })?;
+    pub fn get_field_value(
+        &self,
+        field_names: &[String],
+        field: &str,
+    ) -> crate::Result<&PrismaValue> {
+        let index = field_names
+            .iter()
+            .position(|r| r == field)
+            .map(Ok)
+            .unwrap_or_else(|| {
+                Err(DomainError::FieldNotFound {
+                    name: field.to_string(),
+                    container_type: "field",
+                    container_name: format!(
+                        "Record values: {:?}. Field names: {:?}.",
+                        &self, &field_names
+                    ),
+                })
+            })?;
 
         Ok(&self.values[index])
     }

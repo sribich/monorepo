@@ -4,7 +4,8 @@ use options::Options;
 use proc_macro::TokenStream;
 use proc_macro_error2::abort;
 use r#struct::impl_struct;
-use syn::{Item, parse_macro_input};
+use syn::Item;
+use syn::parse_macro_input;
 
 mod r#enum;
 mod options;
@@ -33,7 +34,7 @@ pub fn inner_expand(options: Options, item: Item) -> syn::Result<proc_macro2::To
             } else {
                 abort!(abort_item, "Assert error")
             }
-        },
+        }
         Item::Const(item) => abort!(item, "Settings must be either an enum or a struct"),
         Item::ExternCrate(item) => abort!(item, "Settings must be either an enum or a struct"),
         Item::Fn(item) => abort!(item, "Settings must be either an enum or a struct"),

@@ -1,6 +1,8 @@
-use schema_core::commands::diagnose_migration_history::{DiagnoseMigrationHistoryOutput, HistoryDiagnostic};
-use sql_migration_tests::test_api::*;
 use std::io::Write;
+
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryOutput;
+use schema_core::commands::diagnose_migration_history::HistoryDiagnostic;
+use sql_migration_tests::test_api::*;
 
 #[test_connector]
 fn squashing_whole_migration_history_works(api: TestApi) {
@@ -81,10 +83,13 @@ fn squashing_whole_migration_history_works(api: TestApi) {
     let squashed_migration_directory_path = directory.path().join("0000_initial");
     std::fs::create_dir_all(&squashed_migration_directory_path).unwrap();
 
-    let mut migration_file = std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
+    let mut migration_file =
+        std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
 
     for (_, squashed_migration) in squashed_migrations {
-        migration_file.write_all(squashed_migration.as_bytes()).unwrap();
+        migration_file
+            .write_all(squashed_migration.as_bytes())
+            .unwrap();
     }
 
     api.assert_schema().assert_tables_count(3);
@@ -119,7 +124,8 @@ fn squashing_whole_migration_history_works(api: TestApi) {
     assert!(has_migrations_table);
     assert!(error_in_unapplied_migration.is_none());
 
-    api.mark_migration_applied("0000_initial", &directory).send();
+    api.mark_migration_applied("0000_initial", &directory)
+        .send();
 
     let DiagnoseMigrationHistoryOutput {
         drift,
@@ -251,7 +257,9 @@ fn squashing_migrations_history_at_the_start_works(api: TestApi) {
         initial_migration_names
     };
 
-    api.assert_schema().assert_tables_count(3).assert_has_table("Hyena");
+    api.assert_schema()
+        .assert_tables_count(3)
+        .assert_has_table("Hyena");
 
     // Squash the files, mark migration applied, assert the schema is the same.
 
@@ -284,14 +292,18 @@ fn squashing_migrations_history_at_the_start_works(api: TestApi) {
     let squashed_migration_directory_path = directory.path().join("0000_initial");
     std::fs::create_dir_all(&squashed_migration_directory_path).unwrap();
 
-    let mut migration_file = std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
+    let mut migration_file =
+        std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
 
     for (_, squashed_migration) in squashed_migrations {
-        migration_file.write_all(squashed_migration.as_bytes()).unwrap();
+        migration_file
+            .write_all(squashed_migration.as_bytes())
+            .unwrap();
     }
 
     api.assert_schema().assert_tables_count(3);
-    api.mark_migration_applied("0000_initial", &directory).send();
+    api.mark_migration_applied("0000_initial", &directory)
+        .send();
 
     let DiagnoseMigrationHistoryOutput {
         drift,
@@ -400,7 +412,9 @@ fn squashing_migrations_history_at_the_end_works(api: TestApi) {
         initial_migration_names
     };
 
-    api.assert_schema().assert_tables_count(3).assert_has_table("Hyena");
+    api.assert_schema()
+        .assert_tables_count(3)
+        .assert_has_table("Hyena");
 
     // Squash the files, mark migration applied, assert the schema is the same.
 
@@ -433,14 +447,18 @@ fn squashing_migrations_history_at_the_end_works(api: TestApi) {
     let squashed_migration_directory_path = directory.path().join("0000_initial");
     std::fs::create_dir_all(&squashed_migration_directory_path).unwrap();
 
-    let mut migration_file = std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
+    let mut migration_file =
+        std::fs::File::create(squashed_migration_directory_path.join("migration.sql")).unwrap();
 
     for (_, squashed_migration) in squashed_migrations {
-        migration_file.write_all(squashed_migration.as_bytes()).unwrap();
+        migration_file
+            .write_all(squashed_migration.as_bytes())
+            .unwrap();
     }
 
     api.assert_schema().assert_tables_count(3);
-    api.mark_migration_applied("0000_initial", &directory).send();
+    api.mark_migration_applied("0000_initial", &directory)
+        .send();
 
     let DiagnoseMigrationHistoryOutput {
         drift,

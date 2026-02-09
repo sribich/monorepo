@@ -1,7 +1,8 @@
 #![allow(non_snake_case)]
 
-use query_structure::*;
 use std::sync::Arc;
+
+use query_structure::*;
 
 #[test]
 fn an_empty_datamodel_must_work() {

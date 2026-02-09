@@ -1,17 +1,24 @@
-use crate::{
-    PrismaResult,
-    context::PrismaContext,
-    features::{EnabledFeatures, Feature},
-    logger::Logger,
-    opt::{CliOpt, PrismaOpt, Subcommand},
-};
+use std::env;
+use std::sync::Arc;
 
 use base64::prelude::*;
 use psl::parser_database::Files;
-use query_core::{protocol::EngineProtocol, schema};
-use request_handlers::{RequestBody, RequestHandler, dmmf};
-use std::{env, sync::Arc};
-use telemetry::{NextId, RequestId};
+use query_core::protocol::EngineProtocol;
+use query_core::schema;
+use request_handlers::RequestBody;
+use request_handlers::RequestHandler;
+use request_handlers::dmmf;
+use telemetry::NextId;
+use telemetry::RequestId;
+
+use crate::PrismaResult;
+use crate::context::PrismaContext;
+use crate::features::EnabledFeatures;
+use crate::features::Feature;
+use crate::logger::Logger;
+use crate::opt::CliOpt;
+use crate::opt::PrismaOpt;
+use crate::opt::Subcommand;
 
 pub struct ExecuteRequest {
     query: String,
@@ -110,7 +117,11 @@ impl CliCommand {
     fn get_config(mut req: GetConfigRequest) -> PrismaResult<()> {
         let config = &mut req.config;
 
-        config.resolve_datasource_urls_query_engine(&[], |key| env::var(key).ok(), req.ignore_env_var_errors)?;
+        config.resolve_datasource_urls_query_engine(
+            &[],
+            |key| env::var(key).ok(),
+            req.ignore_env_var_errors,
+        )?;
 
         let json = psl::get_config::config_to_mcf_json_value(config, &req.files);
         let serialized = serde_json::to_string(&json)?;

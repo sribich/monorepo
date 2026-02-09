@@ -1,21 +1,31 @@
-use super::*;
 use constants::args;
 use input_types::objects::order_by_objects::OrderByOptions;
 use mutations::create_one;
 use objects::*;
-use query_structure::{prelude::ParentContainer};
+use query_structure::prelude::ParentContainer;
+
+use super::*;
 
 /// Builds "where" argument.
 pub(crate) fn where_argument<'a>(ctx: &'a QuerySchema, model: &Model) -> InputField<'a> {
     let where_object = filter_objects::where_object_type(ctx, model.into());
 
-    input_field(args::WHERE.to_owned(), vec![InputType::object(where_object)], None).optional()
+    input_field(
+        args::WHERE.to_owned(),
+        vec![InputType::object(where_object)],
+        None,
+    )
+    .optional()
 }
 
 /// Builds "where" argument which input type is the where unique type of the input builder.
 pub(crate) fn where_unique_argument(ctx: &QuerySchema, model: Model) -> InputField<'_> {
     let input_object_type = filter_objects::where_unique_object_type(ctx, model);
-    input_field(args::WHERE.to_owned(), vec![InputType::object(input_object_type)], None)
+    input_field(
+        args::WHERE.to_owned(),
+        vec![InputType::object(input_object_type)],
+        None,
+    )
 }
 
 /// Builds "relationLoadStrategy" argument, if the corresponding functionality is available.
@@ -49,7 +59,10 @@ pub(crate) fn update_one_arguments(ctx: &QuerySchema, model: Model) -> Vec<Input
     let unique_arg = where_unique_argument(ctx, model.clone());
     let update_types = update_one_objects::update_one_input_types(ctx, model, None);
 
-    let mut args = vec![input_field(args::DATA.to_owned(), update_types, None), unique_arg];
+    let mut args = vec![
+        input_field(args::DATA.to_owned(), update_types, None),
+        unique_arg,
+    ];
 
     args.extend(relation_load_strategy_argument(ctx));
 
@@ -97,15 +110,22 @@ pub(crate) fn delete_many_arguments(ctx: &QuerySchema, model: Model) -> Vec<Inpu
 }
 
 /// Builds "many records where" arguments based on the given model and field.
-pub(crate) fn many_records_output_field_arguments(ctx: &QuerySchema, field: ModelField) -> Vec<InputField<'_>> {
+pub(crate) fn many_records_output_field_arguments(
+    ctx: &QuerySchema,
+    field: ModelField,
+) -> Vec<InputField<'_>> {
     match field {
         ModelField::Scalar(_) => vec![],
 
         // To-many relation.
-        ModelField::Relation(rf) if rf.is_list() => relation_to_many_selection_arguments(ctx, rf.related_model()),
+        ModelField::Relation(rf) if rf.is_list() => {
+            relation_to_many_selection_arguments(ctx, rf.related_model())
+        }
 
         // To-one optional relation.
-        ModelField::Relation(rf) if !rf.is_required() => relation_to_one_selection_arguments(ctx, rf.related_model()),
+        ModelField::Relation(rf) if !rf.is_required() => {
+            relation_to_one_selection_arguments(ctx, rf.related_model())
+        }
 
         // To-one required relation.
         ModelField::Relation(_) => vec![],
@@ -113,14 +133,20 @@ pub(crate) fn many_records_output_field_arguments(ctx: &QuerySchema, field: Mode
 }
 
 /// Builds "many records where" arguments for to-many relation selection sets.
-pub(crate) fn relation_to_many_selection_arguments(ctx: &QuerySchema, model: Model) -> Vec<InputField<'_>> {
+pub(crate) fn relation_to_many_selection_arguments(
+    ctx: &QuerySchema,
+    model: Model,
+) -> Vec<InputField<'_>> {
     ManyRecordsSelectionArgumentsBuilder::new(ctx, model)
         .include_distinct()
         .build()
 }
 
 /// Builds "many records where" arguments for to-many relation selection sets.
-pub(crate) fn relation_to_one_selection_arguments(ctx: &QuerySchema, model: Model) -> Vec<InputField<'_>> {
+pub(crate) fn relation_to_one_selection_arguments(
+    ctx: &QuerySchema,
+    model: Model,
+) -> Vec<InputField<'_>> {
     vec![where_argument(ctx, &model)]
 }
 
@@ -130,11 +156,16 @@ pub(crate) fn order_by_argument(
     container: ParentContainer,
     options: OrderByOptions,
 ) -> InputField<'_> {
-    let order_object_type = InputType::object(order_by_objects::order_by_object_type(ctx, container, options));
+    let order_object_type = InputType::object(order_by_objects::order_by_object_type(
+        ctx, container, options,
+    ));
 
     input_field(
         args::ORDER_BY.to_owned(),
-        vec![InputType::list(order_object_type.clone()), order_object_type],
+        vec![
+            InputType::list(order_object_type.clone()),
+            order_object_type,
+        ],
         None,
     )
     .optional()
@@ -159,11 +190,19 @@ fn pagination_argument<'a>(arg: &'static str, model: &Model) -> InputField<'a> {
 
 pub(crate) fn group_by_arguments(ctx: &QuerySchema, model: Model) -> Vec<InputField<'_>> {
     let field_enum_type = InputType::Enum(model_field_enum(&model));
-    let filter_object = InputType::object(filter_objects::scalar_filter_object_type(ctx, model.clone(), true));
+    let filter_object = InputType::object(filter_objects::scalar_filter_object_type(
+        ctx,
+        model.clone(),
+        true,
+    ));
 
     vec![
         where_argument(ctx, &model),
-        order_by_argument(ctx, model.clone().into(), OrderByOptions::new().with_aggregates()),
+        order_by_argument(
+            ctx,
+            model.clone().into(),
+            OrderByOptions::new().with_aggregates(),
+        ),
         input_field(
             args::BY,
             vec![InputType::list(field_enum_type.clone()), field_enum_type],
@@ -217,8 +256,10 @@ impl<'a> ManyRecordsSelectionArgumentsBuilder<'a> {
         ]
         .into_iter()
         .chain(self.model.has_unique_identifier().then(|| {
-            let unique_input_type =
-                InputType::object(filter_objects::where_unique_object_type(self.ctx, self.model.clone()));
+            let unique_input_type = InputType::object(filter_objects::where_unique_object_type(
+                self.ctx,
+                self.model.clone(),
+            ));
             input_field(args::CURSOR, vec![unique_input_type], None).optional()
         }))
         .chain([take_argument(&self.model), skip_argument(&self.model)])

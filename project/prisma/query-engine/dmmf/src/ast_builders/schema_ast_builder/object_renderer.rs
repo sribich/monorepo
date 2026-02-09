@@ -63,7 +63,11 @@ impl<'a> DmmfObjectRenderer<'a> {
         ctx.add_input_type(input_object.identifier.clone(), input_type);
     }
 
-    fn render_field_ref_type(&self, input_object: &InputObjectType<'a>, ctx: &mut RenderContext<'a>) {
+    fn render_field_ref_type(
+        &self,
+        input_object: &InputObjectType<'a>,
+        ctx: &mut RenderContext<'a>,
+    ) {
         if ctx.already_rendered(&input_object.identifier) {
             return;
         }

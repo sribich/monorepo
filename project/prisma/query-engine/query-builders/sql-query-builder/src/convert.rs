@@ -1,11 +1,20 @@
-use bigdecimal::{BigDecimal, FromPrimitive};
-use chrono::{DateTime, NaiveTime};
-use prisma_value::{PrismaValue, PrismaValueType};
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use chrono::DateTime;
+use chrono::NaiveTime;
+use prisma_value::PrismaValue;
+use prisma_value::PrismaValueType;
 use quaint::ast::OpaqueType;
-use query_builder::{ArgScalarType, ArgType, Arity, DynamicArgType};
-use query_structure::{FieldArity, FieldTypeInformation, TypeIdentifier};
+use query_builder::ArgScalarType;
+use query_builder::ArgType;
+use query_builder::Arity;
+use query_builder::DynamicArgType;
+use query_structure::FieldArity;
+use query_structure::FieldTypeInformation;
+use query_structure::TypeIdentifier;
 
-use crate::value::{GeneratorCall, Placeholder};
+use crate::value::GeneratorCall;
+use crate::value::Placeholder;
 
 pub fn quaint_value_to_prisma_value(value: quaint::ValueType<'_>) -> PrismaValue {
     match value {
@@ -42,9 +51,11 @@ pub fn quaint_value_to_prisma_value(value: quaint::ValueType<'_>) -> PrismaValue
         quaint::ValueType::Boolean(None) => PrismaValue::Null,
         quaint::ValueType::Char(Some(c)) => PrismaValue::String(c.to_string()),
         quaint::ValueType::Char(None) => PrismaValue::Null,
-        quaint::ValueType::Array(Some(a)) => {
-            PrismaValue::List(a.into_iter().map(|v| quaint_value_to_prisma_value(v.typed)).collect())
-        }
+        quaint::ValueType::Array(Some(a)) => PrismaValue::List(
+            a.into_iter()
+                .map(|v| quaint_value_to_prisma_value(v.typed))
+                .collect(),
+        ),
         quaint::ValueType::Array(None) => PrismaValue::Null,
         // We can't use PrismValue::Float with BigDecimal, because its serializer loses precision.
         quaint::ValueType::Numeric(Some(bd)) => PrismaValue::String(bd.to_string()),
@@ -57,15 +68,24 @@ pub fn quaint_value_to_prisma_value(value: quaint::ValueType<'_>) -> PrismaValue
         quaint::ValueType::Uuid(None) => PrismaValue::Null,
         quaint::ValueType::DateTime(Some(dt)) => PrismaValue::DateTime(dt.fixed_offset()),
         quaint::ValueType::DateTime(None) => PrismaValue::Null,
-        quaint::ValueType::Date(Some(d)) => PrismaValue::DateTime(d.and_time(NaiveTime::MIN).and_utc().fixed_offset()),
-        quaint::ValueType::Date(None) => PrismaValue::Null,
-        quaint::ValueType::Time(Some(t)) => {
-            PrismaValue::DateTime(DateTime::UNIX_EPOCH.date_naive().and_time(t).and_utc().fixed_offset())
+        quaint::ValueType::Date(Some(d)) => {
+            PrismaValue::DateTime(d.and_time(NaiveTime::MIN).and_utc().fixed_offset())
         }
+        quaint::ValueType::Date(None) => PrismaValue::Null,
+        quaint::ValueType::Time(Some(t)) => PrismaValue::DateTime(
+            DateTime::UNIX_EPOCH
+                .date_naive()
+                .and_time(t)
+                .and_utc()
+                .fixed_offset(),
+        ),
         quaint::ValueType::Time(None) => PrismaValue::Null,
         quaint::ValueType::Opaque(opaque) => {
             if let Some(placeholder) = opaque.downcast_ref::<Placeholder>() {
-                PrismaValue::placeholder(placeholder.name().clone(), opaque_type_to_prisma_type(opaque.typ()))
+                PrismaValue::placeholder(
+                    placeholder.name().clone(),
+                    opaque_type_to_prisma_type(opaque.typ()),
+                )
             } else if let Some(call) = opaque.downcast_ref::<GeneratorCall>() {
                 PrismaValue::GeneratorCall {
                     name: call.name().to_owned().into(),
@@ -112,7 +132,11 @@ pub fn prisma_type_to_arg_type(pt: &PrismaValueType) -> ArgType {
         PrismaValueType::Enum => ArgScalarType::Enum,
         PrismaValueType::List(inner) => {
             let inner = prisma_type_to_arg_type(inner);
-            assert_eq!(inner.arity, Arity::Scalar, "list element type must be a scalar type");
+            assert_eq!(
+                inner.arity,
+                Arity::Scalar,
+                "list element type must be a scalar type"
+            );
             return ArgType::new(Arity::List, inner.scalar_type, None);
         }
     };
@@ -127,14 +151,16 @@ pub fn quaint_value_to_arg_type(value: &quaint::Value<'_>) -> DynamicArgType {
         quaint::ValueType::Float(_) | quaint::ValueType::Double(_) => ArgScalarType::Float,
         quaint::ValueType::Numeric(_) => ArgScalarType::Decimal,
         quaint::ValueType::Enum(_, _) => ArgScalarType::Enum,
-        quaint::ValueType::Text(_) | quaint::ValueType::Xml(_) | quaint::ValueType::Char(_) => ArgScalarType::String,
+        quaint::ValueType::Text(_) | quaint::ValueType::Xml(_) | quaint::ValueType::Char(_) => {
+            ArgScalarType::String
+        }
         quaint::ValueType::Uuid(_) => ArgScalarType::Uuid,
         quaint::ValueType::Bytes(_) => ArgScalarType::Bytes,
         quaint::ValueType::Boolean(_) => ArgScalarType::Boolean,
         quaint::ValueType::Json(_) => ArgScalarType::Json,
-        quaint::ValueType::DateTime(_) | quaint::ValueType::Date(_) | quaint::ValueType::Time(_) => {
-            ArgScalarType::DateTime
-        }
+        quaint::ValueType::DateTime(_)
+        | quaint::ValueType::Date(_)
+        | quaint::ValueType::Time(_) => ArgScalarType::DateTime,
         quaint::ValueType::Array(list) => {
             let scalar_type = list
                 .as_deref()
@@ -144,7 +170,11 @@ pub fn quaint_value_to_arg_type(value: &quaint::Value<'_>) -> DynamicArgType {
                     let DynamicArgType::Single { r#type } = quaint_value_to_arg_type(val) else {
                         panic!("array element type must not be a tuple");
                     };
-                    assert_eq!(r#type.arity, Arity::Scalar, "array element type must be a scalar type");
+                    assert_eq!(
+                        r#type.arity,
+                        Arity::Scalar,
+                        "array element type must be a scalar type"
+                    );
                     r#type.scalar_type
                 })
                 .unwrap_or(ArgScalarType::Unknown);
@@ -157,7 +187,9 @@ pub fn quaint_value_to_arg_type(value: &quaint::Value<'_>) -> DynamicArgType {
                 r#type: ArgType::new(Arity::List, ArgScalarType::Enum, native_type),
             };
         }
-        quaint::ValueType::Opaque(opaque) => return opaque_type_to_arg_type(opaque.typ(), native_type),
+        quaint::ValueType::Opaque(opaque) => {
+            return opaque_type_to_arg_type(opaque.typ(), native_type);
+        }
     };
     DynamicArgType::Single {
         r#type: ArgType::new(Arity::Scalar, scalar_type, native_type),
@@ -179,10 +211,16 @@ fn opaque_type_to_arg_type(opaque: &OpaqueType, native_type: Option<String>) -> 
         OpaqueType::Json | OpaqueType::Object => ArgScalarType::Json,
         OpaqueType::DateTime | OpaqueType::Date | OpaqueType::Time => ArgScalarType::DateTime,
         OpaqueType::Array(element_type) => {
-            let DynamicArgType::Single { r#type } = opaque_type_to_arg_type(element_type, native_type) else {
+            let DynamicArgType::Single { r#type } =
+                opaque_type_to_arg_type(element_type, native_type)
+            else {
                 panic!("array element type must not be a tuple");
             };
-            assert_eq!(r#type.arity, Arity::Scalar, "array element type must be a scalar type");
+            assert_eq!(
+                r#type.arity,
+                Arity::Scalar,
+                "array element type must be a scalar type"
+            );
             return DynamicArgType::Single {
                 r#type: ArgType::new(Arity::List, r#type.scalar_type, r#type.db_type),
             };

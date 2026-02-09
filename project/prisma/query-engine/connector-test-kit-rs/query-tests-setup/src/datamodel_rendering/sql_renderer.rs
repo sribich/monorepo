@@ -20,6 +20,9 @@ impl DatamodelRenderer for SqlDatamodelRenderer {
             None => "".to_owned(),
         };
 
-        format!("{} {} {}", m2m.field_name, m2m.field_type, relation_directive)
+        format!(
+            "{} {} {}",
+            m2m.field_name, m2m.field_type, relation_directive
+        )
     }
 }

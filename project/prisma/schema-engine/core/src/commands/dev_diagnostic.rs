@@ -1,7 +1,15 @@
 use json_rpc::types::MigrationList;
-use schema_connector::{ConnectorResult, Namespaces, SchemaConnector, migrations_directory};
+use schema_connector::ConnectorResult;
+use schema_connector::Namespaces;
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory;
 
-use crate::{commands::diagnose_migration_history::{DiagnoseMigrationHistoryInput, DiagnoseMigrationHistoryOutput, DriftDiagnostic, HistoryDiagnostic, diagnose_migration_history}, migration_schema_cache::MigrationSchemaCache};
+use crate::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
+use crate::commands::diagnose_migration_history::DiagnoseMigrationHistoryOutput;
+use crate::commands::diagnose_migration_history::DriftDiagnostic;
+use crate::commands::diagnose_migration_history::HistoryDiagnostic;
+use crate::commands::diagnose_migration_history::diagnose_migration_history;
+use crate::migration_schema_cache::MigrationSchemaCache;
 
 ///
 #[derive(Debug)]
@@ -42,15 +50,23 @@ pub async fn dev_diagnostic(
     connector: &mut dyn SchemaConnector,
     migration_schema_cache: &mut MigrationSchemaCache,
 ) -> ConnectorResult<DevDiagnosticOutput> {
-    migrations_directory::error_on_changed_provider(&input.migrations_list.lockfile, connector.connector_type())?;
+    migrations_directory::error_on_changed_provider(
+        &input.migrations_list.lockfile,
+        connector.connector_type(),
+    )?;
 
     let diagnose_input = DiagnoseMigrationHistoryInput {
         migrations_list: input.migrations_list,
         opt_in_to_shadow_database: true,
     };
 
-    let diagnose_migration_history_output =
-        diagnose_migration_history(diagnose_input, namespaces, connector, migration_schema_cache).await?;
+    let diagnose_migration_history_output = diagnose_migration_history(
+        diagnose_input,
+        namespaces,
+        connector,
+        migration_schema_cache,
+    )
+    .await?;
 
     check_for_broken_migrations(&diagnose_migration_history_output)?;
 
@@ -119,7 +135,8 @@ fn check_for_reset_conditions(output: &DiagnoseMigrationHistoryOutput) -> Option
         [] => None,
         [first_reason] => Some(first_reason.clone()),
         _ => {
-            let mut message = String::with_capacity(reset_reasons.iter().map(|s| s.len() + 3).sum::<usize>());
+            let mut message =
+                String::with_capacity(reset_reasons.iter().map(|s| s.len() + 3).sum::<usize>());
 
             for reason in reset_reasons {
                 message.push_str("- ");

@@ -1,11 +1,15 @@
 pub(crate) mod fields;
 pub(crate) mod objects;
 
-use super::*;
 use fields::*;
 use query_structure::ScalarFieldRef;
 
-fn map_scalar_input_type_for_field<'a>(ctx: &'a QuerySchema, field: &ScalarFieldRef) -> InputType<'a> {
+use super::*;
+
+fn map_scalar_input_type_for_field<'a>(
+    ctx: &'a QuerySchema,
+    field: &ScalarFieldRef,
+) -> InputType<'a> {
     map_scalar_input_type(ctx, field.type_identifier(), field.is_list())
 }
 
@@ -31,7 +35,10 @@ fn map_scalar_input_type(ctx: &'_ QuerySchema, typ: TypeIdentifier, list: bool) 
 
 /// Convenience function to return [object_type, list_object_type]
 /// (shorthand + full type) if the field is a list.
-pub(crate) fn list_union_object_type(input: InputObjectType<'_>, as_list: bool) -> Vec<InputType<'_>> {
+pub(crate) fn list_union_object_type(
+    input: InputObjectType<'_>,
+    as_list: bool,
+) -> Vec<InputType<'_>> {
     let input_type = InputType::object(input);
     list_union_type(input_type, as_list)
 }

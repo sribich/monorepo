@@ -1,9 +1,11 @@
 use macro_util::ast::variant::Variant;
 use proc_macro2::TokenStream;
-use quote::{format_ident, quote};
+use quote::format_ident;
+use quote::quote;
 use syn::Ident;
 
-use crate::{attributes::VariantAttributes, meta::VariantMeta};
+use crate::attributes::VariantAttributes;
+use crate::meta::VariantMeta;
 
 pub trait VariantExt {
     fn generic_types(&self) -> TokenStream;

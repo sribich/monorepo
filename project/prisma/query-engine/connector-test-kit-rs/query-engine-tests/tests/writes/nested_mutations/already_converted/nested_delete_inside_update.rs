@@ -2,7 +2,10 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod delete_inside_update {
-    use query_engine_tests::{DatamodelWithParams, assert_error, run_query, run_query_json};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
     use query_test_macros::relation_link_test;
 
     // ----------------------------------
@@ -84,7 +87,10 @@ mod delete_inside_update {
 
     // "a P1 to C1  relation "should "work through a nested mutation by id & additional filters"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_mut_by_id_and_filters(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_mut_by_id_and_filters(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -157,7 +163,10 @@ mod delete_inside_update {
 
     // "a P1 to C1  relation" should "error if the nodes are not connected"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_error_if_not_connected(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_error_if_not_connected(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -197,7 +206,10 @@ mod delete_inside_update {
 
     // "a P1 to C1  relation" should "error if the node is connected but the additional filters don't match it"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneOpt")]
-    async fn p1_c1_error_if_filter_not_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_error_if_filter_not_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -245,7 +257,10 @@ mod delete_inside_update {
 
     // "a PM to C1! relation "should work through a nested mutation by id"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_by_id_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_by_id_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -305,7 +320,10 @@ mod delete_inside_update {
 
     // "a PM to C1! relation "should work through a nested mutation by id & additional filters"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_by_id_and_fiters_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_by_id_and_fiters_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -366,7 +384,10 @@ mod delete_inside_update {
 
     // a PM to C1!  relation should "error if the node is connected but the additional filters don't match it
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneReq")]
-    async fn pm_c1_req_error_if_filter_not_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_req_error_if_filter_not_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -433,7 +454,10 @@ mod delete_inside_update {
 
     // "a P1 to C1! relation " should "work"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1_req_by_id_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_req_by_id_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -474,7 +498,10 @@ mod delete_inside_update {
 
     // "a P1 to C1! relation " should "work"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1_req_by_filters_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_req_by_filters_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -515,7 +542,10 @@ mod delete_inside_update {
 
     // "a P1 to C1!  relation" should "error if the node is connected but the additional filters don't match it"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToOneReq")]
-    async fn p1_c1_req_error_if_filter_not_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_c1_req_error_if_filter_not_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -618,7 +648,10 @@ mod delete_inside_update {
 
     // "a PM to C1 " should "work"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_by_id_and_filter_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_by_id_and_filter_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -674,7 +707,10 @@ mod delete_inside_update {
 
     // a PM to C1  relation should "error if the node is connected but the additional filters don't match it
     #[relation_link_test(on_parent = "ToMany", on_child = "ToOneOpt")]
-    async fn pm_c1_error_if_filter_not_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_c1_error_if_filter_not_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -835,7 +871,10 @@ mod delete_inside_update {
 
     // "a P1 to CM  relation "should "work"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToMany")]
-    async fn p1_cm_by_id_and_filters_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_cm_by_id_and_filters_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -881,7 +920,10 @@ mod delete_inside_update {
 
     // "a P1 to CM  relation" should "error if the nodes are not connected"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToMany")]
-    async fn p1_cm_error_if_not_connected(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_cm_error_if_not_connected(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -921,7 +963,10 @@ mod delete_inside_update {
 
     // "a P1 to CM  relation" should "error if the node is connected but the additional filters don't match it"
     #[relation_link_test(on_parent = "ToOneOpt", on_child = "ToMany")]
-    async fn p1_cm_error_if_filter_not_match(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn p1_cm_error_if_filter_not_match(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let parent = t.parent().parse(
             run_query_json!(
                 runner,
@@ -1068,7 +1113,10 @@ mod delete_inside_update {
 
     // "a PM to CM  relation" should "work"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_by_id_and_filters_should_work(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_by_id_and_filters_should_work(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         let child_1 = t.child().parse_many_first(
             run_query_json!(
                 runner,
@@ -1279,7 +1327,10 @@ mod delete_inside_update {
 
     // "a PM to CM  relation" should "work for correct children"
     #[relation_link_test(on_parent = "ToMany", on_child = "ToMany")]
-    async fn pm_cm_work_correct_children(runner: &Runner, t: &DatamodelWithParams) -> TestResult<()> {
+    async fn pm_cm_work_correct_children(
+        runner: &Runner,
+        t: &DatamodelWithParams,
+    ) -> TestResult<()> {
         run_query!(
             runner,
             r#"mutation {

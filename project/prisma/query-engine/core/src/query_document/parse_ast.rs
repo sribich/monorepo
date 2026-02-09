@@ -1,13 +1,17 @@
 //! Parsed query document tree. Naming is WIP.
 //! Structures represent parsed and validated parts of the query document, used by the query builders.
-use crate::QueryParserResult;
+use std::borrow::Cow;
+use std::ops::Deref;
+use std::ops::DerefMut;
+
 use indexmap::IndexMap;
-use query_structure::{OrderBy, PrismaValue, ScalarFieldRef};
-use schema::{ObjectTag, constants::args};
-use std::{
-    borrow::Cow,
-    ops::{Deref, DerefMut},
-};
+use query_structure::OrderBy;
+use query_structure::PrismaValue;
+use query_structure::ScalarFieldRef;
+use schema::ObjectTag;
+use schema::constants::args;
+
+use crate::QueryParserResult;
 
 pub(crate) type ParsedInputList<'a> = Vec<ParsedInputValue<'a>>;
 
@@ -47,8 +51,8 @@ impl<'a> FromIterator<(Cow<'a, str>, ParsedInputValue<'a>)> for ParsedInputMap<'
 }
 
 impl<'a> IntoIterator for ParsedInputMap<'a> {
-    type Item = (Cow<'a, str>, ParsedInputValue<'a>);
     type IntoIter = indexmap::map::IntoIter<Cow<'a, str>, ParsedInputValue<'a>>;
+    type Item = (Cow<'a, str>, ParsedInputValue<'a>);
 
     fn into_iter(self) -> Self::IntoIter {
         self.map.into_iter()
@@ -146,6 +150,8 @@ pub(crate) trait ArgumentListLookup<'a> {
 
 impl<'a> ArgumentListLookup<'a> for Vec<ParsedArgument<'a>> {
     fn lookup(&mut self, name: &str) -> Option<ParsedArgument<'a>> {
-        self.iter().position(|arg| arg.name == name).map(|pos| self.remove(pos))
+        self.iter()
+            .position(|arg| arg.name == name)
+            .map(|pos| self.remove(pos))
     }
 }

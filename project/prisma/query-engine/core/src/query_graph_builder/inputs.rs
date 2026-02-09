@@ -1,8 +1,16 @@
 use std::slice;
 
-use query_structure::{Filter, SelectionResult, WriteArgs};
+use query_structure::Filter;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
 
-use crate::{Computation, Flow, Node, NodeInputField, Query, ReadQuery, WriteQuery};
+use crate::Computation;
+use crate::Flow;
+use crate::Node;
+use crate::NodeInputField;
+use crate::Query;
+use crate::ReadQuery;
+use crate::WriteQuery;
 
 #[derive(Debug)]
 pub(crate) struct UpdateOrCreateArgsInput;
@@ -15,7 +23,9 @@ impl NodeInputField<[WriteArgs]> for UpdateOrCreateArgsInput {
                 WriteQuery::UpdateManyRecords(urm) => slice::from_mut(&mut urm.args),
                 WriteQuery::CreateRecord(cr) => slice::from_mut(&mut cr.args),
                 WriteQuery::CreateManyRecords(cr) => &mut cr.args,
-                _ => panic!("UpdateOrCreateArgsInput can only be used with update or create nodes",),
+                _ => {
+                    panic!("UpdateOrCreateArgsInput can only be used with update or create nodes",)
+                }
             }
         } else {
             panic!("UpdateOrCreateArgsInput can only be used with WriteQuery nodes")
@@ -38,7 +48,11 @@ macro_rules! node_input_field {
                 } else {
                     panic!(
                         "{}",
-                        concat!(stringify!($name), " can only be used with ", stringify!($variant))
+                        concat!(
+                            stringify!($name),
+                            " can only be used with ",
+                            stringify!($variant)
+                        )
                     )
                 }
             }

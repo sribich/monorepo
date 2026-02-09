@@ -1,21 +1,26 @@
 pub use railgun_api_derive::*;
 
 pub mod json {
-    use std::{borrow::Cow, convert::Infallible};
+    use std::borrow::Cow;
+    use std::convert::Infallible;
 
-    use axum::{Json, http::StatusCode, response::IntoResponse};
+    use axum::Json;
+    use axum::http::StatusCode;
+    use axum::response::IntoResponse;
     use serde::Serialize;
-    use typegen::{
-        Generics, NamedType, Type, Typegen,
-        cache::TypeCache,
-        datatype::{
-            DataType, NamedDataType,
-            field::field,
-            reference::{Reference, ReferenceType},
-            r#struct::{StructFields, StructType},
-        },
-        id::TypeId,
-    };
+    use typegen::Generics;
+    use typegen::NamedType;
+    use typegen::Type;
+    use typegen::Typegen;
+    use typegen::cache::TypeCache;
+    use typegen::datatype::DataType;
+    use typegen::datatype::NamedDataType;
+    use typegen::datatype::field::field;
+    use typegen::datatype::reference::Reference;
+    use typegen::datatype::reference::ReferenceType;
+    use typegen::datatype::r#struct::StructFields;
+    use typegen::datatype::r#struct::StructType;
+    use typegen::id::TypeId;
 
     /// # Example
     ///

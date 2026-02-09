@@ -4,8 +4,8 @@
 //! transactions.
 //!
 //! Connectors for [MySQL](struct.Mysql.html),
-//! [PostgreSQL](struct.PostgreSql.html), and [SQLite](struct.Sqlite.html) 
-//! connect to the corresponding databases and implement the 
+//! [PostgreSQL](struct.PostgreSql.html), and [SQLite](struct.Sqlite.html)
+//! connect to the corresponding databases and implement the
 //! [Queryable](trait.Queryable.html) trait for generalized
 //! querying interface.
 

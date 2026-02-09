@@ -42,24 +42,43 @@ mod types;
 
 use std::collections::HashMap;
 
-use self::{context::Context, interner::StringId, relations::Relations, types::Types};
-pub use coerce_expression::{coerce, coerce_array, coerce_opt};
+pub use coerce_expression::coerce;
+pub use coerce_expression::coerce_array;
+pub use coerce_expression::coerce_opt;
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
 pub use diagnostics::FileId;
-use diagnostics::{DatamodelError, Diagnostics};
-pub use extension::{ExtensionTypeEntry, ExtensionTypeId, ExtensionTypes, NoExtensionTypes};
+pub use extension::ExtensionTypeEntry;
+pub use extension::ExtensionTypeId;
+pub use extension::ExtensionTypes;
+pub use extension::NoExtensionTypes;
 pub use files::Files;
 pub use ids::*;
 use interner::StringInterner;
 use names::Names;
 pub use names::is_reserved_type_name;
-use psl_ast::ast::{GeneratorConfig, SourceConfig};
-pub use psl_ast::{SourceFile, ast};
+pub use psl_ast::SourceFile;
+pub use psl_ast::ast;
+use psl_ast::ast::GeneratorConfig;
+use psl_ast::ast::SourceConfig;
 use psl_schema::Schema;
-pub use relations::{ManyToManyRelationId, ReferentialAction, RelationId};
-pub use types::{
-    IndexAlgorithm, IndexFieldPath, IndexType, OperatorClass, RelationFieldId, ScalarFieldId, ScalarFieldType,
-    ScalarType, SortOrder,
-};
+pub use relations::ManyToManyRelationId;
+pub use relations::ReferentialAction;
+pub use relations::RelationId;
+pub use types::IndexAlgorithm;
+pub use types::IndexFieldPath;
+pub use types::IndexType;
+pub use types::OperatorClass;
+pub use types::RelationFieldId;
+pub use types::ScalarFieldId;
+pub use types::ScalarFieldType;
+pub use types::ScalarType;
+pub use types::SortOrder;
+
+use self::context::Context;
+use self::interner::StringId;
+use self::relations::Relations;
+use self::types::Types;
 
 /// ParserDatabase is a container for a Schema AST, together with information
 /// gathered during schema validation. Each validation step enriches the
@@ -97,7 +116,11 @@ impl ParserDatabase {
         diagnostics: &mut Diagnostics,
         extension_types: &dyn ExtensionTypes,
     ) -> Self {
-        Self::new(&[("schema.prisma".to_owned(), file)], diagnostics, extension_types)
+        Self::new(
+            &[("schema.prisma".to_owned(), file)],
+            diagnostics,
+            extension_types,
+        )
     }
 
     /// See the docs on [ParserDatabase](/struct.ParserDatabase.html).
@@ -166,9 +189,13 @@ impl ParserDatabase {
 
     /// Returns file id by name
     pub fn file_id(&self, file_name: &str) -> Option<FileId> {
-        self.asts
-            .iter()
-            .find_map(|(file_id, name, _, _)| if name == file_name { Some(file_id) } else { None })
+        self.asts.iter().find_map(|(file_id, name, _, _)| {
+            if name == file_name {
+                Some(file_id)
+            } else {
+                None
+            }
+        })
     }
 
     /// The name of the file.
@@ -233,6 +260,7 @@ impl ParserDatabase {
     pub fn iter_file_ids(&self) -> impl Iterator<Item = FileId> + '_ {
         self.asts.iter().map(|(file_id, _, _, _)| file_id)
     }
+
     /// Iterate all datasources defined in the schema
     pub fn datasources(&self) -> impl Iterator<Item = &SourceConfig> {
         self.iter_asts().flat_map(|ast| ast.sources())
@@ -250,8 +278,14 @@ impl ParserDatabase {
     }
 
     /// Get the database name of an extension type by its ID, along with any modifiers it may have.
-    pub fn get_extension_type_db_name_with_modifiers(&self, id: ExtensionTypeId) -> Option<(&str, &[String])> {
-        let (name, modifiers) = self.extension_metadata.id_to_db_name_with_modifiers.get(&id)?;
+    pub fn get_extension_type_db_name_with_modifiers(
+        &self,
+        id: ExtensionTypeId,
+    ) -> Option<(&str, &[String])> {
+        let (name, modifiers) = self
+            .extension_metadata
+            .id_to_db_name_with_modifiers
+            .get(&id)?;
         let name = self.interner.get(*name)?;
         Some((name, modifiers))
     }

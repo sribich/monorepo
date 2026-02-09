@@ -254,8 +254,7 @@ impl JapaneseTranscriptionContext {
     }
 
     fn fit_transcription(&self, transcription: Transcription) -> Vec<FitWord> {
-        let tagger =
-            Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
 
         let mut list = vec![];
 
@@ -382,8 +381,7 @@ impl JapaneseTranscriptionContext {
         chapters: Vec<(String, Vec<EpubNode>)>,
         mut words: Vec<FitWord>,
     ) -> Vec<TimestampedNodeB> {
-        let tagger =
-            Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
 
         let mut chapters = chapters
             .into_iter()
@@ -624,8 +622,7 @@ impl JapaneseTranscriptionContext {
     }
 
     fn timestamp(&self, text: String, mut words: Vec<FitWord>) -> String {
-        let tagger =
-            Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
 
         let mut meta_text = text
             .split('\n')

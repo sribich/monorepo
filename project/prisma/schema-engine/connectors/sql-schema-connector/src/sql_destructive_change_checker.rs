@@ -22,18 +22,25 @@ pub(crate) mod unexecutable_step_check;
 pub(crate) mod warning_check;
 
 pub(crate) use destructive_change_checker_flavour::DestructiveChangeCheckerFlavour;
-
-use crate::{
-    SqlMigration, SqlSchemaConnector,
-    sql_migration::{AlterEnum, AlterTable, ColumnTypeChange, SqlMigrationStep, TableChange},
-};
 use destructive_check_plan::DestructiveCheckPlan;
-use schema_connector::{BoxFuture, ConnectorResult, DestructiveChangeChecker, DestructiveChangeDiagnostics, Migration};
-use sql_schema_describer::{ColumnArity, walkers::TableColumnWalker};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorResult;
+use schema_connector::DestructiveChangeChecker;
+use schema_connector::DestructiveChangeDiagnostics;
+use schema_connector::Migration;
+use sql_schema_describer::ColumnArity;
+use sql_schema_describer::walkers::TableColumnWalker;
 use unexecutable_step_check::UnexecutableStepCheck;
 use warning_check::SqlMigrationWarningCheck;
 
 use self::check::Column;
+use crate::SqlMigration;
+use crate::SqlSchemaConnector;
+use crate::sql_migration::AlterEnum;
+use crate::sql_migration::AlterTable;
+use crate::sql_migration::ColumnTypeChange;
+use crate::sql_migration::SqlMigrationStep;
+use crate::sql_migration::TableChange;
 
 impl SqlSchemaConnector {
     fn check_table_drop(
@@ -53,7 +60,12 @@ impl SqlSchemaConnector {
     }
 
     /// Emit a warning when we drop a column that contains non-null values.
-    fn check_column_drop(&self, column: &TableColumnWalker<'_>, plan: &mut DestructiveCheckPlan, step_index: usize) {
+    fn check_column_drop(
+        &self,
+        column: &TableColumnWalker<'_>,
+        plan: &mut DestructiveCheckPlan,
+        step_index: usize,
+    ) {
         plan.push_warning(
             SqlMigrationWarningCheck::NonEmptyColumnDrop {
                 table: column.table().name().to_owned(),
@@ -76,7 +88,8 @@ impl SqlSchemaConnector {
         plan: &mut DestructiveCheckPlan,
         step_index: usize,
     ) {
-        let column_is_required_without_default = column.arity().is_required() && column.default().is_none();
+        let column_is_required_without_default =
+            column.arity().is_required() && column.default().is_none();
 
         // Optional columns and columns with a default can safely be added.
         if !column_is_required_without_default {
@@ -126,7 +139,12 @@ impl SqlSchemaConnector {
                             TableChange::AlterColumn(alter_column) => {
                                 let columns = schemas.walk(alter_column.column_id);
 
-                                checker.check_alter_column(alter_column, &columns, &mut plan, step_index)
+                                checker.check_alter_column(
+                                    alter_column,
+                                    &columns,
+                                    &mut plan,
+                                    step_index,
+                                )
                             }
                             TableChange::AddColumn {
                                 column_id,
@@ -134,19 +152,29 @@ impl SqlSchemaConnector {
                             } => {
                                 let column = schemas.next.walk(*column_id);
 
-                                self.check_add_column(&column, *has_virtual_default, &mut plan, step_index)
+                                self.check_add_column(
+                                    &column,
+                                    *has_virtual_default,
+                                    &mut plan,
+                                    step_index,
+                                )
                             }
                             TableChange::DropPrimaryKey => plan.push_warning(
                                 SqlMigrationWarningCheck::PrimaryKeyChange {
                                     table: tables.previous.name().to_owned(),
-                                    namespace: tables.previous.explicit_namespace().map(str::to_owned),
+                                    namespace: tables
+                                        .previous
+                                        .explicit_namespace()
+                                        .map(str::to_owned),
                                 },
                                 step_index,
                             ),
                             TableChange::DropAndRecreateColumn { column_id, changes } => {
                                 let columns = schemas.walk(*column_id);
 
-                                checker.check_drop_and_recreate_column(&columns, changes, &mut plan, step_index)
+                                checker.check_drop_and_recreate_column(
+                                    &columns, changes, &mut plan, step_index,
+                                )
                             }
                             TableChange::AddPrimaryKey => (),
                             TableChange::RenamePrimaryKey => (),
@@ -161,7 +189,10 @@ impl SqlSchemaConnector {
                             plan.push_warning(
                                 SqlMigrationWarningCheck::PrimaryKeyChange {
                                     table: tables.previous.name().to_owned(),
-                                    namespace: tables.previous.explicit_namespace().map(str::to_owned),
+                                    namespace: tables
+                                        .previous
+                                        .explicit_namespace()
+                                        .map(str::to_owned),
                                 },
                                 step_index,
                             )
@@ -172,7 +203,12 @@ impl SqlSchemaConnector {
                             let has_virtual_default = redefine_table
                                 .added_columns_with_virtual_defaults
                                 .contains(added_column_idx);
-                            self.check_add_column(&column, has_virtual_default, &mut plan, step_index);
+                            self.check_add_column(
+                                &column,
+                                has_virtual_default,
+                                &mut plan,
+                                step_index,
+                            );
                         }
 
                         for dropped_column_idx in &redefine_table.dropped_columns {
@@ -180,21 +216,26 @@ impl SqlSchemaConnector {
                             self.check_column_drop(&column, &mut plan, step_index);
                         }
 
-                        for (column_ides, changes, type_change) in redefine_table.column_pairs.iter() {
+                        for (column_ides, changes, type_change) in
+                            redefine_table.column_pairs.iter()
+                        {
                             let columns = schemas.walk(*column_ides);
 
-                            let arity_change_is_safe = match (&columns.previous.arity(), &columns.next.arity()) {
-                                // column became required
-                                (ColumnArity::Nullable, ColumnArity::Required) => false,
-                                // column became nullable
-                                (ColumnArity::Required, ColumnArity::Nullable) => true,
-                                // nothing changed
-                                (ColumnArity::Required, ColumnArity::Required)
-                                | (ColumnArity::Nullable, ColumnArity::Nullable)
-                                | (ColumnArity::List, ColumnArity::List) => true,
-                                // not supported on SQLite
-                                (ColumnArity::List, _) | (_, ColumnArity::List) => unreachable!(),
-                            };
+                            let arity_change_is_safe =
+                                match (&columns.previous.arity(), &columns.next.arity()) {
+                                    // column became required
+                                    (ColumnArity::Nullable, ColumnArity::Required) => false,
+                                    // column became nullable
+                                    (ColumnArity::Required, ColumnArity::Nullable) => true,
+                                    // nothing changed
+                                    (ColumnArity::Required, ColumnArity::Required)
+                                    | (ColumnArity::Nullable, ColumnArity::Nullable)
+                                    | (ColumnArity::List, ColumnArity::List) => true,
+                                    // not supported on SQLite
+                                    (ColumnArity::List, _) | (_, ColumnArity::List) => {
+                                        unreachable!()
+                                    }
+                                };
 
                             if !changes.type_changed() && arity_change_is_safe {
                                 continue;
@@ -207,7 +248,11 @@ impl SqlSchemaConnector {
                                 plan.push_unexecutable(
                                     UnexecutableStepCheck::MadeOptionalFieldRequired(Column {
                                         table: columns.previous.table().name().to_owned(),
-                                        namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                                        namespace: columns
+                                            .previous
+                                            .table()
+                                            .explicit_namespace()
+                                            .map(str::to_owned),
                                         column: columns.previous.name().to_owned(),
                                     }),
                                     step_index,
@@ -220,10 +265,20 @@ impl SqlSchemaConnector {
                                     plan.push_warning(
                                         SqlMigrationWarningCheck::RiskyCast {
                                             table: columns.previous.table().name().to_owned(),
-                                            namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                                            namespace: columns
+                                                .previous
+                                                .table()
+                                                .explicit_namespace()
+                                                .map(str::to_owned),
                                             column: columns.previous.name().to_owned(),
-                                            previous_type: format!("{:?}", columns.previous.column_type_family()),
-                                            next_type: format!("{:?}", columns.next.column_type_family()),
+                                            previous_type: format!(
+                                                "{:?}",
+                                                columns.previous.column_type_family()
+                                            ),
+                                            next_type: format!(
+                                                "{:?}",
+                                                columns.next.column_type_family()
+                                            ),
                                         },
                                         step_index,
                                     );
@@ -231,10 +286,20 @@ impl SqlSchemaConnector {
                                 Some(ColumnTypeChange::NotCastable) => plan.push_warning(
                                     SqlMigrationWarningCheck::NotCastable {
                                         table: columns.previous.table().name().to_owned(),
-                                        namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                                        namespace: columns
+                                            .previous
+                                            .table()
+                                            .explicit_namespace()
+                                            .map(str::to_owned),
                                         column: columns.previous.name().to_owned(),
-                                        previous_type: format!("{:?}", columns.previous.column_type_family()),
-                                        next_type: format!("{:?}", columns.next.column_type_family()),
+                                        previous_type: format!(
+                                            "{:?}",
+                                            columns.previous.column_type_family()
+                                        ),
+                                        next_type: format!(
+                                            "{:?}",
+                                            columns.next.column_type_family()
+                                        ),
                                     },
                                     step_index,
                                 ),
@@ -244,7 +309,12 @@ impl SqlSchemaConnector {
                 }
                 SqlMigrationStep::DropTable { table_id } => {
                     let table = schemas.previous.walk(*table_id);
-                    self.check_table_drop(table.name(), table.explicit_namespace(), &mut plan, step_index);
+                    self.check_table_drop(
+                        table.name(),
+                        table.explicit_namespace(),
+                        &mut plan,
+                        step_index,
+                    );
                 }
                 SqlMigrationStep::CreateIndex {
                     table_id: (Some(_), _),
@@ -256,7 +326,10 @@ impl SqlSchemaConnector {
                         plan.push_warning(
                             SqlMigrationWarningCheck::UniqueConstraintAddition {
                                 table: index.table().name().to_owned(),
-                                columns: index.columns().map(|col| col.as_column().name().to_owned()).collect(),
+                                columns: index
+                                    .columns()
+                                    .map(|col| col.as_column().name().to_owned())
+                                    .collect(),
                             },
                             step_index,
                         )

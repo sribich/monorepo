@@ -1,7 +1,8 @@
 pub mod validation;
 
-use serde::Serialize;
 use std::fmt;
+
+use serde::Serialize;
 use user_facing_error_macros::*;
 
 #[derive(Debug, PartialEq, Eq, Serialize, Clone)]
@@ -60,7 +61,10 @@ pub struct RecordNotFound {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2002", message = "Unique constraint failed on the {constraint}")]
+#[user_facing(
+    code = "P2002",
+    message = "Unique constraint failed on the {constraint}"
+)]
 pub struct UniqueKeyViolation {
     /// Field name from one model from Prisma schema
     #[serde(rename = "target")]
@@ -68,13 +72,19 @@ pub struct UniqueKeyViolation {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2003", message = "Foreign key constraint violated on the {constraint}")]
+#[user_facing(
+    code = "P2003",
+    message = "Foreign key constraint violated on the {constraint}"
+)]
 pub struct ForeignKeyViolation {
     pub constraint: DatabaseConstraint,
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2004", message = "A constraint failed on the database: `{database_error}`")]
+#[user_facing(
+    code = "P2004",
+    message = "A constraint failed on the database: `{database_error}`"
+)]
 pub struct ConstraintViolation {
     /// Database error returned by the underlying data source
     pub database_error: String,
@@ -130,14 +140,20 @@ pub struct QueryParsingFailed {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2010", message = "Raw query failed. Code: `{code}`. Message: `{message}`")]
+#[user_facing(
+    code = "P2010",
+    message = "Raw query failed. Code: `{code}`. Message: `{message}`"
+)]
 pub struct RawQueryFailed {
     pub code: String,
     pub message: String,
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2011", message = "Null constraint violation on the {constraint}")]
+#[user_facing(
+    code = "P2011",
+    message = "Null constraint violation on the {constraint}"
+)]
 pub struct NullConstraintViolation {
     pub constraint: DatabaseConstraint,
 }
@@ -165,7 +181,10 @@ pub struct RelationViolation {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2015", message = "A related record could not be found. {details}")]
+#[user_facing(
+    code = "P2015",
+    message = "A related record could not be found. {details}"
+)]
 pub struct RelatedRecordNotFound {
     pub details: String,
 }
@@ -188,7 +207,10 @@ pub struct RecordsNotConnected {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2018", message = "The required connected records were not found. {details}")]
+#[user_facing(
+    code = "P2018",
+    message = "The required connected records were not found. {details}"
+)]
 pub struct ConnectedRecordsNotFound {
     pub details: String,
 }
@@ -273,7 +295,10 @@ pub struct InteractiveTransactionError {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2029", message = "Query parameter limit exceeded error: {message}.")]
+#[user_facing(
+    code = "P2029",
+    message = "Query parameter limit exceeded error: {message}."
+)]
 pub struct QueryParameterLimitExceeded {
     pub message: String,
 }
@@ -310,7 +335,10 @@ pub struct ValueFitError {
 pub struct TransactionWriteConflict {}
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2035", message = "Assertion violation on the database: `{database_error}`")]
+#[user_facing(
+    code = "P2035",
+    message = "Assertion violation on the database: `{database_error}`"
+)]
 pub struct DatabaseAssertionViolation {
     /// Database error returned by the underlying connector driver.
     pub database_error: String,
@@ -324,7 +352,10 @@ pub struct ExternalError {
 }
 
 #[derive(Debug, UserFacingError, Serialize)]
-#[user_facing(code = "P2037", message = "Too many database connections opened: {message}")]
+#[user_facing(
+    code = "P2037",
+    message = "Too many database connections opened: {message}"
+)]
 pub struct TooManyConnections {
     pub message: String,
 }

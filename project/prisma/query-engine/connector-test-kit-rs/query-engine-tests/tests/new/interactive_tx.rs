@@ -1,9 +1,11 @@
-use query_engine_tests::test_suite;
 use std::borrow::Cow;
+
+use query_engine_tests::test_suite;
 
 #[test_suite(schema(generic))]
 mod interactive_tx {
-    use std::time::{Duration, Instant};
+    use std::time::Duration;
+    use std::time::Instant;
 
     use query_engine_tests::*;
     use tokio::time;
@@ -382,10 +384,14 @@ mod interactive_tx {
         );
 
         // First transaction.
-        let tx_id_a = runner.start_tx(5000, 5000, Some("Serializable".into())).await?;
+        let tx_id_a = runner
+            .start_tx(5000, 5000, Some("Serializable".into()))
+            .await?;
 
         // Second transaction.
-        let tx_id_b = runner.start_tx(5000, 5000, Some("Serializable".into())).await?;
+        let tx_id_b = runner
+            .start_tx(5000, 5000, Some("Serializable".into()))
+            .await?;
 
         // Read on first transaction.
         runner.set_active_tx(tx_id_a.clone());
@@ -589,7 +595,9 @@ mod itx_isolation {
     // All (SQL) connectors support serializable.
     #[connector_test()]
     async fn basic_serializable(mut runner: Runner) -> TestResult<()> {
-        let tx_id = runner.start_tx(5000, 5000, Some("Serializable".to_owned())).await?;
+        let tx_id = runner
+            .start_tx(5000, 5000, Some("Serializable".to_owned()))
+            .await?;
         runner.set_active_tx(tx_id.clone());
 
         insta::assert_snapshot!(
@@ -611,7 +619,9 @@ mod itx_isolation {
 
     #[connector_test()]
     async fn casing_doesnt_matter(mut runner: Runner) -> TestResult<()> {
-        let tx_id = runner.start_tx(5000, 5000, Some("sErIaLiZaBlE".to_owned())).await?;
+        let tx_id = runner
+            .start_tx(5000, 5000, Some("sErIaLiZaBlE".to_owned()))
+            .await?;
         runner.set_active_tx(tx_id.clone());
 
         let res = runner.commit_tx(tx_id).await?;
@@ -622,13 +632,17 @@ mod itx_isolation {
 
     #[connector_test(only(Postgres))]
     async fn spacing_doesnt_matter(mut runner: Runner) -> TestResult<()> {
-        let tx_id = runner.start_tx(5000, 5000, Some("Repeatable Read".to_owned())).await?;
+        let tx_id = runner
+            .start_tx(5000, 5000, Some("Repeatable Read".to_owned()))
+            .await?;
         runner.set_active_tx(tx_id.clone());
 
         let res = runner.commit_tx(tx_id).await?;
         assert!(res.is_ok());
 
-        let tx_id = runner.start_tx(5000, 5000, Some("RepeatableRead".to_owned())).await?;
+        let tx_id = runner
+            .start_tx(5000, 5000, Some("RepeatableRead".to_owned()))
+            .await?;
         runner.set_active_tx(tx_id.clone());
 
         let res = runner.commit_tx(tx_id).await?;
@@ -642,7 +656,9 @@ mod itx_isolation {
         let tx_id = runner.start_tx(5000, 5000, Some("test".to_owned())).await;
 
         match tx_id {
-            Ok(_) => panic!("Expected invalid isolation level string to throw an error, but it succeeded instead."),
+            Ok(_) => panic!(
+                "Expected invalid isolation level string to throw an error, but it succeeded instead."
+            ),
             Err(err) => assert!(err.to_string().contains("Invalid isolation level `test`")),
         };
 

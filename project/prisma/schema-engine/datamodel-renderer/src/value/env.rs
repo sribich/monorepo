@@ -1,6 +1,8 @@
-use super::Text;
-use psl::StringFromEnvVar;
 use std::fmt;
+
+use psl::StringFromEnvVar;
+
+use super::Text;
 
 /// A value that can optionally be fetched from an environment
 /// variable.

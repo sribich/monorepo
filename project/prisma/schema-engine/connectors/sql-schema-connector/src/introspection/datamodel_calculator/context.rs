@@ -1,26 +1,33 @@
 mod flavour;
 
-use crate::introspection::{
-    introspection_helpers::{
-        is_new_migration_table, is_old_migration_table, is_prisma_m_to_n_relation, is_relay_table,
-    },
-    introspection_map::{IntrospectionMap, RelationName},
-    introspection_pair::{EnumPair, ModelPair, RelationFieldDirection, ViewPair},
-    sanitize_datamodel_names::{EnumVariantName, IntrospectedName, ModelName},
-};
+use std::borrow::Cow;
+
 use either::Either;
-use psl::{
-    Configuration, PreviewFeature,
-    builtin_connectors::*,
-    datamodel_connector::Connector,
-    parser_database::{self as db, ExtensionTypes, walkers},
-};
+pub(super) use flavour::IntrospectionFlavour;
+use psl::Configuration;
+use psl::PreviewFeature;
+use psl::builtin_connectors::*;
+use psl::datamodel_connector::Connector;
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::walkers;
+use psl::parser_database::{self as db};
 use quaint::prelude::SqlFamily;
 use schema_connector::IntrospectionContext;
 use sql_schema_describer as sql;
-use std::borrow::Cow;
 
-pub(super) use flavour::IntrospectionFlavour;
+use crate::introspection::introspection_helpers::is_new_migration_table;
+use crate::introspection::introspection_helpers::is_old_migration_table;
+use crate::introspection::introspection_helpers::is_prisma_m_to_n_relation;
+use crate::introspection::introspection_helpers::is_relay_table;
+use crate::introspection::introspection_map::IntrospectionMap;
+use crate::introspection::introspection_map::RelationName;
+use crate::introspection::introspection_pair::EnumPair;
+use crate::introspection::introspection_pair::ModelPair;
+use crate::introspection::introspection_pair::RelationFieldDirection;
+use crate::introspection::introspection_pair::ViewPair;
+use crate::introspection::sanitize_datamodel_names::EnumVariantName;
+use crate::introspection::sanitize_datamodel_names::IntrospectedName;
+use crate::introspection::sanitize_datamodel_names::ModelName;
 
 pub(crate) struct DatamodelCalculatorContext<'a> {
     pub(crate) config: &'a Configuration,
@@ -96,7 +103,8 @@ impl<'a> DatamodelCalculatorContext<'a> {
         // but that would not be correct in all cases.
         // Why? Because we should only add `@@schema` attributes when the user has specified
         // an explicit list of `schemas`.
-        let schemas_in_datasource = matches!(self.config.datasources.first(), Some(ds) if !ds.namespaces.is_empty());
+        let schemas_in_datasource =
+            matches!(self.config.datasources.first(), Some(ds) if !ds.namespaces.is_empty());
         let schemas_in_parameters = self.force_namespaces.is_some();
 
         schemas_in_datasource || schemas_in_parameters
@@ -113,7 +121,10 @@ impl<'a> DatamodelCalculatorContext<'a> {
                     .map(|id| EnumPair::from_model(id, self)),
             )
         } else {
-            let uses_views = self.config.preview_features().contains(PreviewFeature::Views);
+            let uses_views = self
+                .config
+                .preview_features()
+                .contains(PreviewFeature::Views);
             let is_mysql = self.sql_family.is_mysql();
 
             Either::Right(
@@ -122,7 +133,9 @@ impl<'a> DatamodelCalculatorContext<'a> {
                     // MySQL enums are taken from the columns, which means a rogue enum might appear
                     // for users not using the views preview feature, but having views with enums
                     // in their database.
-                    .filter(move |e| !is_mysql || uses_views || self.sql_schema.enum_used_in_tables(e.id))
+                    .filter(move |e| {
+                        !is_mysql || uses_views || self.sql_schema.enum_used_in_tables(e.id)
+                    })
                     .map(|next| {
                         let mut pair = EnumPair::from_db(next, self);
                         if let Some(model_enum) = self.existing_enum(next.id) {
@@ -145,7 +158,9 @@ impl<'a> DatamodelCalculatorContext<'a> {
             .table_walkers()
             .filter(|table| !is_old_migration_table(*table))
             .filter(|table| !is_new_migration_table(*table))
-            .filter(|table| !is_prisma_m_to_n_relation(*table, self.flavour.uses_pk_in_m2m_join_tables(self)))
+            .filter(|table| {
+                !is_prisma_m_to_n_relation(*table, self.flavour.uses_pk_in_m2m_join_tables(self))
+            })
             .filter(|table| !is_relay_table(*table))
             .map(move |next| {
                 let previous = self.existing_model(next.id);
@@ -212,11 +227,21 @@ impl<'a> DatamodelCalculatorContext<'a> {
 
     /// Given a foreign key from the database, this methods returns the existing relation in the
     /// Prisma schema that matches it.
-    pub(crate) fn existing_inline_relation(&self, id: sql::ForeignKeyId) -> Option<walkers::InlineRelationWalker<'a>> {
+    pub(crate) fn existing_inline_relation(
+        &self,
+        id: sql::ForeignKeyId,
+    ) -> Option<walkers::InlineRelationWalker<'a>> {
         self.introspection_map
             .existing_inline_relations
             .get(&id)
-            .map(|relation_id| self.previous_schema.db.walk(*relation_id).refine().as_inline().unwrap())
+            .map(|relation_id| {
+                self.previous_schema
+                    .db
+                    .walk(*relation_id)
+                    .refine()
+                    .as_inline()
+                    .unwrap()
+            })
     }
 
     pub(crate) fn existing_m2m_relation(
@@ -243,14 +268,20 @@ impl<'a> DatamodelCalculatorContext<'a> {
             .map(|id| self.previous_schema.db.walk(*id))
     }
 
-    pub(crate) fn existing_table_scalar_field(&self, id: sql::TableColumnId) -> Option<walkers::ScalarFieldWalker<'a>> {
+    pub(crate) fn existing_table_scalar_field(
+        &self,
+        id: sql::TableColumnId,
+    ) -> Option<walkers::ScalarFieldWalker<'a>> {
         self.introspection_map
             .existing_model_scalar_fields
             .get(&id)
             .map(|id| self.previous_schema.db.walk(*id))
     }
 
-    pub(crate) fn existing_view_scalar_field(&self, id: sql::ViewColumnId) -> Option<walkers::ScalarFieldWalker<'a>> {
+    pub(crate) fn existing_view_scalar_field(
+        &self,
+        id: sql::ViewColumnId,
+    ) -> Option<walkers::ScalarFieldWalker<'a>> {
         self.introspection_map
             .existing_view_scalar_fields
             .get(&id)
@@ -321,7 +352,10 @@ impl<'a> DatamodelCalculatorContext<'a> {
             .unwrap_or(true)
     }
 
-    pub(crate) fn forward_inline_relation_field_prisma_name(&'a self, id: sql::ForeignKeyId) -> &'a str {
+    pub(crate) fn forward_inline_relation_field_prisma_name(
+        &'a self,
+        id: sql::ForeignKeyId,
+    ) -> &'a str {
         let existing_relation = self
             .existing_inline_relation(id)
             .and_then(|relation| relation.as_complete());
@@ -332,7 +366,10 @@ impl<'a> DatamodelCalculatorContext<'a> {
         }
     }
 
-    pub(crate) fn back_inline_relation_field_prisma_name(&'a self, id: sql::ForeignKeyId) -> &'a str {
+    pub(crate) fn back_inline_relation_field_prisma_name(
+        &'a self,
+        id: sql::ForeignKeyId,
+    ) -> &'a str {
         let existing_relation = self
             .existing_inline_relation(id)
             .and_then(|relation| relation.as_complete());
@@ -391,8 +428,13 @@ impl<'a> DatamodelCalculatorContext<'a> {
         }
     }
 
-    pub(crate) fn inline_relation_name(&'a self, id: sql::ForeignKeyId) -> Option<&'a RelationName<'a>> {
-        self.introspection_map.relation_names.inline_relation_name(id)
+    pub(crate) fn inline_relation_name(
+        &'a self,
+        id: sql::ForeignKeyId,
+    ) -> Option<&'a RelationName<'a>> {
+        self.introspection_map
+            .relation_names
+            .inline_relation_name(id)
     }
 
     #[track_caller]
@@ -401,11 +443,15 @@ impl<'a> DatamodelCalculatorContext<'a> {
     }
 
     pub(crate) fn table_missing_for_model(&self, id: &db::ModelId) -> bool {
-        self.introspection_map.missing_tables_for_previous_models.contains(id)
+        self.introspection_map
+            .missing_tables_for_previous_models
+            .contains(id)
     }
 
     pub(crate) fn view_missing_for_model(&self, id: &db::ModelId) -> bool {
-        self.introspection_map.missing_views_for_previous_models.contains(id)
+        self.introspection_map
+            .missing_views_for_previous_models
+            .contains(id)
     }
 
     pub(crate) fn inline_relations_for_table(

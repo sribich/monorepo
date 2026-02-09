@@ -32,7 +32,8 @@ impl Serialize for RawJson {
     where
         S: serde::Serializer,
     {
-        let raw_value = RawValue::from_string(self.value.to_owned()).map_err(serde::ser::Error::custom)?;
+        let raw_value =
+            RawValue::from_string(self.value.to_owned()).map_err(serde::ser::Error::custom)?;
         raw_value.serialize(serializer)
     }
 }

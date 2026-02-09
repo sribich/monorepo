@@ -6954,10 +6954,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "prisma-lsp"
-version = "0.0.0"
-
-[[package]]
 name = "prisma-metrics"
 version = "0.1.0"
 dependencies = [

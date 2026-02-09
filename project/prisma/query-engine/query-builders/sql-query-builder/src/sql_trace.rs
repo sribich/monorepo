@@ -1,4 +1,7 @@
-use quaint::ast::{Delete, Insert, Select, Update};
+use quaint::ast::Delete;
+use quaint::ast::Insert;
+use quaint::ast::Select;
+use quaint::ast::Update;
 use telemetry::TraceParent;
 
 pub trait SqlTraceComment: Sized {

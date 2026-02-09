@@ -1,9 +1,9 @@
 use itertools::Itertools;
 
 use super::*;
-
 use crate::ScalarCompare;
-use crate::{SelectedField, SelectionResult};
+use crate::SelectedField;
+use crate::SelectionResult;
 
 pub trait IntoFilter {
     fn filter(self) -> Filter;

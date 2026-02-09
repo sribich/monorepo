@@ -2,7 +2,9 @@ use barrel::types;
 use sql_introspection_tests::test_api::*;
 
 #[test_connector(tags(Postgres))]
-async fn relations_between_ignored_models_should_not_have_field_level_ignores(api: &mut TestApi) -> TestResult {
+async fn relations_between_ignored_models_should_not_have_field_level_ignores(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {
@@ -91,7 +93,10 @@ async fn unsupported_type_keeps_its_usages(api: &mut TestApi) -> TestResult {
                 t.add_column("dummy", types::integer());
                 t.add_column("broken", types::custom("macaddr"));
                 t.add_index("unique", types::index(vec!["broken", "dummy"]).unique(true));
-                t.add_index("non_unique", types::index(vec!["broken", "dummy"]).unique(false));
+                t.add_index(
+                    "non_unique",
+                    types::index(vec!["broken", "dummy"]).unique(false),
+                );
                 t.set_primary_key(&["broken", "dummy"]);
             });
         })
@@ -140,7 +145,9 @@ async fn a_table_with_only_an_unsupported_id(api: &mut TestApi) -> TestResult {
                 t.add_column("dummy", types::integer());
                 t.add_column(
                     "network_mac",
-                    types::custom("macaddr").primary(true).default("08:00:2b:01:02:03"),
+                    types::custom("macaddr")
+                        .primary(true)
+                        .default("08:00:2b:01:02:03"),
                 );
             });
         })
@@ -287,7 +294,9 @@ async fn commenting_out_a_table_without_columns(api: &mut TestApi) -> TestResult
 }
 
 #[test_connector(tags(Postgres))]
-async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(api: &mut TestApi) -> TestResult {
+async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(
+    api: &mut TestApi,
+) -> TestResult {
     api.barrel()
         .execute(|migration| {
             migration.create_table("User", |t| {
@@ -326,9 +335,7 @@ async fn ignore_on_back_relation_field_if_pointing_to_ignored_model(api: &mut Te
 
 // Postgres9 does not support partition tables, and Postgres10 does not support primary keys on
 // partition tables without an workaround (see the following tests for details).
-#[test_connector(
-    tags(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16)
-)]
+#[test_connector(tags(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16))]
 async fn partition_table_gets_comment(api: &mut TestApi) -> TestResult {
     api.raw_cmd(
         r#"

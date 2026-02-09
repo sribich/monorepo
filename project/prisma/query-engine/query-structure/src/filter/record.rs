@@ -1,6 +1,5 @@
-use crate::SelectionResult;
-
 use super::Filter;
+use crate::SelectionResult;
 
 /// A wrapper struct allowing to either filter for records or for the core to
 /// communicate already known record selectors to connectors.

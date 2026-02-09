@@ -1,19 +1,32 @@
-use crate::{ParserDatabase, ValidatedSchema};
+use std::borrow::Cow;
+use std::collections::HashMap;
+
 use cruet::Inflector;
 use diagnostics::FileId;
-use parser_database::{NoExtensionTypes, ast::WithSpan, walkers};
-use psl_ast::{SourceFile, ast};
-use std::{borrow::Cow, collections::HashMap};
+use parser_database::NoExtensionTypes;
+use parser_database::ast::WithSpan;
+use parser_database::walkers;
+use psl_ast::SourceFile;
+use psl_ast::ast;
+
+use crate::ParserDatabase;
+use crate::ValidatedSchema;
 
 /// Returns either the reformatted schema, or the original input if we can't reformat. This happens
 /// if and only if the source does not parse to a well formed AST.
 pub fn reformat(source: &str, indent_width: usize) -> Option<String> {
-    let reformatted = reformat_multiple(vec![("schema.prisma".to_owned(), source.into())], indent_width);
+    let reformatted = reformat_multiple(
+        vec![("schema.prisma".to_owned(), source.into())],
+        indent_width,
+    );
 
     reformatted.first().map(|(_, source)| source).cloned()
 }
 
-pub fn reformat_validated_schema_into_single(schema: ValidatedSchema, indent_width: usize) -> Option<String> {
+pub fn reformat_validated_schema_into_single(
+    schema: ValidatedSchema,
+    indent_width: usize,
+) -> Option<String> {
     let db = schema.db;
 
     let source = db
@@ -25,7 +38,10 @@ pub fn reformat_validated_schema_into_single(schema: ValidatedSchema, indent_wid
     psl_ast::reformat(&source, indent_width)
 }
 
-pub fn reformat_multiple(sources: Vec<(String, SourceFile)>, indent_width: usize) -> Vec<(String, String)> {
+pub fn reformat_multiple(
+    sources: Vec<(String, SourceFile)>,
+    indent_width: usize,
+) -> Vec<(String, String)> {
     let mut diagnostics = diagnostics::Diagnostics::new();
     let db = parser_database::ParserDatabase::new(&sources, &mut diagnostics, &NoExtensionTypes);
 
@@ -77,7 +93,11 @@ impl MagicReformatCtx<'_> {
 
     fn get_missing_bits(&self, file_id: FileId) -> Option<&Vec<MissingBit>> {
         let bits_vec = self.missing_bits_map.get(&file_id)?;
-        if bits_vec.is_empty() { None } else { Some(bits_vec) }
+        if bits_vec.is_empty() {
+            None
+        } else {
+            Some(bits_vec)
+        }
     }
 
     fn sort_missing_bits(&mut self) {
@@ -88,14 +108,22 @@ impl MagicReformatCtx<'_> {
 }
 
 fn enrich(input: &str, missing_bits: &[MissingBit]) -> String {
-    let bits = missing_bits.iter().scan(0usize, |last_insert_position, missing_bit| {
-        let start: usize = *last_insert_position;
-        *last_insert_position = missing_bit.position;
+    let bits = missing_bits
+        .iter()
+        .scan(0usize, |last_insert_position, missing_bit| {
+            let start: usize = *last_insert_position;
+            *last_insert_position = missing_bit.position;
 
-        Some((start, missing_bit.position, &missing_bit.content))
-    });
+            Some((start, missing_bit.position, &missing_bit.content))
+        });
 
-    let mut out = String::with_capacity(input.len() + missing_bits.iter().map(|mb| mb.content.len()).sum::<usize>());
+    let mut out = String::with_capacity(
+        input.len()
+            + missing_bits
+                .iter()
+                .map(|mb| mb.content.len())
+                .sum::<usize>(),
+    );
 
     for (start, end, insert_content) in bits {
         out.push_str(&input[start..end]);
@@ -173,7 +201,10 @@ fn push_missing_attributes(ctx: &mut MagicReformatCtx<'_>) {
     }
 }
 
-fn push_missing_relation_attribute(inline_relation: walkers::InlineRelationWalker<'_>, ctx: &mut MagicReformatCtx<'_>) {
+fn push_missing_relation_attribute(
+    inline_relation: walkers::InlineRelationWalker<'_>,
+    ctx: &mut MagicReformatCtx<'_>,
+) {
     if let Some(forward) = inline_relation.forward_relation_field() {
         if forward.relation_attribute().is_some() {
             return;
@@ -189,7 +220,10 @@ fn push_missing_relation_attribute(inline_relation: walkers::InlineRelationWalke
         ctx.add_missing_bit(
             file_id,
             MissingBit {
-                position: after_type(forward.ast_field().field_type.span().end, ctx.db.source(file_id)),
+                position: after_type(
+                    forward.ast_field().field_type.span().end,
+                    ctx.db.source(file_id),
+                ),
                 content,
             },
         );
@@ -205,12 +239,18 @@ fn push_missing_fields(ctx: &mut MagicReformatCtx<'_>) {
     }
 }
 
-fn push_missing_fields_for_relation(relation: walkers::InlineRelationWalker<'_>, ctx: &mut MagicReformatCtx<'_>) {
+fn push_missing_fields_for_relation(
+    relation: walkers::InlineRelationWalker<'_>,
+    ctx: &mut MagicReformatCtx<'_>,
+) {
     push_missing_relation_fields(relation, ctx);
     push_missing_scalar_fields(relation, ctx);
 }
 
-fn push_missing_relation_fields(inline: walkers::InlineRelationWalker<'_>, ctx: &mut MagicReformatCtx<'_>) {
+fn push_missing_relation_fields(
+    inline: walkers::InlineRelationWalker<'_>,
+    ctx: &mut MagicReformatCtx<'_>,
+) {
     if inline.back_relation_field().is_none() {
         let referencing_model_name = inline.referencing_model().name();
         let ignore = if inline.referencing_model().is_ignored() {
@@ -262,7 +302,10 @@ fn push_missing_relation_fields(inline: walkers::InlineRelationWalker<'_>, ctx: 
     }
 }
 
-fn push_missing_scalar_fields(inline: walkers::InlineRelationWalker<'_>, ctx: &mut MagicReformatCtx<'_>) {
+fn push_missing_scalar_fields(
+    inline: walkers::InlineRelationWalker<'_>,
+    ctx: &mut MagicReformatCtx<'_>,
+) {
     let missing_scalar_fields: Vec<InferredScalarField<'_>> = match inline.referencing_fields() {
         Some(_) => return,
         None => infer_missing_referencing_scalar_fields(inline),
@@ -286,7 +329,8 @@ fn push_missing_scalar_fields(inline: walkers::InlineRelationWalker<'_>, ctx: &m
         let arity = render_arity(field.arity);
 
         let mut attributes: String = String::new();
-        if let Some((_datasource_name, _type_name, _args, span)) = field.blueprint.raw_native_type() {
+        if let Some((_datasource_name, _type_name, _args, span)) = field.blueprint.raw_native_type()
+        {
             attributes.push_str(&ctx.db.source(span.file_id)[span.start..span.end]);
         }
 
@@ -309,7 +353,9 @@ struct InferredScalarField<'db> {
     blueprint: walkers::ScalarFieldWalker<'db>,
 }
 
-fn infer_missing_referencing_scalar_fields(inline: walkers::InlineRelationWalker<'_>) -> Vec<InferredScalarField<'_>> {
+fn infer_missing_referencing_scalar_fields(
+    inline: walkers::InlineRelationWalker<'_>,
+) -> Vec<InferredScalarField<'_>> {
     match inline.referenced_model().unique_criterias().next() {
         Some(first_unique_criteria) => {
             first_unique_criteria
@@ -324,8 +370,10 @@ fn infer_missing_referencing_scalar_fields(inline: walkers::InlineRelationWalker
                     // we cannot have composite fields in a relation for now.
                     let field = field.as_scalar_field().unwrap();
 
-                    if let Some(existing_field) =
-                        inline.referencing_model().scalar_fields().find(|sf| sf.name() == name)
+                    if let Some(existing_field) = inline
+                        .referencing_model()
+                        .scalar_fields()
+                        .find(|sf| sf.name() == name)
                     {
                         InferredScalarField {
                             name,

@@ -1,10 +1,15 @@
 #![allow(dead_code)]
 
-use indoc::indoc;
-use psl::{SourceFile, parser_database::NoExtensionTypes};
-use schema_core::{commands::diff::{DiffParams, DiffTarget}, json_rpc::types::SchemasContainer, schema_connector};
-use sql_migration_tests::test_api::*;
 use std::fmt::Write as _;
+
+use indoc::indoc;
+use psl::SourceFile;
+use psl::parser_database::NoExtensionTypes;
+use schema_core::commands::diff::DiffParams;
+use schema_core::commands::diff::DiffTarget;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector;
+use sql_migration_tests::test_api::*;
 
 // We need to test this specifically for mysql, because foreign keys are indexes, and they are
 // inferred as both foreign key and index by the sql-schema-describer. We do not want to
@@ -191,31 +196,52 @@ fn arity_is_preserved_by_alter_enum(api: TestApi) {
 #[test_connector(tags(Mysql))]
 fn native_type_columns_can_be_created(api: TestApi) {
     let types = &[
-        ("int", "Int", "Int", if api.is_mysql_8() { "int" } else { "int(11)" }),
+        (
+            "int",
+            "Int",
+            "Int",
+            if api.is_mysql_8() { "int" } else { "int(11)" },
+        ),
         (
             "smallint",
             "Int",
             "SmallInt",
-            if api.is_mysql_8() { "smallint" } else { "smallint(6)" },
+            if api.is_mysql_8() {
+                "smallint"
+            } else {
+                "smallint(6)"
+            },
         ),
         ("tinyint", "Boolean", "TinyInt", "tinyint(1)"),
         (
             "tinyintInt",
             "Int",
             "TinyInt",
-            if api.is_mysql_8() { "tinyint" } else { "tinyint(4)" },
+            if api.is_mysql_8() {
+                "tinyint"
+            } else {
+                "tinyint(4)"
+            },
         ),
         (
             "mediumint",
             "Int",
             "MediumInt",
-            if api.is_mysql_8() { "mediumint" } else { "mediumint(9)" },
+            if api.is_mysql_8() {
+                "mediumint"
+            } else {
+                "mediumint(9)"
+            },
         ),
         (
             "bigint",
             "BigInt",
             "BigInt",
-            if api.is_mysql_8() { "bigint" } else { "bigint(20)" },
+            if api.is_mysql_8() {
+                "bigint"
+            } else {
+                "bigint(20)"
+            },
         ),
         ("decimal", "Decimal", "Decimal(5, 3)", "decimal(5,3)"),
         ("float", "Float", "Float", "float"),
@@ -236,14 +262,24 @@ fn native_type_columns_can_be_created(api: TestApi) {
         ("longText", "String", "LongText", "longtext"),
         ("date", "DateTime", "Date", "date"),
         ("timeWithPrecision", "DateTime", "Time(3)", "time(3)"),
-        ("dateTimeWithPrecision", "DateTime", "DateTime(3)", "datetime(3)"),
+        (
+            "dateTimeWithPrecision",
+            "DateTime",
+            "DateTime(3)",
+            "datetime(3)",
+        ),
         (
             "timestampWithPrecision",
             "DateTime @default(now())",
             "Timestamp(3)",
             "timestamp(3)",
         ),
-        ("year", "Int", "Year", if api.is_mysql_8() { "year" } else { "year(4)" }),
+        (
+            "year",
+            "Int",
+            "Year",
+            if api.is_mysql_8() { "year" } else { "year(4)" },
+        ),
     ];
 
     let mut dm = r#"
@@ -270,7 +306,10 @@ fn native_type_columns_can_be_created(api: TestApi) {
     });
 
     // Check that the migration is idempotent
-    api.schema_push_w_datasource(dm).send().assert_green().assert_no_steps();
+    api.schema_push_w_datasource(dm)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mysql))]
@@ -300,7 +339,9 @@ fn default_current_timestamp_precision_follows_column_precision(api: TestApi) {
 
     api.create_migration("01init", &dm, &migrations_directory)
         .send_sync()
-        .assert_migration("01init", |migration| migration.assert_contents(expected_migration));
+        .assert_migration("01init", |migration| {
+            migration.assert_contents(expected_migration)
+        });
 }
 
 #[test_connector(tags(Mysql))]
@@ -334,7 +375,9 @@ fn datetime_dbgenerated_defaults(api: TestApi) {
 
     api.create_migration("01init", &dm, &migrations_directory)
         .send_sync()
-        .assert_migration("01init", |migration| migration.assert_contents(expected_migration));
+        .assert_migration("01init", |migration| {
+            migration.assert_contents(expected_migration)
+        });
 }
 
 #[test_connector(tags(Mysql))]
@@ -499,7 +542,10 @@ fn dropping_m2m_relation_from_datamodel_works() {
     expected.assert_eq(&diff);
 }
 
-#[cfg_attr(not(target_os = "windows"), test_connector(tags(Mysql), exclude(Vitess)))]
+#[cfg_attr(
+    not(target_os = "windows"),
+    test_connector(tags(Mysql), exclude(Vitess))
+)]
 fn alter_constraint_name(mut api: TestApi) {
     let plain_dm = api.datamodel_with_provider(
         r#"
@@ -632,7 +678,10 @@ fn bigint_defaults_work(api: TestApi) {
     api.expect_sql_for_schema(schema, &sql);
 
     api.schema_push(schema).send().assert_green();
-    api.schema_push(schema).send().assert_green().assert_no_steps();
+    api.schema_push(schema)
+        .send()
+        .assert_green()
+        .assert_no_steps();
 }
 
 #[test_connector(tags(Mysql), exclude(Vitess))]
@@ -718,11 +767,17 @@ fn foreign_keys_covered_by_deleted_index_are_recreated(api: TestApi) {
 
     let diff = api.connector_diff(
         schema_connector::DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_a))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_a),
+            )],
             &NoExtensionTypes,
         ),
         schema_connector::DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_b))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_b),
+            )],
             &NoExtensionTypes,
         ),
         None,
@@ -816,11 +871,17 @@ fn foreign_keys_covered_by_deleted_index_are_also_deleted(api: TestApi) {
 
     let diff = api.connector_diff(
         schema_connector::DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_a))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_a),
+            )],
             &NoExtensionTypes,
         ),
         schema_connector::DiffTarget::Datamodel(
-            vec![("schema.prisma".to_string(), SourceFile::new_static(schema_b))],
+            vec![(
+                "schema.prisma".to_string(),
+                SourceFile::new_static(schema_b),
+            )],
             &NoExtensionTypes,
         ),
         None,

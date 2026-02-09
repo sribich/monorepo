@@ -1,6 +1,7 @@
 use query_core::CoreError;
 use thiserror::Error;
-use user_facing_errors::{KnownError, UnknownError};
+use user_facing_errors::KnownError;
+use user_facing_errors::UnknownError;
 
 #[derive(Debug, Error)]
 #[allow(clippy::large_enum_variant)]
@@ -36,7 +37,10 @@ impl HandlerError {
     pub fn unsupported_feature(feature_name: &'static str, message: impl ToString) -> Self {
         let message = message.to_string();
 
-        Self::UnsupportedFeature { feature_name, message }
+        Self::UnsupportedFeature {
+            feature_name,
+            message,
+        }
     }
 
     pub fn value_fit(details: impl ToString) -> Self {

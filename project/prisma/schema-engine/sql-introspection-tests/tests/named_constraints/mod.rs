@@ -19,7 +19,10 @@ async fn introspecting_non_default_pkey_names_works(api: &mut TestApi) -> TestRe
             migration.create_table("Compound", move |t| {
                 t.add_column("a", types::integer().increments(false).nullable(false));
                 t.add_column("b", types::integer().increments(false).nullable(false));
-                t.add_constraint("SomethingCustomCompound", types::primary_constraint(["a", "b"]));
+                t.add_constraint(
+                    "SomethingCustomCompound",
+                    types::primary_constraint(["a", "b"]),
+                );
             });
         })
         .await?;
@@ -89,7 +92,10 @@ async fn introspecting_non_default_unique_constraint_names_works(api: &mut TestA
             migration.create_table("Compound", move |t| {
                 t.add_column("a", types::integer().increments(false).nullable(false));
                 t.add_column("b", types::integer().increments(false).nullable(false));
-                t.add_constraint("SomethingCustomCompound", types::unique_constraint(["a", "b"]));
+                t.add_constraint(
+                    "SomethingCustomCompound",
+                    types::unique_constraint(["a", "b"]),
+                );
             });
         })
         .await?;

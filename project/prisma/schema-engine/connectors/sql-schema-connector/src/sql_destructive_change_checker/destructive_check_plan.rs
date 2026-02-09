@@ -1,13 +1,17 @@
-use super::{
-    check::Check, database_inspection_results::DatabaseInspectionResults,
-    unexecutable_step_check::UnexecutableStepCheck, warning_check::SqlMigrationWarningCheck,
-};
-use crate::flavour::SqlConnector;
-use crosstarget_utils::time::timeout;
-use schema_connector::{
-    ConnectorError, ConnectorResult, DestructiveChangeDiagnostics, MigrationWarning, UnexecutableMigration,
-};
 use std::time::Duration;
+
+use crosstarget_utils::time::timeout;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use schema_connector::DestructiveChangeDiagnostics;
+use schema_connector::MigrationWarning;
+use schema_connector::UnexecutableMigration;
+
+use super::check::Check;
+use super::database_inspection_results::DatabaseInspectionResults;
+use super::unexecutable_step_check::UnexecutableStepCheck;
+use super::warning_check::SqlMigrationWarningCheck;
+use crate::flavour::SqlConnector;
 
 const DESTRUCTIVE_TIMEOUT_DURATION: Duration = Duration::from_secs(60);
 
@@ -32,8 +36,13 @@ impl DestructiveCheckPlan {
         self.warnings.push((warning, step_index))
     }
 
-    pub fn push_unexecutable(&mut self, unexecutable_migration: UnexecutableStepCheck, step_index: usize) {
-        self.unexecutable_migrations.push((unexecutable_migration, step_index))
+    pub fn push_unexecutable(
+        &mut self,
+        unexecutable_migration: UnexecutableStepCheck,
+        step_index: usize,
+    ) {
+        self.unexecutable_migrations
+            .push((unexecutable_migration, step_index))
     }
 
     /// Inspect the current database state to qualify and render destructive change warnings and
@@ -49,11 +58,13 @@ impl DestructiveCheckPlan {
 
         let inspection = async {
             for (unexecutable, _idx) in &self.unexecutable_migrations {
-                self.inspect_for_check(unexecutable, connector, &mut results).await?;
+                self.inspect_for_check(unexecutable, connector, &mut results)
+                    .await?;
             }
 
             for (warning, _idx) in &self.warnings {
-                self.inspect_for_check(warning, connector, &mut results).await?;
+                self.inspect_for_check(warning, connector, &mut results)
+                    .await?;
             }
 
             Ok::<(), ConnectorError>(())
@@ -69,10 +80,12 @@ impl DestructiveCheckPlan {
 
         for (unexecutable, step_index) in &self.unexecutable_migrations {
             if let Some(message) = unexecutable.evaluate(&results) {
-                diagnostics.unexecutable_migrations.push(UnexecutableMigration {
-                    description: message,
-                    step_index: *step_index,
-                })
+                diagnostics
+                    .unexecutable_migrations
+                    .push(UnexecutableMigration {
+                        description: message,
+                        step_index: *step_index,
+                    })
             }
         }
 
@@ -124,10 +137,12 @@ impl DestructiveCheckPlan {
 
         for (unexecutable, step_index) in &self.unexecutable_migrations {
             if let Some(message) = unexecutable.evaluate(&results) {
-                diagnostics.unexecutable_migrations.push(UnexecutableMigration {
-                    description: message,
-                    step_index: *step_index,
-                })
+                diagnostics
+                    .unexecutable_migrations
+                    .push(UnexecutableMigration {
+                        description: message,
+                        step_index: *step_index,
+                    })
             }
         }
 

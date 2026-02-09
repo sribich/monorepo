@@ -1,9 +1,8 @@
-use std::{
-    cell::RefCell,
-    future::Future,
-    pin::Pin,
-    task::{Context, Poll},
-};
+use std::cell::RefCell;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::Context;
+use std::task::Poll;
 
 use futures::future::Either;
 use pin_project::pin_project;
@@ -27,12 +26,18 @@ thread_local! {
 pub trait WithMetricsInstrumentation: Sized {
     /// Instruments the type with a [`MetricRecorder`].
     fn with_recorder(self, recorder: MetricRecorder) -> WithRecorder<Self> {
-        WithRecorder { inner: self, recorder }
+        WithRecorder {
+            inner: self,
+            recorder,
+        }
     }
 
     /// Instruments the type with an [`MetricRecorder`] if it is a `Some` or returns `self` as is
     /// if the `recorder` is a `None`.
-    fn with_optional_recorder(self, recorder: Option<MetricRecorder>) -> Either<WithRecorder<Self>, Self> {
+    fn with_optional_recorder(
+        self,
+        recorder: Option<MetricRecorder>,
+    ) -> Either<WithRecorder<Self>, Self> {
         match recorder {
             Some(recorder) => Either::Left(self.with_recorder(recorder)),
             None => Either::Right(self),

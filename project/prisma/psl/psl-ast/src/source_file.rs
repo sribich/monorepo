@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
+use serde::Deserializer;
 
 /// A Prisma schema document.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]

@@ -1,4 +1,5 @@
-use std::{num::ParseIntError, str::FromStr};
+use std::num::ParseIntError;
+use std::str::FromStr;
 
 use derive_more::Display;
 use thiserror::Error;
@@ -46,7 +47,9 @@ impl FromStr for TraceParent {
         let span_id = parts.next().ok_or(ParseTraceParentError::MissingSpanId)?;
         let span_id = span_id.parse()?;
 
-        let flags = parts.next().ok_or(ParseTraceParentError::MissingTraceFlags)?;
+        let flags = parts
+            .next()
+            .ok_or(ParseTraceParentError::MissingTraceFlags)?;
         let flags = flags.parse()?;
 
         Ok(TraceParent {
@@ -129,7 +132,10 @@ mod tests {
     fn test_invalid_version() {
         let traceparent = "01-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01";
         let result = traceparent.parse::<TraceParent>();
-        assert!(matches!(result, Err(ParseTraceParentError::UnsupportedVersion)));
+        assert!(matches!(
+            result,
+            Err(ParseTraceParentError::UnsupportedVersion)
+        ));
     }
 
     #[test]
@@ -150,14 +156,20 @@ mod tests {
     fn test_missing_flags() {
         let traceparent = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7";
         let result = traceparent.parse::<TraceParent>();
-        assert!(matches!(result, Err(ParseTraceParentError::MissingTraceFlags)));
+        assert!(matches!(
+            result,
+            Err(ParseTraceParentError::MissingTraceFlags)
+        ));
     }
 
     #[test]
     fn test_invalid_hex_values() {
         let traceparent = "00-xyz-00f067aa0ba902b7-01";
         let result = traceparent.parse::<TraceParent>();
-        assert!(matches!(result, Err(ParseTraceParentError::InvalidHexValue(_))));
+        assert!(matches!(
+            result,
+            Err(ParseTraceParentError::InvalidHexValue(_))
+        ));
     }
 
     #[test]

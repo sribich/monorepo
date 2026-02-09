@@ -1,7 +1,13 @@
-use diagnostics::{DatamodelError, Span};
-use parser_database::{ExtensionTypeEntry, ParserDatabase, ScalarFieldType};
+use std::any::Any;
+use std::borrow::Cow;
+use std::fmt;
+use std::sync::Arc;
 
-use std::{any::Any, borrow::Cow, fmt, sync::Arc};
+use diagnostics::DatamodelError;
+use diagnostics::Span;
+use parser_database::ExtensionTypeEntry;
+use parser_database::ParserDatabase;
+use parser_database::ScalarFieldType;
 
 /// Represents an available native type.
 #[derive(Debug, Clone)]
@@ -155,8 +161,8 @@ impl NativeTypeArguments for u32 {
 
 impl NativeTypeArguments for (u32, u32) {
     const DESCRIPTION: &'static str = "two nonnegative integers";
-    const REQUIRED_ARGUMENTS_COUNT: usize = 2;
     const OPTIONAL_ARGUMENTS_COUNT: usize = 0;
+    const REQUIRED_ARGUMENTS_COUNT: usize = 2;
 
     fn to_parts(&self) -> Vec<String> {
         vec![self.0.to_string(), self.1.to_string()]
@@ -172,8 +178,13 @@ impl NativeTypeArguments for (u32, u32) {
 
 #[derive(Debug)]
 pub enum NativeTypeParseError<'a> {
-    InvalidArgs { expected: &'static str, found: String },
-    UnknownType { name: &'a str },
+    InvalidArgs {
+        expected: &'static str,
+        found: String,
+    },
+    UnknownType {
+        name: &'a str,
+    },
 }
 
 impl NativeTypeParseError<'_> {
@@ -182,7 +193,9 @@ impl NativeTypeParseError<'_> {
             NativeTypeParseError::InvalidArgs { expected, found } => {
                 DatamodelError::new_value_parser_error(expected, &found, span)
             }
-            NativeTypeParseError::UnknownType { name } => DatamodelError::new_native_type_parser_error(name, span),
+            NativeTypeParseError::UnknownType { name } => {
+                DatamodelError::new_native_type_parser_error(name, span)
+            }
         }
     }
 }

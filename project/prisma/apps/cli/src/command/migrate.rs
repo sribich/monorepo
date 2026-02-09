@@ -1,40 +1,43 @@
-use std::{
-    fs::{create_dir, create_dir_all},
-    path::PathBuf,
-    str::FromStr,
-    sync::Arc,
-};
+use std::fs::create_dir;
+use std::fs::create_dir_all;
+use std::path::PathBuf;
+use std::str::FromStr;
+use std::sync::Arc;
 
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use clap::Subcommand;
 use colored::Colorize;
 use indoc::printdoc;
-use psl::{IntoConfiguredExt, IntoValidatedExt, SchemaExt, Validated};
+use psl::IntoConfiguredExt;
+use psl::IntoValidatedExt;
+use psl::SchemaExt;
+use psl::Validated;
 use psl_ast::SchemaParser;
 // use psl::{Datasource, SchemaExt, SchemaParser};
 // use psl_ast::SourceFile;
 use psl_schema::Schema;
-
-use crate::{
-    command::generate::{self, GenerateArgs},
-    slug::slugify,
-    util::Pluralize,
-};
-use schema_core::{
-    commands::{
-        apply_migrations::{ApplyMigrationsInput, ApplyMigrationsOutput},
-        create_migration::{CreateMigrationInput, CreateMigrationOutput},
-        dev_diagnostic::{DevAction, DevDiagnosticInput, DevDiagnosticOutput},
-        diagnose_migration_history::{DiagnoseMigrationHistoryInput, HistoryDiagnostic},
-        ensure_connection_validity::EnsureConnectionValidityParams,
-        evaluate_data_loss::{EvaluateDataLossInput, EvaluateDataLossOutput},
-    },
-    json_rpc::types::{
-        DatasourceParam, MigrationDirectory, MigrationFile, MigrationList, MigrationLockfile, SchemaContainer,
-        SchemasContainer,
-    },
-    state::{EngineExt, EngineState},
-};
+use schema_core::commands::apply_migrations::ApplyMigrationsInput;
+use schema_core::commands::apply_migrations::ApplyMigrationsOutput;
+use schema_core::commands::create_migration::CreateMigrationInput;
+use schema_core::commands::create_migration::CreateMigrationOutput;
+use schema_core::commands::dev_diagnostic::DevAction;
+use schema_core::commands::dev_diagnostic::DevDiagnosticInput;
+use schema_core::commands::dev_diagnostic::DevDiagnosticOutput;
+use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
+use schema_core::commands::diagnose_migration_history::HistoryDiagnostic;
+use schema_core::commands::ensure_connection_validity::EnsureConnectionValidityParams;
+use schema_core::commands::evaluate_data_loss::EvaluateDataLossInput;
+use schema_core::commands::evaluate_data_loss::EvaluateDataLossOutput;
+use schema_core::json_rpc::types::DatasourceParam;
+use schema_core::json_rpc::types::MigrationDirectory;
+use schema_core::json_rpc::types::MigrationFile;
+use schema_core::json_rpc::types::MigrationList;
+use schema_core::json_rpc::types::MigrationLockfile;
+use schema_core::json_rpc::types::SchemaContainer;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::state::EngineExt;
+use schema_core::state::EngineState;
 /*
 use schema_core::{
     ExtensionTypeConfig,
@@ -49,7 +52,12 @@ use schema_core::{
  */
 use tracing::debug;
 
-use crate::{path::diff_paths, util::print_datasource};
+use crate::command::generate::GenerateArgs;
+use crate::command::generate::{self};
+use crate::path::diff_paths;
+use crate::slug::slugify;
+use crate::util::Pluralize;
+use crate::util::print_datasource;
 
 #[derive(Parser)]
 #[command(name = "workspace")]
@@ -192,7 +200,12 @@ async fn can_connect_to_database(state: &EngineState) -> bool {
 
 trait SchemaMigrationExt {
     async fn apply_migrations(&self, engine: &EngineState) -> ApplyMigrationsOutput;
-    async fn create_migration(&self, engine: &EngineState, name: String, create_only: bool) -> CreateMigrationOutput;
+    async fn create_migration(
+        &self,
+        engine: &EngineState,
+        name: String,
+        create_only: bool,
+    ) -> CreateMigrationOutput;
     async fn dev_diagnostic(&self, engine: &EngineState) -> DevDiagnosticOutput;
     async fn evaluate_data_loss(&self, engine: &EngineState) -> EvaluateDataLossOutput;
 
@@ -210,7 +223,12 @@ impl SchemaMigrationExt for Schema<Validated> {
             .unwrap()
     }
 
-    async fn create_migration(&self, engine: &EngineState, name: String, create_only: bool) -> CreateMigrationOutput {
+    async fn create_migration(
+        &self,
+        engine: &EngineState,
+        name: String,
+        create_only: bool,
+    ) -> CreateMigrationOutput {
         let migration = engine
             .create_migration(CreateMigrationInput {
                 draft: create_only,
@@ -275,7 +293,12 @@ impl SchemaMigrationExt for Schema<Validated> {
         MigrationList {
             base_dir: migrations.root().to_str().unwrap().to_owned(),
             lockfile: MigrationLockfile {
-                path: migrations.root().join("migrations.lock").to_str().unwrap().to_string(),
+                path: migrations
+                    .root()
+                    .join("migrations.lock")
+                    .to_str()
+                    .unwrap()
+                    .to_string(),
                 content: None,
             },
             shadow_db_init_script: "".to_owned(),
@@ -342,7 +365,10 @@ async fn migrate_dev() -> Result<()> {
     let data_loss = schema.evaluate_data_loss(&engine).await;
 
     if !data_loss.unexecutable_steps.is_empty() {
-        println!("\n{}", "⚠️ We found changes that cannot be executed:".bold().red());
+        println!(
+            "\n{}",
+            "⚠️ We found changes that cannot be executed:".bold().red()
+        );
 
         for item in data_loss.unexecutable_steps {
             println!("  • Step {} {}", item.step_index, item.message);
@@ -366,7 +392,10 @@ async fn migrate_dev() -> Result<()> {
     }
 
     if !data_loss.warnings.is_empty() {
-        println!("\n{}", "⚠️ Warnings for the current datasource:".bold().yellow());
+        println!(
+            "\n{}",
+            "⚠️ Warnings for the current datasource:".bold().yellow()
+        );
 
         for item in data_loss.warnings {
             println!("  • {}", item.message);
@@ -495,7 +524,11 @@ async fn migrate_status() -> Result<()> {
 
     print_datasource(&config);
 
-    let engine = Schema::new().parse().into_configured().into_validated().into_engine();
+    let engine = Schema::new()
+        .parse()
+        .into_configured()
+        .into_validated()
+        .into_engine();
     let schema = Schema::new().parse();
 
     let migrations = schema.paths().unwrap().migrations().unwrap();
@@ -507,7 +540,12 @@ async fn migrate_status() -> Result<()> {
             migrations_list: MigrationList {
                 base_dir: migrations.root().to_str().unwrap().to_owned(),
                 lockfile: MigrationLockfile {
-                    path: migrations.root().join("migrations.lock").to_str().unwrap().to_string(),
+                    path: migrations
+                        .root()
+                        .join("migrations.lock")
+                        .to_str()
+                        .unwrap()
+                        .to_string(),
                     content: None,
                 },
                 shadow_db_init_script: "".to_owned(),
@@ -641,7 +679,9 @@ TODO
             "prisma migrate resolve --rolled-back TODO_MIGRATION_NAME"
                 .bold()
                 .green(),
-            "prisma migrate resolve --applied TODO_MIGRATION_NAME".bold().green()
+            "prisma migrate resolve --applied TODO_MIGRATION_NAME"
+                .bold()
+                .green()
         );
 
         std::process::exit(1);

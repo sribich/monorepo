@@ -1,7 +1,14 @@
-use crate::value::{Array, Documentation, Env, Text, Value};
 use core::fmt;
+use std::borrow::Cow;
+use std::default::Default;
+
 use psl::datamodel_connector::RelationMode;
-use std::{borrow::Cow, default::Default};
+
+use crate::value::Array;
+use crate::value::Documentation;
+use crate::value::Env;
+use crate::value::Text;
+use crate::value::Value;
 
 /// The datasource block in a PSL file.
 #[derive(Debug)]
@@ -107,7 +114,10 @@ impl<'a> Datasource<'a> {
 
     /// Create a rendering from a PSL datasource.
     pub fn from_psl(psl_ds: &'a psl::Datasource, force_namespaces: Option<&'a [String]>) -> Self {
-        let shadow_database_url = psl_ds.shadow_database_url.as_ref().map(|(url, _)| Env::from(url));
+        let shadow_database_url = psl_ds
+            .shadow_database_url
+            .as_ref()
+            .map(|(url, _)| Env::from(url));
 
         let namespaces: Vec<Text<_>> = match force_namespaces {
             Some(namespaces) => namespaces
@@ -130,7 +140,11 @@ impl<'a> Datasource<'a> {
             direct_url: psl_ds.direct_url.as_ref().map(Env::from),
             shadow_database_url,
             relation_mode: psl_ds.relation_mode,
-            documentation: psl_ds.documentation.as_deref().map(Cow::Borrowed).map(Documentation),
+            documentation: psl_ds
+                .documentation
+                .as_deref()
+                .map(Cow::Borrowed)
+                .map(Documentation),
             custom_properties: Default::default(),
             namespaces: Array::from(namespaces),
         }
@@ -174,15 +188,19 @@ impl fmt::Display for Datasource<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{configuration::*, value::*};
     use expect_test::expect;
     use psl::datamodel_connector::RelationMode;
+
+    use crate::configuration::*;
+    use crate::value::*;
 
     #[test]
     fn kitchen_sink() {
         let mut datasource = Datasource::new("db", "postgres", Env::variable("DATABASE_URL"));
 
-        datasource.documentation("Here comes the sun king...\n\nEverybody's laughing,\nEverybody's happy!");
+        datasource.documentation(
+            "Here comes the sun king...\n\nEverybody's laughing,\nEverybody's happy!",
+        );
         datasource.shadow_database_url(Env::variable("SHADOW_DATABASE_URL"));
         datasource.relation_mode(RelationMode::ForeignKeys);
 

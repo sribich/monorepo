@@ -1,14 +1,22 @@
-use crate::{context::PrismaContext, features::Feature, logger::Logger};
 use enumflags2::make_bitflags;
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use query_core::protocol::EngineProtocol;
 use serde_json::json;
-use telemetry::{NextId, RequestId};
+use telemetry::NextId;
+use telemetry::RequestId;
+
+use crate::context::PrismaContext;
+use crate::features::Feature;
+use crate::logger::Logger;
 
 #[tokio::test]
 async fn connection_string_problems_give_a_nice_error() {
     let providers = &[
-        ("mysql", "mysql://root:password-with-#@localhost:3306/database"),
+        (
+            "mysql",
+            "mysql://root:password-with-#@localhost:3306/database",
+        ),
         (
             "postgresql",
             "postgresql://root:password-with-#@localhost:5432/postgres",

@@ -7,7 +7,8 @@ use query_engine::error::PrismaError;
 use query_engine::opt::PrismaOpt;
 use query_engine::server;
 use structopt::StructOpt;
-use tokio::{select, signal};
+use tokio::select;
+use tokio::signal;
 
 #[tokio::main]
 async fn main() {
@@ -30,7 +31,11 @@ async fn main() {
         .expect("main task panicked")
     };
 
-    let interrupt = async { signal::ctrl_c().await.expect("failed to listen for SIGINT/Ctrl+C") };
+    let interrupt = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to listen for SIGINT/Ctrl+C")
+    };
 
     #[cfg(unix)]
     let terminate = async {

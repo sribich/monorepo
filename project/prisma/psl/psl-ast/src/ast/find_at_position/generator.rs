@@ -1,4 +1,5 @@
-use super::{PropertyPosition, WithName};
+use super::PropertyPosition;
+use super::WithName;
 use crate::ast::{self};
 
 #[derive(Debug)]
@@ -19,7 +20,10 @@ impl<'ast> GeneratorPosition<'ast> {
 
         for property in &source.properties {
             if property.span.contains(position) {
-                return GeneratorPosition::Property(&property.name.name, PropertyPosition::new(property, position));
+                return GeneratorPosition::Property(
+                    &property.name.name,
+                    PropertyPosition::new(property, position),
+                );
             }
         }
 

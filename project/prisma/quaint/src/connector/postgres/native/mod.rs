@@ -264,9 +264,7 @@ impl<Cache: QueryCache> PostgreSql<Cache> {
         if let Some(_schema) = &url.query_params.schema {
             // PGBouncer does not support the search_path connection parameter.
             // https://www.pgbouncer.org/config.html#ignore_startup_parameters
-            if url.query_params.pg_bouncer
-                || url.flavour().is_unknown()
-            {
+            if url.query_params.pg_bouncer || url.flavour().is_unknown() {
                 let session_variables = format!(
                     r##"{set_search_path}"##,
                     set_search_path = SetSearchPath(url.query_params.schema.as_deref())

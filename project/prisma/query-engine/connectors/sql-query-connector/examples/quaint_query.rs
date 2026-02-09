@@ -1,9 +1,12 @@
-use quaint::{pooled::Quaint, prelude::Queryable};
 use std::time::Instant;
+
+use quaint::pooled::Quaint;
+use quaint::prelude::Queryable;
 
 #[tokio::main]
 async fn main() {
-    let url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set to a quaint-compatible database URL");
+    let url = std::env::var("DATABASE_URL")
+        .expect("DATABASE_URL must be set to a quaint-compatible database URL");
     let start = Instant::now();
 
     let now = Instant::now();

@@ -1,5 +1,8 @@
 use super::scalar::*;
-use crate::{Filter, JsonCompare, ScalarFieldRef, ScalarFilter};
+use crate::Filter;
+use crate::JsonCompare;
+use crate::ScalarFieldRef;
+use crate::ScalarFilter;
 
 #[derive(Debug, Clone, Eq, Hash, PartialEq)]
 pub enum JsonTargetType {
@@ -14,7 +17,12 @@ pub enum JsonFilterPath {
 }
 
 impl JsonCompare for ScalarFieldRef {
-    fn json_contains<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_contains<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {
@@ -29,7 +37,12 @@ impl JsonCompare for ScalarFieldRef {
         })
     }
 
-    fn json_not_contains<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_contains<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {
@@ -44,7 +57,12 @@ impl JsonCompare for ScalarFieldRef {
         })
     }
 
-    fn json_starts_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_starts_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {
@@ -59,7 +77,12 @@ impl JsonCompare for ScalarFieldRef {
         })
     }
 
-    fn json_not_starts_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_starts_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {
@@ -74,7 +97,12 @@ impl JsonCompare for ScalarFieldRef {
         })
     }
 
-    fn json_ends_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_ends_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {
@@ -89,7 +117,12 @@ impl JsonCompare for ScalarFieldRef {
         })
     }
 
-    fn json_not_ends_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_ends_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>,
     {

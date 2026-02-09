@@ -17,8 +17,9 @@ fn changing_the_type_of_an_id_field_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm1).send().assert_green();
 
-    api.assert_schema()
-        .assert_table("A", |table| table.assert_column("b_id", |col| col.assert_type_is_int()));
+    api.assert_schema().assert_table("A", |table| {
+        table.assert_column("b_id", |col| col.assert_type_is_int())
+    });
 
     let dm2 = r#"
         model A {

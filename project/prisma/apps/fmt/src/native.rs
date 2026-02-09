@@ -20,7 +20,9 @@ pub(crate) fn run(input: &str) -> String {
     }
 
     let datasource = &validated_configuration.datasources[0];
-    let available_native_type_constructors = datasource.active_connector.available_native_type_constructors();
+    let available_native_type_constructors = datasource
+        .active_connector
+        .available_native_type_constructors();
     let available_native_type_constructors: Vec<_> = available_native_type_constructors
         .iter()
         .filter_map(SerializableNativeTypeConstructor::new)

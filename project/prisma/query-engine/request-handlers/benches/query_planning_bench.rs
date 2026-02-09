@@ -1,8 +1,13 @@
-use codspeed_criterion_compat::{Criterion, black_box, criterion_group, criterion_main};
-use query_core::{query_graph_builder::QueryGraphBuilder, *};
+use std::sync::Arc;
+
+use codspeed_criterion_compat::Criterion;
+use codspeed_criterion_compat::black_box;
+use codspeed_criterion_compat::criterion_group;
+use codspeed_criterion_compat::criterion_main;
+use query_core::query_graph_builder::QueryGraphBuilder;
+use query_core::*;
 use request_handlers::JsonSingleQuery;
 use schema::QuerySchema;
-use std::sync::Arc;
 
 const SCHEMA: &str = include_str!("../../schema/test-schemas/odoo.prisma");
 

@@ -2,7 +2,8 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod many_nested_muts {
-    use query_engine_tests::{DatamodelWithParams, run_query};
+    use query_engine_tests::DatamodelWithParams;
+    use query_engine_tests::run_query;
     use query_test_macros::relation_link_test;
 
     //hardcoded execution order

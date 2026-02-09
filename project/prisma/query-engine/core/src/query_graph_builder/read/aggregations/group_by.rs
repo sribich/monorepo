@@ -1,10 +1,22 @@
-use super::*;
-use crate::{AggregateRecordsQuery, ArgumentListLookup, ParsedInputValue, ReadQuery, query_document::ParsedField};
-use query_structure::{Filter, Model, OrderBy, ScalarFieldRef};
-use schema::constants::args;
 use std::convert::TryInto;
 
-pub(crate) fn group_by(mut field: ParsedField<'_>, model: Model) -> QueryGraphBuilderResult<ReadQuery> {
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::OrderBy;
+use query_structure::ScalarFieldRef;
+use schema::constants::args;
+
+use super::*;
+use crate::AggregateRecordsQuery;
+use crate::ArgumentListLookup;
+use crate::ParsedInputValue;
+use crate::ReadQuery;
+use crate::query_document::ParsedField;
+
+pub(crate) fn group_by(
+    mut field: ParsedField<'_>,
+    model: Model,
+) -> QueryGraphBuilderResult<ReadQuery> {
     let name = field.name;
     let alias = field.alias;
     let model = model;
@@ -43,7 +55,10 @@ pub(crate) fn group_by(mut field: ParsedField<'_>, model: Model) -> QueryGraphBu
 
 /// Cross checks that the selections of the request are valid with regard to the requested group bys:
 /// Every plain scalar field in the selectors must be present in the group by as well.
-fn verify_selections(selectors: &[AggregationSelection], group_by: &[ScalarFieldRef]) -> QueryGraphBuilderResult<()> {
+fn verify_selections(
+    selectors: &[AggregationSelection],
+    group_by: &[ScalarFieldRef],
+) -> QueryGraphBuilderResult<()> {
     let mut missing_fields = vec![];
 
     for selector in selectors {
@@ -67,7 +82,10 @@ fn verify_selections(selectors: &[AggregationSelection], group_by: &[ScalarField
 
 /// Cross checks that the requested order-bys of the request are valid with regard to the requested group bys.
 /// Every ordered field must be present in the group by as well, except aggregation & relevance orderings, which are always valid.
-fn verify_orderings(orderings: &[OrderBy], group_by: &[ScalarFieldRef]) -> QueryGraphBuilderResult<()> {
+fn verify_orderings(
+    orderings: &[OrderBy],
+    group_by: &[ScalarFieldRef],
+) -> QueryGraphBuilderResult<()> {
     let mut missing_fields = vec![];
 
     for ordering in orderings {
@@ -89,7 +107,10 @@ fn verify_orderings(orderings: &[OrderBy], group_by: &[ScalarFieldRef]) -> Query
 }
 
 /// Cross checks that every scalar field used in `having` is either an aggregate or contained in the selectors.
-fn verify_having(having: Option<&Filter>, selectors: &[AggregationSelection]) -> QueryGraphBuilderResult<()> {
+fn verify_having(
+    having: Option<&Filter>,
+    selectors: &[AggregationSelection],
+) -> QueryGraphBuilderResult<()> {
     if let Some(filter) = having {
         let having_fields: Vec<&ScalarFieldRef> = collect_scalar_fields(filter);
         let selector_fields: Vec<&ScalarFieldRef> = selectors
@@ -140,9 +161,18 @@ fn collect_scalar_fields(filter: &Filter) -> Vec<&ScalarFieldRef> {
 /// Collects all referenced fields that are used in an aggregate filter
 fn collect_aggregate_field_refs(filter: &Filter) -> Vec<&ScalarFieldRef> {
     match filter {
-        Filter::And(inner) => inner.iter().flat_map(collect_aggregate_field_refs).collect(),
-        Filter::Or(inner) => inner.iter().flat_map(collect_aggregate_field_refs).collect(),
-        Filter::Not(inner) => inner.iter().flat_map(collect_aggregate_field_refs).collect(),
+        Filter::And(inner) => inner
+            .iter()
+            .flat_map(collect_aggregate_field_refs)
+            .collect(),
+        Filter::Or(inner) => inner
+            .iter()
+            .flat_map(collect_aggregate_field_refs)
+            .collect(),
+        Filter::Not(inner) => inner
+            .iter()
+            .flat_map(collect_aggregate_field_refs)
+            .collect(),
         Filter::Scalar(sf) => sf.as_field_ref().map(|sf| vec![sf]).unwrap_or_default(),
         Filter::Aggregation(af) => collect_aggregate_field_refs(af.filter()),
         _ => unreachable!(),

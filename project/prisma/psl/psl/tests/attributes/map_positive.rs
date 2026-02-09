@@ -27,5 +27,6 @@ fn map_attribute() {
 
     let post = schema.assert_has_model("Post");
     post.assert_mapped_name("posti");
-    post.assert_has_scalar_field("text").assert_mapped_name("post_text");
+    post.assert_has_scalar_field("text")
+        .assert_mapped_name("post_text");
 }

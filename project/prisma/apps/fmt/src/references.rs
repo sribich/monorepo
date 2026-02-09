@@ -1,20 +1,33 @@
 use log::*;
-use lsp_types::{Location, ReferenceParams, Url};
-use psl::{
-    Diagnostics, SourceFile,
-    diagnostics::{FileId, Span},
-    error_tolerant_parse_configuration,
-    parser_database::{NoExtensionTypes, ParserDatabase},
-    psl_ast::ast::{
-        AttributePosition, EnumPosition, Field, FieldId, FieldPosition, FieldType, ModelId,
-        ModelPosition, SchemaPosition, SourcePosition, Top, WithAttributes, WithIdentifier, WithName, WithSpan,
-    },
-};
+use lsp_types::Location;
+use lsp_types::ReferenceParams;
+use lsp_types::Url;
+use psl::Diagnostics;
+use psl::SourceFile;
+use psl::diagnostics::FileId;
+use psl::diagnostics::Span;
+use psl::error_tolerant_parse_configuration;
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::ParserDatabase;
+use psl::psl_ast::ast::AttributePosition;
+use psl::psl_ast::ast::EnumPosition;
+use psl::psl_ast::ast::Field;
+use psl::psl_ast::ast::FieldId;
+use psl::psl_ast::ast::FieldPosition;
+use psl::psl_ast::ast::FieldType;
+use psl::psl_ast::ast::ModelId;
+use psl::psl_ast::ast::ModelPosition;
+use psl::psl_ast::ast::SchemaPosition;
+use psl::psl_ast::ast::SourcePosition;
+use psl::psl_ast::ast::Top;
+use psl::psl_ast::ast::WithAttributes;
+use psl::psl_ast::ast::WithIdentifier;
+use psl::psl_ast::ast::WithName;
+use psl::psl_ast::ast::WithSpan;
 
-use crate::{
-    LSPContext,
-    offsets::{position_to_offset, span_to_range},
-};
+use crate::LSPContext;
+use crate::offsets::position_to_offset;
+use crate::offsets::span_to_range;
 
 pub(super) type ReferencesContext<'a> = LSPContext<'a, ReferenceParams>;
 
@@ -22,7 +35,10 @@ pub(crate) fn empty_references() -> Vec<Location> {
     Vec::new()
 }
 
-pub(crate) fn references(schema_files: Vec<(String, SourceFile)>, params: ReferenceParams) -> Vec<Location> {
+pub(crate) fn references(
+    schema_files: Vec<(String, SourceFile)>,
+    params: ReferenceParams,
+) -> Vec<Location> {
     let (_, config, _) = error_tolerant_parse_configuration(&schema_files);
 
     let db = {
@@ -30,14 +46,18 @@ pub(crate) fn references(schema_files: Vec<(String, SourceFile)>, params: Refere
         ParserDatabase::new(&schema_files, &mut diag, &NoExtensionTypes)
     };
 
-    let Some(initiating_file_id) = db.file_id(params.text_document_position.text_document.uri.as_str()) else {
+    let Some(initiating_file_id) =
+        db.file_id(params.text_document_position.text_document.uri.as_str())
+    else {
         warn!("Initating file name is not found in the schema");
         return empty_references();
     };
 
     let initiating_doc = db.source(initiating_file_id);
 
-    let position = if let Some(pos) = position_to_offset(&params.text_document_position.position, initiating_doc) {
+    let position = if let Some(pos) =
+        position_to_offset(&params.text_document_position.position, initiating_doc)
+    {
         pos
     } else {
         warn!("Received a position outside of the document boundaries in ReferenceParams");
@@ -56,7 +76,10 @@ pub(crate) fn references(schema_files: Vec<(String, SourceFile)>, params: Refere
     reference_locations_for_target(ctx, target_position)
 }
 
-fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosition) -> Vec<Location> {
+fn reference_locations_for_target(
+    ctx: ReferencesContext<'_>,
+    target: SchemaPosition,
+) -> Vec<Location> {
     let spans: Vec<Span> = match target {
         // Blocks
         SchemaPosition::Model(model_id, ModelPosition::Name(name)) => {
@@ -73,10 +96,12 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
                 .chain(find_where_used_as_field_type(&ctx, name))
                 .collect()
         }
-        SchemaPosition::DataSource(_, SourcePosition::Name(name)) => find_where_used_as_ds_name(&ctx, name)
-            .into_iter()
-            .chain(find_where_used_for_native_type(&ctx, name))
-            .collect(),
+        SchemaPosition::DataSource(_, SourcePosition::Name(name)) => {
+            find_where_used_as_ds_name(&ctx, name)
+                .into_iter()
+                .chain(find_where_used_for_native_type(&ctx, name))
+                .collect()
+        }
 
         // Fields
         SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Type(r#type))) => {
@@ -86,7 +111,10 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
                 .collect()
         }
 
-        SchemaPosition::Model(model_id, ModelPosition::Field(field_id, FieldPosition::Name(name))) => {
+        SchemaPosition::Model(
+            model_id,
+            ModelPosition::Field(field_id, FieldPosition::Name(name)),
+        ) => {
             let field = ctx.db.walk(((ctx.initiating_file_id, model_id), field_id));
 
             std::iter::once(field.ast_field().identifier().span())
@@ -110,18 +138,27 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
             model_id,
             ModelPosition::Field(
                 field_id,
-                FieldPosition::Attribute(_, _, AttributePosition::ArgumentValue(arg_name, arg_value)),
+                FieldPosition::Attribute(
+                    _,
+                    _,
+                    AttributePosition::ArgumentValue(arg_name, arg_value),
+                ),
             ),
         ) => match arg_name {
-            Some("fields") => find_where_used_as_field_name(&ctx, arg_value.as_str(), model_id, ctx.initiating_file_id)
-                .into_iter()
-                .chain(find_where_used_in_block_attribute(
-                    &ctx,
-                    arg_value.as_str(),
-                    model_id,
-                    ctx.initiating_file_id,
-                ))
-                .collect(),
+            Some("fields") => find_where_used_as_field_name(
+                &ctx,
+                arg_value.as_str(),
+                model_id,
+                ctx.initiating_file_id,
+            )
+            .into_iter()
+            .chain(find_where_used_in_block_attribute(
+                &ctx,
+                arg_value.as_str(),
+                model_id,
+                ctx.initiating_file_id,
+            ))
+            .collect(),
             Some("references") => {
                 let field = &ctx.db.ast(ctx.initiating_file_id)[model_id][field_id];
                 let referenced_model = field.field_type.name();
@@ -131,15 +168,20 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
                     return empty_references();
                 };
 
-                find_where_used_as_field_name(&ctx, arg_value.as_str(), ref_model_id.id.1, ref_model_id.id.0)
-                    .into_iter()
-                    .chain(find_where_used_in_block_attribute(
-                        &ctx,
-                        arg_value.as_str(),
-                        ref_model_id.id.1,
-                        ref_model_id.id.0,
-                    ))
-                    .collect()
+                find_where_used_as_field_name(
+                    &ctx,
+                    arg_value.as_str(),
+                    ref_model_id.id.1,
+                    ref_model_id.id.0,
+                )
+                .into_iter()
+                .chain(find_where_used_in_block_attribute(
+                    &ctx,
+                    arg_value.as_str(),
+                    ref_model_id.id.1,
+                    ref_model_id.id.0,
+                ))
+                .collect()
             }
             _ => vec![],
         },
@@ -147,32 +189,40 @@ fn reference_locations_for_target(ctx: ReferencesContext<'_>, target: SchemaPosi
         // ? This might make more sense to add as a definition rather than a reference
         SchemaPosition::Model(_, ModelPosition::Field(_, FieldPosition::Attribute(name, _, _))) => {
             match ctx.datasource().map(|ds| &ds.name) {
-                Some(ds_name) if name.contains(ds_name) => find_where_used_as_ds_name(&ctx, ds_name)
-                    .into_iter()
-                    .chain(find_where_used_for_native_type(&ctx, ds_name))
-                    .collect(),
+                Some(ds_name) if name.contains(ds_name) => {
+                    find_where_used_as_ds_name(&ctx, ds_name)
+                        .into_iter()
+                        .chain(find_where_used_for_native_type(&ctx, ds_name))
+                        .collect()
+                }
                 _ => vec![],
             }
         }
 
         SchemaPosition::Model(
             model_id,
-            ModelPosition::ModelAttribute(_attr_name, _, AttributePosition::ArgumentValue(_, arg_val)),
-        ) => find_where_used_as_field_name(&ctx, arg_val.as_str(), model_id, ctx.initiating_file_id)
-            .into_iter()
-            .chain(find_where_used_in_relation_attribute(
-                &ctx,
-                arg_val.as_str(),
-                model_id,
-                ctx.initiating_file_id,
-            ))
-            .chain(find_where_used_in_block_attribute(
-                &ctx,
-                arg_val.as_str(),
-                model_id,
-                ctx.initiating_file_id,
-            ))
-            .collect(),
+            ModelPosition::ModelAttribute(
+                _attr_name,
+                _,
+                AttributePosition::ArgumentValue(_, arg_val),
+            ),
+        ) => {
+            find_where_used_as_field_name(&ctx, arg_val.as_str(), model_id, ctx.initiating_file_id)
+                .into_iter()
+                .chain(find_where_used_in_relation_attribute(
+                    &ctx,
+                    arg_val.as_str(),
+                    model_id,
+                    ctx.initiating_file_id,
+                ))
+                .chain(find_where_used_in_block_attribute(
+                    &ctx,
+                    arg_val.as_str(),
+                    model_id,
+                    ctx.initiating_file_id,
+                ))
+                .collect()
+        }
 
         _ => vec![],
     };
@@ -200,9 +250,9 @@ fn find_where_used_in_relation_attribute<'a>(
                     .find(|arg| arg.name() == Some("fields") && arg.value.is_array())
                     .and_then(|arg| {
                         arg.value.as_array().and_then(|arr| {
-                            arr.0
-                                .iter()
-                                .find(|expr| expr.as_constant_value().is_some_and(|cv| cv.0 == name))
+                            arr.0.iter().find(|expr| {
+                                expr.as_constant_value().is_some_and(|cv| cv.0 == name)
+                            })
                         })
                     })
             })
@@ -218,19 +268,23 @@ fn find_where_used_in_block_attribute<'ast>(
 ) -> impl Iterator<Item = Span> + 'ast {
     let model = ctx.db.walk((file_id, model_id));
 
-    model.ast_model().attributes().iter().filter_map(move |attr| {
-        attr.arguments
-            .arguments
-            .iter()
-            .find_map(|arg| {
-                arg.value.as_array().and_then(|arr| {
-                    arr.0
-                        .iter()
-                        .find(|expr| expr.as_constant_value().is_some_and(|cv| cv.0 == name))
+    model
+        .ast_model()
+        .attributes()
+        .iter()
+        .filter_map(move |attr| {
+            attr.arguments
+                .arguments
+                .iter()
+                .find_map(|arg| {
+                    arg.value.as_array().and_then(|arr| {
+                        arr.0
+                            .iter()
+                            .find(|expr| expr.as_constant_value().is_some_and(|cv| cv.0 == name))
+                    })
                 })
-            })
-            .map(|arg| arg.span())
-    })
+                .map(|arg| arg.span())
+        })
 }
 
 fn find_where_used_as_field_name(
@@ -276,7 +330,10 @@ fn find_where_used_as_field_type<'ast>(
     ctx: &'ast ReferencesContext<'_>,
     name: &'ast str,
 ) -> impl Iterator<Item = Span> + 'ast {
-    fn get_relevent_identifiers<'a>(fields: impl Iterator<Item = (FieldId, &'a Field)>, name: &str) -> Vec<Span> {
+    fn get_relevent_identifiers<'a>(
+        fields: impl Iterator<Item = (FieldId, &'a Field)>,
+        name: &str,
+    ) -> Vec<Span> {
         fields
             .filter_map(|(_id, field)| match &field.field_type {
                 FieldType::Supported(id) if id.name == name => Some(id.span()),
@@ -292,11 +349,19 @@ fn find_where_used_as_field_type<'ast>(
     })
 }
 
-fn find_where_used_as_top_name<'ast>(ctx: &'ast ReferencesContext<'_>, name: &'ast str) -> Option<Span> {
-    ctx.db.find_top(name).map(|top| top.ast_top().identifier().span())
+fn find_where_used_as_top_name<'ast>(
+    ctx: &'ast ReferencesContext<'_>,
+    name: &'ast str,
+) -> Option<Span> {
+    ctx.db
+        .find_top(name)
+        .map(|top| top.ast_top().identifier().span())
 }
 
-fn find_where_used_as_ds_name<'ast>(ctx: &'ast ReferencesContext<'_>, name: &'ast str) -> Option<Span> {
+fn find_where_used_as_ds_name<'ast>(
+    ctx: &'ast ReferencesContext<'_>,
+    name: &'ast str,
+) -> Option<Span> {
     ctx.db
         .find_source(name)
         .map(|source| ctx.db.ast(source.0)[source.1].identifier().span())

@@ -2,16 +2,22 @@
 
 use std::pin::Pin;
 
-use crate::{
-    CoreError, Operation, ResponseData, TransactionError, TxId, execute_many_operations, execute_single_operation,
-};
-use connector::{Connection, Transaction};
+use connector::Connection;
+use connector::Transaction;
 use crosstarget_utils::time::ElapsedTimeCounter;
 use schema::QuerySchemaRef;
 use telemetry::TraceParent;
 use tokio::time::Duration;
 use tracing::Span;
 use tracing_futures::Instrument;
+
+use crate::CoreError;
+use crate::Operation;
+use crate::ResponseData;
+use crate::TransactionError;
+use crate::TxId;
+use crate::execute_many_operations;
+use crate::execute_single_operation;
 
 // Note: it's important to maintain the correct state of the transaction throughout execution. If
 // the transaction is ever left in the `Open` state after rollback or commit operations, it means
@@ -49,7 +55,10 @@ impl ClosedTransaction {
             ClosedTransaction::RolledBack => {
                 format!("A {operation} cannot be executed on a transaction that was rolled back")
             }
-            ClosedTransaction::Expired { start_time, timeout } => {
+            ClosedTransaction::Expired {
+                start_time,
+                timeout,
+            } => {
                 format!(
                     "A {operation} cannot be executed on an expired transaction. \
                      The timeout for this transaction was {} ms, however {} ms passed since the start \
@@ -73,10 +82,12 @@ impl TransactionState {
         let mut conn = Box::into_pin(conn);
 
         // SAFETY: We do not move out of `conn`.
-        let conn_mut: &mut (dyn Connection + Send + Sync) = unsafe { conn.as_mut().get_unchecked_mut() };
+        let conn_mut: &mut (dyn Connection + Send + Sync) =
+            unsafe { conn.as_mut().get_unchecked_mut() };
 
         // This creates a transaction, which borrows from the connection.
-        let tx_borrowed_from_conn: Box<dyn Transaction> = conn_mut.start_transaction(isolation_level).await?;
+        let tx_borrowed_from_conn: Box<dyn Transaction> =
+            conn_mut.start_transaction(isolation_level).await?;
 
         // SAFETY: This transmute only erases the lifetime from `conn_mut`. Normally, borrow checker
         // guarantees that the borrowed value is not dropped. In this case, we guarantee ourselves
@@ -104,7 +115,10 @@ impl TransactionState {
             Self::Open { .. } => None,
             Self::Committed => Some(ClosedTransaction::Committed),
             Self::RolledBack => Some(ClosedTransaction::RolledBack),
-            Self::Expired { start_time, timeout } => Some(ClosedTransaction::Expired {
+            Self::Expired {
+                start_time,
+                timeout,
+            } => Some(ClosedTransaction::Expired {
                 start_time: *start_time,
                 timeout: *timeout,
             }),

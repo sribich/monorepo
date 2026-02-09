@@ -6,7 +6,8 @@ use query_engine_tests::*;
 #[test_suite]
 mod unchecked_update {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -238,7 +239,10 @@ mod unchecked_update {
     // "Unchecked updates" should "allow writing non-inlined relations normally"
     #[connector_test(schema(schema_3))]
     async fn allow_write_non_inline_rels(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneModelB(data: { id: 11 }) { id } }"#
+        );
         run_query!(
             &runner,
             r#"mutation {
@@ -280,10 +284,7 @@ mod unchecked_update {
     }
 
     // "Unchecked updates" should "allow to write to autoincrement IDs directly"
-    #[connector_test(
-        schema(schema_4),
-        capabilities(AutoIncrement, WritableAutoincField),
-    )]
+    #[connector_test(schema(schema_4), capabilities(AutoIncrement, WritableAutoincField))]
     async fn allow_write_autoinc_ids(runner: Runner) -> TestResult<()> {
         run_query!(&runner, r#"mutation { createOneModelA { id } }"#);
 

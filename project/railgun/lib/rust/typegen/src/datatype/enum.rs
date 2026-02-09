@@ -1,10 +1,11 @@
 use std::borrow::Cow;
 
-use super::{
-    field::{Field, NamedFields, UnnamedFields},
-    generic::GenericType,
-};
-use crate::{id::TypeId, internal::Deprecation};
+use super::field::Field;
+use super::field::NamedFields;
+use super::field::UnnamedFields;
+use super::generic::GenericType;
+use crate::id::TypeId;
+use crate::internal::Deprecation;
 
 #[derive(Clone, Debug)]
 pub struct EnumType {

@@ -1,10 +1,14 @@
-use crate::SqlSchemaConnector;
 use quaint::ast::*;
-use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, MigrationPersistence, MigrationRecord, Namespaces,
-    PersistenceNotInitializedError,
-};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use schema_connector::MigrationPersistence;
+use schema_connector::MigrationRecord;
+use schema_connector::Namespaces;
+use schema_connector::PersistenceNotInitializedError;
 use uuid::Uuid;
+
+use crate::SqlSchemaConnector;
 
 impl MigrationPersistence for SqlSchemaConnector {
     fn baseline_initialize(&mut self) -> BoxFuture<'_, ConnectorResult<()>> {
@@ -15,21 +19,23 @@ impl MigrationPersistence for SqlSchemaConnector {
     }
 
     #[tracing::instrument(skip(self))]
-    fn initialize(
-        &mut self,
-        namespaces: Option<Namespaces>,
-    ) -> BoxFuture<'_, ConnectorResult<()>> {
+    fn initialize(&mut self, namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<()>> {
         Box::pin(async move {
             let table_names = self.inner.table_names(namespaces).await?;
 
-            if table_names.iter().any(|name| name == crate::MIGRATIONS_TABLE_NAME) {
+            if table_names
+                .iter()
+                .any(|name| name == crate::MIGRATIONS_TABLE_NAME)
+            {
                 return Ok(());
             }
 
-            if table_names
-                .iter()
-                .any(|t| !self.sql_dialect().schema_differ().table_should_be_ignored(t))
-            {
+            if table_names.iter().any(|t| {
+                !self
+                    .sql_dialect()
+                    .schema_differ()
+                    .table_should_be_ignored(t)
+            }) {
                 return Err(ConnectorError::user_facing(
                     user_facing_errors::schema_engine::DatabaseSchemaNotEmpty,
                 ));
@@ -64,7 +70,10 @@ impl MigrationPersistence for SqlSchemaConnector {
         })
     }
 
-    fn mark_migration_rolled_back_by_id<'a>(&'a mut self, migration_id: &'a str) -> BoxFuture<'a, ConnectorResult<()>> {
+    fn mark_migration_rolled_back_by_id<'a>(
+        &'a mut self,
+        migration_id: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>> {
         let update = Update::table(self.sql_dialect().migrations_table())
             .so_that(Column::from("id").equals(migration_id))
             .set("rolled_back_at", chrono::Utc::now());
@@ -114,7 +123,11 @@ impl MigrationPersistence for SqlSchemaConnector {
         })
     }
 
-    fn record_failed_step<'a>(&'a mut self, id: &'a str, logs: &'a str) -> BoxFuture<'a, ConnectorResult<()>> {
+    fn record_failed_step<'a>(
+        &'a mut self,
+        id: &'a str,
+        logs: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>> {
         let update = Update::table(self.sql_dialect().migrations_table())
             .so_that(Column::from("id").equals(id))
             .set("logs", logs);
@@ -126,7 +139,10 @@ impl MigrationPersistence for SqlSchemaConnector {
         })
     }
 
-    fn record_migration_finished<'a>(&'a mut self, id: &'a str) -> BoxFuture<'a, ConnectorResult<()>> {
+    fn record_migration_finished<'a>(
+        &'a mut self,
+        id: &'a str,
+    ) -> BoxFuture<'a, ConnectorResult<()>> {
         let update = Update::table(self.sql_dialect().migrations_table())
             .so_that(Column::from("id").equals(id))
             .set("finished_at", chrono::Utc::now()); // TODO maybe use a database generated timestamp
@@ -140,7 +156,8 @@ impl MigrationPersistence for SqlSchemaConnector {
     #[tracing::instrument(skip(self))]
     fn list_migrations(
         &mut self,
-    ) -> BoxFuture<'_, ConnectorResult<Result<Vec<MigrationRecord>, PersistenceNotInitializedError>>> {
+    ) -> BoxFuture<'_, ConnectorResult<Result<Vec<MigrationRecord>, PersistenceNotInitializedError>>>
+    {
         self.inner.load_migrations_table()
     }
 }

@@ -1,12 +1,17 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
+use std::collections::HashSet;
 
-use convert_case::{Case, Casing};
-use typegen::{
-    cache::{ExportIdentifier, TypeCache},
-    datatype::NamedDataType,
-    export::{DuplicateRouteContext, ExportError, InvariantErrorContext, TypeExporter},
-};
-use typegen_typescript::{TypeDefinition, process_type};
+use convert_case::Case;
+use convert_case::Casing;
+use typegen::cache::ExportIdentifier;
+use typegen::cache::TypeCache;
+use typegen::datatype::NamedDataType;
+use typegen::export::DuplicateRouteContext;
+use typegen::export::ExportError;
+use typegen::export::InvariantErrorContext;
+use typegen::export::TypeExporter;
+use typegen_typescript::TypeDefinition;
+use typegen_typescript::process_type;
 
 use super::ClientExporter;
 use crate::router::Route;
@@ -75,7 +80,7 @@ impl ClientExporter for TypescriptClient {
                 Some(routes) => routes.push(route),
                 None => {
                     segmented_routes.insert(namespace, vec![route]);
-                },
+                }
             }
 
             // segmented_routes.get()
@@ -293,7 +298,7 @@ export async function {func}(data: {request_ty_name}): Promise<{response_ty_name
                 msg: format!("Unknown method {like_method}"),
             }
             .fail();
-        },
+        }
     };
 
     items.push(match like_method {

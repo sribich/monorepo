@@ -1,6 +1,11 @@
-use crate::ast::{Enum, GeneratorConfig, Identifier, Model, SourceConfig, Span, traits::WithSpan};
-
 use super::WithDocumentation;
+use crate::ast::Enum;
+use crate::ast::GeneratorConfig;
+use crate::ast::Identifier;
+use crate::ast::Model;
+use crate::ast::SourceConfig;
+use crate::ast::Span;
+use crate::ast::traits::WithSpan;
 
 /// Enum for distinguishing between top-level entries
 #[derive(Debug, Clone)]

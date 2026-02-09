@@ -1,13 +1,21 @@
-use super::*;
-use crate::EnumType;
-use constants::{filters, itx, json_null, load_strategy, ordering};
+use constants::filters;
+use constants::itx;
+use constants::json_null;
+use constants::load_strategy;
+use constants::ordering;
 use psl::parser_database as db;
 use query_structure::prelude::ParentContainer;
+
+use super::*;
+use crate::EnumType;
 
 pub(crate) fn sort_order_enum() -> EnumType {
     let ident = Identifier::new_prisma(IdentifierType::SortOrder);
 
-    EnumType::string(ident, vec![ordering::ASC.to_owned(), ordering::DESC.to_owned()])
+    EnumType::string(
+        ident,
+        vec![ordering::ASC.to_owned(), ordering::DESC.to_owned()],
+    )
 }
 
 pub(crate) fn nulls_order_enum() -> EnumType {
@@ -18,7 +26,9 @@ pub(crate) fn nulls_order_enum() -> EnumType {
 }
 
 pub(crate) fn map_schema_enum_type(ctx: &'_ QuerySchema, enum_id: db::EnumId) -> EnumType {
-    let ident = Identifier::new_model(IdentifierType::Enum(ctx.internal_data_model.clone().zip(enum_id)));
+    let ident = Identifier::new_model(IdentifierType::Enum(
+        ctx.internal_data_model.clone().zip(enum_id),
+    ));
 
     let schema_enum = ctx.internal_data_model.clone().zip(enum_id);
     EnumType::database(ident, schema_enum)
@@ -59,7 +69,10 @@ pub(crate) fn json_null_input_enum(nullable: bool) -> EnumType {
     if nullable {
         EnumType::string(
             ident,
-            vec![json_null::DB_NULL.to_owned(), json_null::JSON_NULL.to_owned()],
+            vec![
+                json_null::DB_NULL.to_owned(),
+                json_null::JSON_NULL.to_owned(),
+            ],
         )
     } else {
         EnumType::string(ident, vec![json_null::JSON_NULL.to_owned()])
@@ -119,7 +132,10 @@ pub(crate) fn relation_load_strategy(ctx: &QuerySchema) -> Option<EnumType> {
     let ident = Identifier::new_prisma(IdentifierType::RelationLoadStrategy);
 
     let values = if ctx.can_resolve_relation_with_joins() {
-        vec![load_strategy::QUERY.to_owned(), load_strategy::JOIN.to_owned()]
+        vec![
+            load_strategy::QUERY.to_owned(),
+            load_strategy::JOIN.to_owned(),
+        ]
     } else {
         vec![load_strategy::QUERY.to_owned()]
     };

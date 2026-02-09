@@ -49,7 +49,9 @@ mod simple {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -118,7 +120,9 @@ mod nested {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ parentId }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ parentId }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

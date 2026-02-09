@@ -1,6 +1,7 @@
-use crate::test_api::*;
 use pretty_assertions::assert_eq;
 use sql_schema_describer::*;
+
+use crate::test_api::*;
 
 #[test_connector(tags(Sqlite))]
 fn multi_column_foreign_keys_must_work(api: TestApi) {
@@ -39,7 +40,10 @@ fn views_can_be_described(api: TestApi) {
 
     api.raw_cmd(full_sql);
     let result = api.describe();
-    let view = result.get_view("ab").expect("couldn't get ab view").to_owned();
+    let view = result
+        .get_view("ab")
+        .expect("couldn't get ab view")
+        .to_owned();
 
     let expected_sql = "CREATE VIEW ab AS SELECT a_id FROM a UNION ALL SELECT b_id FROM b";
 
@@ -241,7 +245,10 @@ fn sqlite_foreign_key_on_delete_must_be_handled(api: TestApi) {
 
     for (colname, expected_action) in expectations.into_iter() {
         let column = table.column(colname).unwrap().id;
-        let action = table.foreign_key_for_column(column).unwrap().on_delete_action();
+        let action = table
+            .foreign_key_for_column(column)
+            .unwrap()
+            .on_delete_action();
         assert_eq!(action, expected_action);
     }
 }

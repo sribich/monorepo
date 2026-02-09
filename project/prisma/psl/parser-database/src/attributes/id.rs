@@ -1,16 +1,29 @@
-use super::{FieldResolutionError};
-use crate::{
-    DatamodelError, ScalarFieldId, StringId,
-    ast::{self, WithName, WithSpan},
-    attributes::{format_fields_in_error_with_leading_word, resolve_field_array_with_args},
-    coerce,
-    context::Context,
-    types::{FieldWithArgs, IdAttribute, IndexFieldPath, ModelAttributes, ScalarField, SortOrder},
-};
 use std::borrow::Cow;
 
+use super::FieldResolutionError;
+use crate::DatamodelError;
+use crate::ScalarFieldId;
+use crate::StringId;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
+use crate::attributes::format_fields_in_error_with_leading_word;
+use crate::attributes::resolve_field_array_with_args;
+use crate::coerce;
+use crate::context::Context;
+use crate::types::FieldWithArgs;
+use crate::types::IdAttribute;
+use crate::types::IndexFieldPath;
+use crate::types::ModelAttributes;
+use crate::types::ScalarField;
+use crate::types::SortOrder;
+
 /// @@id on models
-pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut Context<'_>) {
+pub(super) fn model(
+    model_data: &mut ModelAttributes,
+    model_id: crate::ModelId,
+    ctx: &mut Context<'_>,
+) {
     let attr = ctx.current_attribute();
     let fields = match ctx.visit_default_arg("fields") {
         Ok(value) => value,
@@ -25,12 +38,13 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
             relation_fields,
         }) => {
             if !unresolvable_fields.is_empty() {
-                let field_names = unresolvable_fields
-                    .into_iter()
-                    .map(|((file_id, top_id), field_name)| match top_id {
-                        ast::TopId::Model(_) => Cow::from(field_name),
-                        _ => unreachable!(),
-                    });
+                let field_names =
+                    unresolvable_fields
+                        .into_iter()
+                        .map(|((file_id, top_id), field_name)| match top_id {
+                            ast::TopId::Model(_) => Cow::from(field_name),
+                            _ => unreachable!(),
+                        });
 
                 let msg = format!(
                     "The multi field id declaration refers to the unknown {}.",
@@ -73,7 +87,9 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
         .filter_map(|field| {
             let id = field.path.field_in_index();
 
-            let ScalarField { model_id, field_id, .. } = ctx.types[id];
+            let ScalarField {
+                model_id, field_id, ..
+            } = ctx.types[id];
             let field = &ctx.asts[model_id][field_id];
 
             if field.arity.is_required() {

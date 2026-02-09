@@ -1,8 +1,14 @@
+use std::fmt::Write as _;
+use std::io::Write as _;
+use std::sync::LazyLock;
+
 use crate::helpers::load_schema_files;
-use std::{fmt::Write as _, io::Write as _, sync::LazyLock};
 
 const CURSOR_MARKER: &str = "<|>";
-const SCENARIOS_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/text_document_completion/scenarios");
+const SCENARIOS_PATH: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/tests/text_document_completion/scenarios"
+);
 static UPDATE_EXPECT: LazyLock<bool> = LazyLock::new(|| std::env::var("UPDATE_EXPECT").is_ok());
 
 pub(crate) fn test_scenario(scenario_name: &str) {
@@ -25,7 +31,9 @@ pub(crate) fn test_scenario(scenario_name: &str) {
             }, // ignored
             position: cursor_position,
         },
-        work_done_progress_params: lsp_types::WorkDoneProgressParams { work_done_token: None },
+        work_done_progress_params: lsp_types::WorkDoneProgressParams {
+            work_done_token: None,
+        },
         partial_result_params: lsp_types::PartialResultParams {
             partial_result_token: None,
         },
@@ -37,8 +45,10 @@ pub(crate) fn test_scenario(scenario_name: &str) {
         &serde_json::to_string_pretty(&params).unwrap(),
     );
     // Prettify the JSON
-    let result =
-        serde_json::to_string_pretty(&serde_json::from_str::<lsp_types::CompletionList>(&result).unwrap()).unwrap();
+    let result = serde_json::to_string_pretty(
+        &serde_json::from_str::<lsp_types::CompletionList>(&result).unwrap(),
+    )
+    .unwrap();
 
     if *UPDATE_EXPECT {
         let mut file = std::fs::File::create(&path).unwrap(); // truncate
@@ -76,7 +86,9 @@ fn format_chunks(chunks: Vec<dissimilar::Chunk>) -> String {
     buf
 }
 
-fn take_cursor(schema_files: Vec<(String, String)>) -> (String, lsp_types::Position, Vec<(String, String)>) {
+fn take_cursor(
+    schema_files: Vec<(String, String)>,
+) -> (String, lsp_types::Position, Vec<(String, String)>) {
     let mut result = Vec::with_capacity(schema_files.len());
     let mut file_and_pos = None;
     for (file_name, content) in schema_files {
@@ -88,14 +100,18 @@ fn take_cursor(schema_files: Vec<(String, String)>) -> (String, lsp_types::Posit
         }
     }
 
-    let (file_name, position) = file_and_pos.expect("Could not find a cursor in any of the schema files");
+    let (file_name, position) =
+        file_and_pos.expect("Could not find a cursor in any of the schema files");
 
     (file_name, position, result)
 }
 
 fn take_cursor_one(schema: &str) -> Option<(lsp_types::Position, String)> {
     let mut schema_without_cursor = String::with_capacity(schema.len() - 3);
-    let mut cursor_position = lsp_types::Position { character: 0, line: 0 };
+    let mut cursor_position = lsp_types::Position {
+        character: 0,
+        line: 0,
+    };
     let mut cursor_found = false;
     for line in schema.lines() {
         if !cursor_found {

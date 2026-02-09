@@ -1,8 +1,16 @@
-use super::{utils::get_relation_load_strategy, *};
-use crate::{QueryOption, QueryOptions, ReadQuery, RecordQuery, query_document::*};
-use query_structure::Model;
-use schema::{QuerySchema, constants::args};
 use std::convert::TryInto;
+
+use query_structure::Model;
+use schema::QuerySchema;
+use schema::constants::args;
+
+use super::utils::get_relation_load_strategy;
+use super::*;
+use crate::QueryOption;
+use crate::QueryOptions;
+use crate::ReadQuery;
+use crate::RecordQuery;
+use crate::query_document::*;
 
 pub(crate) fn find_unique(
     field: ParsedField<'_>,
@@ -47,7 +55,8 @@ fn find_unique_with_options(
     let (selected_fields, selection_order, nested) =
         utils::extract_selected_fields(field.nested_fields.unwrap().fields, &model, query_schema)?;
 
-    let relation_load_strategy = get_relation_load_strategy(requested_rel_load_strategy, None, &nested, query_schema)?;
+    let relation_load_strategy =
+        get_relation_load_strategy(requested_rel_load_strategy, None, &nested, query_schema)?;
 
     Ok(ReadQuery::RecordQuery(RecordQuery {
         name,

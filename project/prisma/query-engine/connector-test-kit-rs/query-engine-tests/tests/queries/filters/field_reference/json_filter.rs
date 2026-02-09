@@ -357,7 +357,10 @@ mod json_filter {
             }) { id }}"#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 4 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 4 }) { id }}"#
+        );
 
         Ok(())
     }
@@ -399,7 +402,10 @@ mod json_filter {
             }) { id }}"#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 5 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 5 }) { id }}"#
+        );
 
         Ok(())
     }
@@ -441,7 +447,10 @@ mod json_filter {
             }) { id }}"#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 5 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 5 }) { id }}"#
+        );
 
         Ok(())
     }
@@ -471,7 +480,10 @@ mod json_filter {
             "#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#
+        );
 
         Ok(())
     }
@@ -483,9 +495,9 @@ mod json_filter {
     fn json_path(runner: &Runner) -> &'static str {
         match runner.connector_version() {
             ConnectorVersion::Postgres(_) => r#"path: ["a", "b"]"#,
-            ConnectorVersion::Sqlite(_) | ConnectorVersion::MySql(_) | ConnectorVersion::Vitess(_) => {
-                r#"path: "$.a.b""#
-            }
+            ConnectorVersion::Sqlite(_)
+            | ConnectorVersion::MySql(_)
+            | ConnectorVersion::Vitess(_) => r#"path: "$.a.b""#,
             x => unreachable!("JSON filtering is not supported on {:?}", x),
         }
     }

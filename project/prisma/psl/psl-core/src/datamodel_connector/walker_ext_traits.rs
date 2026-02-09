@@ -1,16 +1,16 @@
-use crate::{
-    builtin_connectors::has_capability,
-    datamodel_connector::{
-        Connector, NativeTypeInstance, ReferentialAction, RelationMode, constraint_names::ConstraintNames,
-    },
-};
-use parser_database::{
-    ast::{self, WithSpan},
-    walkers::*,
-};
 use std::borrow::Cow;
 
+use parser_database::ast::WithSpan;
+use parser_database::ast::{self};
+use parser_database::walkers::*;
+
 use super::ConnectorCapability;
+use crate::builtin_connectors::has_capability;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::NativeTypeInstance;
+use crate::datamodel_connector::ReferentialAction;
+use crate::datamodel_connector::RelationMode;
+use crate::datamodel_connector::constraint_names::ConstraintNames;
 
 pub trait IndexWalkerExt<'db> {
     fn constraint_name(self, connector: &dyn Connector) -> Cow<'db, str>;
@@ -69,33 +69,39 @@ impl<'db> PrimaryKeyWalkerExt<'db> for PrimaryKeyWalker<'db> {
             return None;
         }
 
-        Some(
-            self.mapped_name()
-                .map(Cow::Borrowed)
-                .unwrap_or_else(|| ConstraintNames::primary_key_name(self.model().database_name(), connector).into()),
-        )
+        Some(self.mapped_name().map(Cow::Borrowed).unwrap_or_else(|| {
+            ConstraintNames::primary_key_name(self.model().database_name(), connector).into()
+        }))
     }
 }
 
 pub trait CompleteInlineRelationWalkerExt<'db> {
     /// Gives the onDelete referential action of the relation. If not defined
     /// explicitly, returns the default value.
-    fn on_delete(self, connector: &dyn Connector, relation_mode: RelationMode) -> ReferentialAction;
+    fn on_delete(self, connector: &dyn Connector, relation_mode: RelationMode)
+    -> ReferentialAction;
 }
 
 impl<'db> CompleteInlineRelationWalkerExt<'db> for CompleteInlineRelationWalker<'db> {
-    fn on_delete(self, connector: &dyn Connector, relation_mode: RelationMode) -> ReferentialAction {
+    fn on_delete(
+        self,
+        connector: &dyn Connector,
+        relation_mode: RelationMode,
+    ) -> ReferentialAction {
         use ReferentialAction::*;
 
-        self.referencing_field().explicit_on_delete().unwrap_or_else(|| {
-            let supports_restrict = connector.supports_referential_action(&relation_mode, Restrict);
+        self.referencing_field()
+            .explicit_on_delete()
+            .unwrap_or_else(|| {
+                let supports_restrict =
+                    connector.supports_referential_action(&relation_mode, Restrict);
 
-            match self.referential_arity() {
-                ast::FieldArity::Required if supports_restrict => Restrict,
-                ast::FieldArity::Required => NoAction,
-                _ => SetNull,
-            }
-        })
+                match self.referential_arity() {
+                    ast::FieldArity::Required if supports_restrict => Restrict,
+                    ast::FieldArity::Required => NoAction,
+                    _ => SetNull,
+                }
+            })
     }
 }
 
@@ -111,7 +117,12 @@ impl<'db> InlineRelationWalkerExt<'db> for InlineRelationWalker<'db> {
                 .referencing_fields()
                 .map(|fields| fields.map(|f| f.database_name()).collect())
                 .unwrap_or_default();
-            ConstraintNames::foreign_key_constraint_name(model_database_name, &field_names, connector).into()
+            ConstraintNames::foreign_key_constraint_name(
+                model_database_name,
+                &field_names,
+                connector,
+            )
+            .into()
         })
     }
 }
@@ -127,7 +138,12 @@ pub trait ScalarFieldWalkerExt {
 impl ScalarFieldWalkerExt for ScalarFieldWalker<'_> {
     fn native_type_instance(&self, connector: &dyn Connector) -> Option<NativeTypeInstance> {
         self.raw_native_type().and_then(|(_, name, args, _)| {
-            connector.parse_native_type(name, args, self.ast_field().span(), &mut Default::default())
+            connector.parse_native_type(
+                name,
+                args,
+                self.ast_field().span(),
+                &mut Default::default(),
+            )
         })
     }
 }
@@ -135,20 +151,34 @@ impl ScalarFieldWalkerExt for ScalarFieldWalker<'_> {
 impl ScalarFieldWalkerExt for IndexFieldWalker<'_> {
     fn native_type_instance(&self, connector: &dyn Connector) -> Option<NativeTypeInstance> {
         self.raw_native_type().and_then(|(_, name, args, _)| {
-            connector.parse_native_type(name, args, self.ast_field().span(), &mut Default::default())
+            connector.parse_native_type(
+                name,
+                args,
+                self.ast_field().span(),
+                &mut Default::default(),
+            )
         })
     }
 }
 
 pub trait RelationFieldWalkerExt {
-    fn default_on_delete_action(self, relation_mode: RelationMode, connector: &dyn Connector) -> ReferentialAction;
+    fn default_on_delete_action(
+        self,
+        relation_mode: RelationMode,
+        connector: &dyn Connector,
+    ) -> ReferentialAction;
 }
 
 impl RelationFieldWalkerExt for RelationFieldWalker<'_> {
-    fn default_on_delete_action(self, relation_mode: RelationMode, connector: &dyn Connector) -> ReferentialAction {
+    fn default_on_delete_action(
+        self,
+        relation_mode: RelationMode,
+        connector: &dyn Connector,
+    ) -> ReferentialAction {
         match self.referential_arity() {
             ast::FieldArity::Required
-                if connector.supports_referential_action(&relation_mode, ReferentialAction::Restrict) =>
+                if connector
+                    .supports_referential_action(&relation_mode, ReferentialAction::Restrict) =>
             {
                 ReferentialAction::Restrict
             }

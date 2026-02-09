@@ -2,7 +2,9 @@ use query_engine_tests::*;
 
 #[test_suite(schema(json_opt), capabilities(Json), exclude(MySql(5.6)))]
 mod json {
-    use query_engine_tests::{EngineProtocol, Runner, run_query};
+    use query_engine_tests::EngineProtocol;
+    use query_engine_tests::Runner;
+    use query_engine_tests::run_query;
 
     #[connector_test]
     async fn read_one(runner: Runner) -> TestResult<()> {
@@ -10,7 +12,10 @@ mod json {
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 1 }) { json } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 1 }) { json } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -89,7 +94,10 @@ mod json {
 
         match runner.protocol() {
             query_engine_tests::EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 4 }) { json } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 4 }) { json } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -130,7 +138,10 @@ mod json {
 
         match runner.protocol() {
             query_engine_tests::EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 3 }) { json } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 3 }) { json } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -171,7 +182,10 @@ mod json {
 
         match runner.protocol() {
             query_engine_tests::EngineProtocol::Graphql => {
-                let res = run_query!(runner, r#"{ findUniqueTestModel(where: { id: 7 }) { json } }"#);
+                let res = run_query!(
+                    runner,
+                    r#"{ findUniqueTestModel(where: { id: 7 }) { json } }"#
+                );
 
                 insta::assert_snapshot!(
                   res,
@@ -370,7 +384,11 @@ mod json {
             r#"{ id: 1, child: { create: { id: 1, json_list: ["1", "2"] } } }"#,
         )
         .await?;
-        create_row(&runner, r#"{ id: 2, child: { create: { id: 2, json_list: ["{}"] } } }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, child: { create: { id: 2, json_list: ["{}"] } } }"#,
+        )
+        .await?;
         create_row(
             &runner,
             r#"{ id: 3, child: { create: { id: 3, json_list: ["\"hello\"", "\"world\""] } } }"#,
@@ -400,7 +418,9 @@ mod json {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

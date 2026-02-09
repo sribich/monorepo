@@ -1,15 +1,23 @@
-use super::*;
-use crate::{
-    DataExpectation, ParsedInputList, ParsedInputValue, RowSink,
-    inputs::{UpdateManyRecordsSelectorsInput, UpdateOrCreateArgsInput},
-    query_ast::*,
-    query_graph::{NodeRef, QueryGraph, QueryGraphDependency},
-    write::write_args_parser::WriteArgsParser,
-};
-use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{Filter, Model, RelationFieldRef};
-use schema::constants::args;
 use std::convert::TryInto;
+
+use psl::datamodel_connector::ConnectorCapability;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::RelationFieldRef;
+use schema::constants::args;
+
+use super::*;
+use crate::DataExpectation;
+use crate::ParsedInputList;
+use crate::ParsedInputValue;
+use crate::RowSink;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::inputs::UpdateOrCreateArgsInput;
+use crate::query_ast::*;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
+use crate::write::write_args_parser::WriteArgsParser;
 
 /// Handles nested create one cases.
 /// The resulting graph can take multiple forms, based on the relation type to the parent model.
@@ -52,11 +60,14 @@ pub fn nested_create(
     //    because we need to know the ids of created children records.
     let has_create_many = query_schema.has_capability(ConnectorCapability::CreateMany);
     let has_returning = query_schema.has_capability(ConnectorCapability::InsertReturning);
-    let is_one_to_many_in_child = relation.is_one_to_many() && parent_relation_field.relation_is_inlined_in_child();
+    let is_one_to_many_in_child =
+        relation.is_one_to_many() && parent_relation_field.relation_is_inlined_in_child();
     let is_many_to_many = relation.is_many_to_many() && has_returning;
     let has_nested = data_maps.iter().any(|(_args, nested)| !nested.is_empty());
-    let should_use_bulk_create =
-        has_create_many && child_records_count > 1 && !has_nested && (is_one_to_many_in_child || is_many_to_many);
+    let should_use_bulk_create = has_create_many
+        && child_records_count > 1
+        && !has_nested
+        && (is_one_to_many_in_child || is_many_to_many);
 
     if should_use_bulk_create {
         // Create all child records in a single query.
@@ -77,9 +88,11 @@ pub fn nested_create(
             args: data_maps.into_iter().map(|(args, _nested)| args).collect(),
             skip_duplicates: false,
             selected_fields,
-            split_by_shape: !query_schema.has_capability(ConnectorCapability::SupportsDefaultInInsert),
+            split_by_shape: !query_schema
+                .has_capability(ConnectorCapability::SupportsDefaultInInsert),
         };
-        let create_many_node = graph.create_node(Query::Write(WriteQuery::CreateManyRecords(query)));
+        let create_many_node =
+            graph.create_node(Query::Write(WriteQuery::CreateManyRecords(query)));
 
         if relation.is_one_to_many() {
             handle_one_to_many_bulk(graph, parent_node, parent_relation_field, create_many_node)?;
@@ -97,7 +110,13 @@ pub fn nested_create(
         let creates = data_maps
             .into_iter()
             .map(|(args, nested)| {
-                create::create_record_node_from_args(graph, query_schema, child_model.clone(), args, nested)
+                create::create_record_node_from_args(
+                    graph,
+                    query_schema,
+                    child_model.clone(),
+                    args,
+                    nested,
+                )
             })
             .collect::<QueryGraphBuilderResult<Vec<_>>>()?;
 
@@ -164,7 +183,11 @@ fn handle_many_to_many_bulk(
     child_node: NodeRef,
     expected_connects: usize,
 ) -> QueryGraphBuilderResult<()> {
-    graph.create_edge(&parent_node, &child_node, QueryGraphDependency::ExecutionOrder)?;
+    graph.create_edge(
+        &parent_node,
+        &child_node,
+        QueryGraphDependency::ExecutionOrder,
+    )?;
     connect::connect_records_node(
         graph,
         &parent_node,
@@ -203,7 +226,11 @@ fn handle_many_to_many(
 ) -> QueryGraphBuilderResult<()> {
     // Todo optimize with createMany
     for create_node in create_nodes {
-        graph.create_edge(&parent_node, &create_node, QueryGraphDependency::ExecutionOrder)?;
+        graph.create_edge(
+            &parent_node,
+            &create_node,
+            QueryGraphDependency::ExecutionOrder,
+        )?;
         connect::connect_records_node(graph, &parent_node, &create_node, parent_relation_field, 1)?;
     }
 
@@ -290,7 +317,9 @@ fn handle_one_to_many(
                     MissingRelatedRecord::builder()
                         .model(&parent_relation_field.related_model())
                         .relation(&parent_relation_field.relation())
-                        .needed_for(DependentOperation::inline_relation(&parent_relation_field.model()))
+                        .needed_for(DependentOperation::inline_relation(
+                            &parent_relation_field.model(),
+                        ))
                         .operation(DataOperation::NestedCreate)
                         .build(),
                 )),
@@ -311,7 +340,9 @@ fn handle_one_to_many(
                         MissingRelatedRecord::builder()
                             .model(&parent_relation_field.model())
                             .relation(&parent_relation_field.relation())
-                            .needed_for(DependentOperation::inline_relation(&parent_relation_field.model()))
+                            .needed_for(DependentOperation::inline_relation(
+                                &parent_relation_field.model(),
+                            ))
                             .operation(DataOperation::NestedCreate)
                             .build(),
                     )),
@@ -440,24 +471,29 @@ fn handle_one_to_one(
     // existing parent, either.
     // For the above reasons, the checks always live on `parent_node`.
     if !parent_is_create {
-        utils::insert_existing_1to1_related_model_checks(graph, &parent_node, parent_relation_field)?;
+        utils::insert_existing_1to1_related_model_checks(
+            graph,
+            &parent_node,
+            parent_relation_field,
+        )?;
     }
 
     // If the relation is inlined on the parent, we swap the create and the parent to have the child ID for inlining.
     // Swapping changes the extraction model identifier as well.
-    let ((extractor_model, extractor), (assimilator_model, assimilator)) = if relation_inlined_parent {
-        // We need to swap the read node and the parent because the inlining is done in the parent, and we need to fetch the ID first.
-        graph.mark_nodes(&parent_node, &create_node);
-        (
-            (child_relation_field.model(), child_link.clone()),
-            (parent_relation_field.model(), parent_link),
-        )
-    } else {
-        (
-            (parent_relation_field.model(), parent_link),
-            (child_relation_field.model(), child_link.clone()),
-        )
-    };
+    let ((extractor_model, extractor), (assimilator_model, assimilator)) =
+        if relation_inlined_parent {
+            // We need to swap the read node and the parent because the inlining is done in the parent, and we need to fetch the ID first.
+            graph.mark_nodes(&parent_node, &create_node);
+            (
+                (child_relation_field.model(), child_link.clone()),
+                (parent_relation_field.model(), parent_link),
+            )
+        } else {
+            (
+                (parent_relation_field.model(), parent_link),
+                (child_relation_field.model(), child_link.clone()),
+            )
+        };
 
     graph.create_edge(
         &parent_node,
@@ -469,7 +505,9 @@ fn handle_one_to_one(
                 MissingRelatedRecord::builder()
                     .model(&extractor_model)
                     .relation(&parent_relation_field.relation())
-                    .needed_for(DependentOperation::create_inlined_relation(&assimilator_model))
+                    .needed_for(DependentOperation::create_inlined_relation(
+                        &assimilator_model,
+                    ))
                     .operation(DataOperation::NestedCreate)
                     .build(),
             )),
@@ -481,7 +519,8 @@ fn handle_one_to_one(
     // For explanation see end of doc comment.
     if relation_inlined_parent && !parent_is_create {
         let parent_model = parent_relation_field.model();
-        let update_node = utils::update_records_node_placeholder(graph, Filter::empty(), parent_model.clone());
+        let update_node =
+            utils::update_records_node_placeholder(graph, Filter::empty(), parent_model.clone());
         let parent_link = parent_relation_field.linking_fields();
 
         graph.create_edge(
@@ -507,7 +546,9 @@ fn handle_one_to_one(
             &parent_node,
             &update_node,
             QueryGraphDependency::ProjectedDataDependency(
-                parent_relation_field.model().shard_aware_primary_identifier(),
+                parent_relation_field
+                    .model()
+                    .shard_aware_primary_identifier(),
                 RowSink::ExactlyOne(&UpdateManyRecordsSelectorsInput),
                 Some(DataExpectation::non_empty_rows(
                     MissingRelatedRecord::builder()

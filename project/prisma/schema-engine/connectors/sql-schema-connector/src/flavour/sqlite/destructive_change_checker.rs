@@ -1,19 +1,21 @@
-use crate::{
-    flavour::SqlConnector,
-    migration_pair::MigrationPair,
-    sql_destructive_change_checker::{
-        DestructiveChangeCheckerFlavour,
-        check::{Column, Table},
-        destructive_change_checker_flavour::{extract_column_values_count, extract_table_rows_count},
-        destructive_check_plan::DestructiveCheckPlan,
-        unexecutable_step_check::UnexecutableStepCheck,
-        warning_check::SqlMigrationWarningCheck,
-    },
-    sql_migration::{AlterColumn, ColumnTypeChange},
-    sql_schema_differ::ColumnChanges,
-};
-use schema_connector::{BoxFuture, ConnectorResult};
-use sql_schema_describer::{ColumnArity, walkers::TableColumnWalker};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorResult;
+use sql_schema_describer::ColumnArity;
+use sql_schema_describer::walkers::TableColumnWalker;
+
+use crate::flavour::SqlConnector;
+use crate::migration_pair::MigrationPair;
+use crate::sql_destructive_change_checker::DestructiveChangeCheckerFlavour;
+use crate::sql_destructive_change_checker::check::Column;
+use crate::sql_destructive_change_checker::check::Table;
+use crate::sql_destructive_change_checker::destructive_change_checker_flavour::extract_column_values_count;
+use crate::sql_destructive_change_checker::destructive_change_checker_flavour::extract_table_rows_count;
+use crate::sql_destructive_change_checker::destructive_check_plan::DestructiveCheckPlan;
+use crate::sql_destructive_change_checker::unexecutable_step_check::UnexecutableStepCheck;
+use crate::sql_destructive_change_checker::warning_check::SqlMigrationWarningCheck;
+use crate::sql_migration::AlterColumn;
+use crate::sql_migration::ColumnTypeChange;
+use crate::sql_schema_differ::ColumnChanges;
 
 #[derive(Debug, Default)]
 pub struct SqliteDestructiveChangeCheckerFlavour;
@@ -32,7 +34,8 @@ impl DestructiveChangeCheckerFlavour for SqliteDestructiveChangeCheckerFlavour {
             // column became nullable
             (ColumnArity::Required, ColumnArity::Nullable) => true,
             // nothing changed
-            (ColumnArity::Required, ColumnArity::Required) | (ColumnArity::Nullable, ColumnArity::Nullable) => true,
+            (ColumnArity::Required, ColumnArity::Required)
+            | (ColumnArity::Nullable, ColumnArity::Nullable) => true,
             // not supported on SQLite
             (ColumnArity::List, _) | (_, ColumnArity::List) => unreachable!(),
         };
@@ -48,7 +51,11 @@ impl DestructiveChangeCheckerFlavour for SqliteDestructiveChangeCheckerFlavour {
             plan.push_unexecutable(
                 UnexecutableStepCheck::MadeOptionalFieldRequired(Column {
                     table: columns.previous.table().name().to_owned(),
-                    namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                    namespace: columns
+                        .previous
+                        .table()
+                        .explicit_namespace()
+                        .map(str::to_owned),
                     column: columns.previous.name().to_owned(),
                 }),
                 step_index,
@@ -61,7 +68,11 @@ impl DestructiveChangeCheckerFlavour for SqliteDestructiveChangeCheckerFlavour {
                 plan.push_warning(
                     SqlMigrationWarningCheck::RiskyCast {
                         table: columns.previous.table().name().to_owned(),
-                        namespace: columns.previous.table().explicit_namespace().map(str::to_owned),
+                        namespace: columns
+                            .previous
+                            .table()
+                            .explicit_namespace()
+                            .map(str::to_owned),
                         column: columns.previous.name().to_owned(),
                         previous_type: format!("{:?}", columns.previous.column_type_family()),
                         next_type: format!("{:?}", columns.next.column_type_family()),

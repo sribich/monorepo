@@ -1,5 +1,6 @@
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
+use sql_schema_describer::postgres::SQLOperatorClassKind;
+use sql_schema_describer::postgres::SqlIndexAlgorithm;
 
 #[test_connector(tags(Postgres), exclude(Postgres9))]
 fn gin_change_from_btree(api: TestApi) {
@@ -17,7 +18,9 @@ fn gin_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::BTree))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::BTree)
+            })
     });
 
     let dm = r#"
@@ -34,7 +37,9 @@ fn gin_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::Gin))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::Gin)
+            })
     });
 }
 
@@ -56,7 +61,9 @@ fn gin_array_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ArrayOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ArrayOps)
+                    })
             })
     });
 
@@ -81,7 +88,9 @@ fn gin_array_default_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ArrayOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ArrayOps)
+                    })
             })
     });
 
@@ -106,7 +115,9 @@ fn gin_array_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::ArrayOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ArrayOps)
+                    })
             })
     });
 
@@ -131,7 +142,9 @@ fn gin_jsonb_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::JsonbOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::JsonbOps)
+                    })
             })
     });
 
@@ -156,7 +169,9 @@ fn gin_jsonb_ops_default(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::JsonbOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::JsonbOps)
+                    })
             })
     });
 
@@ -181,7 +196,9 @@ fn gin_jsonb_path_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::JsonbPathOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::JsonbPathOps)
+                    })
             })
     });
 
@@ -217,7 +234,9 @@ fn from_jsonb_ops_to_jsonb_path_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::JsonbPathOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::JsonbPathOps)
+                    })
             })
     });
 }
@@ -241,8 +260,12 @@ fn compound_index_with_different_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data", "sata"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gin)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::JsonbOps))
-                    .assert_column("sata", |attrs| attrs.assert_ops(SQLOperatorClassKind::ArrayOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::JsonbOps)
+                    })
+                    .assert_column("sata", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::ArrayOps)
+                    })
             })
     });
 }

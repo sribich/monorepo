@@ -1,5 +1,6 @@
-use sql_migration_tests::multi_engine_test_api::*;
 use std::sync::Arc;
+
+use sql_migration_tests::multi_engine_test_api::*;
 use test_macros::test_connector;
 
 #[test_connector]

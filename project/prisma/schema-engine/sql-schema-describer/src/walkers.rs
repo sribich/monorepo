@@ -14,9 +14,15 @@ mod view;
 
 use std::ops::Range;
 
-pub use column::{ColumnWalker, IndexColumnWalker, TableColumnWalker, ViewColumnWalker};
-pub use default::{DefaultValueWalker, TableDefaultValueWalker, ViewDefaultValueWalker};
-pub use r#enum::{EnumVariantWalker, EnumWalker};
+pub use column::ColumnWalker;
+pub use column::IndexColumnWalker;
+pub use column::TableColumnWalker;
+pub use column::ViewColumnWalker;
+pub use default::DefaultValueWalker;
+pub use default::TableDefaultValueWalker;
+pub use default::ViewDefaultValueWalker;
+pub use r#enum::EnumVariantWalker;
+pub use r#enum::EnumWalker;
 pub use foreign_key::ForeignKeyWalker;
 pub use index::IndexWalker;
 pub use namespace::NamespaceWalker;
@@ -63,6 +69,9 @@ where
         Some(other) => other + 1,
     };
     let mut iter = slice[seed..].iter();
-    let end = seed + iter.position(|i| extract(i) != key).unwrap_or(slice.len() - seed);
+    let end = seed
+        + iter
+            .position(|i| extract(i) != key)
+            .unwrap_or(slice.len() - seed);
     start..end
 }

@@ -15,10 +15,12 @@ pub mod offsets;
 
 pub use lint::MiniError;
 use log::*;
-use psl::{
-    Configuration, Datasource, Generator, datamodel_connector::Connector, diagnostics::FileId,
-    parser_database::ParserDatabase,
-};
+use psl::Configuration;
+use psl::Datasource;
+use psl::Generator;
+use psl::datamodel_connector::Connector;
+use psl::diagnostics::FileId;
+use psl::parser_database::ParserDatabase;
 use schema_file_input::SchemaFileInput;
 use serde_json::json;
 
@@ -163,7 +165,9 @@ pub fn format(datamodel: String, params: &str) -> String {
     let indent_width = params.options.tab_size as usize;
 
     match schema {
-        SchemaFileInput::Single(single) => psl::reformat(&single, indent_width).unwrap_or(datamodel),
+        SchemaFileInput::Single(single) => {
+            psl::reformat(&single, indent_width).unwrap_or(datamodel)
+        }
         SchemaFileInput::Multiple(multiple) => {
             let result = psl::reformat_multiple(multiple, indent_width);
             serde_json::to_string(&result).unwrap_or(datamodel)
@@ -260,7 +264,6 @@ pub fn referential_actions(schema: String) -> String {
 /// }
 ///
 /// type GetConfigResponse = GetConfigErrorResponse | GetConfigSuccessResponse
-///
 /// ```
 pub fn get_config(get_config_params: String) -> String {
     get_config::get_config(&get_config_params)

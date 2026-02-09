@@ -43,7 +43,10 @@ async fn ignore_on_model_with_only_optional_id(api: &mut TestApi) -> TestResult 
 
             migration.create_table("OptionalIdAndOptionalUnique", |t| {
                 t.inject_custom("id Text Primary Key");
-                t.add_column("unique", barrel::types::integer().unique(true).nullable(true));
+                t.add_column(
+                    "unique",
+                    barrel::types::integer().unique(true).nullable(true),
+                );
             });
         })
         .await?;
@@ -78,7 +81,8 @@ async fn ignore_on_model_with_only_optional_id(api: &mut TestApi) -> TestResult 
 
 #[test_connector(tags(Sqlite))]
 async fn field_with_empty_name(api: &mut TestApi) -> TestResult {
-    api.raw_cmd(r#"CREATE TABLE "A"(" " INTEGER PRIMARY KEY)"#).await;
+    api.raw_cmd(r#"CREATE TABLE "A"(" " INTEGER PRIMARY KEY)"#)
+        .await;
 
     let expectation = expect![[r#"
         model A {

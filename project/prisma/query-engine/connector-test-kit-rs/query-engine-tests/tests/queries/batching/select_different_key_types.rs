@@ -225,7 +225,11 @@ mod datetime_in_schema {
     }
 }
 
-async fn assert_consistent_with_batch(runner: &Runner, query_a: &str, query_b: &str) -> TestResult<()> {
+async fn assert_consistent_with_batch(
+    runner: &Runner,
+    query_a: &str,
+    query_b: &str,
+) -> TestResult<()> {
     // These pairs of queries are run as batched and non-batched to verify that the
     // batching logic returns the same results as the non-batched logic.
     // The reason this is valuable is that the batching logic, unlike regular queries

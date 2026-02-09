@@ -1,5 +1,7 @@
-use quaint::{prelude::Queryable, single::Quaint};
-use schema_core::commands::db_execute::{DbExecuteDatasourceType, DbExecuteParams};
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+use schema_core::commands::db_execute::DbExecuteDatasourceType;
+use schema_core::commands::db_execute::DbExecuteParams;
 use schema_core::json_rpc::types::SchemasWithConfigDir;
 use sql_migration_tests::test_api::*;
 use sql_migration_tests::utils::to_schema_containers;
@@ -33,7 +35,10 @@ fn db_execute_happy_path_with_literal_url() {
 #[test]
 fn db_execute_happy_path_with_prisma_schema() {
     let tmpdir = tempfile::TempDir::new().unwrap();
-    let url = format!("file:{}/dbfromschema.sqlite", tmpdir.path().to_string_lossy());
+    let url = format!(
+        "file:{}/dbfromschema.sqlite",
+        tmpdir.path().to_string_lossy()
+    );
     let prisma_schema = format!(
         r#"
         datasource dbtest {{

@@ -27,7 +27,10 @@ mod prisma_22971 {
     // Ensures that mapped fields are correctly resolved, even when there's a conflict between a scalar field name and a relation field name.
     #[connector_test]
     async fn top_level(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOnePost(data: { id: 1 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOnePost(data: { id: 1 }) { id } }"#
+        );
         run_query!(
             &runner,
             r#"mutation { createOneUser(data: { id: 1, postId: 1 }) { id } }"#
@@ -67,7 +70,10 @@ mod prisma_22971 {
             ""
         };
 
-        run_query!(&runner, r#"mutation { createOnePost(data: { id: 1 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOnePost(data: { id: 1 }) { id } }"#
+        );
         run_query!(
             &runner,
             r#"mutation { createOneUser(data: { id: 2, postId: 1 }) { id } }"#

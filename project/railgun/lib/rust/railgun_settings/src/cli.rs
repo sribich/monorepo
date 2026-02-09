@@ -1,11 +1,16 @@
 use std::ffi::OsString;
 
-use clap::{Arg, ArgAction, ArgMatches, Command, error::ErrorKind};
-use railgun_core::{
-    ServiceInfo,
-    bootstrap::{ArgumentErrorContext, BootstrapResult},
-};
-use railgun_error::{Error, Location, ResultExt};
+use clap::Arg;
+use clap::ArgAction;
+use clap::ArgMatches;
+use clap::Command;
+use clap::error::ErrorKind;
+use railgun_core::ServiceInfo;
+use railgun_core::bootstrap::ArgumentErrorContext;
+use railgun_core::bootstrap::BootstrapResult;
+use railgun_error::Error;
+use railgun_error::Location;
+use railgun_error::ResultExt;
 
 use crate::Settings;
 
@@ -121,7 +126,7 @@ fn get_settings<S: Settings>(arg_matches: &ArgMatches) -> BootstrapResult<S> {
 
 #[cfg(test)]
 mod test {
-    
+
     use railgun_core::service_info;
     use railgun_settings_derive::settings;
 

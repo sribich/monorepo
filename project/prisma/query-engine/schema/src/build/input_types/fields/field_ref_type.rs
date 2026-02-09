@@ -1,5 +1,6 @@
-use super::*;
 use constants::filters;
+
+use super::*;
 
 pub(crate) trait WithFieldRefInputExt<'a> {
     fn with_field_ref_input(self) -> Vec<InputType<'a>>;
@@ -7,7 +8,10 @@ pub(crate) trait WithFieldRefInputExt<'a> {
 
 impl<'a> WithFieldRefInputExt<'a> for InputType<'a> {
     fn with_field_ref_input(self) -> Vec<InputType<'a>> {
-        let field_types = vec![self.clone(), InputType::object(field_ref_input_object_type(self))];
+        let field_types = vec![
+            self.clone(),
+            InputType::object(field_ref_input_object_type(self)),
+        ];
 
         field_types
     }
@@ -20,7 +24,11 @@ fn field_ref_input_object_type(allow_type: InputType<'_>) -> InputObjectType<'_>
     object.set_fields(|| {
         vec![
             input_field(filters::UNDERSCORE_REF, vec![InputType::string()], None),
-            input_field(filters::UNDERSCORE_CONTAINER, vec![InputType::string()], None),
+            input_field(
+                filters::UNDERSCORE_CONTAINER,
+                vec![InputType::string()],
+                None,
+            ),
         ]
     });
     object

@@ -224,7 +224,8 @@ async fn check_and_exclusion_constraints_stopgap(api: &mut TestApi) -> TestResul
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
@@ -304,7 +305,8 @@ async fn exclusion_constraints_stopgap(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
@@ -380,13 +382,16 @@ async fn exclusion_constraints_without_where_stopgap(api: &mut TestApi) -> TestR
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
 
 #[test_connector(tags(Postgres))]
-async fn exclusion_constraints_without_where_and_expressions_stopgap(api: &mut TestApi) -> TestResult {
+async fn exclusion_constraints_without_where_and_expressions_stopgap(
+    api: &mut TestApi,
+) -> TestResult {
     let raw_sql = indoc! {r#"
         CREATE EXTENSION btree_gist;
 
@@ -448,7 +453,8 @@ async fn exclusion_constraints_without_where_and_expressions_stopgap(api: &mut T
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }
@@ -516,7 +522,8 @@ async fn check_constraints_stopgap(api: &mut TestApi) -> TestResult {
           price      Decimal? @db.Decimal
         }
     "#]];
-    api.expect_re_introspected_datamodel(input, expectation).await;
+    api.expect_re_introspected_datamodel(input, expectation)
+        .await;
 
     Ok(())
 }

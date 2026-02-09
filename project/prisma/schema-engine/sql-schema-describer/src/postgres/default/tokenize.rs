@@ -22,7 +22,10 @@ pub(super) enum Token {
 }
 
 pub(super) fn tokenize(default_string: &str) -> Vec<(Token, u32)> {
-    let mut char_indices = default_string.char_indices().map(|(idx, c)| (idx as u32, c)).peekable();
+    let mut char_indices = default_string
+        .char_indices()
+        .map(|(idx, c)| (idx as u32, c))
+        .peekable();
     let mut out = Vec::new();
 
     loop {

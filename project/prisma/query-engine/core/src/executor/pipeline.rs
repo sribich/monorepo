@@ -1,7 +1,13 @@
-use crate::{Env, Expressionista, IrSerializer, QueryGraph, QueryInterpreter, ResponseData};
 use schema::QuerySchema;
 use telemetry::TraceParent;
 use tracing::Instrument;
+
+use crate::Env;
+use crate::Expressionista;
+use crate::IrSerializer;
+use crate::QueryGraph;
+use crate::QueryInterpreter;
+use crate::ResponseData;
 
 #[derive(Debug)]
 pub(crate) struct QueryPipeline<'conn, 'schema> {

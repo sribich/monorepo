@@ -238,7 +238,10 @@ mod decimal_filter {
             }) { id }}"#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#
+        );
 
         Ok(())
     }
@@ -263,7 +266,10 @@ mod decimal_filter {
             }) { id }}"#
         );
 
-        run_query!(runner, r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#);
+        run_query!(
+            runner,
+            r#"mutation { createOneTestModel(data: { id: 3 }) { id }}"#
+        );
 
         Ok(())
     }

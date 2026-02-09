@@ -1,9 +1,13 @@
+use itertools::Itertools;
+
 /// Functions in this module are meant to parse the JSON result of mutation sent to the Query Engine
 /// in order to extract the generated id(s).
 use crate::TestError;
-use itertools::Itertools;
 
-pub fn walk_json<'a>(json: &'a serde_json::Value, path: &[&str]) -> Result<&'a serde_json::Value, TestError> {
+pub fn walk_json<'a>(
+    json: &'a serde_json::Value,
+    path: &[&str],
+) -> Result<&'a serde_json::Value, TestError> {
     path.iter().try_fold(json, |acc, p| {
         let key = if p.starts_with('[') && p.ends_with(']') {
             let index: String = p.chars().skip(1).take_while(|c| *c != ']').collect();
@@ -28,7 +32,12 @@ pub fn walk_json<'a>(json: &'a serde_json::Value, path: &[&str]) -> Result<&'a s
 /// Parses the JSON result of mutation sent to the Query Engine in order to extract the generated id.
 /// Returns a string that's already formatted to be included in another query. eg:
 /// { "id": "my_fancy_id" }
-pub fn parse_id(field: &str, json: &serde_json::Value, path: &[&str], meta: &str) -> Result<String, TestError> {
+pub fn parse_id(
+    field: &str,
+    json: &serde_json::Value,
+    path: &[&str],
+    meta: &str,
+) -> Result<String, TestError> {
     let mut path_with_field = path.to_vec();
     path_with_field.push(field);
 
@@ -96,7 +105,11 @@ pub fn parse_many_compound_ids(
 }
 
 /// Performs the same extraction as `parse_id` but for an array
-pub fn parse_many_ids(field: &str, json: &serde_json::Value, path: &[&str]) -> Result<Vec<String>, TestError> {
+pub fn parse_many_ids(
+    field: &str,
+    json: &serde_json::Value,
+    path: &[&str],
+) -> Result<Vec<String>, TestError> {
     match walk_json(json, path)? {
         serde_json::Value::Array(arr) => {
             let ids = arr

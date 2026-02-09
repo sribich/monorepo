@@ -1,8 +1,10 @@
 //! Rendering of model level index definitions.
 
-use crate::introspection::introspection_pair::{IndexOps, IndexPair};
 use datamodel_renderer::datamodel as renderer;
 use sql_schema_describer as sql;
+
+use crate::introspection::introspection_pair::IndexOps;
+use crate::introspection::introspection_pair::IndexPair;
 
 pub(super) fn render(index: IndexPair<'_>) -> renderer::IndexDefinition<'_> {
     let fields = index.fields().map(|field| {

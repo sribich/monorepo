@@ -1,32 +1,34 @@
-use crate::{ClosedTransaction, InteractiveTransaction, Operation, ResponseData};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::sync::LazyLock;
+
 use connector::Connection;
 use lru::LruCache;
-use schema::QuerySchemaRef;
-use std::{
-    collections::HashMap,
-    sync::{Arc, LazyLock},
-};
-use telemetry::TraceParent;
-use tokio::{
-    sync::{
-        Mutex, RwLock,
-        mpsc::{UnboundedSender, unbounded_channel},
-    },
-    time::Duration,
-};
-use tracing_futures::WithSubscriber;
-
-#[cfg(not(feature = "metrics"))]
-use crate::metrics::MetricsInstrumentationStub;
 #[cfg(feature = "metrics")]
 use prisma_metrics::WithMetricsInstrumentation;
+use schema::QuerySchemaRef;
+use telemetry::TraceParent;
+use tokio::sync::Mutex;
+use tokio::sync::RwLock;
+use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::unbounded_channel;
+use tokio::time::Duration;
+use tracing_futures::WithSubscriber;
 
-use super::{TransactionError, TxId};
+use super::TransactionError;
+use super::TxId;
+use crate::ClosedTransaction;
+use crate::InteractiveTransaction;
+use crate::Operation;
+use crate::ResponseData;
+#[cfg(not(feature = "metrics"))]
+use crate::metrics::MetricsInstrumentationStub;
 
-pub static CLOSED_TX_CACHE_SIZE: LazyLock<usize> = LazyLock::new(|| match std::env::var("CLOSED_TX_CACHE_SIZE") {
-    Ok(size) => size.parse().unwrap_or(100),
-    Err(_) => 100,
-});
+pub static CLOSED_TX_CACHE_SIZE: LazyLock<usize> =
+    LazyLock::new(|| match std::env::var("CLOSED_TX_CACHE_SIZE") {
+        Ok(size) => size.parse().unwrap_or(100),
+        Err(_) => 100,
+    });
 
 pub struct ItxManager {
     /// Stores all current transactions (some of them might be already committed/expired/rolled back).
@@ -59,7 +61,9 @@ pub struct ItxManager {
 
 impl ItxManager {
     pub fn new() -> Self {
-        let transactions = Arc::new(RwLock::new(HashMap::<_, Arc<Mutex<InteractiveTransaction>>>::default()));
+        let transactions = Arc::new(RwLock::new(
+            HashMap::<_, Arc<Mutex<InteractiveTransaction>>>::default(),
+        ));
         let closed_txs = Arc::new(RwLock::new(LruCache::new(*CLOSED_TX_CACHE_SIZE)));
         let (timeout_sender, mut timeout_receiver) = unbounded_channel();
 
@@ -122,8 +126,14 @@ impl ItxManager {
             }
         });
 
-        let transaction =
-            InteractiveTransaction::new(tx_id.clone(), conn, timeout, query_schema, isolation_level).await?;
+        let transaction = InteractiveTransaction::new(
+            tx_id.clone(),
+            conn,
+            timeout,
+            query_schema,
+            isolation_level,
+        )
+        .await?;
 
         self.transactions
             .write()
@@ -140,14 +150,16 @@ impl ItxManager {
         if let Some(transaction) = self.transactions.read().await.get(tx_id) {
             Ok(Arc::clone(transaction))
         } else {
-            Err(if let Some(closed_tx) = self.closed_txs.read().await.peek(tx_id) {
-                TransactionError::Closed {
-                    reason: closed_tx.error_message_for(from_operation),
-                }
-                .into()
-            } else {
-                TransactionError::NotFound.into()
-            })
+            Err(
+                if let Some(closed_tx) = self.closed_txs.read().await.peek(tx_id) {
+                    TransactionError::Closed {
+                        reason: closed_tx.error_message_for(from_operation),
+                    }
+                    .into()
+                } else {
+                    TransactionError::NotFound.into()
+                },
+            )
         }
     }
 
@@ -180,7 +192,12 @@ impl ItxManager {
     }
 
     pub async fn commit_tx(&self, tx_id: &TxId) -> crate::Result<()> {
-        self.get_transaction(tx_id, "commit").await?.lock().await.commit().await
+        self.get_transaction(tx_id, "commit")
+            .await?
+            .lock()
+            .await
+            .commit()
+            .await
     }
 
     pub async fn rollback_tx(&self, tx_id: &TxId) -> crate::Result<()> {

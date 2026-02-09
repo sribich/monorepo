@@ -1,32 +1,38 @@
 mod lateral;
 mod subquery;
 
-use itertools::{Either, Itertools};
 use std::borrow::Cow;
 
-use psl::{
-    datamodel_connector::{ConnectorCapability, Flavour},
-    has_capability,
-};
+use itertools::Either;
+use itertools::Itertools;
+use psl::datamodel_connector::ConnectorCapability;
+use psl::datamodel_connector::Flavour;
+use psl::has_capability;
 use quaint::prelude::*;
 use query_structure::*;
 
-use crate::{
-    context::Context,
-    filter::alias::Alias,
-    model_extensions::{AsColumn, AsColumns, AsTable, ColumnIterator, RelationFieldExt},
-    ordering::OrderByBuilder,
-    sql_trace::SqlTraceComment,
-};
-
-use self::{lateral::LateralJoinSelectBuilder, subquery::SubqueriesSelectBuilder};
+use self::lateral::LateralJoinSelectBuilder;
+use self::subquery::SubqueriesSelectBuilder;
+use crate::context::Context;
+use crate::filter::alias::Alias;
+use crate::model_extensions::AsColumn;
+use crate::model_extensions::AsColumns;
+use crate::model_extensions::AsTable;
+use crate::model_extensions::ColumnIterator;
+use crate::model_extensions::RelationFieldExt;
+use crate::ordering::OrderByBuilder;
+use crate::sql_trace::SqlTraceComment;
 
 pub(crate) const JSON_AGG_IDENT: &str = "__prisma_data__";
 
 pub struct SelectBuilder;
 
 impl SelectBuilder {
-    pub fn build(args: QueryArguments, selected_fields: &FieldSelection, ctx: &Context<'_>) -> Select<'static> {
+    pub fn build(
+        args: QueryArguments,
+        selected_fields: &FieldSelection,
+        ctx: &Context<'_>,
+    ) -> Select<'static> {
         if supports_lateral_join(&args) {
             LateralJoinSelectBuilder::default().build(args, selected_fields, ctx)
         } else {
@@ -38,7 +44,12 @@ impl SelectBuilder {
 pub(crate) trait JoinSelectBuilder {
     /// Build the select query for the given query arguments and selected fields.
     /// This is the entry point for building a select query. `build_default_select` can be used to get a default select query.
-    fn build(&mut self, args: QueryArguments, selected_fields: &FieldSelection, ctx: &Context<'_>) -> Select<'static>;
+    fn build(
+        &mut self,
+        args: QueryArguments,
+        selected_fields: &FieldSelection,
+        ctx: &Context<'_>,
+    ) -> Select<'static>;
     /// Adds to `select` the SQL statements to fetch a 1-1 relation.
     fn add_to_one_relation<'a>(
         &mut self,
@@ -166,7 +177,10 @@ pub(crate) trait JoinSelectBuilder {
 
         // Build the JSON object utilizing the information we collected in `with_relations` and
         // `with_virtual_selections`.
-        let inner = inner.value(self.build_json_obj_fn(rs, root_alias, ctx).alias(JSON_AGG_IDENT));
+        let inner = inner.value(
+            self.build_json_obj_fn(rs, root_alias, ctx)
+                .alias(JSON_AGG_IDENT),
+        );
 
         let linking_fields = rs.field.related_field().linking_fields();
 
@@ -198,7 +212,9 @@ pub(crate) trait JoinSelectBuilder {
             .map(|c| c.table(root_alias.to_string()))
             .collect();
 
-            let inner = inner.with_columns(inner_selection.into()).comment("inner select");
+            let inner = inner
+                .with_columns(inner_selection.into())
+                .comment("inner select");
 
             let override_empty_middle_take = match connector_flavour(&rs.args) {
                 // On MySQL, using LIMIT makes the ordering of the JSON_AGG working. Beware, this is undocumented behavior.
@@ -237,8 +253,12 @@ pub(crate) trait JoinSelectBuilder {
         ctx: &Context<'_>,
     ) -> Select<'a> {
         match (rs.field.is_list(), rs.field.relation().is_many_to_many()) {
-            (true, true) => self.add_many_to_many_relation(select, rs, parent_virtuals, parent_alias, ctx),
-            (true, false) => self.add_to_many_relation(select, rs, parent_virtuals, parent_alias, ctx),
+            (true, true) => {
+                self.add_many_to_many_relation(select, rs, parent_virtuals, parent_alias, ctx)
+            }
+            (true, false) => {
+                self.add_to_many_relation(select, rs, parent_virtuals, parent_alias, ctx)
+            }
             (false, _) => self.add_to_one_relation(select, rs, parent_alias, ctx),
         }
     }
@@ -254,11 +274,21 @@ pub(crate) trait JoinSelectBuilder {
         let virtual_selections = virtual_selections.collect::<Vec<_>>();
 
         relation_selections.fold(input, |acc, rs| {
-            self.with_relation(acc, rs, virtual_selections.iter().copied(), parent_alias, ctx)
+            self.with_relation(
+                acc,
+                rs,
+                virtual_selections.iter().copied(),
+                parent_alias,
+                ctx,
+            )
         })
     }
 
-    fn build_default_select(&mut self, args: &QueryArguments, ctx: &Context<'_>) -> (Select<'static>, Alias) {
+    fn build_default_select(
+        &mut self,
+        args: &QueryArguments,
+        ctx: &Context<'_>,
+    ) -> (Select<'static>, Alias) {
         let table_alias = ctx.next_table_alias();
         let table = args.model().as_table(ctx).alias(table_alias.to_string());
 
@@ -298,7 +328,13 @@ pub(crate) trait JoinSelectBuilder {
         match vs {
             VirtualSelection::RelationCount(rf, filter) => {
                 if rf.relation().is_many_to_many() {
-                    self.build_relation_count_query_m2m(vs.db_alias(), rf, filter, parent_alias, ctx)
+                    self.build_relation_count_query_m2m(
+                        vs.db_alias(),
+                        rf,
+                        filter,
+                        parent_alias,
+                        ctx,
+                    )
                 } else {
                     self.build_relation_count_query(vs.db_alias(), rf, filter, parent_alias, ctx)
                 }
@@ -340,7 +376,10 @@ pub(crate) trait JoinSelectBuilder {
     ) -> Select<'a> {
         let related_table_alias = ctx.next_table_alias();
 
-        let related_table = rf.related_model().as_table(ctx).alias(related_table_alias.to_string());
+        let related_table = rf
+            .related_model()
+            .as_table(ctx)
+            .alias(related_table_alias.to_string());
 
         Select::from_table(related_table)
             .value(count(asterisk()).alias(selection_name))
@@ -359,11 +398,15 @@ pub(crate) trait JoinSelectBuilder {
         let related_table_alias = ctx.next_table_alias();
         let m2m_table_alias = ctx.next_table_alias();
 
-        let related_table = rf.related_model().as_table(ctx).alias(related_table_alias.to_string());
+        let related_table = rf
+            .related_model()
+            .as_table(ctx)
+            .alias(related_table_alias.to_string());
 
         let m2m_join_conditions = {
             let left_columns = rf.join_columns(ctx);
-            let right_columns = ModelProjection::from(rf.related_field().linking_fields()).as_columns(ctx);
+            let right_columns =
+                ModelProjection::from(rf.related_field().linking_fields()).as_columns(ctx);
             build_join_conditions(
                 (left_columns, Some(m2m_table_alias)),
                 (right_columns, Some(related_table_alias)),
@@ -377,7 +420,8 @@ pub(crate) trait JoinSelectBuilder {
 
         let aggregation_join_conditions = {
             let left_columns = vec![rf.related_field().m2m_column(ctx)];
-            let right_columns = ModelProjection::from(rf.model().primary_identifier()).as_columns(ctx);
+            let right_columns =
+                ModelProjection::from(rf.model().primary_identifier()).as_columns(ctx);
             build_join_conditions(
                 (left_columns.into(), Some(m2m_table_alias)),
                 (right_columns, Some(parent_alias)),
@@ -396,18 +440,34 @@ pub(crate) trait JoinSelectBuilder {
         rs: &RelationSelection,
         mut parent_virtuals: impl Iterator<Item = &'a VirtualSelection>,
     ) -> Option<&'a VirtualSelection> {
-        if rs.args.take.is_some() || rs.args.skip.is_some() || rs.args.cursor.is_some() || rs.args.distinct.is_some() {
+        if rs.args.take.is_some()
+            || rs.args.skip.is_some()
+            || rs.args.cursor.is_some()
+            || rs.args.distinct.is_some()
+        {
             return None;
         }
 
-        parent_virtuals.find(|vs| *vs.relation_field() == rs.field && vs.filter() == rs.args.filter.as_ref())
+        parent_virtuals
+            .find(|vs| *vs.relation_field() == rs.field && vs.filter() == rs.args.filter.as_ref())
     }
 }
 
 pub(crate) trait SelectBuilderExt<'a> {
-    fn with_filters(self, filter: Option<Filter>, parent_alias: Option<Alias>, ctx: &Context<'_>) -> Select<'a>;
-    fn with_pagination(self, args: &QueryArguments, override_empty_take: Option<i64>) -> Select<'a>;
-    fn with_ordering(self, args: &QueryArguments, parent_alias: Option<String>, ctx: &Context<'_>) -> Select<'a>;
+    fn with_filters(
+        self,
+        filter: Option<Filter>,
+        parent_alias: Option<Alias>,
+        ctx: &Context<'_>,
+    ) -> Select<'a>;
+    fn with_pagination(self, args: &QueryArguments, override_empty_take: Option<i64>)
+    -> Select<'a>;
+    fn with_ordering(
+        self,
+        args: &QueryArguments,
+        parent_alias: Option<String>,
+        ctx: &Context<'_>,
+    ) -> Select<'a>;
     fn with_distinct(self, args: &QueryArguments, table_alias: Alias) -> Select<'a>;
     fn with_join_conditions(
         self,
@@ -427,16 +487,24 @@ pub(crate) trait SelectBuilderExt<'a> {
 }
 
 impl<'a> SelectBuilderExt<'a> for Select<'a> {
-    fn with_filters(self, filter: Option<Filter>, parent_alias: Option<Alias>, ctx: &Context<'_>) -> Select<'a> {
+    fn with_filters(
+        self,
+        filter: Option<Filter>,
+        parent_alias: Option<Alias>,
+        ctx: &Context<'_>,
+    ) -> Select<'a> {
         use crate::filter::*;
 
         if let Some(filter) = filter {
-            let mut visitor = crate::filter::FilterVisitor::with_top_level_joins().set_parent_alias_opt(parent_alias);
+            let mut visitor = crate::filter::FilterVisitor::with_top_level_joins()
+                .set_parent_alias_opt(parent_alias);
             let (filter, joins) = visitor.visit_filter(filter, ctx);
             let select = self.and_where(filter);
 
             match joins {
-                Some(joins) => joins.into_iter().fold(select, |acc, join| acc.join(join.data)),
+                Some(joins) => joins
+                    .into_iter()
+                    .fold(select, |acc, join| acc.join(join.data)),
                 None => select,
             }
         } else {
@@ -444,9 +512,15 @@ impl<'a> SelectBuilderExt<'a> for Select<'a> {
         }
     }
 
-    fn with_pagination(self, args: &QueryArguments, override_empty_take: Option<i64>) -> Select<'a> {
+    fn with_pagination(
+        self,
+        args: &QueryArguments,
+        override_empty_take: Option<i64>,
+    ) -> Select<'a> {
         let take = match args.take.abs() {
-            Some(_) if args.requires_inmemory_pagination(RelationLoadStrategy::Join) => override_empty_take,
+            Some(_) if args.requires_inmemory_pagination(RelationLoadStrategy::Join) => {
+                override_empty_take
+            }
             Some(take) => Some(take),
             None => override_empty_take,
         };
@@ -467,7 +541,12 @@ impl<'a> SelectBuilderExt<'a> for Select<'a> {
         }
     }
 
-    fn with_ordering(self, args: &QueryArguments, parent_alias: Option<String>, ctx: &Context<'_>) -> Select<'a> {
+    fn with_ordering(
+        self,
+        args: &QueryArguments,
+        parent_alias: Option<String>,
+        ctx: &Context<'_>,
+    ) -> Select<'a> {
         let order_by_definitions = OrderByBuilder::default()
             .with_parent_alias(parent_alias)
             .build(args, ctx);
@@ -487,7 +566,9 @@ impl<'a> SelectBuilderExt<'a> for Select<'a> {
             return self;
         }
 
-        let Some(ref distinct) = args.distinct else { return self };
+        let Some(ref distinct) = args.distinct else {
+            return self;
+        };
 
         let distinct_fields = distinct
             .scalars()
@@ -523,7 +604,9 @@ impl<'a> SelectBuilderExt<'a> for Select<'a> {
     }
 
     fn with_columns(self, columns: ColumnIterator) -> Select<'a> {
-        columns.into_iter().fold(self, |select, col| select.column(col))
+        columns
+            .into_iter()
+            .fold(self, |select, col| select.column(col))
     }
 }
 
@@ -550,7 +633,8 @@ impl JoinConditionExt for RelationField {
         ctx: &Context<'_>,
     ) -> ConditionTree<'static> {
         let left_columns = self.join_columns(ctx);
-        let right_columns = ModelProjection::from(self.related_field().linking_fields()).as_columns(ctx);
+        let right_columns =
+            ModelProjection::from(self.related_field().linking_fields()).as_columns(ctx);
 
         build_join_conditions((left_columns, left_alias), (right_columns, right_alias))
     }
@@ -562,9 +646,13 @@ impl JoinConditionExt for RelationField {
         ctx: &Context<'_>,
     ) -> ConditionTree<'static> {
         let left_columns = vec![self.m2m_column(ctx)];
-        let right_columns = ModelProjection::from(self.related_model().primary_identifier()).as_columns(ctx);
+        let right_columns =
+            ModelProjection::from(self.related_model().primary_identifier()).as_columns(ctx);
 
-        build_join_conditions((left_columns.into(), left_alias), (right_columns, right_alias))
+        build_join_conditions(
+            (left_columns.into(), left_alias),
+            (right_columns, right_alias),
+        )
     }
 }
 
@@ -604,7 +692,10 @@ fn first_hop_linking_fields(hops: &[OrderByHop]) -> Vec<ScalarFieldRef> {
 }
 
 fn relation_selection(rs: &RelationSelection) -> FieldSelection {
-    let relation_fields = rs.relations().flat_map(|rs| join_fields(&rs.field)).collect::<Vec<_>>();
+    let relation_fields = rs
+        .relations()
+        .flat_map(|rs| join_fields(&rs.field))
+        .collect::<Vec<_>>();
 
     FieldSelection::from(relation_fields)
 }
@@ -623,7 +714,11 @@ fn distinct_selection(rs: &RelationSelection) -> FieldSelection {
 
 fn json_obj_selections(rs: &RelationSelection) -> impl Iterator<Item = &SelectedField> + '_ {
     match rs.args.distinct.as_ref() {
-        Some(distinct) if rs.args.requires_inmemory_distinct(RelationLoadStrategy::Join) => {
+        Some(distinct)
+            if rs
+                .args
+                .requires_inmemory_distinct(RelationLoadStrategy::Join) =>
+        {
             Either::Left(rs.selections.iter().chain(distinct.selections()).unique())
         }
         _ => Either::Right(rs.selections.iter()),
@@ -635,7 +730,11 @@ fn extract_filter_scalars(f: &Filter) -> Vec<ScalarFieldRef> {
         Filter::And(x) => x.iter().flat_map(extract_filter_scalars).collect(),
         Filter::Or(x) => x.iter().flat_map(extract_filter_scalars).collect(),
         Filter::Not(x) => x.iter().flat_map(extract_filter_scalars).collect(),
-        Filter::Scalar(x) => x.scalar_fields().into_iter().map(ToOwned::to_owned).collect(),
+        Filter::Scalar(x) => x
+            .scalar_fields()
+            .into_iter()
+            .map(ToOwned::to_owned)
+            .collect(),
         Filter::ScalarList(x) => vec![x.field.clone()],
         Filter::OneRelationIsNull(x) => join_fields(&x.field),
         Filter::Relation(x) => join_fields(&x.field),
@@ -686,7 +785,11 @@ fn json_agg() -> Function<'static> {
     .alias(JSON_AGG_IDENT)
 }
 
-pub(crate) fn aliased_scalar_column(sf: &ScalarField, parent_alias: Alias, ctx: &Context<'_>) -> Column<'static> {
+pub(crate) fn aliased_scalar_column(
+    sf: &ScalarField,
+    parent_alias: Alias,
+    ctx: &Context<'_>,
+) -> Column<'static> {
     let col = sf
         .as_column(ctx)
         .table(parent_alias.to_table_alias().to_string())
@@ -709,5 +812,8 @@ fn connector_flavour(args: &QueryArguments) -> Flavour {
 }
 
 fn supports_lateral_join(args: &QueryArguments) -> bool {
-    has_capability(args.model().dm.schema.connector, ConnectorCapability::LateralJoin)
+    has_capability(
+        args.model().dm.schema.connector,
+        ConnectorCapability::LateralJoin,
+    )
 }

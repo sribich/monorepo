@@ -1,5 +1,6 @@
-use query_engine_tests::*;
 use std::cmp;
+
+use query_engine_tests::*;
 
 #[test_suite(schema(schema))]
 mod pagination {
@@ -874,7 +875,9 @@ mod pagination {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

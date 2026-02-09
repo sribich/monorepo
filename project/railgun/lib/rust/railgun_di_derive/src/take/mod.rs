@@ -1,10 +1,13 @@
-use macro_util::{
-    ast::{Input, Struct, StructKind},
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_type_bound},
-};
+use macro_util::ast::Input;
+use macro_util::ast::Struct;
+use macro_util::ast::StructKind;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_type_bound;
 use proc_macro::TokenStream;
 use proc_macro_error2::abort;
-use quote::{format_ident, quote};
+use quote::format_ident;
+use quote::quote;
 
 pub fn derive(input: TokenStream) -> TokenStream {
     inner_derive(input)

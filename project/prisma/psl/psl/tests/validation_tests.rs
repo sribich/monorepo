@@ -1,12 +1,19 @@
 mod panic_with_diff;
 
-use psl::{SourceFile, ValidatedSchema};
-use std::{fs, io::Write as _, path, sync::Arc};
+use std::fs;
+use std::io::Write as _;
+use std::path;
+use std::sync::Arc;
+
+use psl::SourceFile;
+use psl::ValidatedSchema;
 
 const TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/validation");
 
 /// Parse and analyze a Prisma schema, returning Err if there are any diagnostics (warnings or errors).
-fn parse_schema_fail_on_diagnostics(file: impl Into<SourceFile>) -> Result<ValidatedSchema, String> {
+fn parse_schema_fail_on_diagnostics(
+    file: impl Into<SourceFile>,
+) -> Result<ValidatedSchema, String> {
     let schema = psl::validate_without_extensions(file.into());
 
     let file_name = "schema.prisma";
@@ -66,7 +73,8 @@ fn run_validation_test(test_file_path: &str) {
         })
         .unwrap_or_default();
 
-    let source_file = psl::parser_database::SourceFile::new_allocated(Arc::from(text.into_boxed_str()));
+    let source_file =
+        psl::parser_database::SourceFile::new_allocated(Arc::from(text.into_boxed_str()));
 
     let validation_result = parse_schema_fail_on_diagnostics(source_file.clone());
 

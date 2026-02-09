@@ -1,18 +1,30 @@
 use log::warn;
-use lsp_types::{Hover, HoverContents, HoverParams, MarkupContent, MarkupKind};
-use psl::{
-    Diagnostics, SourceFile, error_tolerant_parse_configuration,
-    parser_database::{
-        NoExtensionTypes, ParserDatabase, RelationFieldId, ScalarFieldType,
-        walkers::{self, Walker},
-    },
-    psl_ast::ast::{
-        self, EnumPosition, EnumValuePosition, Field, FieldPosition, ModelPosition,
-        SchemaPosition, WithDocumentation, WithName,
-    },
-};
+use lsp_types::Hover;
+use lsp_types::HoverContents;
+use lsp_types::HoverParams;
+use lsp_types::MarkupContent;
+use lsp_types::MarkupKind;
+use psl::Diagnostics;
+use psl::SourceFile;
+use psl::error_tolerant_parse_configuration;
+use psl::parser_database::NoExtensionTypes;
+use psl::parser_database::ParserDatabase;
+use psl::parser_database::RelationFieldId;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::walkers::Walker;
+use psl::parser_database::walkers::{self};
+use psl::psl_ast::ast::EnumPosition;
+use psl::psl_ast::ast::EnumValuePosition;
+use psl::psl_ast::ast::Field;
+use psl::psl_ast::ast::FieldPosition;
+use psl::psl_ast::ast::ModelPosition;
+use psl::psl_ast::ast::SchemaPosition;
+use psl::psl_ast::ast::WithDocumentation;
+use psl::psl_ast::ast::WithName;
+use psl::psl_ast::ast::{self};
 
-use crate::{LSPContext, offsets::position_to_offset};
+use crate::LSPContext;
+use crate::offsets::position_to_offset;
 
 pub(super) type HoverContext<'a> = LSPContext<'a, HoverParams>;
 
@@ -33,7 +45,13 @@ pub fn run(schema_files: Vec<(String, SourceFile)>, params: HoverParams) -> Opti
         ParserDatabase::new(&schema_files, &mut diag, &NoExtensionTypes)
     };
 
-    let Some(initiating_file_id) = db.file_id(params.text_document_position_params.text_document.uri.as_str()) else {
+    let Some(initiating_file_id) = db.file_id(
+        params
+            .text_document_position_params
+            .text_document
+            .uri
+            .as_str(),
+    ) else {
         warn!("Initiating file name is not found in the schema");
         return None;
     };
@@ -79,7 +97,10 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
         }
 
         // --- Block Field Names ---
-        SchemaPosition::Model(model_id, ModelPosition::Field(field_id, FieldPosition::Name(name))) => {
+        SchemaPosition::Model(
+            model_id,
+            ModelPosition::Field(field_id, FieldPosition::Name(name)),
+        ) => {
             let field = ctx
                 .db
                 .walk((ctx.initiating_file_id, model_id))
@@ -93,7 +114,10 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
                 None,
             ))
         }
-        SchemaPosition::Enum(enm_id, EnumPosition::Value(value_id, EnumValuePosition::Name(name))) => {
+        SchemaPosition::Enum(
+            enm_id,
+            EnumPosition::Value(value_id, EnumValuePosition::Name(name)),
+        ) => {
             let value = ctx
                 .db
                 .walk((ctx.initiating_file_id, enm_id))
@@ -109,8 +133,14 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
         }
 
         // --- Block Field Types ---
-        SchemaPosition::Model(model_id, ModelPosition::Field(field_id, FieldPosition::Type(name))) => {
-            let initiating_field = &ctx.db.walk((ctx.initiating_file_id, model_id)).field(field_id);
+        SchemaPosition::Model(
+            model_id,
+            ModelPosition::Field(field_id, FieldPosition::Type(name)),
+        ) => {
+            let initiating_field = &ctx
+                .db
+                .walk((ctx.initiating_file_id, model_id))
+                .field(field_id);
 
             initiating_field.refine().and_then(|field| match field {
                 walkers::RefinedFieldWalker::Scalar(scalar) => match scalar.scalar_field_type() {
@@ -126,7 +156,10 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
                     let related_model_type = "model";
 
                     Some(format_hover_content(
-                        opposite_model.ast_model().documentation().unwrap_or_default(),
+                        opposite_model
+                            .ast_model()
+                            .documentation()
+                            .unwrap_or_default(),
                         related_model_type,
                         name,
                         relation_info,
@@ -137,7 +170,10 @@ fn hover(ctx: HoverContext<'_>) -> Option<Hover> {
         _ => None,
     };
 
-    contents.map(|contents| Hover { contents, range: None })
+    contents.map(|contents| Hover {
+        contents,
+        range: None,
+    })
 }
 
 fn hover_enum(enm: &ast::Enum, name: &str) -> HoverContents {
@@ -178,15 +214,29 @@ fn format_relation_info(
 
         let fields = rf
             .referencing_fields()
-            .map(|fields| fields.map(|f| f.to_string()).collect::<Vec<String>>().join(", "))
+            .map(|fields| {
+                fields
+                    .map(|f| f.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            })
             .map_or_else(String::new, |fields| format!(", fields: [{fields}]"));
 
         let references = rf
             .referenced_fields()
-            .map(|fields| fields.map(|f| f.to_string()).collect::<Vec<String>>().join(", "))
+            .map(|fields| {
+                fields
+                    .map(|f| f.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            })
             .map_or_else(String::new, |fields| format!(", references: [{fields}]"));
 
-        let self_relation = if relation.is_self_relation() { " on self" } else { "" };
+        let self_relation = if relation.is_self_relation() {
+            " on self"
+        } else {
+            ""
+        };
         let relation_kind = format!("{}{}", relation.relation_kind(), self_relation);
 
         let relation_name = relation.relation_name();

@@ -1,6 +1,10 @@
 use query_engine_tests::*;
 
-#[test_suite(schema(schema), capabilities(AnyId), exclude_executors("QueryCompiler"))]
+#[test_suite(
+    schema(schema),
+    capabilities(AnyId),
+    exclude_executors("QueryCompiler")
+)]
 mod compound_batch {
     use indoc::indoc;
 
@@ -366,8 +370,10 @@ mod compound_batch {
         );
 
         let queries = vec![
-            r#"query {findUniqueTestModel(where:{ id: 1, int: { equals: [1, 2, 3] } }) {id, int}}"#.to_string(),
-            r#"query {findUniqueTestModel(where:{ id: 2, int: { equals: [1, 3, 4] } }) {id, int}}"#.to_string(),
+            r#"query {findUniqueTestModel(where:{ id: 1, int: { equals: [1, 2, 3] } }) {id, int}}"#
+                .to_string(),
+            r#"query {findUniqueTestModel(where:{ id: 2, int: { equals: [1, 3, 4] } }) {id, int}}"#
+                .to_string(),
         ];
 
         // COMPACT: Queries use scalar list

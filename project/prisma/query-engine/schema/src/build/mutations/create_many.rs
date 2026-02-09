@@ -1,10 +1,21 @@
-use super::*;
-use crate::{Identifier, IdentifierType, InputField, InputType, OutputField, OutputType, QueryInfo, QueryTag};
 use constants::*;
-use input_types::{fields::data_input_mapper::*, list_union_type};
-use output_types::{field, objects};
+use input_types::fields::data_input_mapper::*;
+use input_types::list_union_type;
+use output_types::field;
+use output_types::objects;
 use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{Model, RelationFieldRef};
+use query_structure::Model;
+use query_structure::RelationFieldRef;
+
+use super::*;
+use crate::Identifier;
+use crate::IdentifierType;
+use crate::InputField;
+use crate::InputType;
+use crate::OutputField;
+use crate::OutputType;
+use crate::QueryInfo;
+use crate::QueryTag;
 
 /// Builds a create many mutation field (e.g. createManyUsers) for given model.
 pub(crate) fn create_many(ctx: &'_ QuerySchema, model: Model) -> OutputField<'_> {
@@ -39,7 +50,10 @@ pub(crate) fn create_many_and_return(ctx: &'_ QuerySchema, model: Model) -> Outp
     )
 }
 
-pub(crate) fn create_many_and_return_output_type(ctx: &'_ QuerySchema, model: Model) -> ObjectType<'_> {
+pub(crate) fn create_many_and_return_output_type(
+    ctx: &'_ QuerySchema,
+    model: Model,
+) -> ObjectType<'_> {
     let model_id = model.id;
     let mut obj = ObjectType::new(
         Identifier::new_model(IdentifierType::CreateManyAndReturnOutput(model.clone())),
@@ -72,7 +86,8 @@ pub(crate) fn create_many_arguments(ctx: &'_ QuerySchema, model: Model) -> Vec<I
     let data_arg = input_field(args::DATA, list_union_type(create_many_type, true), None);
 
     if ctx.has_capability(ConnectorCapability::CreateSkipDuplicates) {
-        let skip_arg = input_field(args::SKIP_DUPLICATES, vec![InputType::boolean()], None).optional();
+        let skip_arg =
+            input_field(args::SKIP_DUPLICATES, vec![InputType::boolean()], None).optional();
 
         vec![data_arg, skip_arg]
     } else {

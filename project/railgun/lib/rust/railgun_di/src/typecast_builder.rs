@@ -1,10 +1,11 @@
-use core::{
-    any::{Any, TypeId},
-    marker::PhantomData,
-};
+use core::any::Any;
+use core::any::TypeId;
+use core::marker::PhantomData;
 use std::sync::Arc;
 
-use crate::{Builder, InjectionError, Injector};
+use crate::Builder;
+use crate::InjectionError;
+use crate::Injector;
 
 #[derive(Clone)]
 pub struct BindingInner {

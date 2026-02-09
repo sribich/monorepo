@@ -1,5 +1,6 @@
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::postgres::{SQLOperatorClassKind, SqlIndexAlgorithm};
+use sql_schema_describer::postgres::SQLOperatorClassKind;
+use sql_schema_describer::postgres::SqlIndexAlgorithm;
 
 #[test_connector(tags(Postgres))]
 fn gist_change_from_btree(api: TestApi) {
@@ -17,7 +18,9 @@ fn gist_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::BTree))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::BTree)
+            })
     });
 
     let dm = r#"
@@ -34,7 +37,9 @@ fn gist_change_from_btree(api: TestApi) {
     api.assert_schema().assert_table("A", |table| {
         table
             .assert_has_column("data")
-            .assert_index_on_columns(&["data"], |idx| idx.assert_algorithm(SqlIndexAlgorithm::Gist))
+            .assert_index_on_columns(&["data"], |idx| {
+                idx.assert_algorithm(SqlIndexAlgorithm::Gist)
+            })
     });
 }
 
@@ -56,7 +61,9 @@ fn gist_inet_ops(api: TestApi) {
             .assert_has_column("data")
             .assert_index_on_columns(&["data"], |idx| {
                 idx.assert_algorithm(SqlIndexAlgorithm::Gist)
-                    .assert_column("data", |attrs| attrs.assert_ops(SQLOperatorClassKind::InetOps))
+                    .assert_column("data", |attrs| {
+                        attrs.assert_ops(SQLOperatorClassKind::InetOps)
+                    })
             })
     });
 

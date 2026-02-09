@@ -1,13 +1,16 @@
 mod table_default;
 mod view_default;
 
+use either::Either;
 use prisma_value::PrismaValue;
 pub use table_default::TableDefaultValueWalker;
 pub use view_default::ViewDefaultValueWalker;
 
-use either::Either;
-
-use crate::{DefaultKind, DefaultValue, TableDefaultValueId, ViewDefaultValueId, Walker};
+use crate::DefaultKind;
+use crate::DefaultValue;
+use crate::TableDefaultValueId;
+use crate::ViewDefaultValueId;
+use crate::Walker;
 
 /// Traverse default value.
 pub type DefaultValueWalker<'a> = Walker<'a, Either<TableDefaultValueId, ViewDefaultValueId>>;

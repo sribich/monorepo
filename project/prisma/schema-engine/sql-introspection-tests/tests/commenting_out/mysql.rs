@@ -1,5 +1,6 @@
 use barrel::types;
-use sql_introspection_tests::{TestResult, test_api::*};
+use sql_introspection_tests::TestResult;
+use sql_introspection_tests::test_api::*;
 
 #[test_connector(tags(Mysql))]
 async fn a_table_without_required_uniques(api: &mut TestApi) -> TestResult {

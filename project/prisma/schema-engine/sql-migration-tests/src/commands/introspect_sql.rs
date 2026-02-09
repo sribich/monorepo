@@ -1,8 +1,9 @@
 use quaint::prelude::ColumnType;
-use schema_core::{
-    CoreError, CoreResult,
-    schema_connector::{IntrospectSqlQueryInput, IntrospectSqlQueryOutput, SchemaConnector},
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::schema_connector::IntrospectSqlQueryInput;
+use schema_core::schema_connector::IntrospectSqlQueryOutput;
+use schema_core::schema_connector::SchemaConnector;
 
 #[must_use = "This struct does nothing on its own. See ApplyMigrations::send()"]
 pub struct IntrospectSql<'a> {

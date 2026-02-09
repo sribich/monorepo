@@ -1,4 +1,5 @@
-use crate::{DatamodelError, Span};
+use crate::DatamodelError;
+use crate::Span;
 
 pub struct NativeTypeErrorFactory {
     native_type: String,
@@ -7,7 +8,10 @@ pub struct NativeTypeErrorFactory {
 
 impl NativeTypeErrorFactory {
     pub fn new(native_type: String, connector: String) -> Self {
-        NativeTypeErrorFactory { native_type, connector }
+        NativeTypeErrorFactory {
+            native_type,
+            connector,
+        }
     }
 
     pub fn new_scale_larger_than_precision_error(self, span: Span) -> DatamodelError {
@@ -20,7 +24,11 @@ impl NativeTypeErrorFactory {
         )
     }
 
-    pub fn new_incompatible_native_type_with_index(self, message: &str, span: Span) -> DatamodelError {
+    pub fn new_incompatible_native_type_with_index(
+        self,
+        message: &str,
+        span: Span,
+    ) -> DatamodelError {
         DatamodelError::new(
             format!(
                 "You cannot define an index on fields with native type `{}` of {}.{message}",
@@ -30,7 +38,11 @@ impl NativeTypeErrorFactory {
         )
     }
 
-    pub fn new_incompatible_native_type_with_unique(self, message: &str, span: Span) -> DatamodelError {
+    pub fn new_incompatible_native_type_with_unique(
+        self,
+        message: &str,
+        span: Span,
+    ) -> DatamodelError {
         DatamodelError::new(
             format!(
                 "Native type `{}` cannot be unique in {}.{message}",

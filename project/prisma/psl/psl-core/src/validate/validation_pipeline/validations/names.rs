@@ -1,9 +1,11 @@
+use std::collections::HashMap;
+use std::collections::HashSet;
+
+use parser_database::ModelId;
+use parser_database::walkers::RelationFieldId;
+use parser_database::walkers::RelationName;
+
 use super::constraint_namespace::ConstraintNamespace;
-use parser_database::{
-    ModelId,
-    walkers::{RelationFieldId, RelationName},
-};
-use std::collections::{HashMap, HashSet};
 
 type RelationIdentifier<'db> = (ModelId, ModelId, RelationName<'db>);
 
@@ -24,7 +26,8 @@ pub(super) struct Names<'db> {
 
 impl<'db> Names<'db> {
     pub(super) fn new(ctx: &super::Context<'db>) -> Self {
-        let mut relation_names: HashMap<RelationIdentifier<'db>, Vec<RelationFieldId>> = HashMap::new();
+        let mut relation_names: HashMap<RelationIdentifier<'db>, Vec<RelationFieldId>> =
+            HashMap::new();
         let mut index_names: HashSet<(ModelId, &'db str)> = HashSet::new();
         let mut unique_names: HashSet<(ModelId, &'db str)> = HashSet::new();
         let mut primary_key_names: HashMap<ModelId, &'db str> = HashMap::new();

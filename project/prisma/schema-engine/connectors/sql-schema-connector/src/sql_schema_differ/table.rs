@@ -1,11 +1,16 @@
 use std::collections::HashSet;
 
-use super::{SqlSchemaDifferFlavour, differ_database::DifferDatabase, foreign_keys_match};
+use sql_schema_describer::ForeignKeyId;
+use sql_schema_describer::TableId;
+use sql_schema_describer::walkers::ForeignKeyWalker;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+
+use super::SqlSchemaDifferFlavour;
+use super::differ_database::DifferDatabase;
+use super::foreign_keys_match;
 use crate::migration_pair::MigrationPair;
-use sql_schema_describer::{
-    ForeignKeyId, TableId,
-    walkers::{ForeignKeyWalker, IndexWalker, TableColumnWalker, TableWalker},
-};
 
 pub(crate) struct TableDiffer<'a, 'b> {
     pub(crate) tables: MigrationPair<TableWalker<'a>>,
@@ -13,15 +18,20 @@ pub(crate) struct TableDiffer<'a, 'b> {
 }
 
 impl<'schema> TableDiffer<'schema, '_> {
-    pub fn column_pairs(&self) -> impl Iterator<Item = MigrationPair<TableColumnWalker<'schema>>> + '_ {
+    pub fn column_pairs(
+        &self,
+    ) -> impl Iterator<Item = MigrationPair<TableColumnWalker<'schema>>> + '_ {
         self.db
             .column_pairs(self.tables.map(|t| t.id))
             .map(move |colids| self.db.schemas.walk(colids))
     }
 
     pub fn any_column_changed(&self) -> bool {
-        self.column_pairs()
-            .any(|col| self.db.column_changes_for_walkers(col).differs_in_something())
+        self.column_pairs().any(|col| {
+            self.db
+                .column_changes_for_walkers(col)
+                .differs_in_something()
+        })
     }
 
     pub fn dropped_columns<'a>(&'a self) -> impl Iterator<Item = TableColumnWalker<'schema>> + 'a {
@@ -36,27 +46,31 @@ impl<'schema> TableDiffer<'schema, '_> {
             .map(move |colid| self.tables.next.walk(colid))
     }
 
-    pub fn created_foreign_keys<'a>(&'a self) -> impl Iterator<Item = ForeignKeyWalker<'schema>> + 'a {
+    pub fn created_foreign_keys<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = ForeignKeyWalker<'schema>> + 'a {
         self.next_foreign_keys().filter(move |next_fk| {
-            !self
-                .previous_foreign_keys()
-                .any(|previous_fk| super::foreign_keys_match(MigrationPair::new(&previous_fk, next_fk), self.db))
+            !self.previous_foreign_keys().any(|previous_fk| {
+                super::foreign_keys_match(MigrationPair::new(&previous_fk, next_fk), self.db)
+            })
         })
     }
 
-    pub fn dropped_foreign_keys<'a>(&'a self) -> impl Iterator<Item = ForeignKeyWalker<'schema>> + 'a {
+    pub fn dropped_foreign_keys<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = ForeignKeyWalker<'schema>> + 'a {
         self.previous_foreign_keys().filter(move |previous_fk| {
-            !self
-                .next_foreign_keys()
-                .any(|next_fk| super::foreign_keys_match(MigrationPair::new(previous_fk, &next_fk), self.db))
+            !self.next_foreign_keys().any(|next_fk| {
+                super::foreign_keys_match(MigrationPair::new(previous_fk, &next_fk), self.db)
+            })
         })
     }
 
     pub fn created_indexes<'a>(&'a self) -> impl Iterator<Item = IndexWalker<'schema>> + 'a {
         self.next_indexes().filter(move |next_index| {
-            !self
-                .previous_indexes()
-                .any(move |previous_index| indexes_match(previous_index, *next_index, self.db.flavour))
+            !self.previous_indexes().any(move |previous_index| {
+                indexes_match(previous_index, *next_index, self.db.flavour)
+            })
         })
     }
 
@@ -68,13 +82,17 @@ impl<'schema> TableDiffer<'schema, '_> {
         })
     }
 
-    pub fn foreign_key_pairs(&self) -> impl Iterator<Item = MigrationPair<ForeignKeyWalker<'schema>>> + '_ {
+    pub fn foreign_key_pairs(
+        &self,
+    ) -> impl Iterator<Item = MigrationPair<ForeignKeyWalker<'schema>>> + '_ {
         let mut seen_foreign_keys: HashSet<ForeignKeyId> = HashSet::new();
 
         self.previous_foreign_keys().filter_map(move |previous_fk| {
             self.next_foreign_keys()
                 .filter(|next_fk| !seen_foreign_keys.contains(&next_fk.id))
-                .find(move |next_fk| foreign_keys_match(MigrationPair::new(&previous_fk, next_fk), self.db))
+                .find(move |next_fk| {
+                    foreign_keys_match(MigrationPair::new(&previous_fk, next_fk), self.db)
+                })
                 .map(|next_fk| {
                     seen_foreign_keys.insert(next_fk.id);
                     MigrationPair::new(previous_fk, next_fk)
@@ -82,7 +100,9 @@ impl<'schema> TableDiffer<'schema, '_> {
         })
     }
 
-    pub fn index_pairs<'a>(&'a self) -> impl Iterator<Item = MigrationPair<IndexWalker<'schema>>> + 'a {
+    pub fn index_pairs<'a>(
+        &'a self,
+    ) -> impl Iterator<Item = MigrationPair<IndexWalker<'schema>>> + 'a {
         let singular_indexes = self.previous_indexes().filter(move |left| {
             // Renaming an index in a situation where we have multiple indexes
             // with the same columns, but a different name, is highly unstable.
@@ -91,7 +111,10 @@ impl<'schema> TableDiffer<'schema, '_> {
                 .previous_indexes()
                 .filter(|right| {
                     left.column_names().len() == right.column_names().len()
-                        && left.column_names().zip(right.column_names()).all(|(a, b)| a == b)
+                        && left
+                            .column_names()
+                            .zip(right.column_names())
+                            .all(|(a, b)| a == b)
                         && left.index_type() == right.index_type()
                 })
                 .count();
@@ -167,7 +190,9 @@ impl<'schema> TableDiffer<'schema, '_> {
     }
 
     fn previous_indexes(&self) -> impl Iterator<Item = IndexWalker<'schema>> {
-        self.previous().indexes().filter(|idx| !idx.is_primary_key())
+        self.previous()
+            .indexes()
+            .filter(|idx| !idx.is_primary_key())
     }
 
     fn next_indexes(&self) -> impl Iterator<Item = IndexWalker<'schema>> {
@@ -188,7 +213,11 @@ impl<'schema> TableDiffer<'schema, '_> {
 }
 
 /// Compare two SQL indexes and return whether they only differ by name.
-fn indexes_match(first: IndexWalker<'_>, second: IndexWalker<'_>, flavour: &dyn SqlSchemaDifferFlavour) -> bool {
+fn indexes_match(
+    first: IndexWalker<'_>,
+    second: IndexWalker<'_>,
+    flavour: &dyn SqlSchemaDifferFlavour,
+) -> bool {
     let left_cols = first.columns();
     let right_cols = second.columns();
 
@@ -196,7 +225,8 @@ fn indexes_match(first: IndexWalker<'_>, second: IndexWalker<'_>, flavour: &dyn 
         && left_cols.zip(right_cols).all(|(a, b)| {
             let names_match = a.as_column().name() == b.as_column().name();
             let lengths_match = a.length() == b.length();
-            let orders_match = a.sort_order().unwrap_or_default() == b.sort_order().unwrap_or_default();
+            let orders_match =
+                a.sort_order().unwrap_or_default() == b.sort_order().unwrap_or_default();
 
             names_match && lengths_match && orders_match
         })

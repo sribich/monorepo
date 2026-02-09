@@ -1,7 +1,8 @@
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
+use std::hash::Hasher;
 
 use schema_connector::DatabaseSchema;
 
@@ -20,7 +21,11 @@ impl MigrationSchemaCache {
     }
 
     /// Gets a DatabaseSchema from the cache, or calls the provided async closure if not found and stores its result in the cache.
-    pub async fn get_or_insert<F, Fut, E, T>(&mut self, migration_directories: &[T], f: F) -> Result<DatabaseSchema, E>
+    pub async fn get_or_insert<F, Fut, E, T>(
+        &mut self,
+        migration_directories: &[T],
+        f: F,
+    ) -> Result<DatabaseSchema, E>
     where
         F: FnOnce() -> Fut,
         Fut: std::future::Future<Output = Result<DatabaseSchema, E>>,

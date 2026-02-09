@@ -1,11 +1,17 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{ModelOperation, ModelWriteOperation, Query, QueryConvert, QueryResult, SelectionQuery, query},
-};
+use super::Model;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::ModelOperation;
+use crate::query::ModelWriteOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct CreateUnchecked<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -47,7 +53,10 @@ impl<'db, TModel: Model> CreateUnchecked<'db, TModel> {
         Self::selection(
             [(
                 "data".to_owned(),
-                PrismaValue::Object(merge_fields(set_params.into_iter().map(Into::into).collect())).into(),
+                PrismaValue::Object(merge_fields(
+                    set_params.into_iter().map(Into::into).collect(),
+                ))
+                .into(),
             )],
             nested_selections,
         )

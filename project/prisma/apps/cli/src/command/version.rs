@@ -6,7 +6,11 @@ use clap::Parser;
 pub struct VersionArgs;
 
 pub async fn run(args: VersionArgs) -> Result<()> {
-    println!("Prisma v{} ({})", env!("CARGO_PKG_VERSION"), env!("GIT_HASH"));
+    println!(
+        "Prisma v{} ({})",
+        env!("CARGO_PKG_VERSION"),
+        env!("GIT_HASH")
+    );
 
     Ok(())
 }

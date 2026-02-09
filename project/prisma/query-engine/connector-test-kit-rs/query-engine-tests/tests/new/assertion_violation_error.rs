@@ -14,7 +14,11 @@ mod raw_params {
         let ids: Vec<u32> = (1..n + 1).collect();
 
         // "$1,$2,...,$n"
-        let params: String = ids.iter().map(|id| format!("${id}")).collect::<Vec<String>>().join(",");
+        let params: String = ids
+            .iter()
+            .map(|id| format!("${id}"))
+            .collect::<Vec<String>>()
+            .join(",");
 
         let mutation = format!(
             r#"

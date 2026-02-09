@@ -1,10 +1,9 @@
-use std::{
-    collections::HashSet,
-    fs::File,
-    io::{BufRead, BufReader},
-    path::PathBuf,
-    sync::OnceLock,
-};
+use std::collections::HashSet;
+use std::fs::File;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::path::PathBuf;
+use std::sync::OnceLock;
 
 static IGNORED_TESTS: OnceLock<HashSet<String>> = OnceLock::new();
 
@@ -18,7 +17,8 @@ fn is_in_list(test_name: &str, env_var: &'static str, cache: &OnceLock<HashSet<S
     };
 
     let tests = cache.get_or_init(|| {
-        let workspace_root = std::env::var("WORKSPACE_ROOT").expect("WORKSPACE_ROOT env must be set");
+        let workspace_root =
+            std::env::var("WORKSPACE_ROOT").expect("WORKSPACE_ROOT env must be set");
 
         let path = PathBuf::from(workspace_root).join(list_file);
         let file = File::open(path).expect("could not open file");
@@ -29,7 +29,11 @@ fn is_in_list(test_name: &str, env_var: &'static str, cache: &OnceLock<HashSet<S
             .map(|line| line.expect("could not read line"))
             .map(|line| {
                 let trimmed = line.trim();
-                if line != trimmed { trimmed.to_owned() } else { line }
+                if line != trimmed {
+                    trimmed.to_owned()
+                } else {
+                    line
+                }
             })
             .filter(|line| !line.is_empty() && !line.starts_with('#'))
             .collect()

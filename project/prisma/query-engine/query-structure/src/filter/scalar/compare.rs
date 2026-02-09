@@ -432,7 +432,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionListValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::In(values.into()),
             mode: QueryMode::Default,
         })
@@ -444,7 +447,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::InTemplate(value.into()),
             mode: QueryMode::Default,
         })
@@ -456,7 +462,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionListValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotIn(values.into()),
             mode: QueryMode::Default,
         })
@@ -468,7 +477,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::Equals(val.into()),
             mode: QueryMode::Default,
         })
@@ -480,7 +492,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotEquals(val.into()),
             mode: QueryMode::Default,
         })
@@ -492,7 +507,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::Contains(val.into()),
             mode: QueryMode::Default,
         })
@@ -504,7 +522,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotContains(val.into()),
             mode: QueryMode::Default,
         })
@@ -516,7 +537,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::StartsWith(val.into()),
             mode: QueryMode::Default,
         })
@@ -528,7 +552,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotStartsWith(val.into()),
             mode: QueryMode::Default,
         })
@@ -540,7 +567,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::EndsWith(val.into()),
             mode: QueryMode::Default,
         })
@@ -552,7 +582,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotEndsWith(val.into()),
             mode: QueryMode::Default,
         })
@@ -564,7 +597,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::LessThan(val.into()),
             mode: QueryMode::Default,
         })
@@ -576,7 +612,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::LessThanOrEquals(val.into()),
             mode: QueryMode::Default,
         })
@@ -588,7 +627,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::GreaterThan(val.into()),
             mode: QueryMode::Default,
         })
@@ -600,7 +642,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::GreaterThanOrEquals(val.into()),
             mode: QueryMode::Default,
         })
@@ -611,7 +656,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::Search(val.into(), vec![]),
             mode: QueryMode::Default,
         })
@@ -622,7 +670,10 @@ impl ScalarCompare for FieldSelection {
         T: Into<ConditionValue>,
     {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::NotSearch(val.into(), vec![]),
             mode: QueryMode::Default,
         })
@@ -630,7 +681,10 @@ impl ScalarCompare for FieldSelection {
 
     fn is_set(&self, val: bool) -> Filter {
         Filter::from(ScalarFilter {
-            projection: ScalarProjection::Compound(self.as_scalar_fields().expect("Todo composites in filters.")),
+            projection: ScalarProjection::Compound(
+                self.as_scalar_fields()
+                    .expect("Todo composites in filters."),
+            ),
             condition: ScalarCondition::IsSet(val),
             mode: QueryMode::Default,
         })

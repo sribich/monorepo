@@ -1,5 +1,8 @@
+use psl::builtin_connectors::KnownPostgresType;
+use psl::builtin_connectors::MySqlType;
+use psl::builtin_connectors::PostgresType;
+
 use crate::common::*;
-use psl::builtin_connectors::{KnownPostgresType, MySqlType, PostgresType};
 
 #[test]
 fn should_be_able_to_handle_native_type_combined_with_default_autoincrement_attribute() {
@@ -22,7 +25,10 @@ fn should_be_able_to_handle_native_type_combined_with_default_autoincrement_attr
 
     let field = user_model.assert_has_scalar_field("name");
     field.assert_default_value().assert_autoincrement();
-    field.assert_native_type(datamodel.connector, &PostgresType::Known(KnownPostgresType::SmallInt));
+    field.assert_native_type(
+        datamodel.connector,
+        &PostgresType::Known(KnownPostgresType::SmallInt),
+    );
 }
 
 #[test]
@@ -65,15 +71,19 @@ fn should_handle_type_specifications_on_postgres() {
     let datamodel = psl::parse_schema_without_extensions(dml).unwrap();
     let user_model = datamodel.assert_has_model("Blog");
 
-    user_model.assert_has_scalar_field("foobar").assert_native_type(
-        datamodel.connector,
-        &PostgresType::Known(KnownPostgresType::VarChar(Some(26))),
-    );
+    user_model
+        .assert_has_scalar_field("foobar")
+        .assert_native_type(
+            datamodel.connector,
+            &PostgresType::Known(KnownPostgresType::VarChar(Some(26))),
+        );
 
-    user_model.assert_has_scalar_field("foobaz").assert_native_type(
-        datamodel.connector,
-        &PostgresType::Known(KnownPostgresType::VarChar(None)),
-    );
+    user_model
+        .assert_has_scalar_field("foobaz")
+        .assert_native_type(
+            datamodel.connector,
+            &PostgresType::Known(KnownPostgresType::VarChar(None)),
+        );
 }
 
 #[test]

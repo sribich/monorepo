@@ -1,4 +1,5 @@
-use crate::{id::TypeId, typegen::id::SourceLocation};
+use crate::id::TypeId;
+use crate::typegen::id::SourceLocation;
 
 pub const fn source_location(location: &'static str) -> SourceLocation {
     SourceLocation(location)

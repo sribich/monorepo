@@ -1,6 +1,10 @@
-use crate::flavour::{MysqlConnector, SqlConnector, mysql};
-use schema_connector::{ConnectorResult, migrations_directory::Migrations};
+use schema_connector::ConnectorResult;
+use schema_connector::migrations_directory::Migrations;
 use sql_schema_describer::SqlSchema;
+
+use crate::flavour::MysqlConnector;
+use crate::flavour::SqlConnector;
+use crate::flavour::mysql;
 
 pub async fn sql_schema_from_migrations_history(
     migrations: &Migrations,
@@ -24,7 +28,8 @@ pub async fn sql_schema_from_migrations_history(
             .apply_migration_script(migration.migration_name(), &script)
             .await
             .map_err(|connector_error| {
-                connector_error.into_migration_does_not_apply_cleanly(migration.migration_name().to_owned())
+                connector_error
+                    .into_migration_does_not_apply_cleanly(migration.migration_name().to_owned())
             })?;
     }
 

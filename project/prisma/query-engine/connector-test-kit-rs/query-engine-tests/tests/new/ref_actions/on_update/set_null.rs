@@ -4,7 +4,11 @@
 use indoc::indoc;
 use query_engine_tests::*;
 
-#[test_suite(suite = "setnull_onU_1to1_opt", schema(optional), relation_mode = "prisma")]
+#[test_suite(
+    suite = "setnull_onU_1to1_opt",
+    schema(optional),
+    relation_mode = "prisma"
+)]
 mod one2one_opt {
     fn optional() -> String {
         let schema = indoc! {
@@ -344,7 +348,11 @@ mod one2one_opt {
     }
 }
 
-#[test_suite(suite = "setnull_onU_1toM_opt", schema(optional), relation_mode = "prisma")]
+#[test_suite(
+    suite = "setnull_onU_1toM_opt",
+    schema(optional),
+    relation_mode = "prisma"
+)]
 mod one2many_opt {
     fn optional() -> String {
         let schema = indoc! {

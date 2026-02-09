@@ -1,4 +1,9 @@
-use query_structure::{FieldSelection, Filter, Model, RecordFilter, ScalarFieldRef, WriteArgs};
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::RecordFilter;
+use query_structure::ScalarFieldRef;
+use query_structure::WriteArgs;
 
 #[derive(Debug, Clone)]
 pub struct NativeUpsert {

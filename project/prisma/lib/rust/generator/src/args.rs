@@ -1,15 +1,18 @@
-use std::{collections::BTreeSet, sync::Arc};
+use std::collections::BTreeSet;
+use std::sync::Arc;
 
-use dmmf::{
-    DataModelMetaFormat,
-    serialization_ast::{DmmfInputField, TypeLocation},
-};
-use generator_shared::extensions::{DmmfSchemaExtension, ScalarTypeExtension};
-use psl::{
-    Schema, Validated, ValidatedSchema,
-    parser_database::{ScalarFieldType, ScalarType},
-};
-use query_structure::{FieldArity, walkers::ScalarFieldWalker};
+use dmmf::DataModelMetaFormat;
+use dmmf::serialization_ast::DmmfInputField;
+use dmmf::serialization_ast::TypeLocation;
+use generator_shared::extensions::DmmfSchemaExtension;
+use generator_shared::extensions::ScalarTypeExtension;
+use psl::Schema;
+use psl::Validated;
+use psl::ValidatedSchema;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::ScalarType;
+use query_structure::FieldArity;
+use query_structure::walkers::ScalarFieldWalker;
 use serde_json::Value;
 
 use super::jsonrpc::GenerateRequest;
@@ -30,7 +33,11 @@ pub struct GeneratorArgs {
 }
 
 impl GeneratorArgs {
-    pub(crate) fn new(config: psl::Generator, dmmf: Arc<DataModelMetaFormat>, schema: Arc<Schema<Validated>>) -> Self {
+    pub(crate) fn new(
+        config: psl::Generator,
+        dmmf: Arc<DataModelMetaFormat>,
+        schema: Arc<Schema<Validated>>,
+    ) -> Self {
         let scalars = Self::generate_scalars(&dmmf);
         let read_params = Self::generate_read_params(&dmmf, &scalars, schema.context());
         let write_params = Self::generate_write_params(&dmmf, &scalars, schema.context());
@@ -269,17 +276,16 @@ impl GeneratorArgs {
                         .clone()
                         .into_iter()
                         .filter_map(|field| {
-                            field
-                                .input_types
-                                .iter()
-                                .find(|inner_input_type| match inner_input_type.location {
+                            field.input_types.iter().find(
+                                |inner_input_type| match inner_input_type.location {
                                     TypeLocation::Scalar if inner_input_type.typ != "Null" => true,
                                     TypeLocation::Scalar
                                     | TypeLocation::InputObjectTypes
                                     | TypeLocation::OutputObjectTypes
                                     | TypeLocation::EnumTypes
                                     | TypeLocation::FieldRefTypes => true,
-                                })?;
+                                },
+                            )?;
 
                             Some(field)
                         })
@@ -302,35 +308,42 @@ impl GeneratorArgs {
                     let scalar_name = {
                         let mut scalar_name = None;
 
-                        fields.extend(input_type.fields.clone().into_iter().filter_map(|inner_field| {
-                            if inner_field.name == "set" {
-                                for inner_input_type in &inner_field.input_types {
-                                    match inner_input_type.location {
+                        fields.extend(input_type.fields.clone().into_iter().filter_map(
+                            |inner_field| {
+                                if inner_field.name == "set" {
+                                    for inner_input_type in &inner_field.input_types {
+                                        match inner_input_type.location {
+                                            TypeLocation::Scalar
+                                                if inner_input_type.typ != "null" =>
+                                            {
+                                                scalar_name =
+                                                    Some(inner_input_type.typ.clone() + "List");
+                                            }
+                                            TypeLocation::Scalar
+                                            | TypeLocation::InputObjectTypes
+                                            | TypeLocation::OutputObjectTypes
+                                            | TypeLocation::EnumTypes
+                                            | TypeLocation::FieldRefTypes => {}
+                                        }
+                                    }
+                                }
+
+                                inner_field
+                                    .input_types
+                                    .iter()
+                                    .find(|inner_input_type| match inner_input_type.location {
                                         TypeLocation::Scalar if inner_input_type.typ != "null" => {
-                                            scalar_name = Some(inner_input_type.typ.clone() + "List");
+                                            true
                                         }
                                         TypeLocation::Scalar
                                         | TypeLocation::InputObjectTypes
                                         | TypeLocation::OutputObjectTypes
                                         | TypeLocation::EnumTypes
-                                        | TypeLocation::FieldRefTypes => {}
-                                    }
-                                }
-                            }
-
-                            inner_field
-                                .input_types
-                                .iter()
-                                .find(|inner_input_type| match inner_input_type.location {
-                                    TypeLocation::Scalar if inner_input_type.typ != "null" => true,
-                                    TypeLocation::Scalar
-                                    | TypeLocation::InputObjectTypes
-                                    | TypeLocation::OutputObjectTypes
-                                    | TypeLocation::EnumTypes
-                                    | TypeLocation::FieldRefTypes => false,
-                                })
-                                .map(|_| inner_field.clone())
-                        }));
+                                        | TypeLocation::FieldRefTypes => false,
+                                    })
+                                    .map(|_| inner_field.clone())
+                            },
+                        ));
 
                         scalar_name
                     }?;

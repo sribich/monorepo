@@ -12,11 +12,11 @@ mod relation_fields;
 mod relations;
 mod views;
 
-use crate::datamodel_connector::ConnectorCapability;
-
-use super::context::Context;
 use names::Names;
 use parser_database::walkers::RefinedRelationWalker;
+
+use super::context::Context;
+use crate::datamodel_connector::ConnectorCapability;
 
 pub(super) fn validate(ctx: &mut Context<'_>) {
     let names = Names::new(ctx);
@@ -130,7 +130,11 @@ pub(super) fn validate(ctx: &mut Context<'_>) {
                     let span = index.ast_attribute().span;
                     let attribute = (index.attribute_name(), span);
 
-                    fields::validate_length_used_with_correct_types(field_attribute, attribute, ctx);
+                    fields::validate_length_used_with_correct_types(
+                        field_attribute,
+                        attribute,
+                        ctx,
+                    );
                 }
             }
         }
@@ -168,7 +172,9 @@ pub(super) fn validate(ctx: &mut Context<'_>) {
                 if relation.is_one_to_one() {
                     relations::one_to_one::both_sides_are_defined(relation, ctx);
                     relations::one_to_one::fields_and_references_are_defined(relation, ctx);
-                    relations::one_to_one::fields_and_references_defined_on_one_side_only(relation, ctx);
+                    relations::one_to_one::fields_and_references_defined_on_one_side_only(
+                        relation, ctx,
+                    );
                     relations::one_to_one::referential_actions(relation, ctx);
                     relations::one_to_one::fields_must_be_a_unique_constraint(relation, ctx);
                     relations::one_to_one::fields_references_mixups(relation, ctx);

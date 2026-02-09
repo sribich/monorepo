@@ -3,18 +3,26 @@ pub mod arithmetic;
 mod error;
 mod raw_json;
 
-use base64::prelude::*;
-use bigdecimal::{BigDecimal, FromPrimitive, ToPrimitive};
-use chrono::prelude::*;
-use serde::de::Unexpected;
-use serde::ser::SerializeMap;
-use serde::{Deserialize, Deserializer, Serialize, ser::Serializer};
-use serde_json::json;
-use std::{borrow::Cow, convert::TryFrom, fmt, str::FromStr};
-use uuid::Uuid;
+use std::borrow::Cow;
+use std::convert::TryFrom;
+use std::fmt;
+use std::str::FromStr;
 
+use base64::prelude::*;
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use bigdecimal::ToPrimitive;
+use chrono::prelude::*;
 pub use error::ConversionFailure;
 pub use raw_json::RawJson;
+use serde::Deserialize;
+use serde::Deserializer;
+use serde::Serialize;
+use serde::de::Unexpected;
+use serde::ser::SerializeMap;
+use serde::ser::Serializer;
+use serde_json::json;
+use uuid::Uuid;
 
 pub type PrismaValueResult<T> = std::result::Result<T, ConversionFailure>;
 pub type PrismaListValue = Vec<PrismaValue>;
@@ -40,7 +48,10 @@ pub enum PrismaValue {
     #[serde(serialize_with = "serialize_date")]
     DateTime(DateTime<FixedOffset>),
 
-    #[serde(serialize_with = "serialize_decimal", deserialize_with = "deserialize_decimal")]
+    #[serde(
+        serialize_with = "serialize_decimal",
+        deserialize_with = "deserialize_decimal"
+    )]
     Float(BigDecimal),
 
     #[serde(serialize_with = "serialize_bigint")]
@@ -174,7 +185,8 @@ impl TryFrom<serde_json::Value> for PrismaValue {
         match v {
             serde_json::Value::String(s) => Ok(PrismaValue::String(s)),
             serde_json::Value::Array(v) => {
-                let vals: PrismaValueResult<Vec<PrismaValue>> = v.into_iter().map(PrismaValue::try_from).collect();
+                let vals: PrismaValueResult<Vec<PrismaValue>> =
+                    v.into_iter().map(PrismaValue::try_from).collect();
                 Ok(PrismaValue::List(vals?))
             }
             serde_json::Value::Null => Ok(PrismaValue::Null),
@@ -189,7 +201,11 @@ impl TryFrom<serde_json::Value> for PrismaValue {
                     Ok(PrismaValue::Float(dec))
                 }
             }
-            serde_json::Value::Object(obj) => match obj.get("prisma__type").as_ref().and_then(|s| s.as_str()) {
+            serde_json::Value::Object(obj) => match obj
+                .get("prisma__type")
+                .as_ref()
+                .and_then(|s| s.as_str())
+            {
                 Some("date") => {
                     let value = obj
                         .get("prisma__value")
@@ -206,7 +222,9 @@ impl TryFrom<serde_json::Value> for PrismaValue {
                     let value = obj
                         .get("prisma__value")
                         .and_then(|v| v.as_str())
-                        .ok_or_else(|| ConversionFailure::new("JSON bigint value", "PrismaValue"))?;
+                        .ok_or_else(|| {
+                            ConversionFailure::new("JSON bigint value", "PrismaValue")
+                        })?;
 
                     i64::from_str(value)
                         .map(PrismaValue::BigInt)
@@ -217,7 +235,9 @@ impl TryFrom<serde_json::Value> for PrismaValue {
                     let value = obj
                         .get("prisma__value")
                         .and_then(|v| v.as_str())
-                        .ok_or_else(|| ConversionFailure::new("JSON decimal value", "PrismaValue"))?;
+                        .ok_or_else(|| {
+                            ConversionFailure::new("JSON decimal value", "PrismaValue")
+                        })?;
 
                     BigDecimal::from_str(value)
                         .map(PrismaValue::Float)
@@ -245,7 +265,10 @@ impl TryFrom<serde_json::Value> for PrismaValue {
                         .ok_or_else(|| ConversionFailure::new("param name", "JSON param value"))?
                         .to_owned();
 
-                    Ok(PrismaValue::Placeholder(Placeholder::new(name, PrismaValueType::Any)))
+                    Ok(PrismaValue::Placeholder(Placeholder::new(
+                        name,
+                        PrismaValueType::Any,
+                    )))
                 }
 
                 _ => Ok(PrismaValue::Json(serde_json::to_string(&obj).unwrap())),
@@ -297,7 +320,11 @@ where
     {
         d.serialize(serializer)
     } else {
-        decimal.to_string().parse::<f64>().unwrap().serialize(serializer)
+        decimal
+            .to_string()
+            .parse::<f64>()
+            .unwrap()
+            .serialize(serializer)
     }
 }
 
@@ -315,7 +342,10 @@ where
     serializer.collect_map(obj.iter().map(|(k, v)| (k, v)))
 }
 
-fn serialize_placeholder<S>(Placeholder { name, r#type }: &Placeholder, serializer: S) -> Result<S::Ok, S::Error>
+fn serialize_placeholder<S>(
+    Placeholder { name, r#type }: &Placeholder,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -363,7 +393,10 @@ impl serde::de::Visitor<'_> for BigDecimalVisitor {
     type Value = BigDecimal;
 
     fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        write!(formatter, "a BigDecimal type representing a fixed-point number")
+        write!(
+            formatter,
+            "a BigDecimal type representing a fixed-point number"
+        )
     }
 
     fn visit_i64<E>(self, value: i64) -> Result<BigDecimal, E>
@@ -482,7 +515,11 @@ impl PrismaValue {
     }
 
     pub fn as_json(&self) -> Option<&String> {
-        if let Self::Json(v) = self { Some(v) } else { None }
+        if let Self::Json(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
 
@@ -513,7 +550,9 @@ impl fmt::Display for PrismaValue {
 
                 write!(f, "{{ {joined} }}")
             }
-            PrismaValue::Placeholder(Placeholder { name, r#type }) => write!(f, "var({name}: {type})"),
+            PrismaValue::Placeholder(Placeholder { name, r#type }) => {
+                write!(f, "var({name}: {type})")
+            }
             PrismaValue::GeneratorCall { name, args, .. } => {
                 write!(f, "{name}(")?;
                 for (i, arg) in args.iter().enumerate() {

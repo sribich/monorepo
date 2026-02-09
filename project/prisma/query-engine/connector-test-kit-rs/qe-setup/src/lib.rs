@@ -7,15 +7,20 @@ mod postgres;
 mod providers;
 mod sqlite;
 
-pub use schema_core::schema_connector::ConnectorError;
-use sqlite::sqlite_setup;
-
-use self::{mysql::*, postgres::*};
 use driver_adapters::DriverAdapter;
 use enumflags2::BitFlags;
 use providers::Provider;
-use psl::{Datasource, builtin_connectors::*, parser_database::NoExtensionTypes};
-use schema_core::schema_connector::{ConnectorResult, SchemaConnector, SchemaDialect};
+use psl::Datasource;
+use psl::builtin_connectors::*;
+use psl::parser_database::NoExtensionTypes;
+pub use schema_core::schema_connector::ConnectorError;
+use schema_core::schema_connector::ConnectorResult;
+use schema_core::schema_connector::SchemaConnector;
+use schema_core::schema_connector::SchemaDialect;
+use sqlite::sqlite_setup;
+
+use self::mysql::*;
+use self::postgres::*;
 
 #[derive(Debug, serde::Deserialize, PartialEq)]
 pub struct InitResult {
@@ -27,8 +32,10 @@ where
     Self: Sized,
 {
     #[allow(async_fn_in_trait)]
-    async fn init_with_migration(&self, script: String)
-    -> Result<InitResult, Box<dyn std::error::Error + Send + Sync>>;
+    async fn init_with_migration(
+        &self,
+        script: String,
+    ) -> Result<InitResult, Box<dyn std::error::Error + Send + Sync>>;
 
     #[allow(async_fn_in_trait)]
     async fn init(&self) -> Result<InitResult, Box<dyn std::error::Error + Send + Sync>>;
@@ -37,17 +44,19 @@ where
     fn datamodel(&self) -> &'a str;
 }
 
-fn parse_configuration(datamodel: &str) -> ConnectorResult<(Datasource, BitFlags<psl::PreviewFeature>)> {
-    let config = psl::parse_configuration(datamodel)
-        .map_err(|err| ConnectorError::new_schema_parser_error(err.to_pretty_string("schema.prisma", datamodel)))?;
+fn parse_configuration(
+    datamodel: &str,
+) -> ConnectorResult<(Datasource, BitFlags<psl::PreviewFeature>)> {
+    let config = psl::parse_configuration(datamodel).map_err(|err| {
+        ConnectorError::new_schema_parser_error(err.to_pretty_string("schema.prisma", datamodel))
+    })?;
 
     let preview_features = config.preview_features();
 
-    let source = config
-        .datasources
-        .into_iter()
-        .next()
-        .ok_or_else(|| ConnectorError::from_msg("There is no datasource in the schema.".into()))?;
+    let source =
+        config.datasources.into_iter().next().ok_or_else(|| {
+            ConnectorError::from_msg("There is no datasource in the schema.".into())
+        })?;
 
     Ok((source, preview_features))
 }
@@ -79,17 +88,20 @@ pub async fn setup_external<'a>(
             initializer
                 .init_with_migration(migration_script)
                 .await
-                .map_err(|err| ConnectorError::from_msg(format!("Error migrating with D1 adapter: {err}")))
+                .map_err(|err| {
+                    ConnectorError::from_msg(format!("Error migrating with D1 adapter: {err}"))
+                })
         }
         _ => {
             setup(initializer.url().to_owned(), prisma_schema, db_schemas).await?;
 
             // 3. Tell JavaScript to initialize the external test session.
             //    The schema migration is taken care of by the Schema Engine.
-            initializer
-                .init()
-                .await
-                .map_err(|err| ConnectorError::from_msg(format!("Error initializing {driver_adapter} adapter: {err}")))
+            initializer.init().await.map_err(|err| {
+                ConnectorError::from_msg(format!(
+                    "Error initializing {driver_adapter} adapter: {err}"
+                ))
+            })
         }
     }?;
 
@@ -119,12 +131,7 @@ pub async fn teardown(url: &str, prisma_schema: &str, db_schemas: &[&str]) -> Co
             postgres_teardown(url, db_schemas).await?;
         }
 
-        provider
-            if [
-                SQLITE.provider_name(),
-                MYSQL.provider_name(),
-            ]
-            .contains(provider) => {}
+        provider if [SQLITE.provider_name(), MYSQL.provider_name()].contains(provider) => {}
 
         x => unimplemented!("Connector {} is not supported yet", x),
     };
@@ -150,7 +157,10 @@ pub(crate) async fn diff(
 }
 
 /// Apply the script returned by [`diff`] against the database.
-pub(crate) async fn diff_and_apply(schema: &str, connector: &mut dyn SchemaConnector) -> ConnectorResult<()> {
+pub(crate) async fn diff_and_apply(
+    schema: &str,
+    connector: &mut dyn SchemaConnector,
+) -> ConnectorResult<()> {
     let script = diff(
         schema,
         &*connector.schema_dialect(),

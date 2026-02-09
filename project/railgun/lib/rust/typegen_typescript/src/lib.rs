@@ -9,20 +9,25 @@ use std::borrow::Borrow;
 
 use ecma::is_ecma_ident;
 use jsdoc::Jsdoc;
-use typegen::{
-    Generics, NamedType,
-    cache::{ExportIdentifier, TypeCache},
-    datatype::{
-        DataType, NamedDataType,
-        r#enum::{EnumRepr, EnumType, EnumVariantFields},
-        field::{NamedFields, UnnamedFields},
-        primitive::PrimitiveMeta,
-        reference::ReferenceType,
-        r#struct::{StructFields, StructType},
-    },
-    export::{ExportError, InvariantErrorContext, TypeExporter},
-    internal::Deprecation,
-};
+use typegen::Generics;
+use typegen::NamedType;
+use typegen::cache::ExportIdentifier;
+use typegen::cache::TypeCache;
+use typegen::datatype::DataType;
+use typegen::datatype::NamedDataType;
+use typegen::datatype::r#enum::EnumRepr;
+use typegen::datatype::r#enum::EnumType;
+use typegen::datatype::r#enum::EnumVariantFields;
+use typegen::datatype::field::NamedFields;
+use typegen::datatype::field::UnnamedFields;
+use typegen::datatype::primitive::PrimitiveMeta;
+use typegen::datatype::reference::ReferenceType;
+use typegen::datatype::r#struct::StructFields;
+use typegen::datatype::r#struct::StructType;
+use typegen::export::ExportError;
+use typegen::export::InvariantErrorContext;
+use typegen::export::TypeExporter;
+use typegen::internal::Deprecation;
 
 pub fn type_output<T: NamedType>() -> String {
     let mut cache = TypeCache::default();
@@ -135,7 +140,7 @@ pub fn process_type(
                 name: format!("{}[]", inner.name),
                 refs: inner.refs,
             })
-        },
+        }
         DataType::Tuple(item) => {
             let (names, refs) = item
                 .elements
@@ -152,7 +157,7 @@ pub fn process_type(
                 name: format!("[{}]", names.join(",")),
                 refs: Some(refs),
             })
-        },
+        }
         DataType::Optional(item) => {
             let real_type = process_type(cache, item, module)?;
 
@@ -160,7 +165,7 @@ pub fn process_type(
                 name: format!("{} | undefined", real_type.name),
                 refs: real_type.refs,
             })
-        },
+        }
         DataType::Reference(ReferenceType { name, id, generics }) => {
             let mut reference = match generics.as_slice() {
                 [] => TypeDefinition {
@@ -198,7 +203,7 @@ pub fn process_type(
                         name: format!("{name}<{generic_idents}>"),
                         refs: generic_refs,
                     }
-                },
+                }
             };
 
             if !cache.is_exported(id)
@@ -213,10 +218,10 @@ pub fn process_type(
                                 inner.append(&mut exported_refs);
                                 inner
                             });
-                        },
+                        }
                         None => {
                             reference.refs = Some(exported_refs);
-                        },
+                        }
                     }
                 }
 
@@ -229,7 +234,7 @@ pub fn process_type(
             }
 
             Ok(reference)
-        },
+        }
         DataType::Generic(generic) => Ok(TypeDefinition {
             name: generic.0.to_string(),
             refs: None,
@@ -269,7 +274,7 @@ fn create_struct(
     let mut definition = match fields {
         StructFields::Unit => {
             format!("export type {name}{generics} = Record<string, never>")
-        },
+        }
         StructFields::Unnamed(UnnamedFields { fields }) => {
             let array_inner = fields
                 .iter()
@@ -320,7 +325,7 @@ fn create_struct(
             } else {
                 format!("export type {name}{generics} = [{array_inner}]")
             }
-        },
+        }
         StructFields::Named(NamedFields { fields }) => {
             let interface_fields = fields
                 .iter()
@@ -350,7 +355,7 @@ fn create_struct(
                                     // prob broke
                                     // return Ok("".to_owned());
                                     todo!();
-                                },
+                                }
                                 DataType::Primitive(_) => todo!(),
                                 DataType::Enum(_) => todo!(),
                                 DataType::List(_) => todo!(),
@@ -364,7 +369,7 @@ fn create_struct(
                                     }
 
                                     todo!();
-                                },
+                                }
                                 DataType::Generic(_) => todo!(),
                                 DataType::Unit => todo!(),
                             }
@@ -406,7 +411,7 @@ fn create_struct(
             } else {
                 format!("export interface {name}{generics} {{\n{interface_fields}\n}}")
             }
-        },
+        }
     };
 
     definition.push('\n');
@@ -480,7 +485,7 @@ fn create_enum(
                     .join(",");
 
                 Ok(format!(r#"{{ "{name}": {{ {items} }} }}"#))
-            },
+            }
             (EnumRepr::External, EnumVariantFields::Unnamed(UnnamedFields { fields })) => {
                 let items = fields
                     .iter()
@@ -506,10 +511,10 @@ fn create_enum(
                 } else {
                     Ok(format!(r#"{{ "{name}": [ {items} ] }}"#))
                 }
-            },
+            }
             (EnumRepr::Adjacent { tag, .. }, EnumVariantFields::Unit) => {
                 Ok(format!(r#""{tag}": "{name}""#))
-            },
+            }
             (
                 EnumRepr::Adjacent { tag, content },
                 EnumVariantFields::Named(NamedFields { fields }),
@@ -536,7 +541,7 @@ fn create_enum(
                 Ok(format!(
                     r#"{{ "{tag}": "{name}", "{content}": {{ {items} }} }}"#
                 ))
-            },
+            }
             (
                 EnumRepr::Adjacent { tag, content },
                 EnumVariantFields::Unnamed(UnnamedFields { fields }),
@@ -565,7 +570,7 @@ fn create_enum(
                 } else {
                     Ok(format!(r#"{{ "{tag}": "{name}", {content}: [{items}] }}"#))
                 }
-            },
+            }
             (EnumRepr::Internal { .. }, EnumVariantFields::Unit) => todo!(),
             (EnumRepr::Internal { .. }, EnumVariantFields::Named(_)) => todo!(),
             (EnumRepr::Internal { tag }, EnumVariantFields::Unnamed(tuple)) => {
@@ -598,7 +603,7 @@ fn create_enum(
                     .join(",");
 
                 Ok(format!(r#"({{ {tag}: "{name}" }} & {items})"#))
-            },
+            }
             (EnumRepr::Untagged, EnumVariantFields::Unit) => todo!(),
             (EnumRepr::Untagged, EnumVariantFields::Named(NamedFields { fields })) => {
                 let items = fields
@@ -621,7 +626,7 @@ fn create_enum(
                     .join(",");
 
                 Ok(format!("{{ {items} }}"))
-            },
+            }
             (EnumRepr::Untagged, EnumVariantFields::Unnamed(UnnamedFields { fields })) => {
                 let items = fields
                     .iter()
@@ -647,7 +652,7 @@ fn create_enum(
                 } else {
                     Ok(format!("[{items}]"))
                 }
-            },
+            }
             //            EnumRepr::External => format!("{{ {}: {} }}", name, process_type(cache,
             // variant.inner)),            EnumRepr::Adjacent { tag, content } =>
             // todo!(),            EnumRepr::Internal { tag } => todo!(),

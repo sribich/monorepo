@@ -1,4 +1,5 @@
-use railgun_error::{Error, ResultExt};
+use railgun_error::Error;
+use railgun_error::ResultExt;
 
 #[derive(Error)]
 enum Error {

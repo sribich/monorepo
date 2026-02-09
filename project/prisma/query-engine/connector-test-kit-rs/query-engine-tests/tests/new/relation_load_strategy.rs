@@ -5,7 +5,10 @@ mod queries;
 
 fn used_db_join_times(logs: &[String]) -> usize {
     logs.iter()
-        .filter(|l| l.contains("LEFT JOIN LATERAL") || (l.contains("JSON_ARRAYAGG") && l.contains("JSON_OBJECT")))
+        .filter(|l| {
+            l.contains("LEFT JOIN LATERAL")
+                || (l.contains("JSON_ARRAYAGG") && l.contains("JSON_OBJECT"))
+        })
         .count()
 }
 

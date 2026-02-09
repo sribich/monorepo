@@ -1,5 +1,6 @@
-use query_engine_tests::*;
 use std::sync::Arc;
+
+use query_engine_tests::*;
 
 #[test_suite]
 mod occ {
@@ -21,12 +22,16 @@ mod occ {
     }
 
     async fn find_unclaimed_seat(runner: Arc<Runner>) -> (u64, u64) {
-        let seat_query = "query { findFirstSeat(where: { movie: \"zardoz\", userId: null }) { id version } }";
+        let seat_query =
+            "query { findFirstSeat(where: { movie: \"zardoz\", userId: null }) { id version } }";
         let seat_result = runner.query(seat_query).await.unwrap().to_json_value();
         let available_seat = &seat_result["data"]["findFirstSeat"];
         match available_seat {
             serde_json::Value::Null => (0, 0),
-            other => (other["id"].as_u64().unwrap(), other["version"].as_u64().unwrap()),
+            other => (
+                other["id"].as_u64().unwrap(),
+                other["version"].as_u64().unwrap(),
+            ),
         }
     }
 
@@ -43,7 +48,9 @@ mod occ {
                     "##
         );
         let response = runner.query(query).await.unwrap().to_json_value();
-        let seat_count = response["data"]["updateManySeat"]["count"].as_u64().unwrap();
+        let seat_count = response["data"]["updateManySeat"]["count"]
+            .as_u64()
+            .unwrap();
         (user_id, seat_count)
     }
 
@@ -107,7 +114,9 @@ mod occ {
             .unwrap()
             .to_json_value();
 
-        let found_booked_user_id = booked_seat["data"]["findFirstSeat"]["userId"].as_u64().unwrap();
+        let found_booked_user_id = booked_seat["data"]["findFirstSeat"]["userId"]
+            .as_u64()
+            .unwrap();
 
         assert_eq!(booked_user_id, found_booked_user_id);
     }
@@ -270,7 +279,11 @@ mod occ {
             }
           }"#;
 
-        runner.query(create_one_resource).await.unwrap().to_json_value();
+        runner
+            .query(create_one_resource)
+            .await
+            .unwrap()
+            .to_json_value();
     }
 
     async fn update_one_resource(runner: Arc<Runner>) -> serde_json::Value {
@@ -283,7 +296,11 @@ mod occ {
           }
         "#;
 
-        runner.query(update_one_resource).await.unwrap().to_json_value()
+        runner
+            .query(update_one_resource)
+            .await
+            .unwrap()
+            .to_json_value()
     }
 
     #[allow(dead_code)]
@@ -304,7 +321,11 @@ mod occ {
            }
         "#;
 
-        runner.query(upsert_one_resource).await.unwrap().to_json_value()
+        runner
+            .query(upsert_one_resource)
+            .await
+            .unwrap()
+            .to_json_value()
     }
 
     async fn delete_one_resource(runner: Arc<Runner>) -> serde_json::Value {
@@ -317,7 +338,11 @@ mod occ {
           }
         "#;
 
-        runner.query(delete_one_resource).await.unwrap().to_json_value()
+        runner
+            .query(delete_one_resource)
+            .await
+            .unwrap()
+            .to_json_value()
     }
 
     async fn delete_many_resource(runner: Arc<Runner>) -> u64 {
@@ -329,7 +354,11 @@ mod occ {
           }
         "#;
 
-        let res = runner.query(delete_many_resource).await.unwrap().to_json_value();
+        let res = runner
+            .query(delete_many_resource)
+            .await
+            .unwrap()
+            .to_json_value();
 
         res["data"]["deleteManyResource"]["count"].as_u64().unwrap()
     }
@@ -344,6 +373,10 @@ mod occ {
         }
         "#;
 
-        runner.query(find_one_resource).await.unwrap().to_json_value()
+        runner
+            .query(find_one_resource)
+            .await
+            .unwrap()
+            .to_json_value()
     }
 }

@@ -1,19 +1,24 @@
-use convert_case::{Case, Casing};
-use macro_util::{
-    ast::{Enum, variant::Variant},
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_type_bound},
-};
-use quote::{format_ident, quote, quote_spanned};
-use syn::{Ident, Path, spanned::Spanned};
+use convert_case::Case;
+use convert_case::Casing;
+use macro_util::ast::Enum;
+use macro_util::ast::variant::Variant;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_type_bound;
+use quote::format_ident;
+use quote::quote;
+use quote::quote_spanned;
+use syn::Ident;
+use syn::Path;
+use syn::spanned::Spanned;
 
-use crate::{
-    attributes::{
-        ContainerAttributes, ContainerModuleAttribute, FieldAttributes, VariantAttributes,
-    },
-    ext::VariantExt,
-    get_crate_path,
-    meta::VariantMeta,
-};
+use crate::attributes::ContainerAttributes;
+use crate::attributes::ContainerModuleAttribute;
+use crate::attributes::FieldAttributes;
+use crate::attributes::VariantAttributes;
+use crate::ext::VariantExt;
+use crate::get_crate_path;
+use crate::meta::VariantMeta;
 
 pub fn impl_enum(input: &Enum) -> syn::Result<proc_macro2::TokenStream> {
     let input = input.resolve_attributes::<ContainerAttributes>()?;

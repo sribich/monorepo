@@ -1,8 +1,11 @@
-use crate::{ArgumentValue, ArgumentValueObject};
+use std::iter;
+
 use indexmap::IndexMap;
 use itertools::Itertools;
 use schema::constants::filters;
-use std::iter;
+
+use crate::ArgumentValue;
+use crate::ArgumentValueObject;
 
 pub type SelectionArgument = (String, ArgumentValue);
 
@@ -53,7 +56,10 @@ impl PartialEq for Selection {
             && self.alias == other.alias
             && self.arguments.len() == other.arguments.len()
             && self.nested_selections.len() == other.nested_selections.len()
-            && self.arguments.iter().all(|arg| other.arguments.contains(arg))
+            && self
+                .arguments
+                .iter()
+                .all(|arg| other.arguments.contains(arg))
             && self
                 .nested_selections
                 .iter()
@@ -100,7 +106,10 @@ impl Selection {
     }
 
     pub fn argument<'a>(&'a self, name: &str) -> Option<&'a ArgumentValue> {
-        self.arguments.iter().find(|(k, _)| k == name).map(|(_, v)| v)
+        self.arguments
+            .iter()
+            .find(|(k, _)| k == name)
+            .map(|(_, v)| v)
     }
 
     pub fn pop_argument(&mut self) -> Option<(String, ArgumentValue)> {
@@ -209,7 +218,10 @@ impl QuerySingle {
             return None;
         }
 
-        if query_filters.iter().any(|query_filters| query_filters.has_many_keys()) {
+        if query_filters
+            .iter()
+            .any(|query_filters| query_filters.has_many_keys())
+        {
             return None;
         }
 
@@ -293,12 +305,15 @@ impl From<In> for ArgumentValue {
             SelectionSet::Many(buckets) => {
                 let conjuctive = buckets.into_iter().fold(Conjuctive::new(), |acc, bucket| {
                     // Needed because we flush the last bucket by pushing an empty one, which gets translated to a `Null` as the Conjunctive is empty.
-                    let ands = bucket.0.into_iter().fold(Conjuctive::new(), |acc, (key, value)| {
-                        let mut argument = IndexMap::with_capacity(1);
-                        argument.insert(key.clone(), value);
+                    let ands = bucket
+                        .0
+                        .into_iter()
+                        .fold(Conjuctive::new(), |acc, (key, value)| {
+                            let mut argument = IndexMap::with_capacity(1);
+                            argument.insert(key.clone(), value);
 
-                        acc.and(argument)
-                    });
+                            acc.and(argument)
+                        });
 
                     acc.or(ands)
                 });
@@ -307,7 +322,9 @@ impl From<In> for ArgumentValue {
             }
             SelectionSet::Single(QuerySingle(key, vals)) => {
                 let is_bool = vals.clone().into_iter().any(|v| match v {
-                    ArgumentValue::Scalar(s) => matches!(s, query_structure::PrismaValue::Boolean(_)),
+                    ArgumentValue::Scalar(s) => {
+                        matches!(s, query_structure::PrismaValue::Boolean(_))
+                    }
                     _ => false,
                 });
 
@@ -386,12 +403,14 @@ impl From<Conjuctive> for ArgumentValue {
             Conjuctive::None => Self::null(),
             Conjuctive::Single(obj) => ArgumentValue::object(single_to_multi_filter(obj)),
             Conjuctive::Or(conjuctives) => {
-                let conditions: Vec<ArgumentValue> = conjuctives.into_iter().map(ArgumentValue::from).collect();
+                let conditions: Vec<ArgumentValue> =
+                    conjuctives.into_iter().map(ArgumentValue::from).collect();
 
                 ArgumentValue::object([("OR".to_string(), ArgumentValue::list(conditions))])
             }
             Conjuctive::And(conjuctives) => {
-                let conditions: Vec<ArgumentValue> = conjuctives.into_iter().map(ArgumentValue::from).collect();
+                let conditions: Vec<ArgumentValue> =
+                    conjuctives.into_iter().map(ArgumentValue::from).collect();
 
                 ArgumentValue::object([("AND".to_string(), ArgumentValue::list(conditions))])
             }
@@ -404,7 +423,10 @@ fn single_to_multi_filter(obj: ArgumentValueObject) -> ArgumentValueObject {
     let mut new_obj: ArgumentValueObject = IndexMap::new();
 
     for (key, value) in obj {
-        new_obj.insert(key, ArgumentValue::object([(filters::EQUALS.to_owned(), value)]));
+        new_obj.insert(
+            key,
+            ArgumentValue::object([(filters::EQUALS.to_owned(), value)]),
+        );
     }
 
     new_obj

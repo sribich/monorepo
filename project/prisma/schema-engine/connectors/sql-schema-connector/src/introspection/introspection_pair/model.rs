@@ -1,19 +1,25 @@
-use psl::{
-    datamodel_connector::walker_ext_traits::IndexWalkerExt,
-    parser_database::{self as db, walkers},
-    psl_ast::ast::WithDocumentation,
-};
-use sql::postgres::PostgresSchemaExt;
-use sql_schema_describer as sql;
 use std::borrow::Cow;
 
-use super::{IdPair, IndexPair, IntrospectionPair, RelationFieldDirection, RelationFieldPair, ScalarFieldPair};
+use psl::datamodel_connector::walker_ext_traits::IndexWalkerExt;
+use psl::parser_database::walkers;
+use psl::parser_database::{self as db};
+use psl::psl_ast::ast::WithDocumentation;
+use sql::postgres::PostgresSchemaExt;
+use sql_schema_describer as sql;
+
+use super::IdPair;
+use super::IndexPair;
+use super::IntrospectionPair;
+use super::RelationFieldDirection;
+use super::RelationFieldPair;
+use super::ScalarFieldPair;
 
 /// Comparing a possible PSL model definition
 /// to a table in a database. For re-introspection
 /// some values will be copied from the previons
 /// data model.
-pub(crate) type ModelPair<'a> = IntrospectionPair<'a, Option<walkers::ModelWalker<'a>>, sql::TableWalker<'a>>;
+pub(crate) type ModelPair<'a> =
+    IntrospectionPair<'a, Option<walkers::ModelWalker<'a>>, sql::TableWalker<'a>>;
 
 impl<'a> ModelPair<'a> {
     /// The position of the model from the PSL, if existing. Used for
@@ -73,7 +79,11 @@ impl<'a> ModelPair<'a> {
 
     /// Whether the model has exclusion constraints.
     pub(crate) fn adds_exclusion_constraints(self) -> bool {
-        self.previous.is_none() && self.context.flavour.uses_exclude_constraint(self.context, self.next)
+        self.previous.is_none()
+            && self
+                .context
+                .flavour
+                .uses_exclude_constraint(self.context, self.next)
     }
 
     pub(crate) fn expression_indexes(self) -> impl Iterator<Item = &'a str> {
@@ -126,7 +136,8 @@ impl<'a> ModelPair<'a> {
 
     /// The documentation on top of the Model.
     pub(crate) fn documentation(self) -> Option<&'a str> {
-        self.previous.and_then(|model| model.ast_model().documentation())
+        self.previous
+            .and_then(|model| model.ast_model().documentation())
     }
 
     /// Iterating over the scalar fields.
@@ -155,10 +166,9 @@ impl<'a> ModelPair<'a> {
                     RelationFieldPair::inline(self.context, previous, fk, direction)
                 });
 
-            let m2m = self
-                .context
-                .m2m_relations_for_table(self.table_id())
-                .map(move |(direction, next)| RelationFieldPair::m2m(self.context, next, direction));
+            let m2m = self.context.m2m_relations_for_table(self.table_id()).map(
+                move |(direction, next)| RelationFieldPair::m2m(self.context, next, direction),
+            );
 
             match self.previous {
                 Some(prev) => {
@@ -170,8 +180,12 @@ impl<'a> ModelPair<'a> {
                     let view_relations = prev
                         .relation_fields()
                         .filter(|rf| rf.one_side_is_view())
-                        .filter(move |rf| !self.context.table_missing_for_model(&rf.related_model().id))
-                        .filter(move |rf| !self.context.view_missing_for_model(&rf.related_model().id))
+                        .filter(move |rf| {
+                            !self.context.table_missing_for_model(&rf.related_model().id)
+                        })
+                        .filter(move |rf| {
+                            !self.context.view_missing_for_model(&rf.related_model().id)
+                        })
                         .map(move |previous| RelationFieldPair::emulated(self.context, previous));
 
                     Box::new(inline.chain(m2m).chain(view_relations))
@@ -185,7 +199,9 @@ impl<'a> ModelPair<'a> {
                     // are copied from the previous PSL.
                     let fields = prev
                         .relation_fields()
-                        .filter(move |rf| !self.context.table_missing_for_model(&rf.related_model().id))
+                        .filter(move |rf| {
+                            !self.context.table_missing_for_model(&rf.related_model().id)
+                        })
                         .map(move |previous| RelationFieldPair::emulated(self.context, previous));
 
                     Box::new(fields)
@@ -198,12 +214,18 @@ impl<'a> ModelPair<'a> {
     /// True, if the user has explicitly mapped the model's name in
     /// the PSL.
     pub(crate) fn remapped_name(self) -> bool {
-        self.previous.filter(|m| m.mapped_name().is_some()).is_some()
+        self.previous
+            .filter(|m| m.mapped_name().is_some())
+            .is_some()
     }
 
     /// True, if we have a new model that uses row level TTL.
     pub(crate) fn adds_a_row_level_ttl(self) -> bool {
-        self.previous.is_none() && self.context.flavour.uses_row_level_ttl(self.context, self.next)
+        self.previous.is_none()
+            && self
+                .context
+                .flavour
+                .uses_row_level_ttl(self.context, self.next)
     }
 
     /// True, if we _add_ a new constraint with a non-default
@@ -254,7 +276,9 @@ impl<'a> ModelPair<'a> {
 
     /// If the model is already marked as ignored in the PSL.
     pub(crate) fn ignored_in_psl(self) -> bool {
-        self.previous.map(|model| model.is_ignored()).unwrap_or(false)
+        self.previous
+            .map(|model| model.is_ignored())
+            .unwrap_or(false)
     }
 
     /// Returns an iterator over all indexes of the model,
@@ -311,7 +335,8 @@ impl<'a> ModelPair<'a> {
     /// True if we have a new model and it has a comment.
     pub(crate) fn adds_a_description(self) -> bool {
         self.previous.is_none()
-            && (self.description().is_some() || self.scalar_fields().any(|sf| sf.adds_a_description()))
+            && (self.description().is_some()
+                || self.scalar_fields().any(|sf| sf.adds_a_description()))
     }
 
     fn all_indexes(self) -> impl ExactSizeIterator<Item = IndexPair<'a>> {

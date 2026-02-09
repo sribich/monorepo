@@ -1,11 +1,14 @@
-use super::read::get_single_record;
-
-use crate::row::ToSqlRow;
-use crate::{QueryExt, Queryable};
-
 use itertools::Itertools;
 use query_structure::*;
-use sql_query_builder::{ColumnMetadata, Context, column_metadata, update};
+use sql_query_builder::ColumnMetadata;
+use sql_query_builder::Context;
+use sql_query_builder::column_metadata;
+use sql_query_builder::update;
+
+use super::read::get_single_record;
+use crate::QueryExt;
+use crate::Queryable;
+use crate::row::ToSqlRow;
 
 /// Performs an update with an explicit selection set.
 /// This function is called for connectors that supports the `UpdateReturning` capability.
@@ -21,11 +24,20 @@ pub(crate) async fn update_one_with_selection(
     // TODO(perf): Technically, if the selectors are fulfilling the field selection, there's no need to perform an additional read.
     if args.args.is_empty() {
         let filter = build_update_one_filter(record_filter);
-        return get_single_record(conn, model, &filter, &selected_fields, RelationLoadStrategy::Query, ctx).await;
+        return get_single_record(
+            conn,
+            model,
+            &filter,
+            &selected_fields,
+            RelationLoadStrategy::Query,
+            ctx,
+        )
+        .await;
     }
 
     let selected_fields = ModelProjection::from(selected_fields);
-    let update = update::update_one_with_selection(model, record_filter, args, &selected_fields, ctx);
+    let update =
+        update::update_one_with_selection(model, record_filter, args, &selected_fields, ctx);
 
     let field_names: Vec<_> = selected_fields.db_names().collect();
     let idents = selected_fields.type_identifiers_with_arities();
@@ -56,11 +68,16 @@ pub(crate) async fn update_one_without_selection(
     // If there's nothing to update, just return the ids.
     // If the parent operation did not pass any ids, then perform a read so that the following operations can be resolved.
     if args.args.is_empty() {
-        let ids: Vec<SelectionResult> = conn.filter_selectors(model, record_filter.clone(), ctx).await?;
+        let ids: Vec<SelectionResult> = conn
+            .filter_selectors(model, record_filter.clone(), ctx)
+            .await?;
 
         let record = ids.into_iter().next().map(|id| SingleRecord {
             record: Record::from(id),
-            field_names: model.shard_aware_primary_identifier().db_names().collect_vec(),
+            field_names: model
+                .shard_aware_primary_identifier()
+                .db_names()
+                .collect_vec(),
         });
 
         return Ok(record);
@@ -95,7 +112,10 @@ fn process_result_row(
     selected_fields: &ModelProjection,
 ) -> crate::Result<SelectionResult> {
     let sql_row = row.to_sql_row(meta)?;
-    let prisma_row = selected_fields.scalar_fields().zip(sql_row.values).collect_vec();
+    let prisma_row = selected_fields
+        .scalar_fields()
+        .zip(sql_row.values)
+        .collect_vec();
 
     Ok(SelectionResult::new(prisma_row))
 }

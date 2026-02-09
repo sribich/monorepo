@@ -1,9 +1,9 @@
 //! Private module for common code shared by multiple dialects.
 
-use std::{
-    borrow::Cow,
-    fmt::{self, Display, Formatter},
-};
+use std::borrow::Cow;
+use std::fmt::Display;
+use std::fmt::Formatter;
+use std::fmt::{self};
 
 /// The indentation used throughout the crate. Four spaces.
 pub const SQL_INDENTATION: &str = "    ";

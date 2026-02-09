@@ -1,4 +1,6 @@
-use super::{Env, ExpressionResult, InterpretationResult};
+use super::Env;
+use super::ExpressionResult;
+use super::InterpretationResult;
 use crate::Query;
 
 pub(crate) enum Expression {

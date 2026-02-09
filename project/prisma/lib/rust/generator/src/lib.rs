@@ -5,17 +5,28 @@ mod error;
 mod jsonrpc;
 mod rust;
 
-use std::{
-    io::{BufRead, BufReader, Write, stderr, stdin},
-    sync::Arc,
-};
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::Write;
+use std::io::stderr;
+use std::io::stdin;
+use std::sync::Arc;
 
 use ::dmmf::DataModelMetaFormat;
 use args::GeneratorArgs;
-use error::{ExternalErrorContext, GenericErrorContext};
-pub use error::{PrismaError, Result};
-use jsonrpc::{GenerateRequest, JsonRpcRequest, JsonRpcResponseData, Manifest, ManifestResponse};
-use psl::{Schema, Validated, ValidatedSchema, parser_database::NoExtensionTypes};
+use error::ExternalErrorContext;
+use error::GenericErrorContext;
+pub use error::PrismaError;
+pub use error::Result;
+use jsonrpc::GenerateRequest;
+use jsonrpc::JsonRpcRequest;
+use jsonrpc::JsonRpcResponseData;
+use jsonrpc::Manifest;
+use jsonrpc::ManifestResponse;
+use psl::Schema;
+use psl::Validated;
+use psl::ValidatedSchema;
+use psl::parser_database::NoExtensionTypes;
 use railgun_error::ResultExt;
 pub use rust::RustGenerator;
 use serde_json::Value;
@@ -42,13 +53,17 @@ impl GeneratorContext {
         schema: Arc<Schema<Validated>>,
         dmmf: Arc<DataModelMetaFormat>,
     ) -> Result<()> {
-        self.generator.generate(GeneratorArgs::new(config, dmmf, schema));
+        self.generator
+            .generate(GeneratorArgs::new(config, dmmf, schema));
 
         Ok(())
     }
 }
 
-pub fn run_generators(schema: Arc<Schema<Validated>>, dmmf: Arc<DataModelMetaFormat>) -> Result<()> {
+pub fn run_generators(
+    schema: Arc<Schema<Validated>>,
+    dmmf: Arc<DataModelMetaFormat>,
+) -> Result<()> {
     for generator in &schema.context().configuration.generators {
         run_generator(&generator, Arc::clone(&schema), Arc::clone(&dmmf))?;
     }

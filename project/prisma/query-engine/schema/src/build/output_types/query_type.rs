@@ -1,9 +1,11 @@
-use super::*;
 use input_types::fields::arguments;
+
+use super::*;
 
 /// Builds the root `Query` type.
 pub(crate) fn query_fields(ctx: &QuerySchema) -> Vec<FieldFn> {
-    let mut fields: Vec<FieldFn> = Vec::with_capacity(ctx.internal_data_model.schema.db.models_count() * 6);
+    let mut fields: Vec<FieldFn> =
+        Vec::with_capacity(ctx.internal_data_model.schema.db.models_count() * 6);
 
     macro_rules! field {
         ($f:ident, $model_var:expr) => {{

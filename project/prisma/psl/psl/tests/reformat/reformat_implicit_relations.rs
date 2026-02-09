@@ -71,7 +71,8 @@ fn back_relations_must_be_added_when_attribute_is_present_with_no_arguments() {
 }
 
 #[test]
-fn scalar_field_and_attribute_must_be_added_even_when_attribute_is_missing_and_both_relation_fields_present() {
+fn scalar_field_and_attribute_must_be_added_even_when_attribute_is_missing_and_both_relation_fields_present()
+ {
     let input = indoc! {r#"
         model User {
           id Int @id
@@ -102,7 +103,8 @@ fn scalar_field_and_attribute_must_be_added_even_when_attribute_is_missing_and_b
 }
 
 #[test]
-fn scalar_field_and_attribute_must_be_added_even_when_attribute_is_missing_and_only_one_relation_field_present() {
+fn scalar_field_and_attribute_must_be_added_even_when_attribute_is_missing_and_only_one_relation_field_present()
+ {
     let input = indoc! {r#"
         model User {
           id Int @id

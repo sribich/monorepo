@@ -21,7 +21,11 @@ mod datetime {
     // FIXME: this panics the rust code. Let's fix that at some point.
     #[connector_test(exclude(Sqlite))]
     async fn before_1970(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{id: 1, name: "First", born: "1969-01-01T10:33:59Z"}"#).await?;
+        create_row(
+            &runner,
+            r#"{id: 1, name: "First", born: "1969-01-01T10:33:59Z"}"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query {findUniquePerson(where:{name: "First"}){name, born}}"#),
@@ -34,7 +38,11 @@ mod datetime {
     // "Using milliseconds in a date before 1970" should "work"
     #[connector_test(exclude(Sqlite))]
     async fn ms_in_date_before_1970(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{id: 1, name: "Second", born: "1969-01-01T10:33:59.828Z"}"#).await?;
+        create_row(
+            &runner,
+            r#"{id: 1, name: "Second", born: "1969-01-01T10:33:59.828Z"}"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query {findUniquePerson(where:{name: "Second"}){name, born}}"#),
@@ -47,7 +55,11 @@ mod datetime {
     // "Using a date after 1970" should "work"
     #[connector_test]
     async fn date_after_1970(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{id: 1, name: "Third", born: "1979-01-01T10:33:59Z"}"#).await?;
+        create_row(
+            &runner,
+            r#"{id: 1, name: "Third", born: "1979-01-01T10:33:59Z"}"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query {findUniquePerson(where:{name: "Third"}){name, born}}"#),
@@ -60,7 +72,11 @@ mod datetime {
     // "Using milliseconds in a date after 1970" should "work"
     #[connector_test]
     async fn ms_in_date_after_1970(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{id: 1, name: "Fourth", born: "1979-01-01T10:33:59.828Z"}"#).await?;
+        create_row(
+            &runner,
+            r#"{id: 1, name: "Fourth", born: "1979-01-01T10:33:59.828Z"}"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query {findUniquePerson(where:{name: "Fourth"}){name, born}}"#),
@@ -72,7 +88,9 @@ mod datetime {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOnePerson(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOnePerson(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

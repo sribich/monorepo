@@ -1,7 +1,11 @@
 //! D1 seems to silently ignore Cascade.
 use query_engine_tests::*;
 
-#[test_suite(suite = "cascade_onU_1to1_req", schema(required), relation_mode = "prisma")]
+#[test_suite(
+    suite = "cascade_onU_1to1_req",
+    schema(required),
+    relation_mode = "prisma"
+)]
 mod one2one_req {
     use indoc::indoc;
     use query_engine_tests::run_query;
@@ -139,7 +143,11 @@ mod one2one_req {
     }
 }
 
-#[test_suite(suite = "cascade_onU_1to1_opt", schema(optional), relation_mode = "prisma")]
+#[test_suite(
+    suite = "cascade_onU_1to1_opt",
+    schema(optional),
+    relation_mode = "prisma"
+)]
 mod one2one_opt {
     use indoc::indoc;
     use query_engine_tests::run_query;
@@ -317,7 +325,11 @@ mod one2one_opt {
     }
 }
 
-#[test_suite(suite = "cascade_onU_1toM_req", schema(required), relation_mode = "prisma")]
+#[test_suite(
+    suite = "cascade_onU_1toM_req",
+    schema(required),
+    relation_mode = "prisma"
+)]
 mod one2many_req {
     use indoc::indoc;
     use query_engine_tests::run_query;
@@ -362,7 +374,11 @@ mod one2many_req {
     }
 }
 
-#[test_suite(suite = "cascade_onU_1toM_opt", schema(optional), relation_mode = "prisma")]
+#[test_suite(
+    suite = "cascade_onU_1toM_opt",
+    schema(optional),
+    relation_mode = "prisma"
+)]
 mod one2many_opt {
     use indoc::indoc;
     use query_engine_tests::run_query;

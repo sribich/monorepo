@@ -1,10 +1,15 @@
 use super::*;
 
-pub(crate) fn render_enum_types<'a>(ctx: &mut RenderContext, enum_types: impl Iterator<Item = EnumType> + 'a) {
+pub(crate) fn render_enum_types<'a>(
+    ctx: &mut RenderContext,
+    enum_types: impl Iterator<Item = EnumType> + 'a,
+) {
     let mut borrows: Vec<_> = enum_types.collect();
 
     borrows.sort_by_key(|a| a.name());
-    borrows.into_iter().for_each(|et| DmmfEnumRenderer::new(et).render(ctx));
+    borrows
+        .into_iter()
+        .for_each(|et| DmmfEnumRenderer::new(et).render(ctx));
 }
 
 pub struct DmmfEnumRenderer {

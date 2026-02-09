@@ -5,20 +5,35 @@ mod native_types;
 mod schema;
 mod shard_key;
 
-use crate::{
-    DatamodelError, ScalarFieldId, StringId,
-    ast::{self, WithName, WithSpan},
-    coerce, coerce_array,
-    context::Context,
-    types::{
-        EnumAttributes, FieldWithArgs, IndexAlgorithm, IndexAttribute, IndexFieldPath, IndexType,
-        ModelAttributes, OperatorClassStore, RelationField, ScalarField, ScalarFieldType, SortOrder,
-    },
-    walkers::RelationFieldId,
-};
+use std::borrow::Cow;
+use std::cell::Cell;
+use std::fmt::Display;
+
 use diagnostics::Span;
 use itertools::Itertools;
-use std::{borrow::Cow, cell::Cell, fmt::Display};
+
+use crate::DatamodelError;
+use crate::ScalarFieldId;
+use crate::StringId;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
+use crate::coerce;
+use crate::coerce_array;
+use crate::context::Context;
+use crate::types::EnumAttributes;
+use crate::types::FieldWithArgs;
+use crate::types::IndexAlgorithm;
+use crate::types::IndexAttribute;
+use crate::types::IndexFieldPath;
+use crate::types::IndexType;
+use crate::types::ModelAttributes;
+use crate::types::OperatorClassStore;
+use crate::types::RelationField;
+use crate::types::ScalarField;
+use crate::types::ScalarFieldType;
+use crate::types::SortOrder;
+use crate::walkers::RelationFieldId;
 
 pub(super) fn resolve_attributes(ctx: &mut Context<'_>) {
     for rfid in ctx.types.iter_relation_field_ids() {
@@ -38,7 +53,11 @@ pub(super) fn resolve_attributes(ctx: &mut Context<'_>) {
     }
 }
 
-fn resolve_enum_attributes<'db>(enum_id: crate::EnumId, ast_enum: &'db ast::Enum, ctx: &mut Context<'db>) {
+fn resolve_enum_attributes<'db>(
+    enum_id: crate::EnumId,
+    ast_enum: &'db ast::Enum,
+    ctx: &mut Context<'db>,
+) {
     let mut enum_attributes = EnumAttributes::default();
 
     for (value_id, _) in ast_enum.iter_values() {
@@ -47,7 +66,8 @@ fn resolve_enum_attributes<'db>(enum_id: crate::EnumId, ast_enum: &'db ast::Enum
         if ctx.visit_optional_single_attr("map") {
             if let Some(mapped_name) = map::visit_map_attribute(ctx) {
                 enum_attributes.mapped_values.insert(value_id, mapped_name);
-                ctx.mapped_enum_value_names.insert((enum_id, mapped_name), value_id);
+                ctx.mapped_enum_value_names
+                    .insert((enum_id, mapped_name), value_id);
             }
             ctx.validate_visited_arguments();
         }
@@ -140,7 +160,9 @@ fn resolve_model_attributes(model_id: crate::ModelId, ctx: &mut Context<'_>) {
     id::validate_id_field_arities(model_id, &model_attributes, ctx);
     shard_key::validate_shard_key_field_arities(model_id, &model_attributes, ctx);
 
-    ctx.types.model_attributes.insert(model_id, model_attributes);
+    ctx.types
+        .model_attributes
+        .insert(model_id, model_attributes);
     ctx.validate_visited_attributes();
 }
 
@@ -161,7 +183,14 @@ fn visit_scalar_field_attributes(
 
     // @map
     if ctx.visit_optional_single_attr("map") {
-        map::scalar_field(scalar_field_id, ast_model, ast_field, model_id, field_id, ctx);
+        map::scalar_field(
+            scalar_field_id,
+            ast_model,
+            ast_field,
+            model_id,
+            field_id,
+            ctx,
+        );
         ctx.validate_visited_arguments();
     }
 
@@ -189,12 +218,19 @@ fn visit_scalar_field_attributes(
 
     // @updatedAt
     if ctx.visit_optional_single_attr("updatedAt") {
-        if !matches!(r#type, ScalarFieldType::BuiltInScalar(crate::ScalarType::DateTime)) {
-            ctx.push_attribute_validation_error("Fields that are marked with @updatedAt must be of type DateTime.");
+        if !matches!(
+            r#type,
+            ScalarFieldType::BuiltInScalar(crate::ScalarType::DateTime)
+        ) {
+            ctx.push_attribute_validation_error(
+                "Fields that are marked with @updatedAt must be of type DateTime.",
+            );
         }
 
         if ast_field.arity.is_list() {
-            ctx.push_attribute_validation_error("Fields that are marked with @updatedAt cannot be lists.");
+            ctx.push_attribute_validation_error(
+                "Fields that are marked with @updatedAt cannot be lists.",
+            );
         }
 
         ctx.types[scalar_field_id].is_updated_at = true;
@@ -236,7 +272,11 @@ fn visit_scalar_field_attributes(
     ctx.validate_visited_attributes();
 }
 
-fn visit_field_unique(scalar_field_id: ScalarFieldId, model_data: &mut ModelAttributes, ctx: &mut Context<'_>) {
+fn visit_field_unique(
+    scalar_field_id: ScalarFieldId,
+    model_data: &mut ModelAttributes,
+    ctx: &mut Context<'_>,
+) {
     let mapped_name = match ctx
         .visit_optional_arg("map")
         .and_then(|arg| coerce::string(arg, ctx.diagnostics))
@@ -291,7 +331,9 @@ fn visit_field_unique(scalar_field_id: ScalarFieldId, model_data: &mut ModelAttr
 }
 
 fn visit_relation_field_attributes(rfid: RelationFieldId, ctx: &mut Context<'_>) {
-    let RelationField { model_id, field_id, .. } = ctx.types[rfid];
+    let RelationField {
+        model_id, field_id, ..
+    } = ctx.types[rfid];
     let ast_field = &ctx.asts[model_id][field_id];
     ctx.visit_attributes((model_id.0, (model_id.1, field_id)));
 
@@ -326,7 +368,9 @@ fn visit_relation_field_attributes(rfid: RelationFieldId, ctx: &mut Context<'_>)
 
     // @map
     if ctx.visit_optional_single_attr("map") {
-        ctx.push_attribute_validation_error("The attribute `@map` cannot be used on relation fields.");
+        ctx.push_attribute_validation_error(
+            "The attribute `@map` cannot be used on relation fields.",
+        );
 
         if let Err(err) = ctx.visit_default_arg("name") {
             ctx.push_error(err)
@@ -339,13 +383,18 @@ fn visit_relation_field_attributes(rfid: RelationFieldId, ctx: &mut Context<'_>)
         let mut suggested_fields = Vec::new();
 
         for underlying_field in ctx.types[rfid].fields.iter().flatten() {
-            let ScalarField { model_id, field_id, .. } = ctx.types[*underlying_field];
+            let ScalarField {
+                model_id, field_id, ..
+            } = ctx.types[*underlying_field];
             suggested_fields.push(ctx.asts[model_id][field_id].name());
         }
 
         let suggestion = match suggested_fields.len() {
             0 => String::new(),
-            1 => format!(" Did you mean to put it on `{field}`?", field = suggested_fields[0],),
+            1 => format!(
+                " Did you mean to put it on `{field}`?",
+                field = suggested_fields[0],
+            ),
             _ => {
                 format!(
                     " Did you mean to provide `@@unique([{fields}])`?",
@@ -367,7 +416,11 @@ fn visit_relation_field_attributes(rfid: RelationFieldId, ctx: &mut Context<'_>)
     ctx.validate_visited_attributes();
 }
 
-fn visit_model_ignore(model_id: crate::ModelId, model_data: &mut ModelAttributes, ctx: &mut Context<'_>) {
+fn visit_model_ignore(
+    model_id: crate::ModelId,
+    model_data: &mut ModelAttributes,
+    ctx: &mut Context<'_>,
+) {
     let ignored_field_errors: Vec<_> = ctx
         .types
         .range_model_scalar_fields(model_id)
@@ -395,11 +448,7 @@ fn model_fulltext(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mu
         ..Default::default()
     };
 
-    common_index_validations(
-        &mut index_attribute,
-        model_id,
-        ctx,
-    );
+    common_index_validations(&mut index_attribute, model_id, ctx);
 
     let mapped_name = match ctx
         .visit_optional_arg("map")
@@ -415,7 +464,8 @@ fn model_fulltext(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mu
 
     index_attribute.mapped_name = mapped_name;
 
-    data.ast_indexes.push((ctx.current_attribute_id().1, index_attribute));
+    data.ast_indexes
+        .push((ctx.current_attribute_id().1, index_attribute));
 }
 
 /// Validate @@index on models.
@@ -425,11 +475,7 @@ fn model_index(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut C
         ..Default::default()
     };
 
-    common_index_validations(
-        &mut index_attribute,
-        model_id,
-        ctx,
-    );
+    common_index_validations(&mut index_attribute, model_id, ctx);
 
     let name = get_name_argument(ctx);
 
@@ -488,7 +534,8 @@ fn model_index(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut C
     index_attribute.algorithm = algo;
     index_attribute.clustered = validate_clustering_setting(ctx);
 
-    data.ast_indexes.push((ctx.current_attribute_id().1, index_attribute));
+    data.ast_indexes
+        .push((ctx.current_attribute_id().1, index_attribute));
 }
 
 /// Validate @@unique on models.
@@ -498,11 +545,7 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
         ..Default::default()
     };
 
-    common_index_validations(
-        &mut index_attribute,
-        model_id,
-        ctx,
-    );
+    common_index_validations(&mut index_attribute, model_id, ctx);
 
     let current_attribute = ctx.current_attribute();
     let current_attribute_id = ctx.current_attribute_id();
@@ -525,7 +568,9 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
             .and_then(|name| coerce::string(name, ctx.diagnostics))
         {
             Some("") => {
-                ctx.push_attribute_validation_error("The `map` argument cannot be an empty string.");
+                ctx.push_attribute_validation_error(
+                    "The `map` argument cannot be an empty string.",
+                );
                 None
             }
             Some(name) => Some(ctx.interner.intern(name)),
@@ -533,7 +578,13 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
         };
 
         if let Some(name) = name {
-            validate_client_name(current_attribute.span, ast_model.name(), name, "@@unique", ctx);
+            validate_client_name(
+                current_attribute.span,
+                ast_model.name(),
+                name,
+                "@@unique",
+                ctx,
+            );
         }
 
         mapped_name
@@ -543,7 +594,8 @@ fn model_unique(data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut 
     index_attribute.mapped_name = mapped_name;
     index_attribute.clustered = validate_clustering_setting(ctx);
 
-    data.ast_indexes.push((current_attribute_id.1, index_attribute));
+    data.ast_indexes
+        .push((current_attribute_id.1, index_attribute));
 }
 
 fn common_index_validations(
@@ -580,11 +632,20 @@ fn common_index_validations(
                 ctx.push_error({
                     let message: &str = &format!(
                         "The {}index definition refers to the unknown fields: {}.",
-                        if index_data.is_unique() { "unique " } else { "" },
+                        if index_data.is_unique() {
+                            "unique "
+                        } else {
+                            ""
+                        },
                         fields.join(", "),
                     );
                     let model_name = ctx.asts[model_id].name();
-                    DatamodelError::new_model_validation_error(message, "model", model_name, current_attribute.span)
+                    DatamodelError::new_model_validation_error(
+                        message,
+                        "model",
+                        model_name,
+                        current_attribute.span,
+                    )
                 });
             }
 
@@ -603,7 +664,9 @@ fn common_index_validations(
                     let fields = rf.1.fields.iter().flatten();
 
                     for underlying_field in fields {
-                        let ScalarField { model_id, field_id, .. } = ctx.types[*underlying_field];
+                        let ScalarField {
+                            model_id, field_id, ..
+                        } = ctx.types[*underlying_field];
                         suggested_fields.push(ctx.asts[model_id][field_id].name());
                     }
                 }
@@ -611,7 +674,11 @@ fn common_index_validations(
                 let suggestion = if !suggested_fields.is_empty() {
                     format!(
                         " Did you mean `@@{attribute_name}([{fields}])`?",
-                        attribute_name = if index_data.is_unique() { "unique" } else { "index" },
+                        attribute_name = if index_data.is_unique() {
+                            "unique"
+                        } else {
+                            "index"
+                        },
                         fields = suggested_fields.join(", ")
                     )
                 } else {
@@ -635,7 +702,11 @@ fn common_index_validations(
 }
 
 /// @relation validation for relation fields.
-fn visit_relation(model_id: crate::ModelId, relation_field_id: RelationFieldId, ctx: &mut Context<'_>) {
+fn visit_relation(
+    model_id: crate::ModelId,
+    relation_field_id: RelationFieldId,
+    ctx: &mut Context<'_>,
+) {
     let attr = ctx.current_attribute();
     ctx.types[relation_field_id].relation_attribute = Some(ctx.current_attribute_id().1);
 
@@ -747,13 +818,15 @@ fn visit_relation(model_id: crate::ModelId, relation_field_id: RelationFieldId, 
 
     // Validate referential actions.
     if let Some(on_delete) = ctx.visit_optional_arg("onDelete")
-        && let Some(action) = crate::ReferentialAction::try_from_expression(on_delete, ctx.diagnostics)
+        && let Some(action) =
+            crate::ReferentialAction::try_from_expression(on_delete, ctx.diagnostics)
     {
         ctx.types[relation_field_id].on_delete = Some((action, on_delete.span()));
     }
 
     if let Some(on_update) = ctx.visit_optional_arg("onUpdate")
-        && let Some(action) = crate::ReferentialAction::try_from_expression(on_update, ctx.diagnostics)
+        && let Some(action) =
+            crate::ReferentialAction::try_from_expression(on_update, ctx.diagnostics)
     {
         ctx.types[relation_field_id].on_update = Some((action, on_update.span()));
     }
@@ -764,7 +837,9 @@ fn visit_relation(model_id: crate::ModelId, relation_field_id: RelationFieldId, 
             .and_then(|name| coerce::string(name, ctx.diagnostics))
         {
             Some("") => {
-                ctx.push_attribute_validation_error("The `map` argument cannot be an empty string.");
+                ctx.push_attribute_validation_error(
+                    "The `map` argument cannot be an empty string.",
+                );
                 None
             }
             Some(name) => Some(ctx.interner.intern(name)),
@@ -867,10 +942,11 @@ fn resolve_field_array_with_args<'db>(
     ctx: &mut Context<'db>,
 ) -> Result<Vec<FieldWithArgs>, FieldResolutionError<'db>> {
     let file_id = model_id.0;
-    let constant_array = match crate::types::index_fields::coerce_field_array_with_args(values, ctx.diagnostics) {
-        Some(values) => values,
-        None => return Err(FieldResolutionError::AlreadyDealtWith),
-    };
+    let constant_array =
+        match crate::types::index_fields::coerce_field_array_with_args(values, ctx.diagnostics) {
+            Some(values) => values,
+            None => return Err(FieldResolutionError::AlreadyDealtWith),
+        };
 
     let mut field_ids = Vec::with_capacity(constant_array.len());
     let mut unknown_fields = Vec::new();
@@ -880,7 +956,11 @@ fn resolve_field_array_with_args<'db>(
 
     for attrs in &constant_array {
         let path = if attrs.field_name.contains('.') {
-            ctx.diagnostics.push_error(DatamodelError::new_validation_error("Composite indexes not supported as MongoDB is no longer supported", attribute_span));
+            ctx.diagnostics
+                .push_error(DatamodelError::new_validation_error(
+                    "Composite indexes not supported as MongoDB is no longer supported",
+                    attribute_span,
+                ));
             continue;
         } else if let Some(field_id) = ctx.find_model_field(model_id, attrs.field_name) {
             // Is the field a scalar field?
@@ -892,7 +972,10 @@ fn resolve_field_array_with_args<'db>(
                 }
             }
         } else {
-            unknown_fields.push(((model_id.0, ast::TopId::Model(model_id.1)), attrs.field_name));
+            unknown_fields.push((
+                (model_id.0, ast::TopId::Model(model_id.1)),
+                attrs.field_name,
+            ));
             continue;
         };
 
@@ -901,7 +984,9 @@ fn resolve_field_array_with_args<'db>(
             let path_str = Cow::from(attrs.field_name);
 
             ctx.push_error(DatamodelError::new_model_validation_error(
-                &format!("The unique index definition refers to the field {path_str} multiple times.",),
+                &format!(
+                    "The unique index definition refers to the field {path_str} multiple times.",
+                ),
                 "model",
                 ast_model.name(),
                 attribute_span,
@@ -934,10 +1019,17 @@ fn resolve_field_array_with_args<'db>(
     }
 }
 
-fn convert_op_class(raw: crate::types::index_fields::OperatorClass<'_>, ctx: &mut Context<'_>) -> OperatorClassStore {
+fn convert_op_class(
+    raw: crate::types::index_fields::OperatorClass<'_>,
+    ctx: &mut Context<'_>,
+) -> OperatorClassStore {
     match raw {
-        crate::types::index_fields::OperatorClass::Constant(class) => OperatorClassStore::from(class),
-        crate::types::index_fields::OperatorClass::Raw(s) => OperatorClassStore::raw(ctx.interner.intern(s)),
+        crate::types::index_fields::OperatorClass::Constant(class) => {
+            OperatorClassStore::from(class)
+        }
+        crate::types::index_fields::OperatorClass::Raw(s) => {
+            OperatorClassStore::raw(ctx.interner.intern(s))
+        }
     }
 }
 
@@ -955,7 +1047,13 @@ fn get_name_argument(ctx: &mut Context<'_>) -> Option<StringId> {
     }
 }
 
-fn validate_client_name(span: Span, object_name: &str, name: StringId, attribute: &'static str, ctx: &mut Context<'_>) {
+fn validate_client_name(
+    span: Span,
+    object_name: &str,
+    name: StringId,
+    attribute: &'static str,
+    ctx: &mut Context<'_>,
+) {
     // only Alphanumeric characters and underscore are allowed due to this making its way into the client API
     // todo what about starting with a number or underscore?
     {
@@ -997,7 +1095,9 @@ fn format_fields_in_error_with_leading_word<'a>(
     {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             let Some(iter) = self.0.take().map(<_>::into_iter) else {
-                panic!("`format_fields_in_error_with_leading_word` result can only be formatted once")
+                panic!(
+                    "`format_fields_in_error_with_leading_word` result can only be formatted once"
+                )
             };
             write!(f, "field")?;
             if iter.len() > 1 {

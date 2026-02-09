@@ -3,4 +3,5 @@ mod native;
 #[cfg(feature = "mysql-native")]
 pub use native::*;
 
-use super::{Circumstances, Params};
+use super::Circumstances;
+use super::Params;

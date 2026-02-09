@@ -1,6 +1,7 @@
 use barrel::types;
 use indoc::indoc;
-use schema_core::{ExtensionType, ExtensionTypeConfig};
+use schema_core::ExtensionType;
+use schema_core::ExtensionTypeConfig;
 use sql_introspection_tests::test_api::*;
 use test_macros::test_connector;
 

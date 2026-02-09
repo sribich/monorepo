@@ -13,7 +13,8 @@ async fn enum_reintrospection_preserves_good_indentation(api: &mut TestApi) -> T
         "#
     );
 
-    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#).await;
+    api.raw_cmd(r#"CREATE TYPE "theEnumName" AS ENUM ('A', 'B');"#)
+        .await;
 
     let reintrospected: String = api
         .re_introspect(original)
@@ -68,7 +69,9 @@ async fn a_table_enums_array(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(tags(Postgres))]
-async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &mut TestApi) -> TestResult {
+async fn an_enum_with_invalid_value_names_should_have_them_commented_out(
+    api: &mut TestApi,
+) -> TestResult {
     let sql = r#"CREATE TYPE "threechars" AS ENUM ('123', 'wow','$§!');"#;
     api.raw_cmd(sql).await;
     let expected = expect![[r#"
@@ -92,7 +95,9 @@ async fn an_enum_with_invalid_value_names_should_have_them_commented_out(api: &m
 }
 
 #[test_connector(tags(Postgres))]
-async fn a_table_with_an_enum_default_value_that_is_an_empty_string(api: &mut TestApi) -> TestResult {
+async fn a_table_with_an_enum_default_value_that_is_an_empty_string(
+    api: &mut TestApi,
+) -> TestResult {
     let setup = indoc! {r#"
         CREATE TYPE "color" AS ENUM ('black', '');
 
@@ -222,7 +227,9 @@ async fn invalid_enum_variants_regression(api: &mut TestApi) -> TestResult {
 }
 
 #[test_connector(tags(Postgres))]
-async fn a_variant_that_cannot_be_sanitized_triggers_dbgenerated_in_defaults(api: &mut TestApi) -> TestResult {
+async fn a_variant_that_cannot_be_sanitized_triggers_dbgenerated_in_defaults(
+    api: &mut TestApi,
+) -> TestResult {
     let setup = indoc! {r#"
         CREATE Type "A" as ENUM ('0', '1');
 

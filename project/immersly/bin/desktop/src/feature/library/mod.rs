@@ -59,7 +59,6 @@ impl Feature for LibraryFeature {
         Ok(())
     }
 
-
     fn routes(
         &self,
         router: Router<AppState>,

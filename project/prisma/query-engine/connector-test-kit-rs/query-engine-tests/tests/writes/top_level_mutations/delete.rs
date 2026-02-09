@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod delete {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -22,7 +23,10 @@ mod delete {
     async fn should_delete_and_return_item(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1, string: "test" }"#).await?;
 
-        run_query!(&runner, r#"mutation { deleteOneScalarModel(where: {id: 1}) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { deleteOneScalarModel(where: {id: 1}) { id } }"#
+        );
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"query { findManyScalarModel { id }}"#),
@@ -134,7 +138,9 @@ mod delete {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneScalarModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneScalarModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

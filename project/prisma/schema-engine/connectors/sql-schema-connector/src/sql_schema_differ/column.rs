@@ -1,9 +1,10 @@
-use crate::migration_pair::MigrationPair;
 use enumflags2::BitFlags;
-
-use sql_schema_describer::{DefaultKind, PrismaValue, walkers::TableColumnWalker};
+use sql_schema_describer::DefaultKind;
+use sql_schema_describer::PrismaValue;
+use sql_schema_describer::walkers::TableColumnWalker;
 
 use super::SqlSchemaDifferFlavour;
+use crate::migration_pair::MigrationPair;
 
 pub(crate) fn all_changes(
     cols: MigrationPair<TableColumnWalker<'_>>,
@@ -28,16 +29,23 @@ pub(crate) fn all_changes(
         changes |= ColumnChange::Autoincrement;
     }
 
-    ColumnChanges { type_change, changes }
+    ColumnChanges {
+        type_change,
+        changes,
+    }
 }
 
 /// There are workarounds to cope with current migration and introspection limitations.
 ///
 /// - We bail on a number of cases that are too complex to deal with right now or underspecified.
-fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlSchemaDifferFlavour) -> bool {
+fn defaults_match(
+    cols: MigrationPair<TableColumnWalker<'_>>,
+    flavour: &dyn SqlSchemaDifferFlavour,
+) -> bool {
     // JSON defaults on MySQL should be ignored.
     if flavour.should_ignore_json_defaults()
-        && (cols.previous.column_type_family().is_json() || cols.next.column_type_family().is_json())
+        && (cols.previous.column_type_family().is_json()
+            || cols.next.column_type_family().is_json())
     {
         return true;
     }
@@ -57,14 +65,16 @@ fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlS
     match defaults {
         (Some(DefaultKind::DbGenerated(_)), Some(DefaultKind::Value(PrismaValue::List(_))))
         | (Some(DefaultKind::Value(PrismaValue::List(_))), Some(DefaultKind::DbGenerated(_)))
-            if cols.previous.column_type_family().is_datetime() || cols.next.column_type_family().is_datetime() =>
+            if cols.previous.column_type_family().is_datetime()
+                || cols.next.column_type_family().is_datetime() =>
         {
             true
         }
 
-        (Some(DefaultKind::Value(PrismaValue::List(prev))), Some(DefaultKind::Value(PrismaValue::List(next)))) => {
-            list_defaults_match(prev, next, flavour)
-        }
+        (
+            Some(DefaultKind::Value(PrismaValue::List(prev))),
+            Some(DefaultKind::Value(PrismaValue::List(next))),
+        ) => list_defaults_match(prev, next, flavour),
 
         // Avoid naive string comparisons for JSON defaults.
         (
@@ -84,8 +94,14 @@ fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlS
         (Some(DefaultKind::Value(PrismaValue::DateTime(_))), Some(_))
         | (Some(_), Some(DefaultKind::Value(PrismaValue::DateTime(_)))) => true, // can't diff these in at present
 
-        (Some(DefaultKind::Value(PrismaValue::Int(i))), Some(DefaultKind::Value(PrismaValue::BigInt(j))))
-        | (Some(DefaultKind::Value(PrismaValue::BigInt(i))), Some(DefaultKind::Value(PrismaValue::Int(j)))) => i == j,
+        (
+            Some(DefaultKind::Value(PrismaValue::Int(i))),
+            Some(DefaultKind::Value(PrismaValue::BigInt(j))),
+        )
+        | (
+            Some(DefaultKind::Value(PrismaValue::BigInt(i))),
+            Some(DefaultKind::Value(PrismaValue::Int(j))),
+        ) => i == j,
 
         // SQLite introspection recognizes enum defaults as PrismaValue::String since SQLite does
         // not support enums natively, while the Prisma schema recognizes them as
@@ -96,7 +112,9 @@ fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlS
             Some(DefaultKind::Value(PrismaValue::String(next) | PrismaValue::Enum(next))),
         ) => prev == next && names_match,
 
-        (Some(DefaultKind::Value(prev)), Some(DefaultKind::Value(next))) => (prev == next) && names_match,
+        (Some(DefaultKind::Value(prev)), Some(DefaultKind::Value(next))) => {
+            (prev == next) && names_match
+        }
         (Some(DefaultKind::Value(_)), Some(DefaultKind::Now)) => false,
         (Some(DefaultKind::Value(_)), None) => false,
 
@@ -120,9 +138,10 @@ fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlS
         (None, Some(DefaultKind::Value(_))) => false,
         (None, Some(DefaultKind::Now)) => false,
 
-        (Some(DefaultKind::DbGenerated(Some(prev))), Some(DefaultKind::DbGenerated(Some(next)))) => {
-            (prev.eq_ignore_ascii_case(next)) && names_match
-        }
+        (
+            Some(DefaultKind::DbGenerated(Some(prev))),
+            Some(DefaultKind::DbGenerated(Some(next))),
+        ) => (prev.eq_ignore_ascii_case(next)) && names_match,
         (_, Some(DefaultKind::DbGenerated(_))) => false,
         (_, Some(DefaultKind::Sequence(_))) => true,
     }
@@ -130,12 +149,18 @@ fn defaults_match(cols: MigrationPair<TableColumnWalker<'_>>, flavour: &dyn SqlS
 
 fn json_defaults_match(previous: &str, next: &str) -> bool {
     serde_json::from_str::<serde_json::Value>(previous)
-        .and_then(|previous| serde_json::from_str::<serde_json::Value>(next).map(|next| (previous, next)))
+        .and_then(|previous| {
+            serde_json::from_str::<serde_json::Value>(next).map(|next| (previous, next))
+        })
         .map(|(previous, next)| previous == next)
         .unwrap_or(true)
 }
 
-fn list_defaults_match(prev: &[PrismaValue], next: &[PrismaValue], flavour: &dyn SqlSchemaDifferFlavour) -> bool {
+fn list_defaults_match(
+    prev: &[PrismaValue],
+    next: &[PrismaValue],
+    flavour: &dyn SqlSchemaDifferFlavour,
+) -> bool {
     if prev.len() != next.len() {
         return false;
     }

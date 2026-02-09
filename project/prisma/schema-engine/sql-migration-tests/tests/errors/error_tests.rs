@@ -1,13 +1,16 @@
+use std::str::FromStr;
+
 use connection_string::JdbcString;
-use indoc::{formatdoc, indoc};
+use indoc::formatdoc;
+use indoc::indoc;
 use pretty_assertions::assert_eq;
 use quaint::prelude::Insert;
-use schema_core::{
-    commands::ensure_connection_validity::EnsureConnectionValidityParams, json_rpc::types::{DatasourceParam, SchemasContainer}, schema_connector::ConnectorError
-};
+use schema_core::commands::ensure_connection_validity::EnsureConnectionValidityParams;
+use schema_core::json_rpc::types::DatasourceParam;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector::ConnectorError;
 use serde_json::json;
 use sql_migration_tests::test_api::*;
-use std::str::FromStr;
 use url::Url;
 
 pub(crate) async fn connection_error(schema: String) -> ConnectorError {
@@ -309,7 +312,10 @@ fn datamodel_parser_errors_must_return_a_known_error(api: TestApi) {
         }
     "#;
 
-    let error = api.schema_push_w_datasource(bad_dm).send_unwrap_err().to_user_facing();
+    let error = api
+        .schema_push_w_datasource(bad_dm)
+        .send_unwrap_err()
+        .to_user_facing();
 
     let expected_msg = "\u{1b}[1;91merror\u{1b}[0m: \u{1b}[1mType \"Post\" is neither a built-in type, nor refers to another model or enum.\u{1b}[0m\n  \u{1b}[1;94m-->\u{1b}[0m  \u{1b}[4mschema.prisma:10\u{1b}[0m\n\u{1b}[1;94m   | \u{1b}[0m\n\u{1b}[1;94m 9 | \u{1b}[0m            id Float @id\n\u{1b}[1;94m10 | \u{1b}[0m            post \u{1b}[1;91mPost\u{1b}[0m[]\n\u{1b}[1;94m   | \u{1b}[0m\n";
 
@@ -417,7 +423,10 @@ fn json_fields_must_be_rejected_on_mysql_5_6(api: TestApi) {
 #[tokio::test]
 async fn connection_string_problems_give_a_nice_error() {
     let providers = &[
-        ("mysql", "mysql://root:password-with-#@localhost:3306/database"),
+        (
+            "mysql",
+            "mysql://root:password-with-#@localhost:3306/database",
+        ),
         (
             "postgresql",
             "postgresql://root:password-with-#@localhost:5432/postgres",

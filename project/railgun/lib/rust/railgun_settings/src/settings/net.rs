@@ -4,10 +4,13 @@
 //! The wrappers provide support for use within [`Settings`].
 //!
 //! [`Settings`]: super::Settings
-use serde::{Deserialize, Serialize};
 use std::net::ToSocketAddrs;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
+use std::ops::DerefMut;
 use std::option::IntoIter;
+
+use serde::Deserialize;
+use serde::Serialize;
 
 use super::Settings;
 

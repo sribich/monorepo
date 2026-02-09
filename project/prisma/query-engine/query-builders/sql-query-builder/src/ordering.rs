@@ -1,9 +1,13 @@
-use crate::{Context, join_utils::*, model_extensions::*};
 use itertools::Itertools;
-use psl::{datamodel_connector::ConnectorCapability, reachable_only_with_capability};
+use psl::datamodel_connector::ConnectorCapability;
+use psl::reachable_only_with_capability;
 use quaint::ast::*;
 use query_builder::QueryArgumentsExt;
 use query_structure::*;
+
+use crate::Context;
+use crate::join_utils::*;
+use crate::model_extensions::*;
 
 static ORDER_JOIN_PREFIX: &str = "orderby_";
 static ORDER_AGGREGATOR_ALIAS: &str = "orderby_aggregator";
@@ -37,18 +41,26 @@ impl OrderByBuilder {
 
 impl OrderByBuilder {
     /// Builds all expressions for an `ORDER BY` clause based on the query arguments.
-    pub(crate) fn build(&mut self, query_arguments: &QueryArguments, ctx: &Context<'_>) -> Vec<OrderByDefinition> {
+    pub(crate) fn build(
+        &mut self,
+        query_arguments: &QueryArguments,
+        ctx: &Context<'_>,
+    ) -> Vec<OrderByDefinition> {
         let needs_reversed_order = query_arguments.needs_reversed_order();
 
         query_arguments
             .order_by
             .iter()
             .map(|order_by| match order_by {
-                OrderBy::Scalar(order_by) => self.build_order_scalar(order_by, needs_reversed_order, ctx),
+                OrderBy::Scalar(order_by) => {
+                    self.build_order_scalar(order_by, needs_reversed_order, ctx)
+                }
                 OrderBy::ScalarAggregation(order_by) => {
                     self.build_order_aggr_scalar(order_by, needs_reversed_order, ctx)
                 }
-                OrderBy::ToManyAggregation(order_by) => self.build_order_aggr_rel(order_by, needs_reversed_order, ctx),
+                OrderBy::ToManyAggregation(order_by) => {
+                    self.build_order_aggr_rel(order_by, needs_reversed_order, ctx)
+                }
                 OrderBy::Relevance(order_by) => {
                     reachable_only_with_capability!(ConnectorCapability::NativeFullTextSearch);
                     self.build_order_relevance(order_by, needs_reversed_order, ctx)
@@ -85,7 +97,8 @@ impl OrderByBuilder {
         ctx: &Context<'_>,
     ) -> OrderByDefinition {
         let (joins, order_column) = self.compute_joins_relevance(order_by, ctx);
-        let order: Option<Order> = Some(into_order(&order_by.sort_order, None, needs_reversed_order));
+        let order: Option<Order> =
+            Some(into_order(&order_by.sort_order, None, needs_reversed_order));
         let order_definition: OrderDefinition = (order_column.clone(), order);
 
         OrderByDefinition {
@@ -101,7 +114,8 @@ impl OrderByBuilder {
         needs_reversed_order: bool,
         ctx: &Context<'_>,
     ) -> OrderByDefinition {
-        let order: Option<Order> = Some(into_order(&order_by.sort_order, None, needs_reversed_order));
+        let order: Option<Order> =
+            Some(into_order(&order_by.sort_order, None, needs_reversed_order));
         let order_column = order_by.field.as_column(ctx);
         let order_definition: OrderDefinition = match order_by.sort_aggregation {
             SortAggregation::Count => (count(order_column.clone()).into(), order),
@@ -124,11 +138,13 @@ impl OrderByBuilder {
         needs_reversed_order: bool,
         ctx: &Context<'_>,
     ) -> OrderByDefinition {
-        let order: Option<Order> = Some(into_order(&order_by.sort_order, None, needs_reversed_order));
+        let order: Option<Order> =
+            Some(into_order(&order_by.sort_order, None, needs_reversed_order));
         let (joins, order_column) = self.compute_joins_aggregation(order_by, ctx);
         let order_definition: OrderDefinition = match order_by.sort_aggregation {
             SortAggregation::Count => {
-                let exprs: Vec<Expression> = vec![order_column.clone().into(), Value::int32(0).into()];
+                let exprs: Vec<Expression> =
+                    vec![order_column.clone().into(), Value::int32(0).into()];
 
                 // We coalesce the order by expr to 0 so that if there's no relation,
                 // `COALESCE(NULL, 0)` will return `0`, thus preserving the order
@@ -160,8 +176,15 @@ impl OrderByBuilder {
         for (i, hop) in intermediary_hops.iter().enumerate() {
             let previous_join = if i > 0 { joins.get(i - 1) } else { None };
 
-            let previous_alias = previous_join.map(|j| j.alias.as_str()).or(parent_alias.as_deref());
-            let join = compute_one2m_join(hop.as_relation_hop().unwrap(), &self.join_prefix(), previous_alias, ctx);
+            let previous_alias = previous_join
+                .map(|j| j.alias.as_str())
+                .or(parent_alias.as_deref());
+            let join = compute_one2m_join(
+                hop.as_relation_hop().unwrap(),
+                &self.join_prefix(),
+                previous_alias,
+                ctx,
+            );
 
             joins.push(join);
         }
@@ -171,7 +194,10 @@ impl OrderByBuilder {
             _ => unreachable!("Order by relation aggregation other than count are not supported"),
         };
 
-        let previous_alias = joins.last().map(|j| j.alias.as_str()).or(parent_alias.as_deref());
+        let previous_alias = joins
+            .last()
+            .map(|j| j.alias.as_str())
+            .or(parent_alias.as_deref());
 
         // We perform the aggregation on the last join
         let last_aggr_join = compute_aggr_join(
@@ -186,7 +212,10 @@ impl OrderByBuilder {
 
         // This is the final column identifier to be used for the scalar field to order by.
         // `{last_join_alias}.{ORDER_AGGREGATOR_ALIAS}`
-        let order_by_column = Column::from((last_aggr_join.alias.to_owned(), ORDER_AGGREGATOR_ALIAS.to_owned()));
+        let order_by_column = Column::from((
+            last_aggr_join.alias.to_owned(),
+            ORDER_AGGREGATOR_ALIAS.to_owned(),
+        ));
 
         joins.push(last_aggr_join);
 
@@ -199,7 +228,8 @@ impl OrderByBuilder {
         ctx: &Context<'_>,
     ) -> (Vec<AliasedJoin>, Column<'static>) {
         let parent_alias = self.parent_alias.clone();
-        let joins: Vec<AliasedJoin> = self.compute_one2m_join(&order_by.path, parent_alias.as_ref(), ctx);
+        let joins: Vec<AliasedJoin> =
+            self.compute_one2m_join(&order_by.path, parent_alias.as_ref(), ctx);
 
         // This is the final column identifier to be used for the scalar field to order by.
         // - If we order by a scalar field on the base model, we simply use the model's scalar field. eg:
@@ -222,7 +252,8 @@ impl OrderByBuilder {
         ctx: &Context<'_>,
     ) -> (Vec<AliasedJoin>, Expression<'static>) {
         let parent_alias = self.parent_alias.clone();
-        let joins: Vec<AliasedJoin> = self.compute_one2m_join(&order_by.path, parent_alias.as_ref(), ctx);
+        let joins: Vec<AliasedJoin> =
+            self.compute_one2m_join(&order_by.path, parent_alias.as_ref(), ctx);
 
         // This is the final column identifier to be used for the scalar field to order by.
         // - If we order by a scalar field on the base model, we simply use the model's scalar field. eg:
@@ -279,7 +310,11 @@ impl OrderByBuilder {
     }
 }
 
-pub fn into_order(prisma_order: &SortOrder, nulls_order: Option<&NullsOrder>, reverse: bool) -> Order {
+pub fn into_order(
+    prisma_order: &SortOrder,
+    nulls_order: Option<&NullsOrder>,
+    reverse: bool,
+) -> Order {
     match (prisma_order, nulls_order, reverse) {
         // Without NULLS order
         (SortOrder::Ascending, None, false) => Order::Asc,

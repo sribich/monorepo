@@ -1,14 +1,15 @@
-use super::utils::*;
-use psl::{builtin_connectors::MySqlType, parser_database::ScalarType};
+use psl::builtin_connectors::MySqlType;
+use psl::parser_database::ScalarType;
 use quaint::prelude::ColumnType;
 use sql_migration_tests::test_api::*;
+
+use super::utils::*;
 
 #[test_connector(tags(Mysql8), exclude(Vitess))]
 fn insert_mysql(api: TestApi) {
     api.schema_push(SIMPLE_SCHEMA).send().assert_green();
 
-    let query =
-        "INSERT INTO `model` (`int`, `string`, `bigint`, `float`, `bytes`, `bool`, `dt`) VALUES (?, ?, ?, ?, ?, ?, ?);";
+    let query = "INSERT INTO `model` (`int`, `string`, `bigint`, `float`, `bytes`, `bool`, `dt`) VALUES (?, ?, ?, ?, ?, ?, ?);";
 
     let res = api.introspect_sql("test_1", query).send_sync();
 
@@ -130,7 +131,9 @@ fn select_mysql(api: TestApi) {
 
 #[test_connector(tags(Mysql, Mariadb))]
 fn select_nullable_mysql(api: TestApi) {
-    api.schema_push(SIMPLE_NULLABLE_SCHEMA).send().assert_green();
+    api.schema_push(SIMPLE_NULLABLE_SCHEMA)
+        .send()
+        .assert_green();
 
     let res = api
         .introspect_sql(
@@ -215,9 +218,12 @@ fn empty_result(api: TestApi) {
         }
     "#]];
 
-    api.introspect_sql("test_1", "SELECT `int` FROM model WHERE 1 = 0 AND `int` = ?;")
-        .send_sync()
-        .expect_result(expected)
+    api.introspect_sql(
+        "test_1",
+        "SELECT `int` FROM model WHERE 1 = 0 AND `int` = ?;",
+    )
+    .send_sync()
+    .expect_result(expected)
 }
 
 #[test_connector(tags(Mysql8))]
@@ -340,9 +346,12 @@ fn mixed_expr_cast(api: TestApi) {
         }
     "#]];
 
-    api.introspect_sql("test_1", "SELECT CAST(`int` + 1 AS CHAR) as test FROM `model`;")
-        .send_sync()
-        .expect_result(expected)
+    api.introspect_sql(
+        "test_1",
+        "SELECT CAST(`int` + 1 AS CHAR) as test FROM `model`;",
+    )
+    .send_sync()
+    .expect_result(expected)
 }
 
 const DATASOURCE: &str = r#"

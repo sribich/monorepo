@@ -1,6 +1,5 @@
-use crate::ast::{self};
-
 use super::WithSpan;
+use crate::ast::{self};
 
 #[derive(Debug)]
 pub enum ExpressionPosition<'ast> {
@@ -15,7 +14,9 @@ impl<'ast> ExpressionPosition<'ast> {
         match expr {
             ast::Expression::NumericValue(val, span) if span.contains(position) => Self::Value(val),
             ast::Expression::StringValue(val, span) if span.contains(position) => Self::Value(val),
-            ast::Expression::ConstantValue(val, span) if span.contains(position) => Self::Value(val),
+            ast::Expression::ConstantValue(val, span) if span.contains(position) => {
+                Self::Value(val)
+            }
             ast::Expression::Function(name, args, span) if span.contains(position) => {
                 narrow_function_position(args, position, name)
             }

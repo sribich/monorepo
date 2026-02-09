@@ -1,7 +1,12 @@
 use quote::quote;
-use syn::{
-    ConstParam, GenericParam, Generics, Ident, LifetimeParam, TypeParam, WhereClause, parse_quote,
-};
+use syn::ConstParam;
+use syn::GenericParam;
+use syn::Generics;
+use syn::Ident;
+use syn::LifetimeParam;
+use syn::TypeParam;
+use syn::WhereClause;
+use syn::parse_quote;
 
 pub fn generics_with_ident(generics: &Generics) -> Option<proc_macro2::TokenStream> {
     if generics.params.is_empty() {

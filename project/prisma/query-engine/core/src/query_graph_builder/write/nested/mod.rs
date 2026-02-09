@@ -7,21 +7,22 @@ mod set_nested;
 mod update_nested;
 mod upsert_nested;
 
-use super::*;
-use crate::{
-    ParsedInputMap,
-    query_graph::{NodeRef, QueryGraph},
-};
 use connect_nested::*;
 use connect_or_create_nested::*;
 use create_nested::*;
 use delete_nested::*;
 use disconnect_nested::*;
 use query_structure::RelationFieldRef;
-use schema::{QuerySchema, constants::operations};
+use schema::QuerySchema;
+use schema::constants::operations;
 use set_nested::*;
 use update_nested::*;
 use upsert_nested::*;
+
+use super::*;
+use crate::ParsedInputMap;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
 
 #[rustfmt::skip]
 pub fn connect_nested_query(

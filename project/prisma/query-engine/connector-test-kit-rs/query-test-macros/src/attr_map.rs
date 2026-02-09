@@ -1,9 +1,12 @@
-use darling::{ToTokens, ast::NestedMeta};
-use quote::{TokenStreamExt, quote};
-use std::{
-    collections::{HashMap, hash_map},
-    ops::{Deref, DerefMut},
-};
+use std::collections::HashMap;
+use std::collections::hash_map;
+use std::ops::Deref;
+use std::ops::DerefMut;
+
+use darling::ToTokens;
+use darling::ast::NestedMeta;
+use quote::TokenStreamExt;
+use quote::quote;
 
 #[derive(Debug, Default)]
 pub struct NestedAttrMap {
@@ -49,7 +52,9 @@ impl NestedAttrMap {
     }
 
     /// Converts a list of [`NestedMeta`] into a [`NestedAttrMap`].
-    pub fn from_nested_meta<T: IntoIterator<Item = NestedMeta>>(args: T) -> Result<Self, syn::Error> {
+    pub fn from_nested_meta<T: IntoIterator<Item = NestedMeta>>(
+        args: T,
+    ) -> Result<Self, syn::Error> {
         let map = args
             .into_iter()
             .map(|attr| match attr {

@@ -2,15 +2,16 @@ use itertools::Itertools;
 use quaint::ast::*;
 use query_structure::*;
 
-use crate::{
-    context::Context,
-    cursor_condition,
-    filter::FilterBuilder,
-    model_extensions::{AsColumn, AsColumns, AsTable, ColumnStyle},
-    nested_aggregations,
-    ordering::OrderByBuilder,
-    sql_trace::SqlTraceComment,
-};
+use crate::context::Context;
+use crate::cursor_condition;
+use crate::filter::FilterBuilder;
+use crate::model_extensions::AsColumn;
+use crate::model_extensions::AsColumns;
+use crate::model_extensions::AsTable;
+use crate::model_extensions::ColumnStyle;
+use crate::nested_aggregations;
+use crate::ordering::OrderByBuilder;
+use crate::sql_trace::SqlTraceComment;
 
 pub trait SelectDefinition {
     fn into_select<'a>(
@@ -66,8 +67,16 @@ impl SelectDefinition for QueryArguments {
         let cursor_condition = cursor_condition::build(&self, model, &order_by_definitions, ctx);
         let aggregation_joins = nested_aggregations::build(virtual_selections, ctx);
 
-        let limit = if self.ignore_take { None } else { self.take.abs() };
-        let skip = if self.ignore_skip { 0 } else { self.skip.unwrap_or(0) };
+        let limit = if self.ignore_take {
+            None
+        } else {
+            self.take.abs()
+        };
+        let skip = if self.ignore_skip {
+            0
+        } else {
+            self.skip.unwrap_or(0)
+        };
 
         let (filter, filter_joins) = self
             .filter
@@ -105,9 +114,9 @@ impl SelectDefinition for QueryArguments {
             .offset(skip as usize)
             .add_traceparent(ctx.traceparent);
 
-        let select_ast = order_by_definitions
-            .iter()
-            .fold(select_ast, |acc, o| acc.order_by(o.order_definition.clone()));
+        let select_ast = order_by_definitions.iter().fold(select_ast, |acc, o| {
+            acc.order_by(o.order_definition.clone())
+        });
 
         let select_ast = if let Some(distinct) = self.distinct {
             let distinct_fields = ModelProjection::from(distinct)
@@ -137,7 +146,8 @@ pub fn get_records<'a, T>(
 where
     T: SelectDefinition,
 {
-    let (select, additional_selection_set) = query_arguments.into_select(model, virtual_selections, ctx);
+    let (select, additional_selection_set) =
+        query_arguments.into_select(model, virtual_selections, ctx);
     let select = columns.fold(select, |acc, col| acc.column(col));
 
     let select = select.add_traceparent(ctx.traceparent);
@@ -201,11 +211,10 @@ pub fn group_by_aggregate(
         apply_aggregate_selections(acc, sel, ctx, ColumnStyle::ExplicitTable)
     });
 
-    let grouped = group_by
-        .into_iter()
-        .fold(select_query.add_traceparent(ctx.traceparent), |query, field| {
-            query.group_by(field.as_column(ctx))
-        });
+    let grouped = group_by.into_iter().fold(
+        select_query.add_traceparent(ctx.traceparent),
+        |query, field| query.group_by(field.as_column(ctx)),
+    );
 
     match having {
         Some(filter) => {
@@ -224,69 +233,87 @@ fn apply_aggregate_selections(
     col_style: ColumnStyle,
 ) -> Select<'static> {
     match selection {
-        AggregationSelection::Field(field) => {
-            select.column(field.as_column_with_style(ctx, col_style).set_is_selected(true))
+        AggregationSelection::Field(field) => select.column(
+            field
+                .as_column_with_style(ctx, col_style)
+                .set_is_selected(true),
+        ),
+
+        AggregationSelection::Count { .. } => {
+            selection.identifiers().fold(select, |select, next_field| {
+                let expr = match next_field.field {
+                    SelectionField::All => asterisk(),
+                    SelectionField::Scalar(field) => {
+                        field.as_column_with_style(ctx, col_style).into()
+                    }
+                };
+                select.value(count(expr).alias(next_field.db_alias().into_owned()))
+            })
         }
 
-        AggregationSelection::Count { .. } => selection.identifiers().fold(select, |select, next_field| {
-            let expr = match next_field.field {
-                SelectionField::All => asterisk(),
-                SelectionField::Scalar(field) => field.as_column_with_style(ctx, col_style).into(),
-            };
-            select.value(count(expr).alias(next_field.db_alias().into_owned()))
-        }),
+        AggregationSelection::Average(_) => {
+            selection.identifiers().fold(select, |select, next_field| {
+                select.value(
+                    avg(next_field
+                        .field
+                        .as_scalar()
+                        .unwrap()
+                        .as_column_with_style(ctx, col_style))
+                    .alias(next_field.db_alias().into_owned()),
+                )
+            })
+        }
 
-        AggregationSelection::Average(_) => selection.identifiers().fold(select, |select, next_field| {
-            select.value(
-                avg(next_field
-                    .field
-                    .as_scalar()
-                    .unwrap()
-                    .as_column_with_style(ctx, col_style))
-                .alias(next_field.db_alias().into_owned()),
-            )
-        }),
+        AggregationSelection::Sum(_) => {
+            selection.identifiers().fold(select, |select, next_field| {
+                select.value(
+                    sum(next_field
+                        .field
+                        .as_scalar()
+                        .unwrap()
+                        .as_column_with_style(ctx, col_style))
+                    .alias(next_field.db_alias().into_owned()),
+                )
+            })
+        }
 
-        AggregationSelection::Sum(_) => selection.identifiers().fold(select, |select, next_field| {
-            select.value(
-                sum(next_field
-                    .field
-                    .as_scalar()
-                    .unwrap()
-                    .as_column_with_style(ctx, col_style))
-                .alias(next_field.db_alias().into_owned()),
-            )
-        }),
+        AggregationSelection::Min(_) => {
+            selection.identifiers().fold(select, |select, next_field| {
+                select.value(
+                    min(next_field
+                        .field
+                        .as_scalar()
+                        .unwrap()
+                        .as_column_with_style(ctx, col_style)
+                        .set_is_enum(next_field.typ.id.is_enum())
+                        .set_is_selected(true))
+                    .alias(next_field.db_alias().into_owned()),
+                )
+            })
+        }
 
-        AggregationSelection::Min(_) => selection.identifiers().fold(select, |select, next_field| {
-            select.value(
-                min(next_field
-                    .field
-                    .as_scalar()
-                    .unwrap()
-                    .as_column_with_style(ctx, col_style)
-                    .set_is_enum(next_field.typ.id.is_enum())
-                    .set_is_selected(true))
-                .alias(next_field.db_alias().into_owned()),
-            )
-        }),
-
-        AggregationSelection::Max(_) => selection.identifiers().fold(select, |select, next_field| {
-            select.value(
-                max(next_field
-                    .field
-                    .as_scalar()
-                    .unwrap()
-                    .as_column_with_style(ctx, col_style)
-                    .set_is_enum(next_field.typ.id.is_enum())
-                    .set_is_selected(true))
-                .alias(next_field.db_alias().into_owned()),
-            )
-        }),
+        AggregationSelection::Max(_) => {
+            selection.identifiers().fold(select, |select, next_field| {
+                select.value(
+                    max(next_field
+                        .field
+                        .as_scalar()
+                        .unwrap()
+                        .as_column_with_style(ctx, col_style)
+                        .set_is_enum(next_field.typ.id.is_enum())
+                        .set_is_selected(true))
+                    .alias(next_field.db_alias().into_owned()),
+                )
+            })
+        }
     }
 }
 
-fn extract_columns(model: &Model, selections: &[AggregationSelection], ctx: &Context<'_>) -> Vec<Column<'static>> {
+fn extract_columns(
+    model: &Model,
+    selections: &[AggregationSelection],
+    ctx: &Context<'_>,
+) -> Vec<Column<'static>> {
     let fields: Vec<_> = selections
         .iter()
         .flat_map(|selection| match selection {

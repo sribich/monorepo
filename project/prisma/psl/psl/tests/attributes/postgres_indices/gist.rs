@@ -1,6 +1,9 @@
-use psl::parser_database::{IndexAlgorithm, OperatorClass};
+use psl::parser_database::IndexAlgorithm;
+use psl::parser_database::OperatorClass;
 
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn not_allowed_with_unique() {

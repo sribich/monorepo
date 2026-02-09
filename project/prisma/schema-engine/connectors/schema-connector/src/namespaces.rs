@@ -30,8 +30,9 @@ impl Namespaces {
 }
 
 impl IntoIterator for Namespaces {
+    type IntoIter =
+        std::iter::Chain<std::iter::Once<String>, <Vec<String> as IntoIterator>::IntoIter>;
     type Item = String;
-    type IntoIter = std::iter::Chain<std::iter::Once<String>, <Vec<String> as IntoIterator>::IntoIter>;
 
     fn into_iter(self) -> Self::IntoIter {
         std::iter::once(self.0).chain(self.1)

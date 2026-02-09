@@ -3,7 +3,9 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod upsert {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query, run_query_json};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -633,7 +635,9 @@ mod upsert {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

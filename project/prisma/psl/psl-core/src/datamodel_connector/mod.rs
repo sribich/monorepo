@@ -15,26 +15,43 @@ mod filters;
 mod native_types;
 mod relation_mode;
 
-pub use self::{
-    capabilities::{ConnectorCapabilities, ConnectorCapability},
-    completions::format_completion_docs,
-    empty_connector::EmptyDatamodelConnector,
-    filters::*,
-    native_types::{AllowedType, NativeTypeArguments, NativeTypeConstructor, NativeTypeInstance, NativeTypeParseError},
-    relation_mode::RelationMode,
-};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
-use crate::{Configuration, Datasource, PreviewFeature, ValidatedSchema, configuration::DatasourceConnectorData};
-use chrono::{DateTime, FixedOffset};
-use diagnostics::{DatamodelError, Diagnostics, NativeTypeErrorFactory, Span};
+use chrono::DateTime;
+use chrono::FixedOffset;
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::NativeTypeErrorFactory;
+use diagnostics::Span;
 use enumflags2::BitFlags;
 use lsp_types::CompletionList;
-use parser_database::{
-    ExtensionTypes, IndexAlgorithm, ParserDatabase, ReferentialAction, ScalarFieldType, ScalarType,
-    ast::{self, SchemaPosition},
-    walkers,
-};
-use std::{borrow::Cow, collections::HashMap};
+use parser_database::ExtensionTypes;
+use parser_database::IndexAlgorithm;
+use parser_database::ParserDatabase;
+use parser_database::ReferentialAction;
+use parser_database::ScalarFieldType;
+use parser_database::ScalarType;
+use parser_database::ast::SchemaPosition;
+use parser_database::ast::{self};
+use parser_database::walkers;
+
+pub use self::capabilities::ConnectorCapabilities;
+pub use self::capabilities::ConnectorCapability;
+pub use self::completions::format_completion_docs;
+pub use self::empty_connector::EmptyDatamodelConnector;
+pub use self::filters::*;
+pub use self::native_types::AllowedType;
+pub use self::native_types::NativeTypeArguments;
+pub use self::native_types::NativeTypeConstructor;
+pub use self::native_types::NativeTypeInstance;
+pub use self::native_types::NativeTypeParseError;
+pub use self::relation_mode::RelationMode;
+use crate::Configuration;
+use crate::Datasource;
+use crate::PreviewFeature;
+use crate::ValidatedSchema;
+use crate::configuration::DatasourceConnectorData;
 
 pub const EXTENSIONS_KEY: &str = "extensions";
 
@@ -109,11 +126,18 @@ pub trait Connector: Send + Sync {
     /// This was introduced because Postgres accepts data definition language statements with the SET NULL
     /// referential action referencing non-nullable fields, although this would lead to a runtime error once
     /// the action is actually triggered.
-    fn allows_set_null_referential_action_on_non_nullable_fields(&self, _relation_mode: RelationMode) -> bool {
+    fn allows_set_null_referential_action_on_non_nullable_fields(
+        &self,
+        _relation_mode: RelationMode,
+    ) -> bool {
         false
     }
 
-    fn supports_referential_action(&self, relation_mode: &RelationMode, action: ReferentialAction) -> bool {
+    fn supports_referential_action(
+        &self,
+        relation_mode: &RelationMode,
+        action: ReferentialAction,
+    ) -> bool {
         self.referential_actions(relation_mode).contains(action)
     }
 
@@ -123,7 +147,11 @@ pub trait Connector: Send + Sync {
     /// given to the filter input objects for the type. The significance of that name is that the
     /// resulting input objects will be cached by name, so for a given filter input object name,
     /// the filters should always be identical.
-    fn scalar_filter_name(&self, scalar_type_name: String, _native_type_name: Option<&str>) -> Cow<'_, str> {
+    fn scalar_filter_name(
+        &self,
+        scalar_type_name: String,
+        _native_type_name: Option<&str>,
+    ) -> Cow<'_, str> {
         Cow::Owned(scalar_type_name)
     }
 
@@ -139,7 +167,9 @@ pub trait Connector: Send + Sync {
     fn string_filters(&self, input_object_name: &str) -> BitFlags<StringFilter> {
         match input_object_name {
             "String" => BitFlags::all(), // all the filters are available by default
-            _ => panic!("Unexpected scalar input object name for string filters: `{input_object_name}`"),
+            _ => panic!(
+                "Unexpected scalar input object name for string filters: `{input_object_name}`"
+            ),
         }
     }
 
@@ -154,10 +184,27 @@ pub trait Connector: Send + Sync {
     }
 
     fn validate_enum(&self, _enum: walkers::EnumWalker<'_>, _: &mut Diagnostics) {}
-    fn validate_model(&self, _model: walkers::ModelWalker<'_>, _: RelationMode, _: &mut Diagnostics) {}
+    fn validate_model(
+        &self,
+        _model: walkers::ModelWalker<'_>,
+        _: RelationMode,
+        _: &mut Diagnostics,
+    ) {
+    }
     fn validate_view(&self, _view: walkers::ModelWalker<'_>, _: &mut Diagnostics) {}
-    fn validate_relation_field(&self, _field: walkers::RelationFieldWalker<'_>, _: &mut Diagnostics) {}
-    fn validate_datasource(&self, _: BitFlags<PreviewFeature>, _: &Datasource, _: &mut Diagnostics) {}
+    fn validate_relation_field(
+        &self,
+        _field: walkers::RelationFieldWalker<'_>,
+        _: &mut Diagnostics,
+    ) {
+    }
+    fn validate_datasource(
+        &self,
+        _: BitFlags<PreviewFeature>,
+        _: &Datasource,
+        _: &mut Diagnostics,
+    ) {
+    }
 
     fn validate_scalar_field_unknown_default_functions(
         &self,
@@ -166,7 +213,9 @@ pub trait Connector: Send + Sync {
     ) {
         for d in db.walk_scalar_field_defaults_with_unknown_function() {
             let (func_name, _, span) = d.value().as_function().unwrap();
-            diagnostics.push_error(DatamodelError::new_default_unknown_function(func_name, span));
+            diagnostics.push_error(DatamodelError::new_default_unknown_function(
+                func_name, span,
+            ));
         }
     }
 
@@ -196,7 +245,10 @@ pub trait Connector: Send + Sync {
     ) -> Option<NativeTypeInstance>;
 
     /// Debug/error representation of a native type.
-    fn native_type_to_parts<'t>(&self, native_type: &'t NativeTypeInstance) -> (&'t str, Cow<'t, [String]>);
+    fn native_type_to_parts<'t>(
+        &self,
+        native_type: &'t NativeTypeInstance,
+    ) -> (&'t str, Cow<'t, [String]>);
 
     fn find_native_type_constructor(&self, name: &str) -> Option<&NativeTypeConstructor> {
         self.available_native_type_constructors()
@@ -218,8 +270,11 @@ pub trait Connector: Send + Sync {
     }
 
     fn static_join_strategy_support(&self) -> bool {
-        self.capabilities().contains(ConnectorCapability::LateralJoin)
-            || self.capabilities().contains(ConnectorCapability::CorrelatedSubqueries)
+        self.capabilities()
+            .contains(ConnectorCapability::LateralJoin)
+            || self
+                .capabilities()
+                .contains(ConnectorCapability::CorrelatedSubqueries)
     }
 
     // Returns whether the connector supports the `RelationLoadStrategy::Join`.
@@ -268,7 +323,12 @@ pub trait Connector: Send + Sync {
     ) {
     }
 
-    fn datasource_completions(&self, _config: &Configuration, _completion_list: &mut CompletionList) {}
+    fn datasource_completions(
+        &self,
+        _config: &Configuration,
+        _completion_list: &mut CompletionList,
+    ) {
+    }
 
     fn parse_datasource_properties(
         &self,
@@ -341,7 +401,9 @@ impl ConstraintScope {
     /// A beefed-up display for errors.
     pub fn description(self, model_name: &str) -> Cow<'static, str> {
         match self {
-            ConstraintScope::GlobalKeyIndex => Cow::from("global for indexes and unique constraints"),
+            ConstraintScope::GlobalKeyIndex => {
+                Cow::from("global for indexes and unique constraints")
+            }
             ConstraintScope::GlobalForeignKey => Cow::from("global for foreign keys"),
             ConstraintScope::GlobalPrimaryKeyKeyIndex => {
                 Cow::from("global for primary key, indexes and unique constraints")
@@ -349,9 +411,9 @@ impl ConstraintScope {
             ConstraintScope::GlobalPrimaryKeyForeignKeyDefault => {
                 Cow::from("global for primary keys, foreign keys and default constraints")
             }
-            ConstraintScope::ModelKeyIndex => {
-                Cow::from(format!("on model `{model_name}` for indexes and unique constraints"))
-            }
+            ConstraintScope::ModelKeyIndex => Cow::from(format!(
+                "on model `{model_name}` for indexes and unique constraints"
+            )),
             ConstraintScope::ModelPrimaryKeyKeyIndex => Cow::from(format!(
                 "on model `{model_name}` for primary key, indexes and unique constraints"
             )),

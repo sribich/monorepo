@@ -1,21 +1,28 @@
 use std::collections::HashMap;
 use std::fmt;
-use std::sync::{Arc, atomic::Ordering};
+use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
-use metrics::{CounterFn, GaugeFn, HistogramFn, Key};
-use metrics_util::{
-    Histogram as HistogramUtil,
-    registry::{GenerationalAtomicStorage, GenerationalStorage, Registry},
-};
+use metrics::CounterFn;
+use metrics::GaugeFn;
+use metrics::HistogramFn;
+use metrics::Key;
+use metrics_util::Histogram as HistogramUtil;
+use metrics_util::registry::GenerationalAtomicStorage;
+use metrics_util::registry::GenerationalStorage;
+use metrics_util::registry::Registry;
 use parking_lot::RwLock;
 use serde_json::Value;
 
+use super::ACCEPT_LIST;
+use super::HISTOGRAM_BOUNDS;
+use super::common::Metric;
+use super::common::MetricAction;
+use super::common::MetricType;
+use super::common::MetricValue;
+use super::common::Snapshot;
 use super::formatters::metrics_to_json;
-use super::{ACCEPT_LIST, HISTOGRAM_BOUNDS};
-use super::{
-    common::{Metric, MetricAction, MetricType, MetricValue, Snapshot},
-    formatters::metrics_to_prometheus,
-};
+use super::formatters::metrics_to_prometheus;
 
 struct Inner {
     descriptions: RwLock<HashMap<String, String>>,
@@ -105,14 +112,16 @@ impl MetricRegistry {
     }
 
     fn handle_histogram(&self, metric: &MetricVisitor) {
-        self.inner.register.get_or_create_histogram(&metric.name, |c| {
-            if let MetricAction::HistRecord(val) = metric.action {
-                // We multiply by 1000 here because the value is converted into seconds when doing:
-                // histogram!("my_histogram", duration.elapsed());
-                // and we want it in ms
-                HistogramFn::record(c, val * 1000.0)
-            }
-        });
+        self.inner
+            .register
+            .get_or_create_histogram(&metric.name, |c| {
+                if let MetricAction::HistRecord(val) = metric.action {
+                    // We multiply by 1000 here because the value is converted into seconds when doing:
+                    // histogram!("my_histogram", duration.elapsed());
+                    // and we want it in ms
+                    HistogramFn::record(c, val * 1000.0)
+                }
+            });
     }
 
     pub fn counter_value(&self, name: &'static str) -> Option<u64> {
@@ -157,7 +166,12 @@ impl MetricRegistry {
             .into_iter()
             .map(|(key, counter)| {
                 let value = counter.get_inner().load(Ordering::Acquire);
-                Metric::renamed(key, &descriptions, MetricValue::Counter(value), &global_labels)
+                Metric::renamed(
+                    key,
+                    &descriptions,
+                    MetricValue::Counter(value),
+                    &global_labels,
+                )
             })
             .collect();
 
@@ -165,7 +179,12 @@ impl MetricRegistry {
             .into_iter()
             .map(|(key, gauge)| {
                 let value = f64::from_bits(gauge.get_inner().load(Ordering::Acquire));
-                Metric::renamed(key, &descriptions, MetricValue::Gauge(value), &global_labels)
+                Metric::renamed(
+                    key,
+                    &descriptions,
+                    MetricValue::Gauge(value),
+                    &global_labels,
+                )
             })
             .collect();
 

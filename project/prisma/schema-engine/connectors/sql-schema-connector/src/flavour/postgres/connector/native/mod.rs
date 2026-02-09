@@ -7,24 +7,28 @@ use std::collections::HashMap;
 use enumflags2::BitFlags;
 use indoc::indoc;
 use psl::PreviewFeature;
-use quaint::{
-    connector::{self, MakeTlsConnectorManager, PostgresUrl, tokio_postgres::error::ErrorPosition},
-    prelude::{NativeConnectionInfo, Queryable},
-};
-use schema_connector::{ConnectorError, ConnectorParams, ConnectorResult};
+use quaint::connector::MakeTlsConnectorManager;
+use quaint::connector::PostgresUrl;
+use quaint::connector::tokio_postgres::error::ErrorPosition;
+use quaint::connector::{self};
+use quaint::prelude::NativeConnectionInfo;
+use quaint::prelude::Queryable;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorParams;
+use schema_connector::ConnectorResult;
 use url::Url;
-use user_facing_errors::{
-    UserFacingError,
-    common::{DatabaseAccessDenied, DatabaseDoesNotExist},
-    schema_engine::{self, ApplyMigrationError},
-};
+use user_facing_errors::UserFacingError;
+use user_facing_errors::common::DatabaseAccessDenied;
+use user_facing_errors::common::DatabaseDoesNotExist;
+use user_facing_errors::schema_engine::ApplyMigrationError;
+use user_facing_errors::schema_engine::{self};
 
-use crate::{
-    flavour::{postgres::connection_string, validate_connection_infos_do_not_match},
-    sql_renderer::IteratorJoin,
-};
-
-use super::{Circumstances, MigratePostgresUrl, PostgresProvider};
+use super::Circumstances;
+use super::MigratePostgresUrl;
+use super::PostgresProvider;
+use crate::flavour::postgres::connection_string;
+use crate::flavour::validate_connection_infos_do_not_match;
+use crate::sql_renderer::IteratorJoin;
 
 pub type State = crate::flavour::State<Params, (BitFlags<Circumstances>, Connection)>;
 
@@ -37,13 +41,19 @@ pub struct Params {
 impl Params {
     pub fn new(connector_params: ConnectorParams) -> ConnectorResult<Self> {
         if let Some(shadow_db_url) = &connector_params.shadow_database_connection_string {
-            validate_connection_infos_do_not_match(&connector_params.connection_string, shadow_db_url)?;
+            validate_connection_infos_do_not_match(
+                &connector_params.connection_string,
+                shadow_db_url,
+            )?;
         }
 
         let url = connection_string::parse(&connector_params.connection_string)?;
         let url = MigratePostgresUrl::new(url)?;
 
-        Ok(Self { connector_params, url })
+        Ok(Self {
+            connector_params,
+            url,
+        })
     }
 }
 
@@ -54,31 +64,42 @@ impl Connection {
         let quaint = match &params.url.0 {
             PostgresUrl::Native(native_url) => {
                 let tls_manager = MakeTlsConnectorManager::new(native_url.as_ref().clone());
-                connector::PostgreSqlWithNoCache::new(native_url.as_ref().clone(), &tls_manager).await
+                connector::PostgreSqlWithNoCache::new(native_url.as_ref().clone(), &tls_manager)
+                    .await
             }
-            PostgresUrl::WebSocket(ws_url) => connector::PostgreSql::new_with_websocket(ws_url.clone()).await,
+            PostgresUrl::WebSocket(ws_url) => {
+                connector::PostgreSql::new_with_websocket(ws_url.clone()).await
+            }
         }
         .map_err(quaint_error_mapper(params))?;
 
-        let version = quaint.version().await.map_err(quaint_error_mapper(params))?;
+        let version = quaint
+            .version()
+            .await
+            .map_err(quaint_error_mapper(params))?;
 
         if let Some(v) = version {
             let semver: Option<(u8, u8)> = {
-                let semver_unparsed: String = v.chars().take_while(|&c| c.is_ascii_digit() || c == '.').collect();
+                let semver_unparsed: String = v
+                    .chars()
+                    .take_while(|&c| c.is_ascii_digit() || c == '.')
+                    .collect();
 
                 // we only consider the major and minor version, as the patch version is not interesting for us
-                semver_unparsed.split_once('.').and_then(|(major, minor_and_patch)| {
-                    let major = major.parse::<u8>().ok();
+                semver_unparsed
+                    .split_once('.')
+                    .and_then(|(major, minor_and_patch)| {
+                        let major = major.parse::<u8>().ok();
 
-                    let minor = minor_and_patch
-                        .chars()
-                        .take_while(|&c| c != '.')
-                        .collect::<String>()
-                        .parse::<u8>()
-                        .ok();
+                        let minor = minor_and_patch
+                            .chars()
+                            .take_while(|&c| c != '.')
+                            .collect::<String>()
+                            .parse::<u8>()
+                            .ok();
 
-                    major.zip(minor)
-                })
+                        major.zip(minor)
+                    })
             };
 
             match semver {
@@ -115,7 +136,10 @@ impl Connection {
         self.0.raw_cmd(sql).await
     }
 
-    pub async fn query(&self, query: quaint::ast::Query<'_>) -> quaint::Result<quaint::prelude::ResultSet> {
+    pub async fn query(
+        &self,
+        query: quaint::ast::Query<'_>,
+    ) -> quaint::Result<quaint::prelude::ResultSet> {
         use quaint::visitor::Visitor;
         let (sql, params) = quaint::visitor::Postgres::build(query).unwrap();
         self.query_raw(&sql, &params).await
@@ -135,21 +159,33 @@ impl Connection {
         self.0.version().await
     }
 
-    pub async fn describe_query(&self, sql: &str) -> quaint::Result<quaint::connector::DescribedQuery> {
+    pub async fn describe_query(
+        &self,
+        sql: &str,
+    ) -> quaint::Result<quaint::connector::DescribedQuery> {
         tracing::debug!(query_type = "describe_query", sql);
         self.0.describe_query(sql).await
     }
 
-    pub async fn apply_migration_script(&self, migration_name: &str, script: &str) -> ConnectorResult<()> {
+    pub async fn apply_migration_script(
+        &self,
+        migration_name: &str,
+        script: &str,
+    ) -> ConnectorResult<()> {
         tracing::debug!(query_type = "raw_cmd", script);
         let client = self.0.client();
 
         match client.simple_query(script).await {
             Ok(_) => Ok(()),
             Err(err) => {
-                let (database_error_code, database_error): (Option<&str>, _) = if let Some(db_error) = err.as_db_error()
+                let (database_error_code, database_error): (Option<&str>, _) = if let Some(
+                    db_error,
+                ) =
+                    err.as_db_error()
                 {
-                    let position = if let Some(ErrorPosition::Original(position)) = db_error.position() {
+                    let position = if let Some(ErrorPosition::Original(position)) =
+                        db_error.position()
+                    {
                         let mut previous_lines = [""; 5];
                         let mut byte_index = 0;
                         let mut error_position = String::new();
@@ -236,10 +272,15 @@ pub async fn create_database(state: &State) -> ConnectorResult<String> {
         .map_err(quaint_error_mapper(&admin_params))
     {
         Ok(_) => (),
-        Err(err) if err.is_user_facing_error::<user_facing_errors::common::DatabaseAlreadyExists>() => {
+        Err(err)
+            if err.is_user_facing_error::<user_facing_errors::common::DatabaseAlreadyExists>() =>
+        {
             database_already_exists_error = Some(err)
         }
-        Err(err) if err.is_user_facing_error::<user_facing_errors::query_engine::UniqueKeyViolation>() => {
+        Err(err)
+            if err
+                .is_user_facing_error::<user_facing_errors::query_engine::UniqueKeyViolation>() =>
+        {
             database_already_exists_error = Some(err)
         }
         Err(err) => return Err(err),
@@ -250,7 +291,9 @@ pub async fn create_database(state: &State) -> ConnectorResult<String> {
 
     let schema_sql = format!("CREATE SCHEMA IF NOT EXISTS \"{schema_name}\";");
 
-    conn.raw_cmd(&schema_sql).await.map_err(quaint_error_mapper(params))?;
+    conn.raw_cmd(&schema_sql)
+        .await
+        .map_err(quaint_error_mapper(params))?;
 
     if let Some(err) = database_already_exists_error {
         return Err(err);
@@ -298,7 +341,8 @@ pub async fn get_connection_and_params_and_circumstances(
         State::Connected(params, (circumstances, conn)) => Ok((conn, params, *circumstances)),
         State::WithParams(params) => {
             let conn = Connection::new(params).await?;
-            let circumstances = super::setup_connection(&conn, params, provider, params.url.schema()).await?;
+            let circumstances =
+                super::setup_connection(&conn, params, provider, params.url.schema()).await?;
             *state = State::Connected(params.clone(), (circumstances, conn));
 
             let State::Connected(params, (circumstances, conn)) = state else {
@@ -318,14 +362,19 @@ pub async fn get_connection_and_params(
 }
 
 pub fn get_preview_features(state: &State) -> BitFlags<PreviewFeature> {
-    state.get_unwrapped_params().connector_params.preview_features
+    state
+        .get_unwrapped_params()
+        .connector_params
+        .preview_features
 }
 
 pub fn set_preview_features(state: &mut State, preview_features: BitFlags<PreviewFeature>) {
     match state {
         State::Initial => {
             if !preview_features.is_empty() {
-                tracing::warn!("set_preview_feature on Initial state has no effect ({preview_features}).");
+                tracing::warn!(
+                    "set_preview_feature on Initial state has no effect ({preview_features})."
+                );
             }
         }
         State::WithParams(params) | State::Connected(params, _) => {
@@ -349,8 +398,15 @@ pub async fn dispose(state: &mut State) -> ConnectorResult<()> {
     Ok(())
 }
 
-pub fn quaint_error_mapper(params: &Params) -> impl Fn(quaint::error::Error) -> ConnectorError + use<'_> {
-    |err| crate::flavour::quaint_error_to_connector_error(err, Some(&NativeConnectionInfo::from(params.url.clone())))
+pub fn quaint_error_mapper(
+    params: &Params,
+) -> impl Fn(quaint::error::Error) -> ConnectorError + use<'_> {
+    |err| {
+        crate::flavour::quaint_error_to_connector_error(
+            err,
+            Some(&NativeConnectionInfo::from(params.url.clone())),
+        )
+    }
 }
 
 /// Try to connect as an admin to a postgres database. We try to pick a default database from which
@@ -363,7 +419,8 @@ async fn create_postgres_admin_conn(mut params: Params) -> ConnectorResult<(Conn
 
     let mut conn = None;
 
-    let mut url = Url::parse(&params.connector_params.connection_string).map_err(ConnectorError::url_parse_error)?;
+    let mut url = Url::parse(&params.connector_params.connection_string)
+        .map_err(ConnectorError::url_parse_error)?;
     strip_schema_param_from_url(&mut url);
 
     for database_name in CANDIDATE_DEFAULT_DATABASES {
@@ -398,7 +455,10 @@ async fn create_postgres_admin_conn(mut params: Params) -> ConnectorResult<(Conn
 fn strip_schema_param_from_url(url: &mut Url) {
     let mut params: HashMap<String, String> = url.query_pairs().into_owned().collect();
     params.remove("schema");
-    let params: Vec<String> = params.into_iter().map(|(k, v)| format!("{k}={v}")).collect();
+    let params: Vec<String> = params
+        .into_iter()
+        .map(|(k, v)| format!("{k}={v}"))
+        .collect();
     let params: String = params.join("&");
     url.set_query(Some(&params));
 }

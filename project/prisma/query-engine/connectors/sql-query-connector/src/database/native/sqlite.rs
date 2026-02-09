@@ -1,12 +1,21 @@
-use crate::database::{catch, connection::SqlConnection};
-use crate::{FromSource, SqlError};
+use std::convert::TryFrom;
+use std::time::Duration;
+
 use async_trait::async_trait;
-use connector_interface::{
-    self as connector, Connection, Connector,
-    error::{ConnectorError, ErrorKind},
-};
-use quaint::{connector::SqliteParams, error::ErrorKind as QuaintKind, pooled::Quaint, prelude::ConnectionInfo};
-use std::{convert::TryFrom, time::Duration};
+use connector_interface::Connection;
+use connector_interface::Connector;
+use connector_interface::error::ConnectorError;
+use connector_interface::error::ErrorKind;
+use connector_interface::{self as connector};
+use quaint::connector::SqliteParams;
+use quaint::error::ErrorKind as QuaintKind;
+use quaint::pooled::Quaint;
+use quaint::prelude::ConnectionInfo;
+
+use crate::FromSource;
+use crate::SqlError;
+use crate::database::catch;
+use crate::database::connection::SqlConnection;
 
 pub struct Sqlite {
     pool: Quaint,
@@ -79,7 +88,9 @@ fn invalid_file_path_error(file_path: &str, connection_info: &ConnectionInfo) ->
 
 #[async_trait]
 impl Connector for Sqlite {
-    async fn get_connection<'a>(&'a self) -> connector::Result<Box<dyn Connection + Send + Sync + 'static>> {
+    async fn get_connection<'a>(
+        &'a self,
+    ) -> connector::Result<Box<dyn Connection + Send + Sync + 'static>> {
         catch(self.connection_info(), async move {
             let conn = self.pool.check_out().await.map_err(SqlError::from)?;
             let conn = SqlConnection::new(conn, self.connection_info().clone(), self.features);

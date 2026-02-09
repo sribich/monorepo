@@ -1,12 +1,15 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_attribute::parse_attribute,
-    parse_comments::*,
-    parse_types::parse_field_type,
-};
-use crate::ast::{self, *};
-use diagnostics::{DatamodelError, Diagnostics, FileId};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_attribute::parse_attribute;
+use super::parse_comments::*;
+use super::parse_types::parse_field_type;
+use crate::ast::*;
+use crate::ast::{self};
 
 pub(crate) fn parse_field(
     model_name: &str,
@@ -32,7 +35,9 @@ pub(crate) fn parse_field(
                     (file_id, current.as_span()).into(),
                 ));
             }
-            Rule::field_attribute => attributes.push(parse_attribute(current, diagnostics, file_id)),
+            Rule::field_attribute => {
+                attributes.push(parse_attribute(current, diagnostics, file_id))
+            }
             Rule::trailing_comment => {
                 comment = match (comment, parse_trailing_comment(current)) {
                     (c, None) | (None, c) => c,

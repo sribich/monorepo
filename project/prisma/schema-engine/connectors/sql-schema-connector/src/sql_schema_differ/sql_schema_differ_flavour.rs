@@ -1,9 +1,13 @@
-use super::{ColumnTypeChange, differ_database::DifferDatabase};
-use crate::{migration_pair::MigrationPair, sql_migration::SqlMigrationStep, sql_schema_differ};
-use sql_schema_describer::{
-    TableColumnId,
-    walkers::{IndexWalker, TableColumnWalker, TableWalker},
-};
+use sql_schema_describer::TableColumnId;
+use sql_schema_describer::walkers::IndexWalker;
+use sql_schema_describer::walkers::TableColumnWalker;
+use sql_schema_describer::walkers::TableWalker;
+
+use super::ColumnTypeChange;
+use super::differ_database::DifferDatabase;
+use crate::migration_pair::MigrationPair;
+use crate::sql_migration::SqlMigrationStep;
+use crate::sql_schema_differ;
 
 /// Trait to specialize SQL schema diffing (resulting in migration steps) by SQL backend.
 pub(crate) trait SqlSchemaDifferFlavour {
@@ -37,13 +41,21 @@ pub(crate) trait SqlSchemaDifferFlavour {
     }
 
     /// Return whether a column's type needs to be migrated, and how.
-    fn column_type_change(&self, differ: MigrationPair<TableColumnWalker<'_>>) -> Option<ColumnTypeChange>;
+    fn column_type_change(
+        &self,
+        differ: MigrationPair<TableColumnWalker<'_>>,
+    ) -> Option<ColumnTypeChange>;
 
     /// Push enum-related steps.
     fn push_enum_steps(&self, _steps: &mut Vec<SqlMigrationStep>, _db: &DifferDatabase<'_>) {}
 
     /// Push AlterSequence steps.
-    fn push_alter_sequence_steps(&self, _steps: &mut Vec<SqlMigrationStep>, _db: &DifferDatabase<'_>) {}
+    fn push_alter_sequence_steps(
+        &self,
+        _steps: &mut Vec<SqlMigrationStep>,
+        _db: &DifferDatabase<'_>,
+    ) {
+    }
 
     /// Push AlterExtension steps.
     fn push_extension_steps(&self, _steps: &mut Vec<SqlMigrationStep>, _db: &DifferDatabase<'_>) {}

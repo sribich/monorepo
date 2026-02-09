@@ -1,9 +1,12 @@
-use crate::{
-    ParserDatabase, ReferentialAction,
-    walkers::{ModelWalker, RelationFieldId, RelationFieldWalker, ScalarFieldWalker},
-};
 use diagnostics::Span;
 use psl_ast::ast;
+
+use crate::ParserDatabase;
+use crate::ReferentialAction;
+use crate::walkers::ModelWalker;
+use crate::walkers::RelationFieldId;
+use crate::walkers::RelationFieldWalker;
+use crate::walkers::ScalarFieldWalker;
 
 /// Represents a relation that has fields and references defined in one of the
 /// relation fields. Includes 1:1 and 1:n relations that are defined from both sides.
@@ -68,7 +71,10 @@ impl<'db> CompleteInlineRelationWalker<'db> {
     }
 
     pub fn on_update_span(self) -> Option<Span> {
-        self.referencing_field().attributes().on_update.map(|(_, span)| span)
+        self.referencing_field()
+            .attributes()
+            .on_update
+            .map(|(_, span)| span)
     }
 
     /// Prisma allows setting the relation field as optional, even if one of the

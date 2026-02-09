@@ -21,7 +21,9 @@ fn code_actions_should_not_crash_on_validation_errors() {
         },
         range: lsp_types::Range::default(),
         context: lsp_types::CodeActionContext::default(),
-        work_done_progress_params: lsp_types::WorkDoneProgressParams { work_done_token: None },
+        work_done_progress_params: lsp_types::WorkDoneProgressParams {
+            work_done_token: None,
+        },
         partial_result_params: lsp_types::PartialResultParams {
             partial_result_token: None,
         },

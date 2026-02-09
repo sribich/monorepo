@@ -1,7 +1,15 @@
-use crate::{ParsedInputMap, ParsedInputValue, QueryGraphBuilderError, QueryGraphBuilderResult};
-use query_structure::{prelude::ParentContainer, *};
-use schema::constants::{aggregations, filters, json_null};
 use std::convert::TryInto;
+
+use query_structure::prelude::ParentContainer;
+use query_structure::*;
+use schema::constants::aggregations;
+use schema::constants::filters;
+use schema::constants::json_null;
+
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphBuilderResult;
 
 pub struct ScalarFilterParser<'a> {
     /// The field on which the filters are applied.
@@ -41,7 +49,10 @@ impl<'a> ScalarFilterParser<'a> {
         self
     }
 
-    pub fn parse(&self, mut filter_map: ParsedInputMap<'_>) -> QueryGraphBuilderResult<Vec<Filter>> {
+    pub fn parse(
+        &self,
+        mut filter_map: ParsedInputMap<'_>,
+    ) -> QueryGraphBuilderResult<Vec<Filter>> {
         let json_path: Option<JsonFilterPath> = match filter_map.swap_remove(filters::PATH) {
             Some(v) => Some(parse_json_path(v)?),
             _ => None,
@@ -67,7 +78,11 @@ impl<'a> ScalarFilterParser<'a> {
         Ok(filters)
     }
 
-    fn parse_scalar(&self, filter_name: &str, input: ParsedInputValue<'_>) -> QueryGraphBuilderResult<Vec<Filter>> {
+    fn parse_scalar(
+        &self,
+        filter_name: &str,
+        input: ParsedInputValue<'_>,
+    ) -> QueryGraphBuilderResult<Vec<Filter>> {
         let field = self.field();
 
         match filter_name {
@@ -96,7 +111,9 @@ impl<'a> ScalarFilterParser<'a> {
 
                         _ => unreachable!(), // Validation guarantees this.
                     },
-                    ConditionValue::FieldRef(field_ref) if self.reverse() => field.not_in(field_ref),
+                    ConditionValue::FieldRef(field_ref) if self.reverse() => {
+                        field.not_in(field_ref)
+                    }
                     ConditionValue::FieldRef(field_ref) => field.is_in(field_ref),
                 };
 
@@ -124,41 +141,65 @@ impl<'a> ScalarFilterParser<'a> {
                 Ok(vec![filter])
             }
 
-            filters::EQUALS if self.reverse() => Ok(vec![field.not_equals(self.as_condition_value(input, false)?)]),
-            filters::CONTAINS if self.reverse() => Ok(vec![field.not_contains(self.as_condition_value(input, false)?)]),
-            filters::STARTS_WITH if self.reverse() => {
-                Ok(vec![field.not_starts_with(self.as_condition_value(input, false)?)])
-            }
-            filters::ENDS_WITH if self.reverse() => {
-                Ok(vec![field.not_ends_with(self.as_condition_value(input, false)?)])
-            }
+            filters::EQUALS if self.reverse() => Ok(vec![
+                field.not_equals(self.as_condition_value(input, false)?),
+            ]),
+            filters::CONTAINS if self.reverse() => Ok(vec![
+                field.not_contains(self.as_condition_value(input, false)?),
+            ]),
+            filters::STARTS_WITH if self.reverse() => Ok(vec![
+                field.not_starts_with(self.as_condition_value(input, false)?),
+            ]),
+            filters::ENDS_WITH if self.reverse() => Ok(vec![
+                field.not_ends_with(self.as_condition_value(input, false)?),
+            ]),
 
             filters::EQUALS => Ok(vec![field.equals(self.as_condition_value(input, false)?)]),
             filters::CONTAINS => Ok(vec![field.contains(self.as_condition_value(input, false)?)]),
-            filters::STARTS_WITH => Ok(vec![field.starts_with(self.as_condition_value(input, false)?)]),
-            filters::ENDS_WITH => Ok(vec![field.ends_with(self.as_condition_value(input, false)?)]),
-
-            filters::LOWER_THAN if self.reverse() => Ok(vec![
-                field.greater_than_or_equals(self.as_condition_value(input, false)?),
+            filters::STARTS_WITH => Ok(vec![
+                field.starts_with(self.as_condition_value(input, false)?),
             ]),
+            filters::ENDS_WITH => Ok(vec![
+                field.ends_with(self.as_condition_value(input, false)?),
+            ]),
+
+            filters::LOWER_THAN if self.reverse() => {
+                Ok(vec![field.greater_than_or_equals(
+                    self.as_condition_value(input, false)?,
+                )])
+            }
             filters::GREATER_THAN if self.reverse() => {
-                Ok(vec![field.less_than_or_equals(self.as_condition_value(input, false)?)])
+                Ok(vec![field.less_than_or_equals(
+                    self.as_condition_value(input, false)?,
+                )])
             }
-            filters::LOWER_THAN_OR_EQUAL if self.reverse() => {
-                Ok(vec![field.greater_than(self.as_condition_value(input, false)?)])
-            }
-            filters::GREATER_THAN_OR_EQUAL if self.reverse() => {
-                Ok(vec![field.less_than(self.as_condition_value(input, false)?)])
-            }
-
-            filters::LOWER_THAN => Ok(vec![field.less_than(self.as_condition_value(input, false)?)]),
-            filters::GREATER_THAN => Ok(vec![field.greater_than(self.as_condition_value(input, false)?)]),
-            filters::LOWER_THAN_OR_EQUAL => Ok(vec![field.less_than_or_equals(self.as_condition_value(input, false)?)]),
-            filters::GREATER_THAN_OR_EQUAL => Ok(vec![
-                field.greater_than_or_equals(self.as_condition_value(input, false)?),
+            filters::LOWER_THAN_OR_EQUAL if self.reverse() => Ok(vec![
+                field.greater_than(self.as_condition_value(input, false)?),
+            ]),
+            filters::GREATER_THAN_OR_EQUAL if self.reverse() => Ok(vec![
+                field.less_than(self.as_condition_value(input, false)?),
             ]),
 
-            filters::SEARCH if self.reverse() => Ok(vec![field.not_search(self.as_condition_value(input, false)?)]),
+            filters::LOWER_THAN => Ok(vec![
+                field.less_than(self.as_condition_value(input, false)?),
+            ]),
+            filters::GREATER_THAN => Ok(vec![
+                field.greater_than(self.as_condition_value(input, false)?),
+            ]),
+            filters::LOWER_THAN_OR_EQUAL => {
+                Ok(vec![field.less_than_or_equals(
+                    self.as_condition_value(input, false)?,
+                )])
+            }
+            filters::GREATER_THAN_OR_EQUAL => {
+                Ok(vec![field.greater_than_or_equals(
+                    self.as_condition_value(input, false)?,
+                )])
+            }
+
+            filters::SEARCH if self.reverse() => Ok(vec![
+                field.not_search(self.as_condition_value(input, false)?),
+            ]),
             filters::SEARCH => Ok(vec![field.search(self.as_condition_value(input, false)?)]),
 
             filters::IS_SET if self.reverse() => {
@@ -169,9 +210,19 @@ impl<'a> ScalarFilterParser<'a> {
             filters::IS_SET => Ok(vec![field.is_set(input.try_into()?)]),
 
             // List-specific filters
-            filters::HAS => Ok(vec![field.contains_element(self.as_condition_value(input, false)?)]),
-            filters::HAS_EVERY => Ok(vec![field.contains_every_element(self.as_condition_list_value(input)?)]),
-            filters::HAS_SOME => Ok(vec![field.contains_some_element(self.as_condition_list_value(input)?)]),
+            filters::HAS => Ok(vec![
+                field.contains_element(self.as_condition_value(input, false)?),
+            ]),
+            filters::HAS_EVERY => {
+                Ok(vec![field.contains_every_element(
+                    self.as_condition_list_value(input)?,
+                )])
+            }
+            filters::HAS_SOME => {
+                Ok(vec![field.contains_some_element(
+                    self.as_condition_list_value(input)?,
+                )])
+            }
             filters::IS_EMPTY => Ok(vec![field.is_empty_list(input.try_into()?)]),
 
             // Aggregation filters
@@ -200,13 +251,20 @@ impl<'a> ScalarFilterParser<'a> {
                 match input {
                     // Support for syntax `{ scalarField: { not: <value> } }` and `{ scalarField: { not: <value> } }`
                     ParsedInputValue::Single(value) => {
-                        let filter =
-                            json_null_enum_filter(value, json_path, |val, path| field.json_not_equals(val, path), true);
+                        let filter = json_null_enum_filter(
+                            value,
+                            json_path,
+                            |val, path| field.json_not_equals(val, path),
+                            true,
+                        );
 
                         Ok(vec![filter])
                     }
-                    ParsedInputValue::Map(ref map) if matches!(map.tag, Some(schema::ObjectTag::FieldRefType(_))) => {
-                        let filter = field.json_not_equals(self.as_condition_value(input, false)?, json_path);
+                    ParsedInputValue::Map(ref map)
+                        if matches!(map.tag, Some(schema::ObjectTag::FieldRefType(_))) =>
+                    {
+                        let filter = field
+                            .json_not_equals(self.as_condition_value(input, false)?, json_path);
 
                         Ok(vec![filter])
                     }
@@ -254,19 +312,31 @@ impl<'a> ScalarFilterParser<'a> {
                 )])
             }
 
-            filters::LOWER_THAN_OR_EQUAL if self.reverse() => Ok(vec![
-                field.json_greater_than(self.as_condition_value(input, false)?, json_path),
-            ]),
+            filters::LOWER_THAN_OR_EQUAL if self.reverse() => {
+                Ok(vec![field.json_greater_than(
+                    self.as_condition_value(input, false)?,
+                    json_path,
+                )])
+            }
 
-            filters::GREATER_THAN_OR_EQUAL if self.reverse() => Ok(vec![
-                field.json_less_than(self.as_condition_value(input, false)?, json_path),
-            ]),
-            filters::LOWER_THAN => Ok(vec![
-                field.json_less_than(self.as_condition_value(input, false)?, json_path),
-            ]),
-            filters::GREATER_THAN => Ok(vec![
-                field.json_greater_than(self.as_condition_value(input, false)?, json_path),
-            ]),
+            filters::GREATER_THAN_OR_EQUAL if self.reverse() => {
+                Ok(vec![field.json_less_than(
+                    self.as_condition_value(input, false)?,
+                    json_path,
+                )])
+            }
+            filters::LOWER_THAN => {
+                Ok(vec![field.json_less_than(
+                    self.as_condition_value(input, false)?,
+                    json_path,
+                )])
+            }
+            filters::GREATER_THAN => {
+                Ok(vec![field.json_greater_than(
+                    self.as_condition_value(input, false)?,
+                    json_path,
+                )])
+            }
             filters::LOWER_THAN_OR_EQUAL => {
                 Ok(vec![field.json_less_than_or_equals(
                     self.as_condition_value(input, false)?,
@@ -282,9 +352,19 @@ impl<'a> ScalarFilterParser<'a> {
             }
 
             // List-specific filters
-            filters::HAS => Ok(vec![field.contains_element(self.as_condition_value(input, false)?)]),
-            filters::HAS_EVERY => Ok(vec![field.contains_every_element(self.as_condition_list_value(input)?)]),
-            filters::HAS_SOME => Ok(vec![field.contains_some_element(self.as_condition_list_value(input)?)]),
+            filters::HAS => Ok(vec![
+                field.contains_element(self.as_condition_value(input, false)?),
+            ]),
+            filters::HAS_EVERY => {
+                Ok(vec![field.contains_every_element(
+                    self.as_condition_list_value(input)?,
+                )])
+            }
+            filters::HAS_SOME => {
+                Ok(vec![field.contains_some_element(
+                    self.as_condition_list_value(input)?,
+                )])
+            }
             filters::IS_EMPTY => Ok(vec![field.is_empty_list(input.try_into()?)]),
 
             // Json-specific filters
@@ -422,11 +502,15 @@ impl<'a> ScalarFilterParser<'a> {
         match input {
             ParsedInputValue::Map(mut map) => {
                 let field_ref_name = map.swap_remove(filters::UNDERSCORE_REF).unwrap();
-                let field_ref_name = PrismaValue::try_from(field_ref_name)?.into_string().unwrap();
+                let field_ref_name = PrismaValue::try_from(field_ref_name)?
+                    .into_string()
+                    .unwrap();
                 let field_ref = field.container().find_field(&field_ref_name);
 
                 let container_ref_name = map.swap_remove(filters::UNDERSCORE_CONTAINER).unwrap();
-                let container_ref_name = PrismaValue::try_from(container_ref_name)?.into_string().unwrap();
+                let container_ref_name = PrismaValue::try_from(container_ref_name)?
+                    .into_string()
+                    .unwrap();
 
                 if container_ref_name != field.container().name() {
                     let expected_container_type = if field.container().is_model() {
@@ -463,21 +547,26 @@ impl<'a> ScalarFilterParser<'a> {
 
                 match field_ref {
                     Some(Field::Scalar(field_ref))
-                        if field_ref.is_list() == expect_list_ref && field_ref.type_identifier() == *expected_type =>
+                        if field_ref.is_list() == expect_list_ref
+                            && field_ref.type_identifier() == *expected_type =>
                     {
                         Ok(ConditionValue::reference(field_ref))
                     }
-                    Some(Field::Scalar(field_ref)) => Err(QueryGraphBuilderError::InputError(format!(
-                        "Expected a referenced scalar field of type {:?}{} but found {} of type {:?}{}.",
-                        expected_type,
-                        if field.is_list() { "[]" } else { "" },
-                        field_ref,
-                        field_ref.type_identifier(),
-                        if field_ref.is_list() { "[]" } else { "" },
-                    ))),
-                    Some(Field::Relation(field_ref)) => Err(QueryGraphBuilderError::InputError(format!(
-                        "Expected a referenced scalar field {field_ref} but found a relation field."
-                    ))),
+                    Some(Field::Scalar(field_ref)) => {
+                        Err(QueryGraphBuilderError::InputError(format!(
+                            "Expected a referenced scalar field of type {:?}{} but found {} of type {:?}{}.",
+                            expected_type,
+                            if field.is_list() { "[]" } else { "" },
+                            field_ref,
+                            field_ref.type_identifier(),
+                            if field_ref.is_list() { "[]" } else { "" },
+                        )))
+                    }
+                    Some(Field::Relation(field_ref)) => {
+                        Err(QueryGraphBuilderError::InputError(format!(
+                            "Expected a referenced scalar field {field_ref} but found a relation field."
+                        )))
+                    }
                     None => Err(QueryGraphBuilderError::InputError(format!(
                         "The referenced scalar field {}.{} does not exist.",
                         field.container().name(),
@@ -489,29 +578,37 @@ impl<'a> ScalarFilterParser<'a> {
         }
     }
 
-    fn as_condition_list_value(&self, input: ParsedInputValue<'_>) -> QueryGraphBuilderResult<ConditionListValue> {
+    fn as_condition_list_value(
+        &self,
+        input: ParsedInputValue<'_>,
+    ) -> QueryGraphBuilderResult<ConditionListValue> {
         let field = self.field();
 
         match input {
             ParsedInputValue::Map(mut map) => {
                 let field_ref_name = map.swap_remove(filters::UNDERSCORE_REF).unwrap();
-                let field_ref_name = PrismaValue::try_from(field_ref_name)?.into_string().unwrap();
+                let field_ref_name = PrismaValue::try_from(field_ref_name)?
+                    .into_string()
+                    .unwrap();
                 let field_ref = field.container().find_field(&field_ref_name);
 
                 match field_ref {
                     Some(Field::Scalar(field_ref))
-                        if field_ref.is_list() && field_ref.type_identifier() == field.type_identifier() =>
+                        if field_ref.is_list()
+                            && field_ref.type_identifier() == field.type_identifier() =>
                     {
                         Ok(ConditionListValue::reference(field_ref))
                     }
-                    Some(Field::Scalar(field_ref)) => Err(QueryGraphBuilderError::InputError(format!(
-                        "Expected a referenced scalar field of type {:?}{} but found {} of type {:?}{}.",
-                        field.type_identifier(),
-                        if field.is_list() { "[]" } else { "" },
-                        field_ref,
-                        field_ref.type_identifier(),
-                        if field_ref.is_list() { "[]" } else { "" },
-                    ))),
+                    Some(Field::Scalar(field_ref)) => {
+                        Err(QueryGraphBuilderError::InputError(format!(
+                            "Expected a referenced scalar field of type {:?}{} but found {} of type {:?}{}.",
+                            field.type_identifier(),
+                            if field.is_list() { "[]" } else { "" },
+                            field_ref,
+                            field_ref.type_identifier(),
+                            if field_ref.is_list() { "[]" } else { "" },
+                        )))
+                    }
                     Some(Field::Relation(rf)) => Err(QueryGraphBuilderError::InputError(format!(
                         "Expected a referenced scalar list field {rf} but found a relation field."
                     ))),
@@ -561,15 +658,23 @@ where
         ConditionValue::Value(value) => match value {
             PrismaValue::Enum(e) => match e.as_str() {
                 json_null::DB_NULL => filter_fn(PrismaValue::Null.into(), json_path),
-                json_null::JSON_NULL => filter_fn(PrismaValue::Json("null".to_owned()).into(), json_path),
+                json_null::JSON_NULL => {
+                    filter_fn(PrismaValue::Json("null".to_owned()).into(), json_path)
+                }
 
                 json_null::ANY_NULL if reverse => Filter::And(vec![
-                    filter_fn(PrismaValue::Json("null".to_owned()).into(), json_path.clone()),
+                    filter_fn(
+                        PrismaValue::Json("null".to_owned()).into(),
+                        json_path.clone(),
+                    ),
                     filter_fn(PrismaValue::Null.into(), json_path),
                 ]),
 
                 json_null::ANY_NULL => Filter::Or(vec![
-                    filter_fn(PrismaValue::Json("null".to_owned()).into(), json_path.clone()),
+                    filter_fn(
+                        PrismaValue::Json("null".to_owned()).into(),
+                        json_path.clone(),
+                    ),
                     filter_fn(PrismaValue::Null.into(), json_path),
                 ]),
 
@@ -603,7 +708,9 @@ fn parse_json_path(input: ParsedInputValue<'_>) -> QueryGraphBuilderResult<JsonF
 
 fn coerce_json_null(value: ConditionValue) -> ConditionValue {
     match value {
-        ConditionValue::Value(PrismaValue::Null) => ConditionValue::value(PrismaValue::Json("null".to_owned())),
+        ConditionValue::Value(PrismaValue::Null) => {
+            ConditionValue::value(PrismaValue::Json("null".to_owned()))
+        }
         _ => value,
     }
 }

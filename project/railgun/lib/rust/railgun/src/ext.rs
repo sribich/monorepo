@@ -59,7 +59,7 @@ impl<T, E> IntoValidationError for Result<T, E> {
                 }
 
                 Err(err)
-            },
+            }
         }
     }
 
@@ -94,7 +94,7 @@ impl<T, E> IntoValidationError for Result<T, E> {
                     field.as_ref().to_owned(),
                     result,
                 )))
-            },
+            }
         }
     }
 }

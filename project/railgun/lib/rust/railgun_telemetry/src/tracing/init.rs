@@ -1,7 +1,8 @@
 use std::sync::OnceLock;
 
 use opentelemetry_otlp::WithExportConfig;
-use opentelemetry_sdk::{Resource, propagation::TraceContextPropagator};
+use opentelemetry_sdk::Resource;
+use opentelemetry_sdk::propagation::TraceContextPropagator;
 use railgun_core::ServiceInfo;
 
 use crate::settings::TelemetrySettings;

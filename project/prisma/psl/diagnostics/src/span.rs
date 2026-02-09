@@ -4,8 +4,8 @@ pub struct FileId(pub u32); // we can't encapsulate because it would be a circul
 // dependency between diagnostics and parser-database
 
 impl FileId {
-    pub const ZERO: FileId = FileId(0);
     pub const MAX: FileId = FileId(u32::MAX);
+    pub const ZERO: FileId = FileId(0);
 }
 
 /// Represents a location in a datamodel's text representation.
@@ -19,7 +19,11 @@ pub struct Span {
 impl Span {
     /// Constructor.
     pub fn new(start: usize, end: usize, file_id: FileId) -> Span {
-        Span { start, end, file_id }
+        Span {
+            start,
+            end,
+            file_id,
+        }
     }
 
     /// Creates a new empty span.

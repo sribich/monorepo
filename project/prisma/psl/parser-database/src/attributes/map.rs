@@ -1,10 +1,12 @@
-use crate::{
-    DatamodelError, ScalarFieldId, StringId,
-    ast::{self, WithName, WithSpan},
-    coerce,
-    context::Context,
-    types::ModelAttributes,
-};
+use crate::DatamodelError;
+use crate::ScalarFieldId;
+use crate::StringId;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
+use crate::coerce;
+use crate::context::Context;
+use crate::types::ModelAttributes;
 
 pub(super) fn model(model_attributes: &mut ModelAttributes, ctx: &mut Context<'_>) {
     let mapped_name = match visit_map_attribute(ctx) {

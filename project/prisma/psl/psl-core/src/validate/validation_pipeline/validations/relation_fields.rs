@@ -1,18 +1,23 @@
-use super::{database_name::validate_db_name, names::Names};
-use crate::{
-    ast::{self, WithName, WithSpan},
-    datamodel_connector::{ConnectorCapability, RelationMode},
-    diagnostics::DatamodelError,
-    validate::validation_pipeline::context::Context,
-};
+use std::fmt;
+
 use diagnostics::DatamodelWarning;
 use enumflags2::BitFlags;
 use itertools::Itertools;
-use parser_database::{
-    ReferentialAction,
-    walkers::{ModelWalker, RelationFieldId, RelationFieldWalker, RelationName},
-};
-use std::fmt;
+use parser_database::ReferentialAction;
+use parser_database::walkers::ModelWalker;
+use parser_database::walkers::RelationFieldId;
+use parser_database::walkers::RelationFieldWalker;
+use parser_database::walkers::RelationName;
+
+use super::database_name::validate_db_name;
+use super::names::Names;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 struct Fields<'db> {
     fields: &'db [RelationFieldId],
@@ -55,7 +60,10 @@ impl fmt::Display for Fields<'_> {
     }
 }
 
-pub(super) fn ambiguity(field: RelationFieldWalker<'_>, names: &Names<'_>) -> Result<(), DatamodelError> {
+pub(super) fn ambiguity(
+    field: RelationFieldWalker<'_>,
+    names: &Names<'_>,
+) -> Result<(), DatamodelError> {
     let model = field.model();
     let related_model = field.related_model();
 
@@ -108,7 +116,11 @@ pub(super) fn ambiguity(field: RelationFieldWalker<'_>, names: &Names<'_>) -> Re
                 }
             };
 
-            let container_type = if model.ast_model().is_view() { "view" } else { "model" };
+            let container_type = if model.ast_model().is_view() {
+                "view"
+            } else {
+                "model"
+            };
 
             Err(DatamodelError::new_model_validation_error(
                 &message,
@@ -150,7 +162,10 @@ pub(super) fn referential_actions(field: RelationFieldWalker<'_>, ctx: &mut Cont
     let relation_mode = ctx.relation_mode;
 
     fn fmt_allowed_actions(allowed_actions: BitFlags<ReferentialAction>) -> String {
-        allowed_actions.iter().map(|f| format!("`{}`", f.as_str())).join(", ")
+        allowed_actions
+            .iter()
+            .map(|f| format!("`{}`", f.as_str()))
+            .join(", ")
     }
 
     // validation template for relationMode = "foreignKeys"
@@ -210,8 +225,14 @@ pub(super) fn referential_actions(field: RelationFieldWalker<'_>, ctx: &mut Cont
             .span_for_argument("relation", "onDelete")
             .unwrap_or_else(|| field.ast_field().span());
 
-        if !ctx.connector.supports_referential_action(&ctx.relation_mode, on_delete) {
-            ctx.push_error(DatamodelError::new_validation_error(&msg_template(on_delete), span));
+        if !ctx
+            .connector
+            .supports_referential_action(&ctx.relation_mode, on_delete)
+        {
+            ctx.push_error(DatamodelError::new_validation_error(
+                &msg_template(on_delete),
+                span,
+            ));
         }
     }
 
@@ -221,8 +242,14 @@ pub(super) fn referential_actions(field: RelationFieldWalker<'_>, ctx: &mut Cont
             .span_for_argument("relation", "onUpdate")
             .unwrap_or_else(|| field.ast_field().span());
 
-        if !ctx.connector.supports_referential_action(&ctx.relation_mode, on_update) {
-            ctx.push_error(DatamodelError::new_validation_error(&msg_template(on_update), span));
+        if !ctx
+            .connector
+            .supports_referential_action(&ctx.relation_mode, on_update)
+        {
+            ctx.push_error(DatamodelError::new_validation_error(
+                &msg_template(on_update),
+                span,
+            ));
         }
     }
 }
@@ -252,12 +279,25 @@ pub(super) fn map(field: RelationFieldWalker<'_>, ctx: &mut Context<'_>) {
         .iter()
         .find(|attr| attr.name() == "relation")
     {
-        validate_db_name(field.model().name(), relation_attr, field.mapped_name(), ctx, false);
+        validate_db_name(
+            field.model().name(),
+            relation_attr,
+            field.mapped_name(),
+            ctx,
+            false,
+        );
     }
 }
 
-pub(super) fn validate_missing_relation_indexes(relation_field: RelationFieldWalker<'_>, ctx: &mut Context<'_>) {
-    if !ctx.connector.should_suggest_missing_referencing_fields_indexes() || ctx.relation_mode != RelationMode::Prisma {
+pub(super) fn validate_missing_relation_indexes(
+    relation_field: RelationFieldWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    if !ctx
+        .connector
+        .should_suggest_missing_referencing_fields_indexes()
+        || ctx.relation_mode != RelationMode::Prisma
+    {
         return;
     }
 
@@ -289,19 +329,25 @@ pub(super) fn validate_missing_relation_indexes(relation_field: RelationFieldWal
         let span = ast_field
             .span_for_attribute("relation")
             .unwrap_or_else(|| ast_field.span());
-        ctx.push_warning(DatamodelWarning::new_missing_index_on_emulated_relation(span));
+        ctx.push_warning(DatamodelWarning::new_missing_index_on_emulated_relation(
+            span,
+        ));
     }
 }
 
 pub(super) fn connector_specific(field: RelationFieldWalker<'_>, ctx: &mut Context<'_>) {
-    ctx.connector.validate_relation_field(field, ctx.diagnostics)
+    ctx.connector
+        .validate_relation_field(field, ctx.diagnostics)
 }
 
 /// An subgroup is left-wise included in a supergroup if the subgroup is contained in the supergroup, and all the entries of
 /// the left-most entries of the supergroup match the order of definitions of the subgroup.
 /// More formally: { x_1, x_2, ..., x_n } is left-wise included in { y_1, y_2, ..., y_m } if and only if
 /// n <= m and x_i = y_i for all i in [1, n].
-fn is_leftwise_included_it<T>(subgrop: impl ExactSizeIterator<Item = T>, supergroup: impl Iterator<Item = T>) -> bool
+fn is_leftwise_included_it<T>(
+    subgrop: impl ExactSizeIterator<Item = T>,
+    supergroup: impl Iterator<Item = T>,
+) -> bool
 where
     T: PartialEq,
 {

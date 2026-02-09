@@ -1,11 +1,15 @@
-use crate::{
-    DatamodelError, ScalarFieldId, StringId,
-    ast::{self, WithName},
-    coerce,
-    context::Context,
-    generators::{CUID_SUPPORTED_VERSIONS, UUID_SUPPORTED_VERSIONS},
-    types::{DefaultAttribute, ScalarFieldType, ScalarType},
-};
+use crate::DatamodelError;
+use crate::ScalarFieldId;
+use crate::StringId;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::coerce;
+use crate::context::Context;
+use crate::generators::CUID_SUPPORTED_VERSIONS;
+use crate::generators::UUID_SUPPORTED_VERSIONS;
+use crate::types::DefaultAttribute;
+use crate::types::ScalarFieldType;
+use crate::types::ScalarType;
 
 /// @default on model scalar fields
 pub(super) fn visit_model_field_default(
@@ -63,7 +67,9 @@ pub(super) fn visit_model_field_default(
             ctx,
         ),
         ScalarFieldType::Extension(_) => {
-            ctx.push_attribute_validation_error("Only @default(dbgenerated(\"...\")) can be used for extension types.");
+            ctx.push_attribute_validation_error(
+                "Only @default(dbgenerated(\"...\")) can be used for extension types.",
+            );
         }
         ScalarFieldType::Unsupported(_) => {
             ctx.push_attribute_validation_error(
@@ -80,7 +86,9 @@ fn validate_singular_scalar_default_literal(
     ctx: &mut Context<'_>,
 ) {
     if let ast::Expression::Array(..) = value {
-        ctx.push_attribute_validation_error("The default value of a non-list field cannot be a list.")
+        ctx.push_attribute_validation_error(
+            "The default value of a non-list field cannot be a list.",
+        )
     } else {
         validate_scalar_default_literal(scalar_type, value, accept, ctx)
     }
@@ -125,8 +133,12 @@ fn validate_model_builtin_scalar_type_default(
     let arity = ctx.asts[field_id.0][field_id.1].arity;
     match (scalar_type, value) {
         // Functions
-        (_, ast::Expression::Function(funcname, _, _)) if funcname == FN_AUTOINCREMENT && mapped_name.is_some() => {
-            ctx.push_attribute_validation_error("Naming an autoincrement default value is not allowed.")
+        (_, ast::Expression::Function(funcname, _, _))
+            if funcname == FN_AUTOINCREMENT && mapped_name.is_some() =>
+        {
+            ctx.push_attribute_validation_error(
+                "Naming an autoincrement default value is not allowed.",
+            )
         }
         (ScalarType::Int, ast::Expression::Function(funcname, funcargs, _))
         | (ScalarType::BigInt, ast::Expression::Function(funcname, funcargs, _))
@@ -134,19 +146,41 @@ fn validate_model_builtin_scalar_type_default(
         {
             validate_empty_function_args(funcname, &funcargs.arguments, accept, ctx)
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_ULID => {
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_ULID =>
+        {
             validate_empty_function_args(funcname, &funcargs.arguments, accept, ctx)
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_CUID => {
-            validate_uid_int_args(funcname, &funcargs.arguments, &CUID_SUPPORTED_VERSIONS, accept, ctx)
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_CUID =>
+        {
+            validate_uid_int_args(
+                funcname,
+                &funcargs.arguments,
+                &CUID_SUPPORTED_VERSIONS,
+                accept,
+                ctx,
+            )
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_UUID => {
-            validate_uid_int_args(funcname, &funcargs.arguments, &UUID_SUPPORTED_VERSIONS, accept, ctx)
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_UUID =>
+        {
+            validate_uid_int_args(
+                funcname,
+                &funcargs.arguments,
+                &UUID_SUPPORTED_VERSIONS,
+                accept,
+                ctx,
+            )
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_NANOID => {
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_NANOID =>
+        {
             validate_nanoid_args(&funcargs.arguments, accept, ctx)
         }
-        (ScalarType::DateTime, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_NOW => {
+        (ScalarType::DateTime, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_NOW =>
+        {
             validate_empty_function_args(FN_NOW, &funcargs.arguments, accept, ctx)
         }
 
@@ -154,7 +188,9 @@ fn validate_model_builtin_scalar_type_default(
             validate_auto_args(&funcargs.arguments, accept, ctx)
         }
 
-        (_, ast::Expression::Function(funcname, _, _)) if !KNOWN_FUNCTIONS.contains(&funcname.as_str()) => {
+        (_, ast::Expression::Function(funcname, _, _))
+            if !KNOWN_FUNCTIONS.contains(&funcname.as_str()) =>
+        {
             ctx.types.unknown_function_defaults.push(scalar_field_id);
             accept(ctx);
         }
@@ -184,25 +220,51 @@ fn validate_composite_builtin_scalar_type_default(
 ) {
     match (scalar_type, value) {
         // Functions
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_ULID => {
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_ULID =>
+        {
             validate_empty_function_args(funcname, &funcargs.arguments, accept, ctx)
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_CUID => {
-            validate_uid_int_args(funcname, &funcargs.arguments, &CUID_SUPPORTED_VERSIONS, accept, ctx)
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_CUID =>
+        {
+            validate_uid_int_args(
+                funcname,
+                &funcargs.arguments,
+                &CUID_SUPPORTED_VERSIONS,
+                accept,
+                ctx,
+            )
         }
-        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_UUID => {
-            validate_uid_int_args(funcname, &funcargs.arguments, &UUID_SUPPORTED_VERSIONS, accept, ctx)
+        (ScalarType::String, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_UUID =>
+        {
+            validate_uid_int_args(
+                funcname,
+                &funcargs.arguments,
+                &UUID_SUPPORTED_VERSIONS,
+                accept,
+                ctx,
+            )
         }
-        (ScalarType::DateTime, ast::Expression::Function(funcname, funcargs, _)) if funcname == FN_NOW => {
+        (ScalarType::DateTime, ast::Expression::Function(funcname, funcargs, _))
+            if funcname == FN_NOW =>
+        {
             validate_empty_function_args(FN_NOW, &funcargs.arguments, accept, ctx)
         }
-        (_, ast::Expression::Function(funcname, _, _)) if funcname == FN_AUTOINCREMENT || funcname == FN_AUTO => {
+        (_, ast::Expression::Function(funcname, _, _))
+            if funcname == FN_AUTOINCREMENT || funcname == FN_AUTO =>
+        {
             ctx.push_attribute_validation_error(&format!(
                 "The function `{funcname}()` is not supported on composite fields.",
             ));
         }
-        (_, ast::Expression::Function(funcname, _, span)) if !KNOWN_FUNCTIONS.contains(&funcname.as_str()) => {
-            ctx.push_error(DatamodelError::new_default_unknown_function(funcname, *span));
+        (_, ast::Expression::Function(funcname, _, span))
+            if !KNOWN_FUNCTIONS.contains(&funcname.as_str()) =>
+        {
+            ctx.push_error(DatamodelError::new_default_unknown_function(
+                funcname, *span,
+            ));
         }
         // Invalid function default.
         (scalar_type, ast::Expression::Function(funcname, _, _)) => {
@@ -234,7 +296,12 @@ fn default_attribute_mapped_name(ctx: &mut Context<'_>) -> Option<StringId> {
     }
 }
 
-fn validate_default_bool_value(bool_value: &str, span: diagnostics::Span, accept: AcceptFn<'_>, ctx: &mut Context<'_>) {
+fn validate_default_bool_value(
+    bool_value: &str,
+    span: diagnostics::Span,
+    accept: AcceptFn<'_>,
+    ctx: &mut Context<'_>,
+) {
     match bool_value {
         "true" | "false" => accept(ctx),
         _ => ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -252,10 +319,16 @@ fn validate_invalid_default_enum_value(enum_value: &str, ctx: &mut Context<'_>) 
 }
 
 fn validate_invalid_default_enum_expr(bad_value: &ast::Expression, ctx: &mut Context<'_>) {
-    ctx.push_attribute_validation_error(&format!("Expected an enum value, but found `{bad_value}`."))
+    ctx.push_attribute_validation_error(&format!(
+        "Expected an enum value, but found `{bad_value}`."
+    ))
 }
 
-fn validate_invalid_scalar_default(scalar_type: ScalarType, value: &ast::Expression, ctx: &mut Context<'_>) {
+fn validate_invalid_scalar_default(
+    scalar_type: ScalarType,
+    value: &ast::Expression,
+    ctx: &mut Context<'_>,
+) {
     ctx.push_attribute_validation_error(&format!(
         "Expected a {scalar_type} value, but found `{bad_value}`.",
         scalar_type = scalar_type.as_str(),
@@ -263,14 +336,23 @@ fn validate_invalid_scalar_default(scalar_type: ScalarType, value: &ast::Express
     ));
 }
 
-fn validate_invalid_function_default(fn_name: &str, scalar_type: ScalarType, ctx: &mut Context<'_>) {
+fn validate_invalid_function_default(
+    fn_name: &str,
+    scalar_type: ScalarType,
+    ctx: &mut Context<'_>,
+) {
     ctx.push_attribute_validation_error(&format!(
         "The function `{fn_name}()` cannot be used on fields of type `{scalar_type}`.",
         scalar_type = scalar_type.as_str()
     ));
 }
 
-fn validate_empty_function_args(fn_name: &str, args: &[ast::Argument], accept: AcceptFn<'_>, ctx: &mut Context<'_>) {
+fn validate_empty_function_args(
+    fn_name: &str,
+    args: &[ast::Argument],
+    accept: AcceptFn<'_>,
+    ctx: &mut Context<'_>,
+) {
     if args.is_empty() {
         return accept(ctx);
     }
@@ -331,7 +413,9 @@ fn validate_uid_int_args<const N: usize>(
     accept: AcceptFn<'_>,
     ctx: &mut Context<'_>,
 ) {
-    let mut bail = || ctx.push_attribute_validation_error(&format!("`{fn_name}()` takes a single Int argument."));
+    let mut bail = || {
+        ctx.push_attribute_validation_error(&format!("`{fn_name}()` takes a single Int argument."))
+    };
 
     if args.len() > 1 {
         bail()
@@ -353,7 +437,8 @@ fn validate_uid_int_args<const N: usize>(
 }
 
 fn validate_nanoid_args(args: &[ast::Argument], accept: AcceptFn<'_>, ctx: &mut Context<'_>) {
-    let mut bail = || ctx.push_attribute_validation_error("`nanoid()` takes a single Int argument.");
+    let mut bail =
+        || ctx.push_attribute_validation_error("`nanoid()` takes a single Int argument.");
 
     if args.len() > 1 {
         bail()
@@ -381,7 +466,11 @@ fn validate_enum_default(
 ) {
     match found_value {
         ast::Expression::ConstantValue(enum_value, _) => {
-            if ctx.asts[enum_id].values.iter().any(|v| v.name() == enum_value) {
+            if ctx.asts[enum_id]
+                .values
+                .iter()
+                .any(|v| v.name() == enum_value)
+            {
                 accept(ctx)
             } else {
                 validate_invalid_default_enum_value(enum_value, ctx);
@@ -447,7 +536,9 @@ fn validate_builtin_scalar_list_default(
                 accept(ctx)
             }
         }
-        _bad_value => ctx.push_attribute_validation_error("The default value of a list field must be a list."),
+        _bad_value => {
+            ctx.push_attribute_validation_error("The default value of a list field must be a list.")
+        }
     }
 }
 

@@ -131,7 +131,8 @@ mod transactional {
         );
 
         let queries = vec![
-            r#"mutation { createOneModelB(data: { id: 1, a: { create: { id: 1 } } }) { id }}"#.to_string(), // ModelB gets created before ModelA because of inlining,
+            r#"mutation { createOneModelB(data: { id: 1, a: { create: { id: 1 } } }) { id }}"#
+                .to_string(), // ModelB gets created before ModelA because of inlining,
         ];
 
         let batch_results = runner.batch(queries, true, None).await?;
@@ -149,7 +150,9 @@ mod transactional {
     async fn valid_isolation_level(runner: Runner) -> TestResult<()> {
         let queries = vec![r#"mutation { createOneModelB(data: { id: 1 }) { id }}"#.to_string()];
 
-        let batch_results = runner.batch(queries, true, Some("Serializable".into())).await?;
+        let batch_results = runner
+            .batch(queries, true, Some("Serializable".into()))
+            .await?;
 
         insta::assert_snapshot!(batch_results.to_string(), @r###"{"batchResult":[{"data":{"createOneModelB":{"id":1}}}]}"###);
 
@@ -160,7 +163,9 @@ mod transactional {
     async fn invalid_isolation_level(runner: Runner) -> TestResult<()> {
         let queries = vec![r#"mutation { createOneModelB(data: { id: 1 }) { id }}"#.to_string()];
 
-        let batch_results = runner.batch(queries, true, Some("NotALevel".into())).await?;
+        let batch_results = runner
+            .batch(queries, true, Some("NotALevel".into()))
+            .await?;
 
         batch_results.assert_failure(2023, Some("Invalid isolation level `NotALevel`".into()));
 

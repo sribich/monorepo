@@ -4,7 +4,9 @@ pub(crate) mod common {
 
     pub(crate) fn parse_date(str: &str) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
         chrono::NaiveDate::parse_from_str(str, "%Y-%m-%d")
-            .map(|date| DateTime::<Utc>::from_naive_utc_and_offset(date.and_hms_opt(0, 0, 0).unwrap(), Utc))
+            .map(|date| {
+                DateTime::<Utc>::from_naive_utc_and_offset(date.and_hms_opt(0, 0, 0).unwrap(), Utc)
+            })
             .map(DateTime::<FixedOffset>::from)
     }
 
@@ -18,7 +20,10 @@ pub(crate) mod common {
             .map(DateTime::<FixedOffset>::from)
     }
 
-    pub(crate) fn parse_timestamp(str: &str, fmt: &str) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
+    pub(crate) fn parse_timestamp(
+        str: &str,
+        fmt: &str,
+    ) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
         NaiveDateTime::parse_from_str(str, fmt)
             .map(|dt| DateTime::from_naive_utc_and_offset(dt, Utc))
             .or_else(|_| DateTime::parse_from_rfc3339(str).map(DateTime::<Utc>::from))
@@ -30,7 +35,9 @@ pub(crate) mod common {
 pub(crate) mod postgres {
     use chrono::*;
 
-    pub(crate) fn parse_timestamptz(str: &str) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
+    pub(crate) fn parse_timestamptz(
+        str: &str,
+    ) -> Result<DateTime<FixedOffset>, chrono::ParseError> {
         DateTime::parse_from_rfc3339(str)
     }
 

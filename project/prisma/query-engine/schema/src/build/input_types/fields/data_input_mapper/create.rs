@@ -1,5 +1,6 @@
-use super::*;
 use constants::*;
+
+use super::*;
 
 pub(crate) struct CreateDataInputFieldMapper {
     unchecked: bool,
@@ -18,18 +19,27 @@ impl CreateDataInputFieldMapper {
 impl DataInputFieldMapper for CreateDataInputFieldMapper {
     fn map_scalar<'a>(&self, ctx: &'a QuerySchema, sf: ScalarFieldRef) -> InputField<'a> {
         let typ = map_scalar_input_type_for_field(ctx, &sf);
-        let supports_advanced_json = ctx.has_capability(ConnectorCapability::AdvancedJsonNullability);
+        let supports_advanced_json =
+            ctx.has_capability(ConnectorCapability::AdvancedJsonNullability);
 
         match &sf.type_identifier() {
             TypeIdentifier::Json if supports_advanced_json => {
                 let enum_type = InputType::enum_type(json_null_input_enum(!sf.is_required()));
 
-                input_field(sf.name().to_owned(), vec![enum_type, typ], sf.default_value())
-                    .optional_if(!sf.is_required() || sf.default_value().is_some() || sf.is_updated_at())
+                input_field(
+                    sf.name().to_owned(),
+                    vec![enum_type, typ],
+                    sf.default_value(),
+                )
+                .optional_if(
+                    !sf.is_required() || sf.default_value().is_some() || sf.is_updated_at(),
+                )
             }
 
             _ => input_field(sf.name().to_owned(), vec![typ], sf.default_value())
-                .optional_if(!sf.is_required() || sf.default_value().is_some() || sf.is_updated_at())
+                .optional_if(
+                    !sf.is_required() || sf.default_value().is_some() || sf.is_updated_at(),
+                )
                 .nullable_if(!sf.is_required()),
         }
     }
@@ -42,12 +52,23 @@ impl DataInputFieldMapper for CreateDataInputFieldMapper {
         let mut input_object = init_input_object_type(ident);
         input_object.set_container(sf.container());
         input_object.require_exactly_one_field();
-        input_object.set_fields(move || vec![simple_input_field(operations::SET, cloned_typ.clone(), None)]);
+        input_object.set_fields(move || {
+            vec![simple_input_field(
+                operations::SET,
+                cloned_typ.clone(),
+                None,
+            )]
+        });
 
         let input_type = InputType::object(input_object);
 
         // Shorthand type (`list_field: <typ>`) + full object (`list_field: { set: { <typ> }}`)
-        input_field(sf.name().to_owned(), vec![input_type, typ], sf.default_value()).optional()
+        input_field(
+            sf.name().to_owned(),
+            vec![input_type, typ],
+            sf.default_value(),
+        )
+        .optional()
     }
 
     fn map_relation<'a>(&self, ctx: &'a QuerySchema, rf: RelationFieldRef) -> InputField<'a> {
@@ -89,7 +110,8 @@ impl DataInputFieldMapper for CreateDataInputFieldMapper {
             .into_iter()
             .all(|scalar_field| scalar_field.default_value().is_some());
 
-        let input_field = simple_input_field(rf.name().to_owned(), InputType::object(input_object), None);
+        let input_field =
+            simple_input_field(rf.name().to_owned(), InputType::object(input_object), None);
 
         if rf.is_required() && !all_required_scalar_fields_have_defaults {
             input_field

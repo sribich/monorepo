@@ -1,9 +1,10 @@
-use crate::prelude::*;
-use psl::parser_database::{
-    ast::FieldArity,
-    walkers::{self, RelationFieldId},
-};
 use std::fmt::Display;
+
+use psl::parser_database::ast::FieldArity;
+use psl::parser_database::walkers::RelationFieldId;
+use psl::parser_database::walkers::{self};
+
+use crate::prelude::*;
 
 pub type RelationField = crate::Zipper<RelationFieldId>;
 pub type RelationFieldRef = RelationField;
@@ -71,7 +72,9 @@ impl RelationField {
     /// Inlined in self / model of self
     pub fn relation_is_inlined_in_parent(&self) -> bool {
         match self.walker().relation().refine() {
-            walkers::RefinedRelationWalker::Inline(m) => m.forward_relation_field().unwrap().id == self.id,
+            walkers::RefinedRelationWalker::Inline(m) => {
+                m.forward_relation_field().unwrap().id == self.id
+            }
             _ => false,
         }
     }
@@ -112,7 +115,9 @@ impl RelationField {
     }
 
     pub fn db_names(&self) -> impl Iterator<Item = String> {
-        self.scalar_fields().into_iter().map(|f| f.db_name().to_owned())
+        self.scalar_fields()
+            .into_iter()
+            .map(|f| f.db_name().to_owned())
     }
 
     fn linking_fields_impl(&self) -> Vec<ScalarFieldRef> {
@@ -137,9 +142,11 @@ impl RelationField {
                 }
             }
             walkers::RefinedRelationWalker::TwoWayEmbeddedManyToMany(_)
-            | walkers::RefinedRelationWalker::ImplicitManyToMany(_) => {
-                self.model().primary_identifier().as_scalar_fields().unwrap()
-            }
+            | walkers::RefinedRelationWalker::ImplicitManyToMany(_) => self
+                .model()
+                .primary_identifier()
+                .as_scalar_fields()
+                .unwrap(),
         }
     }
 }

@@ -1,9 +1,18 @@
 pub mod variant;
 
-use syn::{
-    Attribute, Data, DataEnum, DataStruct, DataUnion, DeriveInput, Fields, Generics, Ident, Member,
-    Result, Type, spanned::Spanned,
-};
+use syn::Attribute;
+use syn::Data;
+use syn::DataEnum;
+use syn::DataStruct;
+use syn::DataUnion;
+use syn::DeriveInput;
+use syn::Fields;
+use syn::Generics;
+use syn::Ident;
+use syn::Member;
+use syn::Result;
+use syn::Type;
+use syn::spanned::Spanned;
 use variant::Variant;
 
 #[derive(Clone, Debug)]

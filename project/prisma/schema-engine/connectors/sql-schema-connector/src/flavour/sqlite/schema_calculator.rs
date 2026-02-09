@@ -1,6 +1,9 @@
-use crate::sql_schema_calculator::{Context, SqlSchemaCalculatorFlavour};
-use psl::parser_database::{ScalarType, walkers::*};
+use psl::parser_database::ScalarType;
+use psl::parser_database::walkers::*;
 use sql_schema_describer::ColumnTypeFamily;
+
+use crate::sql_schema_calculator::Context;
+use crate::sql_schema_calculator::SqlSchemaCalculatorFlavour;
 
 #[derive(Debug, Default)]
 pub struct SqliteSchemaCalculatorFlavour;
@@ -20,7 +23,11 @@ impl SqlSchemaCalculatorFlavour for SqliteSchemaCalculatorFlavour {
             && field.scalar_type() == Some(ScalarType::Int)
     }
 
-    fn column_type_for_enum(&self, _enm: EnumWalker<'_>, _ctx: &Context<'_>) -> Option<ColumnTypeFamily> {
+    fn column_type_for_enum(
+        &self,
+        _enm: EnumWalker<'_>,
+        _ctx: &Context<'_>,
+    ) -> Option<ColumnTypeFamily> {
         Some(ColumnTypeFamily::String)
     }
 }

@@ -1,13 +1,18 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, merge_fields};
-use crate::{
-    client::InternalClient,
-    query::{
-        BatchResult, ModelOperation, ModelWriteOperation, Query, QueryConvert, QueryResult, SelectionQuery, query,
-    },
-};
+use super::Model;
+use super::merge_fields;
+use crate::client::InternalClient;
+use crate::query::BatchResult;
+use crate::query::ModelOperation;
+use crate::query::ModelWriteOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct CreateMany<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -50,7 +55,9 @@ impl<'db, TModel: Model> CreateMany<'db, TModel> {
                         set_params
                             .into_iter()
                             .map(|entries| {
-                                PrismaValue::Object(merge_fields(entries.into_iter().map(Into::into).collect()))
+                                PrismaValue::Object(merge_fields(
+                                    entries.into_iter().map(Into::into).collect(),
+                                ))
                             })
                             .collect(),
                     )

@@ -1,12 +1,17 @@
-use super::*;
 use input_types::fields::arguments;
-use mutations::{create_many, create_many_and_return, create_one};
+use mutations::create_many;
+use mutations::create_many_and_return;
+use mutations::create_one;
 use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{DefaultKind, PrismaValue};
+use query_structure::DefaultKind;
+use query_structure::PrismaValue;
+
+use super::*;
 
 /// Builds the root `Mutation` type.
 pub(crate) fn mutation_fields(ctx: &QuerySchema) -> Vec<FieldFn> {
-    let mut fields: Vec<FieldFn> = Vec::with_capacity(ctx.internal_data_model.schema.db.models_count() * 2);
+    let mut fields: Vec<FieldFn> =
+        Vec::with_capacity(ctx.internal_data_model.schema.db.models_count() * 2);
 
     macro_rules! field {
         ($f:ident, $model_var:expr) => {{

@@ -1,9 +1,8 @@
-use crate::{
-    datamodel_connector::ConnectorCapability,
-    diagnostics::DatamodelError,
-    parser_database::{ast::WithSpan, walkers::ModelWalker},
-    validate::validation_pipeline::context::Context,
-};
+use crate::datamodel_connector::ConnectorCapability;
+use crate::diagnostics::DatamodelError;
+use crate::parser_database::ast::WithSpan;
+use crate::parser_database::walkers::ModelWalker;
+use crate::validate::validation_pipeline::context::Context;
 
 pub(super) fn validate_auto_increment(model: ModelWalker<'_>, ctx: &mut Context<'_>) {
     let autoincrement_fields = || model.scalar_fields().filter(|f| f.is_autoincrement());
@@ -28,7 +27,9 @@ pub(super) fn validate_auto_increment(model: ModelWalker<'_>, ctx: &mut Context<
         return;
     }
 
-    if !ctx.has_capability(ConnectorCapability::AutoIncrementMultipleAllowed) && autoincrement_fields().count() > 1 {
+    if !ctx.has_capability(ConnectorCapability::AutoIncrementMultipleAllowed)
+        && autoincrement_fields().count() > 1
+    {
         let msg = "The `autoincrement()` default value is used multiple times on this model even though the underlying datasource only supports one instance per table.";
 
         ctx.push_error(DatamodelError::new_attribute_validation_error(
@@ -54,7 +55,9 @@ pub(super) fn validate_auto_increment(model: ModelWalker<'_>, ctx: &mut Context<
             ))
         }
 
-        if !ctx.has_capability(ConnectorCapability::AutoIncrementNonIndexedAllowed) && !field_is_indexed() {
+        if !ctx.has_capability(ConnectorCapability::AutoIncrementNonIndexedAllowed)
+            && !field_is_indexed()
+        {
             let msg = "The `autoincrement()` default value is used on a non-indexed field even though the datasource does not support this.";
 
             ctx.push_error(DatamodelError::new_attribute_validation_error(

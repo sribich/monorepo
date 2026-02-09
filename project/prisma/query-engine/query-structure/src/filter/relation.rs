@@ -1,4 +1,6 @@
-use crate::{RelationCompare, RelationField, filter::Filter};
+use crate::RelationCompare;
+use crate::RelationField;
+use crate::filter::Filter;
 
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct RelationFilter {
@@ -76,7 +78,9 @@ impl RelationCondition {
             match self {
                 RelationCondition::EveryRelatedRecord => RelationCondition::NoRelatedRecord,
                 RelationCondition::AtLeastOneRelatedRecord => RelationCondition::NoRelatedRecord,
-                RelationCondition::NoRelatedRecord if to_one => RelationCondition::ToOneRelatedRecord,
+                RelationCondition::NoRelatedRecord if to_one => {
+                    RelationCondition::ToOneRelatedRecord
+                }
                 RelationCondition::NoRelatedRecord => RelationCondition::AtLeastOneRelatedRecord,
                 RelationCondition::ToOneRelatedRecord => RelationCondition::NoRelatedRecord,
             }
@@ -137,6 +141,8 @@ impl RelationCompare for RelationField {
 
     /// One of the relations is `Null`.
     fn one_relation_is_null(&self) -> Filter {
-        Filter::from(OneRelationIsNullFilter { field: self.clone() })
+        Filter::from(OneRelationIsNullFilter {
+            field: self.clone(),
+        })
     }
 }

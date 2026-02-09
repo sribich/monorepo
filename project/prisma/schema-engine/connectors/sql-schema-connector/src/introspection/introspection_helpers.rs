@@ -1,8 +1,11 @@
 //! Small utility functions.
 
-use sql::walkers::TableWalker;
-use sql_schema_describer::{self as sql, IndexColumnWalker, IndexType};
 use std::cmp;
+
+use sql::walkers::TableWalker;
+use sql_schema_describer::IndexColumnWalker;
+use sql_schema_describer::IndexType;
+use sql_schema_describer::{self as sql};
 
 /// This function implements the reverse behaviour of the `Ord` implementation for `Option`: it
 /// puts `None` values last, and otherwise orders `Some`s by their contents, like the `Ord` impl.
@@ -65,7 +68,9 @@ pub(crate) fn is_prisma_m_to_n_relation(table: TableWalker<'_>, pk_allowed: bool
         column.eq_ignore_ascii_case("b")
     }
 
-    fn index_columns_match<'a>(mut columns: impl ExactSizeIterator<Item = IndexColumnWalker<'a>>) -> bool {
+    fn index_columns_match<'a>(
+        mut columns: impl ExactSizeIterator<Item = IndexColumnWalker<'a>>,
+    ) -> bool {
         columns.len() == 2
             && match (columns.next(), columns.next()) {
                 (Some(a), Some(b)) => is_a(a.name()) && is_b(b.name()),

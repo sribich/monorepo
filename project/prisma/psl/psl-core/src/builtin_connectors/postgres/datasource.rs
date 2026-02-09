@@ -1,10 +1,14 @@
-use super::{PostgresExtension, PostgresExtensions};
-use crate::{
-    datamodel_connector::EXTENSIONS_KEY,
-    diagnostics::{DatamodelError, Diagnostics},
-    parser_database::{ast, coerce, coerce_array},
-};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
+use std::collections::HashSet;
+
+use super::PostgresExtension;
+use super::PostgresExtensions;
+use crate::datamodel_connector::EXTENSIONS_KEY;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
+use crate::parser_database::ast;
+use crate::parser_database::coerce;
+use crate::parser_database::coerce_array;
 
 pub(super) fn parse_extensions(
     args: &mut HashMap<&str, (ast::Span, &ast::Expression)>,
@@ -13,7 +17,9 @@ pub(super) fn parse_extensions(
     args.remove(EXTENSIONS_KEY).and_then(|(span, expr)| {
         let mut extensions = Vec::new();
 
-        for (name, args, span) in coerce_array(expr, &coerce::function_or_constant_with_span, diagnostics)? {
+        for (name, args, span) in
+            coerce_array(expr, &coerce::function_or_constant_with_span, diagnostics)?
+        {
             let mut args = filter_args(args, diagnostics);
 
             let db_name = fetch_string_arg(&mut args, "map", diagnostics);
@@ -59,7 +65,10 @@ fn filter_args<'a>(
             }
             Some(name) => {
                 dups.insert(name.name.as_str());
-                Some((name.name.as_str(), (arg.span, coerce::string(&arg.value, diagnostics))))
+                Some((
+                    name.name.as_str(),
+                    (arg.span, coerce::string(&arg.value, diagnostics)),
+                ))
             }
             None => {
                 diagnostics.push_error(DatamodelError::new_validation_error(

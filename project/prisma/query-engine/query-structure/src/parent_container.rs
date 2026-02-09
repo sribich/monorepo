@@ -1,6 +1,10 @@
-use crate::{Field, InternalDataModelRef, Model};
 use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
+use std::hash::Hash;
+use std::hash::Hasher;
+
+use crate::Field;
+use crate::InternalDataModelRef;
+use crate::Model;
 
 #[derive(Clone)]
 pub enum ParentContainer {

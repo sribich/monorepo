@@ -1,12 +1,15 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_attribute::parse_attribute,
-    parse_comments::parse_comment_block,
-    parse_field::parse_field,
-};
-use crate::ast::{self, Attribute};
-use diagnostics::{DatamodelError, Diagnostics, FileId};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_attribute::parse_attribute;
+use super::parse_comments::parse_comment_block;
+use super::parse_field::parse_field;
+use crate::ast::Attribute;
+use crate::ast::{self};
 
 pub(crate) fn parse_view(
     pair: Pair<'_>,
@@ -28,7 +31,9 @@ pub(crate) fn parse_view(
 
                 for item in current.into_inner() {
                     match item.as_rule() {
-                        Rule::block_attribute => attributes.push(parse_attribute(item, diagnostics, file_id)),
+                        Rule::block_attribute => {
+                            attributes.push(parse_attribute(item, diagnostics, file_id))
+                        }
                         Rule::field_declaration => match parse_field(
                             &name.as_ref().unwrap().name,
                             "view",
@@ -41,10 +46,12 @@ pub(crate) fn parse_view(
                             Err(err) => diagnostics.push_error(err),
                         },
                         Rule::comment_block => pending_field_comment = Some(item),
-                        Rule::BLOCK_LEVEL_CATCH_ALL => diagnostics.push_error(DatamodelError::new_validation_error(
-                            "This line is not a valid field or attribute definition.",
-                            (file_id, item.as_span()).into(),
-                        )),
+                        Rule::BLOCK_LEVEL_CATCH_ALL => {
+                            diagnostics.push_error(DatamodelError::new_validation_error(
+                                "This line is not a valid field or attribute definition.",
+                                (file_id, item.as_span()).into(),
+                            ))
+                        }
                         _ => parsing_catch_all(&item, "view"),
                     }
                 }

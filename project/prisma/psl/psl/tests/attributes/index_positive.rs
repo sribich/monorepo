@@ -1,4 +1,6 @@
-use crate::{Provider, common::*, with_header};
+use crate::Provider;
+use crate::common::*;
+use crate::with_header;
 
 #[test]
 fn basic_index_must_work() {
@@ -303,7 +305,8 @@ fn multiple_fulltext_indexes_allowed_per_model_in_mysql() {
         }
     "#};
 
-    let schema = psl::parse_schema_without_extensions(with_header(dml, Provider::Mysql, &[])).unwrap();
+    let schema =
+        psl::parse_schema_without_extensions(with_header(dml, Provider::Mysql, &[])).unwrap();
     let a = schema.assert_has_model("A");
 
     a.assert_fulltext_on_fields(&["a", "b"]);

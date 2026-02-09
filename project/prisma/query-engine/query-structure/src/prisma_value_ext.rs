@@ -1,7 +1,11 @@
-use super::{PrismaValue, Type, TypeIdentifier};
-use crate::DomainError;
 use bigdecimal::ToPrimitive;
-use prisma_value::{Placeholder, PrismaValueType};
+use prisma_value::Placeholder;
+use prisma_value::PrismaValueType;
+
+use super::PrismaValue;
+use super::Type;
+use super::TypeIdentifier;
+use crate::DomainError;
 
 pub(crate) trait PrismaValueExtensions {
     fn coerce(self, to_type: &Type) -> crate::Result<PrismaValue>;
@@ -28,14 +32,21 @@ impl PrismaValueExtensions for PrismaValue {
             // Valid String coercions
             (PrismaValue::Int(i), TypeIdentifier::String) => PrismaValue::String(format!("{i}")),
             (PrismaValue::Float(f), TypeIdentifier::String) => PrismaValue::String(f.to_string()),
-            (PrismaValue::Boolean(b), TypeIdentifier::String) => PrismaValue::String(format!("{b}")),
+            (PrismaValue::Boolean(b), TypeIdentifier::String) => {
+                PrismaValue::String(format!("{b}"))
+            }
             (PrismaValue::Enum(e), TypeIdentifier::String) => PrismaValue::String(e),
             (PrismaValue::Uuid(u), TypeIdentifier::String) => PrismaValue::String(u.to_string()),
 
             // Valid Int coersions
             (PrismaValue::String(s), TypeIdentifier::Int) => match s.parse() {
                 Ok(i) => PrismaValue::Int(i),
-                Err(_) => return Err(DomainError::ConversionFailure(format!("{s:?}"), format!("{to_type:?}"))),
+                Err(_) => {
+                    return Err(DomainError::ConversionFailure(
+                        format!("{s:?}"),
+                        format!("{to_type:?}"),
+                    ));
+                }
             },
             (PrismaValue::Float(f), TypeIdentifier::Int) => PrismaValue::Int(f.to_i64().unwrap()),
             (PrismaValue::BigInt(i), TypeIdentifier::Int) => PrismaValue::Int(i),
@@ -71,7 +82,12 @@ impl PrismaValueExtensions for PrismaValue {
             }),
 
             // Invalid coercion
-            (val, typ) => return Err(DomainError::ConversionFailure(format!("{val:?}"), format!("{typ:?}"))),
+            (val, typ) => {
+                return Err(DomainError::ConversionFailure(
+                    format!("{val:?}"),
+                    format!("{typ:?}"),
+                ));
+            }
         };
 
         Ok(coerced)

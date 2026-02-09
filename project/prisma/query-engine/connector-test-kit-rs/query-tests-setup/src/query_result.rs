@@ -1,8 +1,10 @@
 use std::fmt::Display;
 
 use query_core::constants::custom_types;
-use request_handlers::{GQLError, PrismaResponse};
-use serde::{Deserialize, Serialize};
+use request_handlers::GQLError;
+use request_handlers::PrismaResponse;
+use serde::Deserialize;
+use serde::Serialize;
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct SimpleGqlErrorResponse {
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -62,7 +64,9 @@ impl QueryResult {
         match self.response {
             Response::Error(ref s) => !s.errors.is_empty(),
             Response::Single(ref s) => !s.errors.is_empty(),
-            Response::Multi(ref m) => !(m.errors.is_empty() && m.batch_result.iter().all(|res| res.errors.is_empty())),
+            Response::Multi(ref m) => {
+                !(m.errors.is_empty() && m.batch_result.iter().all(|res| res.errors.is_empty()))
+            }
         }
     }
 
@@ -174,7 +178,8 @@ impl From<PrismaResponse> for QueryResult {
                 response: Response::Single(SimpleGqlResponse {
                     data: serde_json::to_value(res.data).unwrap(),
                     errors: res.errors,
-                    extensions: (!res.extensions.is_empty()).then(|| serde_json::to_value(&res.extensions).unwrap()),
+                    extensions: (!res.extensions.is_empty())
+                        .then(|| serde_json::to_value(&res.extensions).unwrap()),
                 }),
             },
             PrismaResponse::Multi(reses) => QueryResult {
@@ -201,7 +206,10 @@ impl From<PrismaResponse> for QueryResult {
 fn detag_value(val: &mut serde_json::Value) {
     match val {
         serde_json::Value::Object(obj) => {
-            if obj.len() == 2 && obj.contains_key(custom_types::TYPE) && obj.contains_key(custom_types::VALUE) {
+            if obj.len() == 2
+                && obj.contains_key(custom_types::TYPE)
+                && obj.contains_key(custom_types::VALUE)
+            {
                 let mut new_val = obj.remove(custom_types::VALUE).unwrap();
                 detag_value(&mut new_val);
                 *val = new_val;
@@ -222,8 +230,9 @@ fn detag_value(val: &mut serde_json::Value) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_deserializing_successful_batch_response() {

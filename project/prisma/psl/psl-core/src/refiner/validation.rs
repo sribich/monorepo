@@ -1,13 +1,15 @@
 use std::sync::Arc;
 
 use diagnostics::Diagnostics;
-use parser_database::{NoExtensionTypes, ParserDatabase};
+use parser_database::NoExtensionTypes;
+use parser_database::ParserDatabase;
 use psl_ast::SourceFile;
-use psl_schema::{Schema, SchemaRefiner};
-
-use crate::{Configuration, datamodel_connector};
+use psl_schema::Schema;
+use psl_schema::SchemaRefiner;
 
 use super::configuration::Configured;
+use crate::Configuration;
+use crate::datamodel_connector;
 
 pub struct Validated {}
 
@@ -24,10 +26,9 @@ pub struct ValidatedSchema {
 pub struct ValidatedFile {}
 
 impl SchemaRefiner for Validated {
-    type From = Configured;
-
-    type SchemaContext = ValidatedSchema;
     type FileContext = ValidatedFile;
+    type From = Configured;
+    type SchemaContext = ValidatedSchema;
 
     fn refine_context(&self, from: &psl_schema::Schema<Self::From>) -> Self::SchemaContext {
         let diagnostics = from.diagnostics().borrow().clone();

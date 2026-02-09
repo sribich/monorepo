@@ -1,8 +1,14 @@
 use std::fmt::Display;
 
-use super::{
-    Attribute, Comment, Identifier, Span, WithAttributes, WithDocumentation, WithIdentifier, WithName, WithSpan,
-};
+use super::Attribute;
+use super::Comment;
+use super::Identifier;
+use super::Span;
+use super::WithAttributes;
+use super::WithDocumentation;
+use super::WithIdentifier;
+use super::WithName;
+use super::WithSpan;
 
 /// A field definition in a model or a composite type.
 #[derive(Debug, Clone)]

@@ -6,9 +6,12 @@ use test_macros::test_connector;
 #[test_connector(tags(Postgres))]
 async fn full_text_functions_filtered_out(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text not null)",);
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (to_tsvector('english', data));",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data text not null)",
+    );
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (to_tsvector('english', data));",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -30,8 +33,11 @@ async fn full_text_functions_filtered_out(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn gin_raw_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data tsvector not null)",);
-    let create_idx = format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data tsvector not null)",
+    );
+    let create_idx =
+        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -54,8 +60,11 @@ async fn gin_raw_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn array_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",);
-    let create_idx = format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",
+    );
+    let create_idx =
+        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -78,8 +87,11 @@ async fn array_ops(api: &mut TestApi) -> TestResult {
 #[test_connector(tags(Postgres))]
 async fn array_ops_with_native_type(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",);
-    let create_idx = format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data int[] not null)",
+    );
+    let create_idx =
+        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data);",);
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -103,9 +115,13 @@ async fn array_ops_with_native_type(api: &mut TestApi) -> TestResult {
 async fn jsonb_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
 
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data jsonb not null)",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data jsonb not null)",
+    );
 
-    let create_idx = format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data jsonb_ops);",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data jsonb_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;
@@ -129,10 +145,13 @@ async fn jsonb_ops(api: &mut TestApi) -> TestResult {
 async fn jsonb_path_ops(api: &mut TestApi) -> TestResult {
     let schema_name = api.schema_name();
 
-    let create_table = format!("CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data jsonb not null)",);
+    let create_table = format!(
+        "CREATE TABLE \"{schema_name}\".\"A\" (id SERIAL PRIMARY KEY, data jsonb not null)",
+    );
 
-    let create_idx =
-        format!("CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data jsonb_path_ops);",);
+    let create_idx = format!(
+        "CREATE INDEX \"A_data_idx\" ON \"{schema_name}\".\"A\" USING GIN (data jsonb_path_ops);",
+    );
 
     api.database().raw_cmd(&create_table).await?;
     api.database().raw_cmd(&create_idx).await?;

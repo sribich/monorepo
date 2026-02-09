@@ -1,11 +1,15 @@
-use quaint::{prelude::Queryable, single::Quaint};
-use schema_core::schema_connector::{ConnectorError, ConnectorParams, ConnectorResult};
-use std::{
-    future::Future,
-    pin::Pin,
-    sync::{OnceLock, mpsc},
-};
-use test_setup::{mysql::mysql_safe_identifier, runtime::run_with_thread_local_runtime as tok};
+use std::future::Future;
+use std::pin::Pin;
+use std::sync::OnceLock;
+use std::sync::mpsc;
+
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+use schema_core::schema_connector::ConnectorError;
+use schema_core::schema_connector::ConnectorParams;
+use schema_core::schema_connector::ConnectorResult;
+use test_setup::mysql::mysql_safe_identifier;
+use test_setup::runtime::run_with_thread_local_runtime as tok;
 use url::Url;
 
 pub(crate) async fn mysql_setup(url: String, prisma_schema: &str) -> ConnectorResult<()> {
@@ -22,7 +26,8 @@ async fn mysql_reset(original_url: &str) -> ConnectorResult<()> {
 }
 
 async fn create_mysql_database(database_url: &str, db_name: &str) -> ConnectorResult<()> {
-    type Message = Box<dyn (for<'a> FnOnce(&'a Quaint) -> Pin<Box<dyn Future<Output = ()> + 'a>>) + Send>;
+    type Message =
+        Box<dyn (for<'a> FnOnce(&'a Quaint) -> Pin<Box<dyn Future<Output = ()> + 'a>>) + Send>;
     static ADMIN_THREAD_HANDLE: OnceLock<mpsc::SyncSender<Message>> = OnceLock::new();
 
     let handle = ADMIN_THREAD_HANDLE.get_or_init(|| {

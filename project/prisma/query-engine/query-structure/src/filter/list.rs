@@ -1,5 +1,7 @@
 use super::*;
-use crate::{ScalarField, ScalarFieldRef, ScalarListCompare};
+use crate::ScalarField;
+use crate::ScalarFieldRef;
+use crate::ScalarListCompare;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ScalarListFilter {

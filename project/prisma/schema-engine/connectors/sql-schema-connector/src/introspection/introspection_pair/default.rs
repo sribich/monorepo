@@ -1,9 +1,12 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use either::Either;
 use prisma_value::PrismaValue;
-use psl::{datamodel_connector::constraint_names::ConstraintNames, parser_database::walkers};
+use psl::datamodel_connector::constraint_names::ConstraintNames;
+use psl::parser_database::walkers;
 use sql::postgres::PostgresSchemaExt;
 use sql_schema_describer as sql;
-use std::{borrow::Cow, fmt};
 
 use super::IntrospectionPair;
 
@@ -35,7 +38,9 @@ impl<'a> DefaultValuePair<'a> {
         let family = self.next.column_type_family();
 
         match (sql_kind, family) {
-            (_, sql::ColumnTypeFamily::Int | sql::ColumnTypeFamily::BigInt) if self.next.is_autoincrement() => {
+            (_, sql::ColumnTypeFamily::Int | sql::ColumnTypeFamily::BigInt)
+                if self.next.is_autoincrement() =>
+            {
                 Some(DefaultKind::Autoincrement)
             }
             (Some(sql::DefaultKind::Sequence(_)), _) => Some(DefaultKind::Autoincrement),
@@ -45,14 +50,27 @@ impl<'a> DefaultValuePair<'a> {
                 Some(DefaultKind::DbGenerated(default_string.as_deref()))
             }
 
-            (Some(sql::DefaultKind::Now), sql::ColumnTypeFamily::DateTime) => Some(DefaultKind::Now),
+            (Some(sql::DefaultKind::Now), sql::ColumnTypeFamily::DateTime) => {
+                Some(DefaultKind::Now)
+            }
 
-            (Some(sql::DefaultKind::Value(PrismaValue::Null)), _) => Some(DefaultKind::Constant(&"null")),
-            (Some(sql::DefaultKind::Value(PrismaValue::String(val))), _) => Some(DefaultKind::String(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::Json(val))), _) => Some(DefaultKind::String(val)),
+            (Some(sql::DefaultKind::Value(PrismaValue::Null)), _) => {
+                Some(DefaultKind::Constant(&"null"))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::String(val))), _) => {
+                Some(DefaultKind::String(val))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::Json(val))), _) => {
+                Some(DefaultKind::String(val))
+            }
 
-            (Some(sql::DefaultKind::Value(PrismaValue::Boolean(val))), _) => Some(DefaultKind::Constant(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::Enum(variant))), sql::ColumnTypeFamily::Enum(enum_id)) => {
+            (Some(sql::DefaultKind::Value(PrismaValue::Boolean(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
+            (
+                Some(sql::DefaultKind::Value(PrismaValue::Enum(variant))),
+                sql::ColumnTypeFamily::Enum(enum_id),
+            ) => {
                 let variant = self
                     .context
                     .sql_schema
@@ -69,13 +87,25 @@ impl<'a> DefaultValuePair<'a> {
                     Some(DefaultKind::DbGenerated(variant_name.mapped_name()))
                 }
             }
-            (Some(sql::DefaultKind::Value(PrismaValue::Int(val))), _) => Some(DefaultKind::Constant(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::Uuid(val))), _) => Some(DefaultKind::Constant(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::DateTime(val))), _) => Some(DefaultKind::Constant(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::Float(val))), _) => Some(DefaultKind::Constant(val)),
-            (Some(sql::DefaultKind::Value(PrismaValue::BigInt(val))), _) => Some(DefaultKind::Constant(val)),
+            (Some(sql::DefaultKind::Value(PrismaValue::Int(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::Uuid(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::DateTime(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::Float(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
+            (Some(sql::DefaultKind::Value(PrismaValue::BigInt(val))), _) => {
+                Some(DefaultKind::Constant(val))
+            }
 
-            (Some(sql::DefaultKind::Value(PrismaValue::Bytes(val))), _) => Some(DefaultKind::Bytes(val)),
+            (Some(sql::DefaultKind::Value(PrismaValue::Bytes(val))), _) => {
+                Some(DefaultKind::Bytes(val))
+            }
 
             (Some(sql::DefaultKind::Value(PrismaValue::List(vals))), _) => match vals.first() {
                 None => Some(DefaultKind::ConstantList(Vec::new())),
@@ -96,7 +126,10 @@ impl<'a> DefaultValuePair<'a> {
                     Some(DefaultKind::ConstantList(vals))
                 }
                 Some(PrismaValue::Null) => {
-                    let vals = vals.iter().map(|_| &"null" as &'a dyn fmt::Display).collect();
+                    let vals = vals
+                        .iter()
+                        .map(|_| &"null" as &'a dyn fmt::Display)
+                        .collect();
                     Some(DefaultKind::ConstantList(vals))
                 }
                 Some(PrismaValue::Bytes(_)) => {
@@ -106,37 +139,54 @@ impl<'a> DefaultValuePair<'a> {
                 _ => unreachable!(),
             },
 
-            (None, sql::ColumnTypeFamily::String | sql::ColumnTypeFamily::Uuid) => match self.previous {
-                Some(previous) if previous.is_ulid() => Some(DefaultKind::Ulid),
-                Some(previous) if previous.is_cuid() => {
-                    let version = previous.value().as_function().and_then(|(_, args, _)| {
-                        args.arguments
-                            .first()
-                            .map(|arg| arg.value.as_numeric_value().unwrap().0.parse::<u8>().unwrap())
-                    });
+            (None, sql::ColumnTypeFamily::String | sql::ColumnTypeFamily::Uuid) => {
+                match self.previous {
+                    Some(previous) if previous.is_ulid() => Some(DefaultKind::Ulid),
+                    Some(previous) if previous.is_cuid() => {
+                        let version = previous.value().as_function().and_then(|(_, args, _)| {
+                            args.arguments.first().map(|arg| {
+                                arg.value
+                                    .as_numeric_value()
+                                    .unwrap()
+                                    .0
+                                    .parse::<u8>()
+                                    .unwrap()
+                            })
+                        });
 
-                    Some(DefaultKind::Cuid(version))
-                }
-                Some(previous) if previous.is_uuid() => {
-                    let version = previous.value().as_function().and_then(|(_, args, _)| {
-                        args.arguments
-                            .first()
-                            .map(|arg| arg.value.as_numeric_value().unwrap().0.parse::<u8>().unwrap())
-                    });
+                        Some(DefaultKind::Cuid(version))
+                    }
+                    Some(previous) if previous.is_uuid() => {
+                        let version = previous.value().as_function().and_then(|(_, args, _)| {
+                            args.arguments.first().map(|arg| {
+                                arg.value
+                                    .as_numeric_value()
+                                    .unwrap()
+                                    .0
+                                    .parse::<u8>()
+                                    .unwrap()
+                            })
+                        });
 
-                    Some(DefaultKind::Uuid(version))
-                }
-                Some(previous) if previous.is_nanoid() => {
-                    let length = previous.value().as_function().and_then(|(_, args, _)| {
-                        args.arguments
-                            .first()
-                            .map(|arg| arg.value.as_numeric_value().unwrap().0.parse::<u8>().unwrap())
-                    });
+                        Some(DefaultKind::Uuid(version))
+                    }
+                    Some(previous) if previous.is_nanoid() => {
+                        let length = previous.value().as_function().and_then(|(_, args, _)| {
+                            args.arguments.first().map(|arg| {
+                                arg.value
+                                    .as_numeric_value()
+                                    .unwrap()
+                                    .0
+                                    .parse::<u8>()
+                                    .unwrap()
+                            })
+                        });
 
-                    Some(DefaultKind::Nanoid(length))
+                        Some(DefaultKind::Nanoid(length))
+                    }
+                    _ => None,
                 }
-                _ => None,
-            },
+            }
 
             _ => None,
         }
@@ -146,7 +196,9 @@ impl<'a> DefaultValuePair<'a> {
     /// and it is non-default.
     pub(crate) fn mapped_name(self) -> Option<&'a str> {
         match self.next.default() {
-            Some(def) => def.constraint_name().filter(move |name| name != &self.default_name()),
+            Some(def) => def
+                .constraint_name()
+                .filter(move |name| name != &self.default_name()),
             None => None,
         }
     }
@@ -157,6 +209,10 @@ impl<'a> DefaultValuePair<'a> {
             Either::Right(col) => col.view().name(),
         };
 
-        ConstraintNames::default_name(container_name, self.next.name(), self.context.active_connector())
+        ConstraintNames::default_name(
+            container_name,
+            self.next.name(),
+            self.context.active_connector(),
+        )
     }
 }

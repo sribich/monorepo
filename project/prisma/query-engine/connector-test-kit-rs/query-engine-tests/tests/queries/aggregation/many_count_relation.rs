@@ -552,7 +552,11 @@ mod many_count_rel {
     // Ensures aggregation rows are properly extracted even when in-memory processing is applied to the records
     #[connector_test(schema(schema_inmemory_process))]
     async fn works_with_inmemory_args_processing(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, comments: { create: [{id: 1}, {id: 2}] } }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, comments: { create: [{id: 1}, {id: 2}] } }"#,
+        )
+        .await?;
         create_row(
             &runner,
             r#"{ id: 2, comments: { create: [{id: 3}, {id: 4}, {id: 5}, {id: 6}] } }"#,
@@ -784,7 +788,9 @@ mod many_count_rel {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOnePost(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOnePost(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

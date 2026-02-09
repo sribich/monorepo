@@ -1,13 +1,18 @@
-use crate::{
-    DatamodelError, Diagnostics, FileId,
-    ast::{self, WithName},
-    interner::StringId,
-    walkers::RelationFieldId,
-    {context::Context, types::RelationField},
-};
+use std::collections::BTreeSet;
+use std::fmt;
+
 use enumflags2::bitflags;
 use rustc_hash::FxHashMap as HashMap;
-use std::{collections::BTreeSet, fmt};
+
+use crate::DatamodelError;
+use crate::Diagnostics;
+use crate::FileId;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::context::Context;
+use crate::interner::StringId;
+use crate::types::RelationField;
+use crate::walkers::RelationFieldId;
 
 /// Detect relation types and construct relation objects to the database.
 pub(super) fn infer_relations(ctx: &mut Context<'_>) {
@@ -117,22 +122,44 @@ impl Relations {
     /// Iterator over relations where the provided model is model A, or the forward side of the
     /// relation.
     #[allow(clippy::wrong_self_convention)] // this is the name we want
-    pub(crate) fn from_model(&self, model_a_id: crate::ModelId) -> impl Iterator<Item = RelationId> + '_ {
+    pub(crate) fn from_model(
+        &self,
+        model_a_id: crate::ModelId,
+    ) -> impl Iterator<Item = RelationId> + '_ {
         self.forward
             .range(
-                (model_a_id, (FileId::ZERO, ast::ModelId::ZERO), RelationId::MIN)
-                    ..(model_a_id, (FileId::MAX, ast::ModelId::MAX), RelationId::MAX),
+                (
+                    model_a_id,
+                    (FileId::ZERO, ast::ModelId::ZERO),
+                    RelationId::MIN,
+                )
+                    ..(
+                        model_a_id,
+                        (FileId::MAX, ast::ModelId::MAX),
+                        RelationId::MAX,
+                    ),
             )
             .map(move |(_, _, relation_id)| *relation_id)
     }
 
     /// Iterator over relationss where the provided model is model B, or the backrelation side of
     /// the relation.
-    pub(crate) fn to_model(&self, model_a_id: crate::ModelId) -> impl Iterator<Item = RelationId> + '_ {
+    pub(crate) fn to_model(
+        &self,
+        model_a_id: crate::ModelId,
+    ) -> impl Iterator<Item = RelationId> + '_ {
         self.back
             .range(
-                (model_a_id, (FileId::ZERO, ast::ModelId::ZERO), RelationId::MIN)
-                    ..(model_a_id, (FileId::MAX, ast::ModelId::MAX), RelationId::MAX),
+                (
+                    model_a_id,
+                    (FileId::ZERO, ast::ModelId::ZERO),
+                    RelationId::MIN,
+                )
+                    ..(
+                        model_a_id,
+                        (FileId::MAX, ast::ModelId::MAX),
+                        RelationId::MAX,
+                    ),
             )
             .map(move |(_, _, relation_id)| *relation_id)
     }
@@ -175,8 +202,12 @@ impl RelationAttributes {
                 (Some(*field_a), Some(*field_b))
             }
             RelationAttributes::OneToMany(OneToManyRelationFields::Forward(field_a))
-            | RelationAttributes::OneToOne(OneToOneRelationFields::Forward(field_a)) => (Some(*field_a), None),
-            RelationAttributes::OneToMany(OneToManyRelationFields::Back(field_b)) => (None, Some(*field_b)),
+            | RelationAttributes::OneToOne(OneToOneRelationFields::Forward(field_a)) => {
+                (Some(*field_a), None)
+            }
+            RelationAttributes::OneToMany(OneToManyRelationFields::Back(field_b)) => {
+                (None, Some(*field_b))
+            }
         }
     }
 }
@@ -192,18 +223,30 @@ pub(crate) struct Relation {
 
 impl Relation {
     pub(crate) fn is_implicit_many_to_many(&self) -> bool {
-        matches!(self.attributes, RelationAttributes::ImplicitManyToMany { .. })
+        matches!(
+            self.attributes,
+            RelationAttributes::ImplicitManyToMany { .. }
+        )
     }
 
     pub(crate) fn is_two_way_embedded_many_to_many(&self) -> bool {
-        matches!(self.attributes, RelationAttributes::TwoWayEmbeddedManyToMany { .. })
+        matches!(
+            self.attributes,
+            RelationAttributes::TwoWayEmbeddedManyToMany { .. }
+        )
     }
 
     pub(crate) fn as_complete_fields(&self) -> Option<(RelationFieldId, RelationFieldId)> {
         match &self.attributes {
-            RelationAttributes::ImplicitManyToMany { field_a, field_b } => Some((*field_a, *field_b)),
-            RelationAttributes::TwoWayEmbeddedManyToMany { field_a, field_b } => Some((*field_a, *field_b)),
-            RelationAttributes::OneToOne(OneToOneRelationFields::Both(field_a, field_b)) => Some((*field_a, *field_b)),
+            RelationAttributes::ImplicitManyToMany { field_a, field_b } => {
+                Some((*field_a, *field_b))
+            }
+            RelationAttributes::TwoWayEmbeddedManyToMany { field_a, field_b } => {
+                Some((*field_a, *field_b))
+            }
+            RelationAttributes::OneToOne(OneToOneRelationFields::Both(field_a, field_b)) => {
+                Some((*field_a, *field_b))
+            }
             RelationAttributes::OneToMany(OneToManyRelationFields::Both(field_a, field_b)) => {
                 Some((*field_a, *field_b))
             }
@@ -221,7 +264,8 @@ pub(super) struct RelationEvidence<'db> {
     pub(super) is_two_way_embedded_many_to_many_relation: bool,
     pub(super) relation_field: &'db RelationField,
     pub(super) opposite_model: &'db ast::Model,
-    pub(super) opposite_relation_field: Option<(RelationFieldId, &'db ast::Field, &'db RelationField)>,
+    pub(super) opposite_relation_field:
+        Option<(RelationFieldId, &'db ast::Field, &'db RelationField)>,
 }
 
 impl RelationEvidence<'_> {
@@ -249,7 +293,9 @@ pub(super) fn relation_evidence<'db>(
         .types
         .range_model_relation_fields(relation_field.referenced_model)
         // Only considers relations between the same models
-        .filter(|(_, opposite_relation_field)| opposite_relation_field.referenced_model == relation_field.model_id)
+        .filter(|(_, opposite_relation_field)| {
+            opposite_relation_field.referenced_model == relation_field.model_id
+        })
         // Filter out the field itself, in case of self-relations
         .filter(|(_, opposite_relation_field)| {
             !is_self_relation || opposite_relation_field.field_id != relation_field.field_id
@@ -263,7 +309,8 @@ pub(super) fn relation_evidence<'db>(
             )
         });
 
-    let is_two_way_embedded_many_to_many_relation = match (relation_field, opposite_relation_field) {
+    let is_two_way_embedded_many_to_many_relation = match (relation_field, opposite_relation_field)
+    {
         (left, Some((_, _, right))) => left.fields.is_some() || right.fields.is_some(),
         _ => false,
     };
@@ -280,13 +327,19 @@ pub(super) fn relation_evidence<'db>(
     }
 }
 
-pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &mut Relations, ctx: &Context<'db>) {
+pub(super) fn ingest_relation<'db>(
+    evidence: RelationEvidence<'db>,
+    relations: &mut Relations,
+    ctx: &Context<'db>,
+) {
     // In this function, we want to ingest the relation only once,
     // so if we know that we will create a relation for the opposite
     // field, we skip the field by returning early.
     let relation_type = match (evidence.ast_field.arity, evidence.opposite_relation_field) {
         // m:n
-        (ast::FieldArity::List, Some((opp_field_id, opp_field, _))) if opp_field.arity.is_list() => {
+        (ast::FieldArity::List, Some((opp_field_id, opp_field, _)))
+            if opp_field.arity.is_list() =>
+        {
             // This is an implicit many-to-many relation.
 
             // We will meet the relation twice when we walk over all relation
@@ -316,11 +369,18 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
         }
 
         // 1:1
-        (ast::FieldArity::Required, Some((opp_field_id, opp_field, _))) if opp_field.arity.is_optional() => {
+        (ast::FieldArity::Required, Some((opp_field_id, opp_field, _)))
+            if opp_field.arity.is_optional() =>
+        {
             // This is a required 1:1 relation, and we are on the required side.
-            RelationAttributes::OneToOne(OneToOneRelationFields::Both(evidence.field_id, opp_field_id))
+            RelationAttributes::OneToOne(OneToOneRelationFields::Both(
+                evidence.field_id,
+                opp_field_id,
+            ))
         }
-        (ast::FieldArity::Required, Some((opp_field_id, opp_field, _))) if opp_field.arity.is_required() => {
+        (ast::FieldArity::Required, Some((opp_field_id, opp_field, _)))
+            if opp_field.arity.is_required() =>
+        {
             // This is a 1:1 relation that is required on both sides. We are going to reject this later,
             // so which model is model A doesn't matter.
 
@@ -330,7 +390,10 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
                 return;
             }
 
-            RelationAttributes::OneToOne(OneToOneRelationFields::Both(evidence.field_id, opp_field_id))
+            RelationAttributes::OneToOne(OneToOneRelationFields::Both(
+                evidence.field_id,
+                opp_field_id,
+            ))
         }
         (ast::FieldArity::Optional, Some((_, opp_field, _))) if opp_field.arity.is_required() => {
             // This is a required 1:1 relation, and we are on the virtual side. Skip.
@@ -342,7 +405,10 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
             // This is a 1:1 relation that is optional on both sides. We must infer which side is model A.
 
             if evidence.relation_field.fields.is_some() {
-                RelationAttributes::OneToOne(OneToOneRelationFields::Both(evidence.field_id, opp_field_id))
+                RelationAttributes::OneToOne(OneToOneRelationFields::Both(
+                    evidence.field_id,
+                    opp_field_id,
+                ))
             } else if opp_field_attributes.fields.is_none() {
                 // No fields defined, we have to break the tie: take the first model name / field name (self relations)
                 // in lexicographic order.
@@ -352,7 +418,10 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
                     return;
                 }
 
-                RelationAttributes::OneToOne(OneToOneRelationFields::Both(evidence.field_id, opp_field_id))
+                RelationAttributes::OneToOne(OneToOneRelationFields::Both(
+                    evidence.field_id,
+                    opp_field_id,
+                ))
             } else {
                 // Opposite field has fields, it's the forward side. Return.
                 return;
@@ -370,7 +439,10 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
         }
         (ast::FieldArity::Required | ast::FieldArity::Optional, Some((opp_field_id, _, _))) => {
             // This is a 1:m relation defined on both sides.
-            RelationAttributes::OneToMany(OneToManyRelationFields::Both(evidence.field_id, opp_field_id))
+            RelationAttributes::OneToMany(OneToManyRelationFields::Both(
+                evidence.field_id,
+                opp_field_id,
+            ))
         }
 
         // 1:m or 1:1
@@ -392,12 +464,18 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
                                 }
                             });
                     if fields_are_unique {
-                        RelationAttributes::OneToOne(OneToOneRelationFields::Forward(evidence.field_id))
+                        RelationAttributes::OneToOne(OneToOneRelationFields::Forward(
+                            evidence.field_id,
+                        ))
                     } else {
-                        RelationAttributes::OneToMany(OneToManyRelationFields::Forward(evidence.field_id))
+                        RelationAttributes::OneToMany(OneToManyRelationFields::Forward(
+                            evidence.field_id,
+                        ))
                     }
                 }
-                _ => RelationAttributes::OneToMany(OneToManyRelationFields::Forward(evidence.field_id)),
+                _ => RelationAttributes::OneToMany(OneToManyRelationFields::Forward(
+                    evidence.field_id,
+                )),
             }
         }
     };
@@ -427,13 +505,17 @@ pub(super) fn ingest_relation<'db>(evidence: RelationEvidence<'db>, relations: &
         relations.fields.insert(opposite_field_id, relation_id);
     }
 
-    relations
-        .forward
-        .insert((evidence.model_id(), evidence.referenced_model_id(), relation_id));
+    relations.forward.insert((
+        evidence.model_id(),
+        evidence.referenced_model_id(),
+        relation_id,
+    ));
 
-    relations
-        .back
-        .insert((evidence.referenced_model_id(), evidence.model_id(), relation_id));
+    relations.back.insert((
+        evidence.referenced_model_id(),
+        evidence.model_id(),
+        relation_id,
+    ));
 }
 
 /// An action describing the way referential integrity is managed in the system.
@@ -499,10 +581,18 @@ impl ReferentialAction {
     /// The documentation string to display in autocompletion / editor hints.
     pub fn documentation(&self) -> &'static str {
         match self {
-            ReferentialAction::Cascade => "Delete the child records when the parent record is deleted.",
-            ReferentialAction::Restrict => "Prevent deleting a parent record as long as it is referenced.",
-            ReferentialAction::NoAction => "Prevent deleting a parent record as long as it is referenced.",
-            ReferentialAction::SetNull => "Set the referencing fields to NULL when the referenced record is deleted.",
+            ReferentialAction::Cascade => {
+                "Delete the child records when the parent record is deleted."
+            }
+            ReferentialAction::Restrict => {
+                "Prevent deleting a parent record as long as it is referenced."
+            }
+            ReferentialAction::NoAction => {
+                "Prevent deleting a parent record as long as it is referenced."
+            }
+            ReferentialAction::SetNull => {
+                "Set the referencing fields to NULL when the referenced record is deleted."
+            }
             ReferentialAction::SetDefault => {
                 "Set the referencing field's value to the default when the referenced record is deleted."
             }

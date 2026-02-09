@@ -1,13 +1,11 @@
 use tracing_error::ErrorLayer;
-use tracing_subscriber::{
-    EnvFilter, FmtSubscriber,
-    fmt::{
-        TestWriter,
-        format::{DefaultFields, Format},
-    },
-    layer::Layered,
-    prelude::*,
-};
+use tracing_subscriber::EnvFilter;
+use tracing_subscriber::FmtSubscriber;
+use tracing_subscriber::fmt::TestWriter;
+use tracing_subscriber::fmt::format::DefaultFields;
+use tracing_subscriber::fmt::format::Format;
+use tracing_subscriber::layer::Layered;
+use tracing_subscriber::prelude::*;
 
 pub(crate) fn init_logger() {
     tracing::subscriber::set_global_default(test_tracing_subscriber())

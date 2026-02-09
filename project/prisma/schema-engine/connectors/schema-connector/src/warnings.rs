@@ -1,6 +1,7 @@
 //! Warnings generator for Introspection
 
-use std::{collections::BTreeSet, fmt};
+use std::collections::BTreeSet;
+use std::fmt;
 
 /// A group of warnings that can be grouped by a key, which depends on the concretely
 /// instantiated type T.
@@ -20,7 +21,13 @@ impl fmt::Display for GroupBy<'_, ViewAndField> {
 
 impl fmt::Display for GroupBy<'_, TypeAndField> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        display_list(self.0, "Composite type", |cf| &cf.composite_type, |cf| &cf.field, f)
+        display_list(
+            self.0,
+            "Composite type",
+            |cf| &cf.composite_type,
+            |cf| &cf.field,
+            f,
+        )
     }
 }
 
@@ -38,7 +45,11 @@ fn display_list<T: Ord>(
 
     while let Some(next) = sorted.next() {
         if Some(project_key(next)) != key {
-            write!(f, r#"  - {group_name}: "{}", field(s): ["#, project_key(next))?;
+            write!(
+                f,
+                r#"  - {group_name}: "{}", field(s): ["#,
+                project_key(next)
+            )?;
             key = Some(project_key(next));
         }
 
@@ -171,7 +182,11 @@ impl fmt::Display for Warnings {
             Ok(())
         }
 
-        fn render_warnings_grouped<'a, T>(msg: &str, items: &'a Vec<T>, f: &mut fmt::Formatter<'_>) -> fmt::Result
+        fn render_warnings_grouped<'a, T>(
+            msg: &str,
+            items: &'a Vec<T>,
+            f: &mut fmt::Formatter<'_>,
+        ) -> fmt::Result
         where
             GroupBy<'a, T>: fmt::Display,
         {
@@ -436,7 +451,9 @@ pub struct Model {
 impl Model {
     /// Creates a new model with the given name.
     pub fn new(model: impl Into<String>) -> Self {
-        Self { model: model.into() }
+        Self {
+            model: model.into(),
+        }
     }
 }
 
@@ -532,7 +549,11 @@ pub struct ModelAndIndex {
 
 impl fmt::Display for ModelAndIndex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, r#"Model: "{}", index: "{}""#, self.model, self.index_db_name)
+        write!(
+            f,
+            r#"Model: "{}", index: "{}""#,
+            self.model, self.index_db_name
+        )
     }
 }
 
@@ -547,7 +568,11 @@ pub struct ModelAndConstraint {
 
 impl fmt::Display for ModelAndConstraint {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, r#"Model: "{}", constraint: "{}""#, self.model, self.constraint)
+        write!(
+            f,
+            r#"Model: "{}", constraint: "{}""#,
+            self.model, self.constraint
+        )
     }
 }
 
@@ -697,6 +722,10 @@ pub struct IndexedColumn {
 
 impl fmt::Display for IndexedColumn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, r#"Index: "{}", column: "{}""#, self.index_name, self.column_name)
+        write!(
+            f,
+            r#"Index: "{}", column: "{}""#,
+            self.index_name, self.column_name
+        )
     }
 }

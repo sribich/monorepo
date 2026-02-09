@@ -1,13 +1,22 @@
 use std::fmt;
 
-use crate::{
-    ExtensionTypeId, OperatorClass, ParserDatabase, ScalarFieldId, ScalarFieldType,
-    ast::{self, WithName},
-    types::{DefaultAttribute, FieldWithArgs, OperatorClassStore, ScalarField, ScalarType, SortOrder},
-    walkers::*,
-};
 use diagnostics::Span;
 use either::Either;
+
+use crate::ExtensionTypeId;
+use crate::OperatorClass;
+use crate::ParserDatabase;
+use crate::ScalarFieldId;
+use crate::ScalarFieldType;
+use crate::ast::WithName;
+use crate::ast::{self};
+use crate::types::DefaultAttribute;
+use crate::types::FieldWithArgs;
+use crate::types::OperatorClassStore;
+use crate::types::ScalarField;
+use crate::types::ScalarType;
+use crate::types::SortOrder;
+use crate::walkers::*;
 
 /// A scalar field, as part of a model.
 pub type ScalarFieldWalker<'db> = Walker<'db, ScalarFieldId>;
@@ -20,7 +29,9 @@ impl<'db> ScalarFieldWalker<'db> {
 
     /// The field node in the AST.
     pub fn ast_field(self) -> &'db ast::Field {
-        let ScalarField { model_id, field_id, .. } = self.attributes();
+        let ScalarField {
+            model_id, field_id, ..
+        } = self.attributes();
         &self.db.asts[*model_id][*field_id]
     }
 
@@ -40,7 +51,9 @@ impl<'db> ScalarFieldWalker<'db> {
 
         self.model().indexes().any(|idx| {
             let mut fields = idx.fields();
-            idx.is_unique() && fields.len() == 1 && fields.next().map(|f| f.field_id()) == Some(self.field_id())
+            idx.is_unique()
+                && fields.len() == 1
+                && fields.next().map(|f| f.field_id()) == Some(self.field_id())
         })
     }
 
@@ -68,7 +81,9 @@ impl<'db> ScalarFieldWalker<'db> {
 
     /// Does the field have an `@default(autoincrement())` attribute?
     pub fn is_autoincrement(self) -> bool {
-        self.default_value().map(|dv| dv.is_autoincrement()).unwrap_or(false)
+        self.default_value()
+            .map(|dv| dv.is_autoincrement())
+            .unwrap_or(false)
     }
 
     /// Does the field define a primary key by its own.
@@ -107,7 +122,9 @@ impl<'db> ScalarFieldWalker<'db> {
 
     /// Is this field's type an enum? If yes, walk the enum.
     pub fn field_type_as_enum(self) -> Option<EnumWalker<'db>> {
-        self.scalar_field_type().as_enum().map(|id| self.db.walk(id))
+        self.scalar_field_type()
+            .as_enum()
+            .map(|id| self.db.walk(id))
     }
 
     /// Is this field's type an extension type? If yes, return its ID.
@@ -133,12 +150,17 @@ impl<'db> ScalarFieldWalker<'db> {
         self.attributes()
             .native_type
             .as_ref()
-            .map(move |(datasource_name, name, args, span)| (&db[*datasource_name], &db[*name], args.as_slice(), *span))
+            .map(move |(datasource_name, name, args, span)| {
+                (&db[*datasource_name], &db[*name], args.as_slice(), *span)
+            })
     }
 
     /// Is the type of the field `Unsupported("...")`?
     pub fn is_unsupported(self) -> bool {
-        matches!(self.ast_field().field_type, ast::FieldType::Unsupported(_, _))
+        matches!(
+            self.ast_field().field_type,
+            ast::FieldType::Unsupported(_, _)
+        )
     }
 
     /// The `@default()` attribute of the field, if any.

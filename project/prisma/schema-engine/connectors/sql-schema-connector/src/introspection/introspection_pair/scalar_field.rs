@@ -1,15 +1,20 @@
-use crate::introspection::sanitize_datamodel_names;
-use either::Either;
-use psl::{
-    datamodel_connector::{Flavour, walker_ext_traits::IndexWalkerExt},
-    parser_database::{ExtensionTypeEntry, ScalarFieldType, walkers},
-    psl_ast::ast::WithDocumentation,
-};
-use sql::ColumnArity;
-use sql_schema_describer as sql;
 use std::borrow::Cow;
 
-use super::{DefaultValuePair, IdPair, IndexPair, IntrospectionPair};
+use either::Either;
+use psl::datamodel_connector::Flavour;
+use psl::datamodel_connector::walker_ext_traits::IndexWalkerExt;
+use psl::parser_database::ExtensionTypeEntry;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::walkers;
+use psl::psl_ast::ast::WithDocumentation;
+use sql::ColumnArity;
+use sql_schema_describer as sql;
+
+use super::DefaultValuePair;
+use super::IdPair;
+use super::IndexPair;
+use super::IntrospectionPair;
+use crate::introspection::sanitize_datamodel_names;
 
 /// Comparing a possible previous PSL scalar field
 /// to a column from the database. Re-introspection
@@ -63,7 +68,11 @@ impl<'a> ScalarFieldPair<'a> {
 
     /// Optional, required or a list.
     pub fn arity(self) -> ColumnArity {
-        if self.context.flavour.keep_previous_scalar_field_arity(self.next) {
+        if self
+            .context
+            .flavour
+            .keep_previous_scalar_field_arity(self.next)
+        {
             match self.previous.map(|prev| prev.ast_field().arity) {
                 Some(arity) if arity.is_required() => ColumnArity::Required,
                 Some(arity) if arity.is_list() => ColumnArity::List,
@@ -95,7 +104,9 @@ impl<'a> ScalarFieldPair<'a> {
                 // If the previous type is enum and the connector is SQLite, we render the enum
                 // name as the Prisma type. This is because SQLite does not support enums natively,
                 // and we want to keep the enum type in the Prisma schema.
-                if let Some(enum_name) = self.previous.and_then(|field| Some(field.field_type_as_enum()?.name()))
+                if let Some(enum_name) = self
+                    .previous
+                    .and_then(|field| Some(field.field_type_as_enum()?.name()))
                     && self.context.active_connector().flavour() == Flavour::Sqlite
                 {
                     enum_name.into()
@@ -131,7 +142,10 @@ impl<'a> ScalarFieldPair<'a> {
             if default.is_some_and(|nt| nt == *native_type) {
                 None
             } else {
-                let (r#type, params) = self.context.active_connector().native_type_to_parts(native_type);
+                let (r#type, params) = self
+                    .context
+                    .active_connector()
+                    .native_type_to_parts(native_type);
                 let prefix = &self.context.config.datasources.first().unwrap().name;
 
                 Some((prefix, r#type, params))
@@ -166,7 +180,10 @@ impl<'a> ScalarFieldPair<'a> {
 
     fn extension_type(&self) -> Option<ExtensionTypeEntry<'_>> {
         let native_type = self.next.column_type().native_type.as_ref()?;
-        let (name, modifiers) = self.context.active_connector().native_type_to_parts(native_type);
+        let (name, modifiers) = self
+            .context
+            .active_connector()
+            .native_type_to_parts(native_type);
         let entry = self
             .context
             .extension_types

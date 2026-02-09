@@ -4,20 +4,31 @@ mod multi_schema;
 mod relation_mode;
 mod relations;
 
-use crate::offsets::{position_after_span, range_to_span, span_to_range};
-use log::warn;
-use lsp_types::{CodeActionOrCommand, CodeActionParams, Diagnostic, Range, TextEdit, Url, WorkspaceEdit};
-use psl::{
-    diagnostics::Span,
-    parser_database::{
-        SourceFile,
-        walkers::{ModelWalker, RefinedRelationWalker, ScalarFieldWalker},
-    },
-    psl_ast::ast::{self, Attribute, IndentationType, NewlineType, WithSpan},
-};
 use std::collections::HashMap;
 
+use log::warn;
+use lsp_types::CodeActionOrCommand;
+use lsp_types::CodeActionParams;
+use lsp_types::Diagnostic;
+use lsp_types::Range;
+use lsp_types::TextEdit;
+use lsp_types::Url;
+use lsp_types::WorkspaceEdit;
+use psl::diagnostics::Span;
+use psl::parser_database::SourceFile;
+use psl::parser_database::walkers::ModelWalker;
+use psl::parser_database::walkers::RefinedRelationWalker;
+use psl::parser_database::walkers::ScalarFieldWalker;
+use psl::psl_ast::ast::Attribute;
+use psl::psl_ast::ast::IndentationType;
+use psl::psl_ast::ast::NewlineType;
+use psl::psl_ast::ast::WithSpan;
+use psl::psl_ast::ast::{self};
+
 use crate::LSPContext;
+use crate::offsets::position_after_span;
+use crate::offsets::range_to_span;
+use crate::offsets::span_to_range;
 
 pub(super) type CodeActionsContext<'a> = LSPContext<'a, CodeActionParams>;
 
@@ -29,7 +40,10 @@ impl CodeActionsContext<'_> {
     /// A function to find diagnostics matching the given span. Used for
     /// copying the diagnostics to a code action quick fix.
     #[track_caller]
-    pub(super) fn diagnostics_for_span(&self, span: ast::Span) -> impl Iterator<Item = &Diagnostic> {
+    pub(super) fn diagnostics_for_span(
+        &self,
+        span: ast::Span,
+    ) -> impl Iterator<Item = &Diagnostic> {
         self.diagnostics().iter().filter(move |diag| {
             span.overlaps(range_to_span(
                 diag.range,
@@ -38,7 +52,12 @@ impl CodeActionsContext<'_> {
             ))
         })
     }
-    pub(super) fn diagnostics_for_span_with_message(&self, span: Span, message: &str) -> Vec<Diagnostic> {
+
+    pub(super) fn diagnostics_for_span_with_message(
+        &self,
+        span: Span,
+        message: &str,
+    ) -> Vec<Diagnostic> {
         self.diagnostics_for_span(span)
             .filter(|diag| diag.message.contains(message))
             .cloned()
@@ -78,12 +97,9 @@ pub(crate) fn available_actions(
     for source in initiating_ast.sources() {
         relation_mode::edit_referential_integrity(&mut actions, &context, source)
     }
-    
+
     // models AND views
-    for model in validated_schema
-        .db
-        .walk_models_in_file(initiating_file_id)
-    {
+    for model in validated_schema.db.walk_models_in_file(initiating_file_id) {
         for field in context.db.walk_fields(model.id) {
             field::add_missing_opposite_relation(&mut actions, &context, field);
         }
@@ -119,7 +135,11 @@ pub(crate) fn available_actions(
                     .referencing_model()
                     .is_defined_in_file(initiating_file_id)
             {
-                relations::add_index_for_relation_fields(&mut actions, &context, complete_relation.referencing_field());
+                relations::add_index_for_relation_fields(
+                    &mut actions,
+                    &context,
+                    complete_relation.referencing_field(),
+                );
             }
 
             if validated_schema.relation_mode().uses_foreign_keys() {
@@ -202,7 +222,11 @@ fn format_block_attribute(
     newline: NewlineType,
     attributes: &[Attribute],
 ) -> String {
-    let separator = if attributes.is_empty() { newline.as_ref() } else { "" };
+    let separator = if attributes.is_empty() {
+        newline.as_ref()
+    } else {
+        ""
+    };
 
     let formatted_attribute = format!("{separator}{indentation}@@{attribute}{newline}}}");
 

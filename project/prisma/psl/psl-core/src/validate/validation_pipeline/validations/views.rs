@@ -1,8 +1,9 @@
 use diagnostics::DatamodelError;
-use parser_database::{
-    ast::WithSpan,
-    walkers::{IndexWalker, ModelWalker, PrimaryKeyWalker, ScalarFieldAttributeWalker},
-};
+use parser_database::ast::WithSpan;
+use parser_database::walkers::IndexWalker;
+use parser_database::walkers::ModelWalker;
+use parser_database::walkers::PrimaryKeyWalker;
+use parser_database::walkers::ScalarFieldAttributeWalker;
 
 use crate::validate::validation_pipeline::context::Context;
 

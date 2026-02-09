@@ -1,7 +1,7 @@
-use super::*;
-
-use crate::filter::Filter;
 use prisma_value::PrismaValue;
+
+use super::*;
+use crate::filter::Filter;
 
 /// Comparing methods for scalar fields.
 pub trait ScalarCompare {
@@ -140,27 +140,57 @@ pub trait JsonCompare {
     where
         T: Into<ConditionValue>;
 
-    fn json_contains<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_contains<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 
-    fn json_not_contains<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_contains<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 
-    fn json_starts_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_starts_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 
-    fn json_not_starts_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_starts_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 
-    fn json_ends_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_ends_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 
-    fn json_not_ends_with<T>(&self, value: T, path: Option<JsonFilterPath>, target_type: JsonTargetType) -> Filter
+    fn json_not_ends_with<T>(
+        &self,
+        value: T,
+        path: Option<JsonFilterPath>,
+        target_type: JsonTargetType,
+    ) -> Filter
     where
         T: Into<ConditionValue>;
 }

@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
-use psl::datamodel_connector::{Connector, NativeTypeInstance as PslNativeTypeInstance};
+use psl::datamodel_connector::Connector;
+use psl::datamodel_connector::NativeTypeInstance as PslNativeTypeInstance;
 
 /// Represents an instance of a native type declared in the Prisma schema.
 #[derive(Clone)]
@@ -11,7 +12,10 @@ pub struct NativeTypeInstance {
 
 impl NativeTypeInstance {
     pub fn new(native_type: PslNativeTypeInstance, connector: &'static dyn Connector) -> Self {
-        NativeTypeInstance { native_type, connector }
+        NativeTypeInstance {
+            native_type,
+            connector,
+        }
     }
 
     pub fn deserialize_native_type<T: std::any::Any>(&self) -> &T {

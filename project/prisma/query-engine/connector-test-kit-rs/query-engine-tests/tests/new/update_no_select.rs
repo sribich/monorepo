@@ -15,7 +15,11 @@ mod update_with_no_select {
             }
           }"#;
 
-        runner.query(create_one_resource).await.unwrap().to_json_value();
+        runner
+            .query(create_one_resource)
+            .await
+            .unwrap()
+            .to_json_value();
 
         let logs = runner.get_logs().await;
 

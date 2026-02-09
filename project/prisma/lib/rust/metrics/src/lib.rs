@@ -20,7 +20,6 @@
 //! * The Histogram we use is a Cumulative Histogram. Meaning that a value is added to each bucket that the sample is smaller than.
 //!   This seems to be the way Prometheus expects it
 //! * At the moment, with the Histogram we only support one type of bucket which is a bucket for timings in milliseconds.
-//!
 
 mod common;
 mod formatters;
@@ -30,21 +29,29 @@ mod registry;
 
 pub mod guards;
 
-use serde::Deserialize;
-use std::{collections::HashMap, sync::LazyLock};
-
-pub use metrics::{self, counter, describe_counter, describe_gauge, describe_histogram, gauge, histogram};
+use std::collections::HashMap;
+use std::sync::LazyLock;
 
 pub use instrument::*;
+pub use metrics::counter;
+pub use metrics::describe_counter;
+pub use metrics::describe_gauge;
+pub use metrics::describe_histogram;
+pub use metrics::gauge;
+pub use metrics::histogram;
+pub use metrics::{self};
 pub use recorder::MetricRecorder;
 pub use registry::MetricRegistry;
+use serde::Deserialize;
 
 // Metrics that we emit from the engines, third party metrics emitted by libraries and that we rename are omitted.
 pub const PRISMA_CLIENT_QUERIES_TOTAL: &str = "prisma_client_queries_total"; // counter
 pub const PRISMA_DATASOURCE_QUERIES_TOTAL: &str = "prisma_datasource_queries_total"; // counter
 pub const PRISMA_CLIENT_QUERIES_ACTIVE: &str = "prisma_client_queries_active"; // gauge
-pub const PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS: &str = "prisma_client_queries_duration_histogram_ms"; // histogram
-pub const PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS: &str = "prisma_datasource_queries_duration_histogram_ms"; // histogram
+pub const PRISMA_CLIENT_QUERIES_DURATION_HISTOGRAM_MS: &str =
+    "prisma_client_queries_duration_histogram_ms"; // histogram
+pub const PRISMA_DATASOURCE_QUERIES_DURATION_HISTOGRAM_MS: &str =
+    "prisma_datasource_queries_duration_histogram_ms"; // histogram
 
 // metrics emitted by the connector pool implementation (mobc) that will be renamed using the `METRIC_RENAMES` map.
 const MOBC_POOL_CONNECTIONS_OPENED_TOTAL: &str = "mobc_pool_connections_opened_total"; // counter
@@ -141,7 +148,9 @@ fn initialize_metrics_values() {
 
 // At the moment the histogram is only used for timings. So the bounds are hard coded here
 // The buckets are for ms
-pub(crate) const HISTOGRAM_BOUNDS: [f64; 10] = [0.0, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0, 5000.0, 50000.0];
+pub(crate) const HISTOGRAM_BOUNDS: [f64; 10] = [
+    0.0, 1.0, 5.0, 10.0, 50.0, 100.0, 500.0, 1000.0, 5000.0, 50000.0,
+];
 
 #[derive(PartialEq, Eq, Debug, Deserialize)]
 pub enum MetricFormat {
@@ -153,15 +162,20 @@ pub enum MetricFormat {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use metrics::{describe_counter, describe_gauge, describe_histogram, gauge, histogram};
-    use serde_json::json;
     use std::collections::HashMap;
     use std::sync::LazyLock;
     use std::time::Duration;
+
+    use metrics::describe_counter;
+    use metrics::describe_gauge;
+    use metrics::describe_histogram;
+    use metrics::gauge;
+    use metrics::histogram;
+    use serde_json::json;
+    use tokio::runtime::Runtime;
     use tracing::trace;
 
-    use tokio::runtime::Runtime;
+    use super::*;
 
     static RT: LazyLock<Runtime> = LazyLock::new(|| Runtime::new().unwrap());
 

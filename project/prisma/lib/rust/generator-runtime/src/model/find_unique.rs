@@ -1,11 +1,17 @@
-use query_core::{Operation, Selection};
+use query_core::Operation;
+use query_core::Selection;
 use query_structure::PrismaValue;
 
-use super::{Model, WhereInput};
-use crate::{
-    client::InternalClient,
-    query::{ModelOperation, ModelReadOperation, Query, QueryConvert, QueryResult, SelectionQuery, query},
-};
+use super::Model;
+use super::WhereInput;
+use crate::client::InternalClient;
+use crate::query::ModelOperation;
+use crate::query::ModelReadOperation;
+use crate::query::Query;
+use crate::query::QueryConvert;
+use crate::query::QueryResult;
+use crate::query::SelectionQuery;
+use crate::query::query;
 
 pub struct FindUnique<'db, TModel: Model> {
     client: &'db InternalClient,
@@ -21,7 +27,10 @@ impl<'db, TModel: Model> FindUnique<'db, TModel> {
     pub fn new(client: &'db InternalClient, r#where: TModel::WhereUnique) -> Self {
         Self {
             client,
-            params: FindUniqueParams { r#where, with: vec![] },
+            params: FindUniqueParams {
+                r#where,
+                with: vec![],
+            },
         }
     }
 
@@ -80,7 +89,10 @@ impl<'db, TModel: Model> SelectionQuery<'db> for FindUnique<'db, TModel> {
 impl<TModel: Model> FindUniqueParams<TModel> {
     #[must_use]
     pub fn new(r#where: TModel::WhereUnique) -> Self {
-        Self { r#where, with: vec![] }
+        Self {
+            r#where,
+            with: vec![],
+        }
     }
 }
 
@@ -91,7 +103,9 @@ pub struct FindUniqueArgs<TModel: Model> {
 
 impl<TModel: Model> FindUniqueArgs<TModel> {
     pub fn new() -> Self {
-        Self { with_params: vec![] }
+        Self {
+            with_params: vec![],
+        }
     }
 
     pub fn with(mut self, with: impl Into<TModel::With>) -> Self {

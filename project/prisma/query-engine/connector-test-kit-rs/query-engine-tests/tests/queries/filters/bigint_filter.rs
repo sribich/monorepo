@@ -1,5 +1,6 @@
-use super::common_test_data;
 use query_engine_tests::*;
+
+use super::common_test_data;
 
 #[test_suite(schema(schemas::common_nullable_types))]
 mod bigint_filter_spec {

@@ -3,7 +3,8 @@ use query_engine_tests::*;
 /// Port note: The `findMany` portion of the old `WhereUniqueSpec` was omitted, didn't add any value.
 #[test_suite(schema(schemas::user))]
 mod where_unique {
-    use query_engine_tests::{assert_error, assert_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::assert_query;
 
     #[connector_test]
     async fn no_unique_fields(runner: Runner) -> TestResult<()> {

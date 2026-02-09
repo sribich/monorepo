@@ -1,13 +1,18 @@
-use psl::parser_database::NoExtensionTypes;
-use quaint::{prelude::Queryable, single::Quaint};
-use schema_core::{
-    commands::diff::{DiffParams, DiffResult, DiffTarget, diff}, json_rpc::types::{SchemasContainer, SchemasWithConfigDir}, schema_connector::SchemaConnector
-};
-use sql_migration_tests::{
-    test_api::*,
-    utils::{list_migrations, to_schema_containers},
-};
 use std::sync::Arc;
+
+use psl::parser_database::NoExtensionTypes;
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+use schema_core::commands::diff::DiffParams;
+use schema_core::commands::diff::DiffResult;
+use schema_core::commands::diff::DiffTarget;
+use schema_core::commands::diff::diff;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::json_rpc::types::SchemasWithConfigDir;
+use schema_core::schema_connector::SchemaConnector;
+use sql_migration_tests::test_api::*;
+use sql_migration_tests::utils::list_migrations;
+use sql_migration_tests::utils::to_schema_containers;
 
 #[test_connector(tags(Sqlite, Mysql, Postgres))]
 fn from_unique_index_to_without(mut api: TestApi) {
@@ -510,7 +515,10 @@ fn from_schema_datasource_relative(mut api: TestApi) {
     tok(async {
         let path = expected_sqlite_path.to_str().unwrap();
         let quaint = Quaint::new(&format!("file:{path}")).await.unwrap();
-        quaint.raw_cmd("CREATE TABLE foo (id INT PRIMARY KEY)").await.unwrap();
+        quaint
+            .raw_cmd("CREATE TABLE foo (id INT PRIMARY KEY)")
+            .await
+            .unwrap();
     });
 
     assert!(expected_sqlite_path.exists());
@@ -1022,7 +1030,11 @@ fn diff_output(params: DiffParams) -> String {
     diff_result(params).1
 }
 
-pub(crate) fn write_file_to_tmp(contents: &str, tempdir: &tempfile::TempDir, name: &str) -> std::path::PathBuf {
+pub(crate) fn write_file_to_tmp(
+    contents: &str,
+    tempdir: &tempfile::TempDir,
+    name: &str,
+) -> std::path::PathBuf {
     let tempfile_path = tempdir.path().join(name);
     std::fs::write(&tempfile_path, contents.as_bytes()).unwrap();
     tempfile_path

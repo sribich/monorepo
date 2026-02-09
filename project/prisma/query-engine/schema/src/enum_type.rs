@@ -1,5 +1,8 @@
+use query_structure::InternalEnum;
+use query_structure::PrismaValue;
+use query_structure::ScalarFieldRef;
+
 use super::*;
-use query_structure::{InternalEnum, PrismaValue, ScalarFieldRef};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum EnumType {
@@ -56,7 +59,9 @@ impl StringEnumType {
 
     /// Attempts to find an enum value for the given value key.
     pub fn value_for(&self, name: &str) -> Option<&str> {
-        self.values.iter().find_map(|val| (val == name).then_some(val.as_str()))
+        self.values
+            .iter()
+            .find_map(|val| (val == name).then_some(val.as_str()))
     }
 
     pub fn values(&self) -> &[String] {
@@ -116,10 +121,15 @@ impl FieldRefEnumType {
 
     /// Attempts to find an enum value for the given value key.
     pub fn value_for(&self, name: &str) -> Option<&ScalarFieldRef> {
-        self.values.iter().find_map(|val| (val.0 == name).then_some(&val.1))
+        self.values
+            .iter()
+            .find_map(|val| (val.0 == name).then_some(&val.1))
     }
 
     pub fn values(&self) -> Vec<String> {
-        self.values.iter().map(|(name, _)| name.to_owned()).collect()
+        self.values
+            .iter()
+            .map(|(name, _)| name.to_owned())
+            .collect()
     }
 }

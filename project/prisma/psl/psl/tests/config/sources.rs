@@ -1,5 +1,7 @@
+use psl::StringFromEnvVar;
+use psl::datamodel_connector::RelationMode;
+
 use crate::common::*;
-use psl::{StringFromEnvVar, datamodel_connector::RelationMode};
 
 #[test]
 fn must_error_if_multiple_datasources_are_defined() {

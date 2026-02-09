@@ -1,5 +1,6 @@
-use crate::helpers::*;
 use query_engine_tests::*;
+
+use crate::helpers::*;
 
 /// Asserts common basics for composite type writes.
 #[test_suite(schema(schema))]

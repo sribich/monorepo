@@ -1,4 +1,6 @@
-use crate::common::{expect, expect_error, indoc};
+use crate::common::expect;
+use crate::common::expect_error;
+use crate::common::indoc;
 
 #[test]
 fn should_fail_on_native_type_with_invalid_datasource_name() {

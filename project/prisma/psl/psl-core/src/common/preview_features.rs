@@ -1,7 +1,9 @@
-use serde::{Serialize, Serializer};
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::LazyLock;
+
+use serde::Serialize;
+use serde::Serializer;
 
 /// A set of preview features.
 pub type PreviewFeatures = enumflags2::BitFlags<PreviewFeature>;

@@ -1,11 +1,16 @@
+use std::collections::HashSet;
+use std::collections::VecDeque;
+use std::convert::TryInto;
+
 use query_structure::IntoFilter;
 
-use super::{Env, ExpressionResult, InterpretationResult, InterpreterError, expression::*};
-use crate::{Query, query_graph::*};
-use std::{
-    collections::{HashSet, VecDeque},
-    convert::TryInto,
-};
+use super::Env;
+use super::ExpressionResult;
+use super::InterpretationResult;
+use super::InterpreterError;
+use super::expression::*;
+use crate::Query;
+use crate::query_graph::*;
 
 pub(crate) struct Expressionista;
 
@@ -171,25 +176,37 @@ impl Expressionista {
         let into_expr = Box::new(move |node: Node| {
             Ok(Expression::Func {
                 func: Box::new(move |_| match node {
-                    Node::Computation(Computation::DiffLeftToRight(DiffNode { left, right, .. })) => {
+                    Node::Computation(Computation::DiffLeftToRight(DiffNode {
+                        left,
+                        right,
+                        ..
+                    })) => {
                         let left: HashSet<_> = left.into_iter().collect();
                         let right: HashSet<_> = right.into_iter().collect();
 
                         let diff = left.difference(&right);
 
                         Ok(Expression::Return {
-                            result: Box::new(ExpressionResult::FixedResult(diff.cloned().collect())),
+                            result: Box::new(ExpressionResult::FixedResult(
+                                diff.cloned().collect(),
+                            )),
                         })
                     }
 
-                    Node::Computation(Computation::DiffRightToLeft(DiffNode { left, right, .. })) => {
+                    Node::Computation(Computation::DiffRightToLeft(DiffNode {
+                        left,
+                        right,
+                        ..
+                    })) => {
                         let left: HashSet<_> = left.into_iter().collect();
                         let right: HashSet<_> = right.into_iter().collect();
 
                         let diff = right.difference(&left);
 
                         Ok(Expression::Return {
-                            result: Box::new(ExpressionResult::FixedResult(diff.cloned().collect())),
+                            result: Box::new(ExpressionResult::FixedResult(
+                                diff.cloned().collect(),
+                            )),
                         })
                     }
 
@@ -236,24 +253,26 @@ impl Expressionista {
     ) -> InterpretationResult<Expression> {
         let child_pairs = graph.direct_child_pairs(node);
 
-        let if_node_info = child_pairs
-            .into_iter()
-            .fold(IfNodeAcc::default(), |mut acc, (edge, node)| {
-                match graph.edge_content(&edge) {
-                    Some(QueryGraphDependency::Then) => acc.then = Some((edge, node)),
-                    Some(QueryGraphDependency::Else) => acc._else = Some((edge, node)),
-                    _ => acc.other.push((edge, node)),
-                };
+        let if_node_info =
+            child_pairs
+                .into_iter()
+                .fold(IfNodeAcc::default(), |mut acc, (edge, node)| {
+                    match graph.edge_content(&edge) {
+                        Some(QueryGraphDependency::Then) => acc.then = Some((edge, node)),
+                        Some(QueryGraphDependency::Else) => acc._else = Some((edge, node)),
+                        _ => acc.other.push((edge, node)),
+                    };
 
-                acc
-            });
+                    acc
+                });
 
         let then_pair = if_node_info
             .then
             .expect("Expected if-node to always have a then edge to another node.");
 
         // Build expressions for both arms.
-        let then_expr = Self::build_expression(graph, &then_pair.1, graph.incoming_edges(&then_pair.1))?;
+        let then_expr =
+            Self::build_expression(graph, &then_pair.1, graph.incoming_edges(&then_pair.1))?;
         let else_expr = if_node_info
             ._else
             .into_iter()
@@ -269,7 +288,9 @@ impl Expressionista {
 
             if let Flow::If { rule, data } = flow {
                 let if_expr = Expression::If {
-                    func: Box::new(move || rule.matches_result(&ExpressionResult::FixedResult(data))),
+                    func: Box::new(move || {
+                        rule.matches_result(&ExpressionResult::FixedResult(data))
+                    }),
                     then: vec![then_expr],
                     else_: else_expr,
                 };
@@ -338,7 +359,9 @@ impl Expressionista {
         graph: &mut QueryGraph,
         parent_edges: Vec<EdgeRef>,
         node: Node,
-        into_expr: Box<dyn FnOnce(Node) -> InterpretationResult<Expression> + Send + Sync + 'static>,
+        into_expr: Box<
+            dyn FnOnce(Node) -> InterpretationResult<Expression> + Send + Sync + 'static,
+        >,
     ) -> InterpretationResult<Expression> {
         if parent_edges.is_empty() {
             into_expr(node)
@@ -499,7 +522,11 @@ impl Expressionista {
                 })
                 .collect();
 
-            if let Some(Expression::Let { bindings, expressions }) = exprs.back_mut() {
+            if let Some(Expression::Let {
+                bindings,
+                expressions,
+            }) = exprs.back_mut()
+            {
                 expressions.push(Expression::Get {
                     binding_name: bindings
                         .last()

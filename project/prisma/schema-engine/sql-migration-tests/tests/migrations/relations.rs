@@ -2,7 +2,8 @@ mod vitess;
 
 use psl::parser_database::ReferentialAction;
 use sql_migration_tests::test_api::*;
-use sql_schema_describer::{ColumnTypeFamily, ForeignKeyAction};
+use sql_schema_describer::ColumnTypeFamily;
+use sql_schema_describer::ForeignKeyAction;
 
 #[test_connector(exclude(Vitess))]
 fn adding_a_many_to_many_relation_must_result_in_a_prisma_style_relation_table(api: TestApi) {
@@ -171,7 +172,9 @@ fn changing_the_type_of_a_field_referenced_by_a_fk_must_work(api: TestApi) {
 
     api.assert_schema().assert_table("A", |table| {
         table
-            .assert_column("b_id", |col| col.assert_type_family(ColumnTypeFamily::String))
+            .assert_column("b_id", |col| {
+                col.assert_type_family(ColumnTypeFamily::String)
+            })
             .assert_fk_on_columns(&["b_id"], |fk| fk.assert_references("B", &["uniq"]))
     });
 }
@@ -269,8 +272,8 @@ fn compound_foreign_keys_should_work_in_correct_order(api: TestApi) {
         t.assert_foreign_keys_count(1)
             .assert_fk_on_columns(&["a", "b", "d"], |fk| {
                 fk.assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-                .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-                .assert_references("B", &["a_id", "b_id", "d_id"])
+                    .assert_referential_action_on_update(ForeignKeyAction::Cascade)
+                    .assert_references("B", &["a_id", "b_id", "d_id"])
             })
     });
 }
@@ -292,11 +295,12 @@ fn moving_an_inline_relation_to_the_other_side_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm1).send().assert_green();
     api.assert_schema().assert_table("A", |t| {
-        t.assert_foreign_keys_count(1).assert_fk_on_columns(&["b_id"], |fk| {
-            fk.assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-            .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-            .assert_references("B", &["id"])
-        })
+        t.assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["b_id"], |fk| {
+                fk.assert_referential_action_on_delete(ForeignKeyAction::Restrict)
+                    .assert_referential_action_on_update(ForeignKeyAction::Cascade)
+                    .assert_references("B", &["id"])
+            })
     });
 
     let dm2 = r#"
@@ -323,7 +327,9 @@ fn moving_an_inline_relation_to_the_other_side_must_work(api: TestApi) {
                         .assert_referential_action_on_update(ForeignKeyAction::Cascade)
                 })
         })
-        .assert_table("A", |table| table.assert_foreign_keys_count(0).assert_indexes_count(0));
+        .assert_table("A", |table| {
+            table.assert_foreign_keys_count(0).assert_indexes_count(0)
+        });
 }
 
 #[test_connector(exclude(Vitess))]
@@ -372,7 +378,9 @@ fn relations_can_reference_arbitrary_unique_fields_with_maps(api: TestApi) {
     api.assert_schema().assert_table("Account", |table| {
         table
             .assert_foreign_keys_count(1)
-            .assert_fk_on_columns(&["user-id"], |fk| fk.assert_references("users", &["emergency-mail"]))
+            .assert_fk_on_columns(&["user-id"], |fk| {
+                fk.assert_references("users", &["emergency-mail"])
+            })
     });
 }
 
@@ -531,10 +539,12 @@ fn on_delete_referential_actions_should_work(api: TestApi) {
         api.schema_push_w_datasource(&dm).send().assert_green();
 
         api.assert_schema().assert_table("B", |table| {
-            table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-                fk.assert_references("A", &["id"])
-                    .assert_referential_action_on_delete(*fka)
-            })
+            table
+                .assert_foreign_keys_count(1)
+                .assert_fk_on_columns(&["aId"], |fk| {
+                    fk.assert_references("A", &["id"])
+                        .assert_referential_action_on_delete(*fka)
+                })
         });
 
         api.schema_push_w_datasource("").send().assert_green();
@@ -562,10 +572,12 @@ fn on_delete_set_default_should_work(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::SetDefault)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_delete(ForeignKeyAction::SetDefault)
+            })
     });
 }
 
@@ -587,10 +599,12 @@ fn on_delete_restrict_should_work(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
+            })
     });
 }
 
@@ -621,10 +635,12 @@ fn on_update_referential_actions_should_work(api: TestApi) {
         api.schema_push_w_datasource(&dm).send().assert_green();
 
         api.assert_schema().assert_table("B", |table| {
-            table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-                fk.assert_references("A", &["id"])
-                    .assert_referential_action_on_update(*fka)
-            })
+            table
+                .assert_foreign_keys_count(1)
+                .assert_fk_on_columns(&["aId"], |fk| {
+                    fk.assert_references("A", &["id"])
+                        .assert_referential_action_on_update(*fka)
+                })
         });
     }
 }
@@ -650,10 +666,12 @@ fn on_update_set_default_should_work(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_update(ForeignKeyAction::SetDefault)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_update(ForeignKeyAction::SetDefault)
+            })
     });
 }
 
@@ -675,10 +693,12 @@ fn on_update_restrict_should_work(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_update(ForeignKeyAction::Restrict)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_update(ForeignKeyAction::Restrict)
+            })
     });
 }
 
@@ -700,10 +720,12 @@ fn on_delete_required_default_action(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_delete(ForeignKeyAction::Restrict)
+            })
     });
 }
 
@@ -725,10 +747,12 @@ fn on_delete_optional_default_action(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_delete(ForeignKeyAction::SetNull)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_delete(ForeignKeyAction::SetNull)
+            })
     });
 }
 
@@ -810,10 +834,12 @@ fn on_update_optional_default_action(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_update(ForeignKeyAction::Cascade)
+            })
     });
 }
 
@@ -835,10 +861,12 @@ fn on_update_required_default_action(api: TestApi) {
     api.schema_push_w_datasource(dm).send().assert_green();
 
     api.assert_schema().assert_table("B", |table| {
-        table.assert_foreign_keys_count(1).assert_fk_on_columns(&["aId"], |fk| {
-            fk.assert_references("A", &["id"])
-                .assert_referential_action_on_update(ForeignKeyAction::Cascade)
-        })
+        table
+            .assert_foreign_keys_count(1)
+            .assert_fk_on_columns(&["aId"], |fk| {
+                fk.assert_references("A", &["id"])
+                    .assert_referential_action_on_update(ForeignKeyAction::Cascade)
+            })
     });
 }
 
@@ -935,18 +963,20 @@ fn migrations_with_many_to_many_related_models_must_not_recreate_indexes(api: Te
     "#;
 
     api.schema_push_w_datasource(dm_2).send().assert_green();
-    api.assert_schema().assert_table("_ProfileToSkill", |table| {
-        if api.is_postgres() {
-            table.assert_pk(|pk| {
-                pk.assert_columns(&["A", "B"])
-                    .assert_constraint_name("_ProfileToSkill_AB_pkey")
-            })
-        } else {
-            table.assert_index_on_columns(&["A", "B"], |idx| {
-                idx.assert_is_unique().assert_name("_ProfileToSkill_AB_unique")
-            })
-        }
-    });
+    api.assert_schema()
+        .assert_table("_ProfileToSkill", |table| {
+            if api.is_postgres() {
+                table.assert_pk(|pk| {
+                    pk.assert_columns(&["A", "B"])
+                        .assert_constraint_name("_ProfileToSkill_AB_pkey")
+                })
+            } else {
+                table.assert_index_on_columns(&["A", "B"], |idx| {
+                    idx.assert_is_unique()
+                        .assert_name("_ProfileToSkill_AB_unique")
+                })
+            }
+        });
 
     // Check that the migration is idempotent
     api.schema_push_w_datasource(dm_2)
@@ -989,8 +1019,9 @@ fn removing_a_relation_field_must_work(api: TestApi) {
 
     api.schema_push_w_datasource(dm_2).send().assert_green();
 
-    api.assert_schema()
-        .assert_table("User", |table| table.assert_does_not_have_column("address_name"));
+    api.assert_schema().assert_table("User", |table| {
+        table.assert_does_not_have_column("address_name")
+    });
 }
 
 #[test_connector(exclude(Vitess))]
@@ -1075,7 +1106,9 @@ fn join_tables_between_models_with_compound_primary_keys_must_work(api: TestApi)
             .assert_index_on_columns(&["cat_id", "human_firstName", "human_lastName"], |idx| {
                 idx.assert_is_unique()
             })
-            .assert_index_on_columns(&["human_firstName", "human_lastName"], |idx| idx.assert_is_not_unique())
+            .assert_index_on_columns(&["human_firstName", "human_lastName"], |idx| {
+                idx.assert_is_not_unique()
+            })
     });
 }
 

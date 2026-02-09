@@ -1,13 +1,17 @@
 use std::sync::LazyLock;
 
-use super::*;
-use crate::{ArgumentListLookup, FieldPair, ParsedField, ReadQuery};
 use psl::datamodel_connector::JoinStrategySupport;
-use query_structure::{RelationLoadStrategy, prelude::*};
-use schema::{
-    QuerySchema,
-    constants::{aggregations::*, args},
-};
+use query_structure::RelationLoadStrategy;
+use query_structure::prelude::*;
+use schema::QuerySchema;
+use schema::constants::aggregations::*;
+use schema::constants::args;
+
+use super::*;
+use crate::ArgumentListLookup;
+use crate::FieldPair;
+use crate::ParsedField;
+use crate::ReadQuery;
 
 pub fn collect_selection_order(from: &[FieldPair<'_>]) -> Vec<String> {
     from.iter()
@@ -173,7 +177,10 @@ pub(crate) fn collect_nested_queries(
                 return None;
             }
 
-            let model_field = model.fields().find_from_all(&pair.parsed_field.name).unwrap();
+            let model_field = model
+                .fields()
+                .find_from_all(&pair.parsed_field.name)
+                .unwrap();
 
             match model_field {
                 Field::Scalar(_) => None,
@@ -181,7 +188,12 @@ pub(crate) fn collect_nested_queries(
                     let model = rf.related_model();
                     let parent = rf.clone();
 
-                    Some(related::find_related(pair.parsed_field, parent, model, query_schema))
+                    Some(related::find_related(
+                        pair.parsed_field,
+                        parent,
+                        model,
+                        query_schema,
+                    ))
                 }
             }
         })
@@ -221,7 +233,10 @@ pub(crate) fn merge_relation_selections(
 
 /// Ensures that if a cursor is provided, its fields are also selected.
 /// Necessary for post-processing of unstable orderings with cursor operations.
-pub fn merge_cursor_fields(selected_fields: FieldSelection, cursor: &Option<SelectionResult>) -> FieldSelection {
+pub fn merge_cursor_fields(
+    selected_fields: FieldSelection,
+    cursor: &Option<SelectionResult>,
+) -> FieldSelection {
     match cursor {
         Some(cursor) => selected_fields.merge(cursor.into()),
         None => selected_fields,
@@ -234,12 +249,15 @@ pub(crate) fn get_relation_load_strategy(
     nested_queries: &[ReadQuery],
     query_schema: &QuerySchema,
 ) -> QueryGraphBuilderResult<RelationLoadStrategy> {
-    static DEFAULT_RELATION_LOAD_STRATEGY: LazyLock<Option<RelationLoadStrategy>> = LazyLock::new(|| {
-        std::env::var("PRISMA_RELATION_LOAD_STRATEGY")
-            .map(|var| var.as_str().try_into().unwrap())
-            .ok()
-            .or_else(|| option_env!("PRISMA_RELATION_LOAD_STRATEGY").map(|var| var.try_into().unwrap()))
-    });
+    static DEFAULT_RELATION_LOAD_STRATEGY: LazyLock<Option<RelationLoadStrategy>> =
+        LazyLock::new(|| {
+            std::env::var("PRISMA_RELATION_LOAD_STRATEGY")
+                .map(|var| var.as_str().try_into().unwrap())
+                .ok()
+                .or_else(|| {
+                    option_env!("PRISMA_RELATION_LOAD_STRATEGY").map(|var| var.try_into().unwrap())
+                })
+        });
 
     match query_schema.join_strategy_support() {
         // Connector and database version supports the `Join` strategy...
@@ -263,7 +281,8 @@ pub(crate) fn get_relation_load_strategy(
         JoinStrategySupport::UnsupportedDbVersion => match requested_strategy {
             // So we error out if the requested strategy is `Join`.
             Some(RelationLoadStrategy::Join) => Err(QueryGraphBuilderError::InputError(
-                "`relationLoadStrategy: join` is not available for MySQL < 8.0.14 and MariaDB.".into(),
+                "`relationLoadStrategy: join` is not available for MySQL < 8.0.14 and MariaDB."
+                    .into(),
             )),
             // Otherwise we fallback to the `Query` one. (This makes the default relation load strategy `Query` for database versions that do not support joins.)
             Some(RelationLoadStrategy::Query) | None => Ok(RelationLoadStrategy::Query),
@@ -275,7 +294,10 @@ pub(crate) fn get_relation_load_strategy(
     }
 }
 
-fn query_can_be_resolved_with_joins(cursor: Option<&SelectionResult>, nested_queries: &[ReadQuery]) -> bool {
+fn query_can_be_resolved_with_joins(
+    cursor: Option<&SelectionResult>,
+    nested_queries: &[ReadQuery],
+) -> bool {
     cursor.is_none()
         && !nested_queries.iter().any(|q| match q {
             ReadQuery::RelatedRecordsQuery(q) => q.has_cursor(),
@@ -289,7 +311,8 @@ pub(crate) fn extract_selected_fields(
     query_schema: &QuerySchema,
 ) -> crate::QueryGraphBuilderResult<(FieldSelection, Vec<String>, Vec<ReadQuery>)> {
     let selection_order = utils::collect_selection_order(&nested_fields);
-    let selected_fields = utils::collect_selected_fields(&nested_fields, None, model, query_schema)?;
+    let selected_fields =
+        utils::collect_selected_fields(&nested_fields, None, model, query_schema)?;
     let nested = utils::collect_nested_queries(nested_fields, model, query_schema)?;
     let selected_fields = utils::merge_relation_selections(selected_fields, None, &nested);
 

@@ -1,9 +1,16 @@
 //! Prisma read query AST
+use std::fmt::Display;
+
+use enumflags2::BitFlags;
+use query_structure::AggregationSelection;
+use query_structure::Filter;
+use query_structure::QueryArguments;
+use query_structure::RelationLoadStrategy;
+use query_structure::Take;
+use query_structure::prelude::*;
+
 use super::FilteredQuery;
 use crate::ToGraphviz;
-use enumflags2::BitFlags;
-use query_structure::{AggregationSelection, Filter, QueryArguments, RelationLoadStrategy, Take, prelude::*};
-use std::fmt::Display;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone)]
@@ -19,8 +26,12 @@ impl ReadQuery {
     pub fn is_unique(&self) -> bool {
         match self {
             ReadQuery::RecordQuery(_) => true,
-            ReadQuery::ManyRecordsQuery(q) => q.args.take == Take::One || q.args.take == Take::NegativeOne,
-            ReadQuery::RelatedRecordsQuery(q) => q.args.take == Take::One || q.args.take == Take::NegativeOne,
+            ReadQuery::ManyRecordsQuery(q) => {
+                q.args.take == Take::One || q.args.take == Take::NegativeOne
+            }
+            ReadQuery::RelatedRecordsQuery(q) => {
+                q.args.take == Take::One || q.args.take == Take::NegativeOne
+            }
             ReadQuery::AggregateRecordsQuery(_) => false,
         }
     }
@@ -36,7 +47,9 @@ impl ReadQuery {
 
     /// Checks whether or not the field selection of this query satisfies the inputted field selection.
     pub fn satisfies(&self, expected: &FieldSelection) -> bool {
-        self.returns().map(|sel| sel.is_superset_of(expected)).unwrap_or(false)
+        self.returns()
+            .map(|sel| sel.is_superset_of(expected))
+            .unwrap_or(false)
     }
 
     /// Returns the field selection of a read query.
@@ -77,8 +90,12 @@ impl ReadQuery {
     pub(crate) fn has_cursor(&self) -> bool {
         match self {
             ReadQuery::RecordQuery(_) => false,
-            ReadQuery::ManyRecordsQuery(q) => q.args.cursor.is_some() || q.nested.iter().any(|q| q.has_cursor()),
-            ReadQuery::RelatedRecordsQuery(q) => q.args.cursor.is_some() || q.nested.iter().any(|q| q.has_cursor()),
+            ReadQuery::ManyRecordsQuery(q) => {
+                q.args.cursor.is_some() || q.nested.iter().any(|q| q.has_cursor())
+            }
+            ReadQuery::RelatedRecordsQuery(q) => {
+                q.args.cursor.is_some() || q.nested.iter().any(|q| q.has_cursor())
+            }
             ReadQuery::AggregateRecordsQuery(_) => false,
         }
     }
@@ -134,7 +151,10 @@ impl Display for ReadQuery {
 impl ToGraphviz for ReadQuery {
     fn to_graphviz(&self) -> String {
         match self {
-            Self::RecordQuery(q) => format!("RecordQuery(name: '{}', selection: {})", q.name, q.selected_fields),
+            Self::RecordQuery(q) => format!(
+                "RecordQuery(name: '{}', selection: {})",
+                q.name, q.selected_fields
+            ),
             Self::ManyRecordsQuery(q) => format!(
                 r#"ManyRecordsQuery(name: '{}', model: '{}', selection: {})"#,
                 q.name,

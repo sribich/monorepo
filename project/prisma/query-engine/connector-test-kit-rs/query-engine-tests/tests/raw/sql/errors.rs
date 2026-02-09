@@ -38,7 +38,10 @@ mod raw_errors {
     async fn invalid_parameter_count(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,
-            fmt_execute_raw(r#"INSERT INTO "TestModel" ("id", "point") VALUES (1, $1);"#, vec![]),
+            fmt_execute_raw(
+                r#"INSERT INTO "TestModel" ("id", "point") VALUES (1, $1);"#,
+                vec![]
+            ),
             1016,
             "Your raw query had an incorrect number of parameters. Expected: `1`, actual: `0`."
         );
@@ -49,11 +52,10 @@ mod raw_errors {
     // On driver-adapters, this fails with:
     // Raw query failed. Code: `22P02`. Message: `ERROR: invalid input syntax for type integer: \\\"{\\\"1\\\"}\\\"`.
     // See: `list_param_for_scalar_column_should_not_panic_pg_js`
-    #[connector_test(
-        schema(common_nullable_types),
-        only(Postgres)
-    )]
-    async fn list_param_for_scalar_column_should_not_panic_quaint(runner: Runner) -> TestResult<()> {
+    #[connector_test(schema(common_nullable_types), only(Postgres))]
+    async fn list_param_for_scalar_column_should_not_panic_quaint(
+        runner: Runner,
+    ) -> TestResult<()> {
         assert_error!(
             runner,
             fmt_execute_raw(

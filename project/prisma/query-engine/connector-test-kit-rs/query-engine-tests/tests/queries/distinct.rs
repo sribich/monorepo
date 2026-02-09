@@ -15,7 +15,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schemas::user_posts))]
 mod distinct {
     use indoc::indoc;
-    use query_engine_tests::{match_connector_result, run_query};
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     #[connector_test]
     async fn empty_database(runner: Runner) -> TestResult<()> {
@@ -36,8 +37,16 @@ mod distinct {
     /// Regression test for not selecting the fields the distinct is performed on: https://github.com/prisma/prisma/issues/5969
     #[connector_test]
     async fn no_panic(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
-        test_user(&runner, r#"{ id: 2, first_name: "Doe", last_name: "Joe", email: "2" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
+        test_user(
+            &runner,
+            r#"{ id: 2, first_name: "Doe", last_name: "Joe", email: "2" }"#,
+        )
+        .await?;
 
         match_connector_result!(
             &runner,
@@ -56,8 +65,16 @@ mod distinct {
 
     #[connector_test]
     async fn shorthand_works(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
-        test_user(&runner, r#"{ id: 2, first_name: "Joe", last_name: "Doe", email: "2" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
+        test_user(
+            &runner,
+            r#"{ id: 2, first_name: "Joe", last_name: "Doe", email: "2" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -75,13 +92,21 @@ mod distinct {
 
     #[connector_test]
     async fn with_duplicates(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
         test_user(
             &runner,
             r#"{ id: 2, first_name: "Hans", last_name: "Wurst", email: "2" }"#,
         )
         .await?;
-        test_user(&runner, r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#,
+        )
+        .await?;
 
         match_connector_result!(
             &runner,
@@ -98,13 +123,21 @@ mod distinct {
 
     #[connector_test]
     async fn with_skip_basic(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
         test_user(
             &runner,
             r#"{ id: 2, first_name: "Hans", last_name: "Wurst", email: "2" }"#,
         )
         .await?;
-        test_user(&runner, r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -122,13 +155,21 @@ mod distinct {
 
     #[connector_test]
     async fn with_skip_orderby(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
         test_user(
             &runner,
             r#"{ id: 2, first_name: "Hans", last_name: "Wurst", email: "2" }"#,
         )
         .await?;
-        test_user(&runner, r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -149,13 +190,21 @@ mod distinct {
 
     #[connector_test]
     async fn with_skip_orderby_nondistinct(runner: Runner) -> TestResult<()> {
-        test_user(&runner, r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 1, first_name: "Joe", last_name: "Doe", email: "1" }"#,
+        )
+        .await?;
         test_user(
             &runner,
             r#"{ id: 2, first_name: "Hans", last_name: "Wurst", email: "2" }"#,
         )
         .await?;
-        test_user(&runner, r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#).await?;
+        test_user(
+            &runner,
+            r#"{ id: 3, first_name: "Joe", last_name: "Doe", email: "3" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(run_query!(
                 &runner,
@@ -344,7 +393,9 @@ mod distinct {
 
     async fn test_user(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneUser(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneUser(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

@@ -24,6 +24,7 @@ use query_engine_tests::*;
 #[test_suite(schema(user), exclude(Sqlite, MySql(8)))]
 mod prisma_11750 {
     use std::sync::Arc;
+
     use tokio::task::JoinSet;
 
     #[connector_test]

@@ -4,17 +4,20 @@ mod sql_renderer;
 
 use std::sync::LazyLock;
 
-pub use mongodb_renderer::*;
-pub use sql_renderer::*;
-
-use crate::{
-    CONFIG, DatamodelFragment, IdFragment, M2mFragment, connection_string,
-    datamodel_rendering::datasource::DatasourceBuilder, templating,
-};
 use indoc::indoc;
 use itertools::Itertools;
+pub use mongodb_renderer::*;
 use psl::FeatureMapWithProvider;
 use regex::Regex;
+pub use sql_renderer::*;
+
+use crate::CONFIG;
+use crate::DatamodelFragment;
+use crate::IdFragment;
+use crate::M2mFragment;
+use crate::connection_string;
+use crate::datamodel_rendering::datasource::DatasourceBuilder;
+use crate::templating;
 
 /// Test configuration, loaded once at runtime.
 static FRAGMENT_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"#.*").unwrap());
@@ -86,13 +89,18 @@ fn process_template(template: String, renderer: Box<dyn DatamodelRenderer>) -> S
 
     let preprocessed = FRAGMENT_RE.replace_all(&template, "#{}");
 
-    fragment_defs.into_iter().fold(preprocessed.to_string(), |aggr, next| {
-        aggr.replacen("#{}", &renderer.render(next), 1)
-    })
+    fragment_defs
+        .into_iter()
+        .fold(preprocessed.to_string(), |aggr, next| {
+            aggr.replacen("#{}", &renderer.render(next), 1)
+        })
 }
 
 fn render_preview_features(provider: &str, excluded_features: &[&str]) -> String {
-    let excluded_features: Vec<_> = excluded_features.iter().map(|f| format!(r#""{f}""#)).collect();
+    let excluded_features: Vec<_> = excluded_features
+        .iter()
+        .map(|f| format!(r#""{f}""#))
+        .collect();
     let feature_map_with_provider = FeatureMapWithProvider::new(Some(provider));
 
     feature_map_with_provider

@@ -1,12 +1,15 @@
+use std::any::Any;
+use std::borrow::Cow;
+use std::string::FromUtf8Error;
+
 use connector_interface::error::*;
 use quaint::error::ErrorKind as QuaintKind;
-use query_structure::{Filter, prelude::DomainError};
-use std::{any::Any, borrow::Cow, string::FromUtf8Error};
-use thiserror::Error;
-use user_facing_errors::query_engine::DatabaseConstraint;
-
 #[cfg(not(target_arch = "wasm32"))]
 use quaint::error::NativeErrorKind;
+use query_structure::Filter;
+use query_structure::prelude::DomainError;
+use thiserror::Error;
+use user_facing_errors::query_engine::DatabaseConstraint;
 
 #[cfg(not(target_arch = "wasm32"))]
 pub(crate) enum NativeRawError {
@@ -83,10 +86,14 @@ impl From<quaint::error::Error> for RawError {
                     actual: *actual,
                 }
             }
-            quaint::error::ErrorKind::UnsupportedColumnType { column_type } => Self::UnsupportedColumnType {
-                column_type: column_type.to_owned(),
-            },
-            quaint::error::ErrorKind::QueryInvalidInput(message) => Self::QueryInvalidInput(message.to_owned()),
+            quaint::error::ErrorKind::UnsupportedColumnType { column_type } => {
+                Self::UnsupportedColumnType {
+                    column_type: column_type.to_owned(),
+                }
+            }
+            quaint::error::ErrorKind::QueryInvalidInput(message) => {
+                Self::QueryInvalidInput(message.to_owned())
+            }
             quaint::error::ErrorKind::ExternalError(id) => Self::External { id: *id },
             _ => default_value,
         }
@@ -235,15 +242,27 @@ impl SqlError {
             SqlError::RecordDoesNotExist { cause } => {
                 ConnectorError::from_kind(ErrorKind::RecordDoesNotExist { cause })
             }
-            SqlError::TableDoesNotExist(table) => ConnectorError::from_kind(ErrorKind::TableDoesNotExist { table }),
-            SqlError::ColumnDoesNotExist(column) => ConnectorError::from_kind(ErrorKind::ColumnDoesNotExist { column }),
+            SqlError::TableDoesNotExist(table) => {
+                ConnectorError::from_kind(ErrorKind::TableDoesNotExist { table })
+            }
+            SqlError::ColumnDoesNotExist(column) => {
+                ConnectorError::from_kind(ErrorKind::ColumnDoesNotExist { column })
+            }
             SqlError::ConnectionError(e) => ConnectorError {
-                user_facing_error: user_facing_errors::quaint::render_quaint_error(&e, connection_info).map(Box::new),
+                user_facing_error: user_facing_errors::quaint::render_quaint_error(
+                    &e,
+                    connection_info,
+                )
+                .map(Box::new),
                 kind: ErrorKind::ConnectionError(e.into()),
                 transient: false,
             },
-            SqlError::ColumnReadFailure(e) => ConnectorError::from_kind(ErrorKind::ColumnReadFailure(e)),
-            SqlError::FieldCannotBeNull { field } => ConnectorError::from_kind(ErrorKind::FieldCannotBeNull { field }),
+            SqlError::ColumnReadFailure(e) => {
+                ConnectorError::from_kind(ErrorKind::ColumnReadFailure(e))
+            }
+            SqlError::FieldCannotBeNull { field } => {
+                ConnectorError::from_kind(ErrorKind::FieldCannotBeNull { field })
+            }
             SqlError::DomainError(e) => ConnectorError::from_kind(ErrorKind::DomainError(e)),
             SqlError::RecordNotFoundForWhere(info) => {
                 ConnectorError::from_kind(ErrorKind::RecordNotFoundForWhere(info))
@@ -266,10 +285,17 @@ impl SqlError {
                 parent_name,
                 child_name,
             }),
-            SqlError::ConversionError(e) => ConnectorError::from_kind(ErrorKind::ConversionError(e)),
-            SqlError::QueryInvalidInput(e) => ConnectorError::from_kind(ErrorKind::QueryInvalidInput(e)),
+            SqlError::ConversionError(e) => {
+                ConnectorError::from_kind(ErrorKind::ConversionError(e))
+            }
+            SqlError::QueryInvalidInput(e) => {
+                ConnectorError::from_kind(ErrorKind::QueryInvalidInput(e))
+            }
             SqlError::IncorrectNumberOfParameters { expected, actual } => {
-                ConnectorError::from_kind(ErrorKind::IncorrectNumberOfParameters { expected, actual })
+                ConnectorError::from_kind(ErrorKind::IncorrectNumberOfParameters {
+                    expected,
+                    actual,
+                })
             }
             SqlError::QueryError(e) => {
                 let quaint_error: Option<&QuaintKind> = e.downcast_ref();
@@ -293,17 +319,27 @@ impl SqlError {
             SqlError::TransactionAlreadyClosed(message) => {
                 ConnectorError::from_kind(ErrorKind::TransactionAlreadyClosed { message })
             }
-            SqlError::TransactionWriteConflict => ConnectorError::from_kind(ErrorKind::TransactionWriteConflict),
-            SqlError::RollbackWithoutBegin => ConnectorError::from_kind(ErrorKind::RollbackWithoutBegin),
+            SqlError::TransactionWriteConflict => {
+                ConnectorError::from_kind(ErrorKind::TransactionWriteConflict)
+            }
+            SqlError::RollbackWithoutBegin => {
+                ConnectorError::from_kind(ErrorKind::RollbackWithoutBegin)
+            }
             SqlError::QueryParameterLimitExceeded(e) => {
                 ConnectorError::from_kind(ErrorKind::QueryParameterLimitExceeded(e))
             }
             SqlError::MissingFullTextSearchIndex => {
                 ConnectorError::from_kind(ErrorKind::MissingNativeFullTextSearchIndex)
             }
-            SqlError::InvalidIsolationLevel(msg) => ConnectorError::from_kind(ErrorKind::InternalConversionError(msg)),
-            SqlError::ExternalError(error_id) => ConnectorError::from_kind(ErrorKind::ExternalError(error_id)),
-            SqlError::TooManyConnections(e) => ConnectorError::from_kind(ErrorKind::TooManyConnections(e)),
+            SqlError::InvalidIsolationLevel(msg) => {
+                ConnectorError::from_kind(ErrorKind::InternalConversionError(msg))
+            }
+            SqlError::ExternalError(error_id) => {
+                ConnectorError::from_kind(ErrorKind::ExternalError(error_id))
+            }
+            SqlError::TooManyConnections(e) => {
+                ConnectorError::from_kind(ErrorKind::TooManyConnections(e))
+            }
         }
     }
 }
@@ -321,7 +357,9 @@ impl From<quaint::error::Error> for SqlError {
         match quaint_kind {
             #[cfg(not(target_arch = "wasm32"))]
             QuaintKind::Native(ref native_error_kind) => match native_error_kind {
-                NativeErrorKind::IoError(_) | NativeErrorKind::ConnectionError(_) => Self::ConnectionError(quaint_kind),
+                NativeErrorKind::IoError(_) | NativeErrorKind::ConnectionError(_) => {
+                    Self::ConnectionError(quaint_kind)
+                }
                 NativeErrorKind::ConnectionClosed => SqlError::ConnectionClosed,
                 NativeErrorKind::ConnectTimeout => SqlError::ConnectionError(quaint_kind),
                 NativeErrorKind::PoolTimeout { .. } => SqlError::ConnectionError(quaint_kind),
@@ -338,21 +376,29 @@ impl From<quaint::error::Error> for SqlError {
             QuaintKind::NotFound => Self::RecordDoesNotExist {
                 cause: "Record not found".to_owned(),
             },
-            QuaintKind::UniqueConstraintViolation { constraint } => Self::UniqueConstraintViolation {
-                constraint: constraint.into(),
-            },
+            QuaintKind::UniqueConstraintViolation { constraint } => {
+                Self::UniqueConstraintViolation {
+                    constraint: constraint.into(),
+                }
+            }
 
             QuaintKind::NullConstraintViolation { constraint } => Self::NullConstraintViolation {
                 constraint: constraint.into(),
             },
 
-            QuaintKind::ForeignKeyConstraintViolation { constraint } => Self::ForeignKeyConstraintViolation {
-                constraint: constraint.into(),
-            },
+            QuaintKind::ForeignKeyConstraintViolation { constraint } => {
+                Self::ForeignKeyConstraintViolation {
+                    constraint: constraint.into(),
+                }
+            }
             QuaintKind::MissingFullTextSearchIndex => Self::MissingFullTextSearchIndex,
             QuaintKind::ColumnReadFailure(e) => Self::ColumnReadFailure(e),
-            QuaintKind::ColumnNotFound { column } => SqlError::ColumnDoesNotExist(format!("{column}")),
-            QuaintKind::TableDoesNotExist { table } => SqlError::TableDoesNotExist(format!("{table}")),
+            QuaintKind::ColumnNotFound { column } => {
+                SqlError::ColumnDoesNotExist(format!("{column}"))
+            }
+            QuaintKind::TableDoesNotExist { table } => {
+                SqlError::TableDoesNotExist(format!("{table}"))
+            }
 
             QuaintKind::InvalidIsolationLevel(msg) => Self::InvalidIsolationLevel(msg),
             QuaintKind::TransactionWriteConflict => Self::TransactionWriteConflict,
@@ -361,7 +407,9 @@ impl From<quaint::error::Error> for SqlError {
             QuaintKind::TooManyConnections(e) => Self::TooManyConnections(e),
             QuaintKind::ConnectionClosed => Self::ConnectionClosed,
             e @ QuaintKind::UnsupportedColumnType { .. } => SqlError::ConversionError(e.into()),
-            e @ QuaintKind::TransactionAlreadyClosed(_) => SqlError::TransactionAlreadyClosed(format!("{e}")),
+            e @ QuaintKind::TransactionAlreadyClosed(_) => {
+                SqlError::TransactionAlreadyClosed(format!("{e}"))
+            }
             e @ QuaintKind::IncorrectNumberOfParameters { .. } => SqlError::QueryError(e.into()),
             e @ QuaintKind::ConversionError(_) => SqlError::ConversionError(e.into()),
             e @ QuaintKind::ResultIndexOutOfBounds { .. } => SqlError::QueryError(e.into()),

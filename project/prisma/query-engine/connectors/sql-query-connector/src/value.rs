@@ -1,16 +1,22 @@
-use crate::row::{sanitize_f32, sanitize_f64};
-use bigdecimal::{BigDecimal, FromPrimitive};
-use chrono::{DateTime, NaiveDate, Utc};
+use bigdecimal::BigDecimal;
+use bigdecimal::FromPrimitive;
+use chrono::DateTime;
+use chrono::NaiveDate;
+use chrono::Utc;
 use quaint::ValueType;
 use query_structure::PrismaValue;
-use sql_query_builder::{
-    opaque_type_to_prisma_type,
-    value::{GeneratorCall, Placeholder},
-};
+use sql_query_builder::opaque_type_to_prisma_type;
+use sql_query_builder::value::GeneratorCall;
+use sql_query_builder::value::Placeholder;
+
+use crate::row::sanitize_f32;
+use crate::row::sanitize_f64;
 
 pub fn to_prisma_value<'a, T: Into<ValueType<'a>>>(qv: T) -> crate::Result<PrismaValue> {
     let val = match qv.into() {
-        ValueType::Int32(i) => i.map(|i| PrismaValue::Int(i as i64)).unwrap_or(PrismaValue::Null),
+        ValueType::Int32(i) => i
+            .map(|i| PrismaValue::Int(i as i64))
+            .unwrap_or(PrismaValue::Null),
         ValueType::Int64(i) => i.map(PrismaValue::Int).unwrap_or(PrismaValue::Null),
         ValueType::Float(Some(f)) => {
             sanitize_f32(f, "BigDecimal")?;
@@ -74,7 +80,10 @@ pub fn to_prisma_value<'a, T: Into<ValueType<'a>>>(qv: T) -> crate::Result<Prism
 
         ValueType::Date(d) => d
             .map(|d| {
-                let dt = DateTime::<Utc>::from_naive_utc_and_offset(d.and_hms_opt(0, 0, 0).unwrap(), Utc);
+                let dt = DateTime::<Utc>::from_naive_utc_and_offset(
+                    d.and_hms_opt(0, 0, 0).unwrap(),
+                    Utc,
+                );
                 PrismaValue::DateTime(dt.into())
             })
             .unwrap_or(PrismaValue::Null),
@@ -105,7 +114,10 @@ pub fn to_prisma_value<'a, T: Into<ValueType<'a>>>(qv: T) -> crate::Result<Prism
 
         ValueType::Opaque(opaque) => {
             if let Some(placeholder) = opaque.downcast_ref::<Placeholder>() {
-                PrismaValue::placeholder(placeholder.name().clone(), opaque_type_to_prisma_type(opaque.typ()))
+                PrismaValue::placeholder(
+                    placeholder.name().clone(),
+                    opaque_type_to_prisma_type(opaque.typ()),
+                )
             } else if let Some(call) = opaque.downcast_ref::<GeneratorCall>() {
                 PrismaValue::GeneratorCall {
                     name: call.name().to_owned().into(),

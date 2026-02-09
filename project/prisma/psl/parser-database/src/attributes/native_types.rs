@@ -1,4 +1,7 @@
-use crate::{ScalarFieldId, StringId, ast, context::Context};
+use crate::ScalarFieldId;
+use crate::StringId;
+use crate::ast;
+use crate::context::Context;
 
 pub(super) fn visit_model_field_native_type_attribute(
     id: ScalarFieldId,
@@ -8,7 +11,11 @@ pub(super) fn visit_model_field_native_type_attribute(
     ctx: &mut Context<'_>,
 ) {
     let args = &attr.arguments;
-    let args: Vec<String> = args.arguments.iter().map(|arg| arg.value.to_string()).collect();
+    let args: Vec<String> = args
+        .arguments
+        .iter()
+        .map(|arg| arg.value.to_string())
+        .collect();
 
     ctx.types[id].native_type = Some((datasource_name, type_name, args, attr.span))
 }

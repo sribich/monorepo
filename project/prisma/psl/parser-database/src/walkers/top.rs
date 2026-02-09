@@ -1,7 +1,6 @@
-use crate::{
-    FileId,
-    ast::{self, WithSpan},
-};
+use crate::FileId;
+use crate::ast::WithSpan;
+use crate::ast::{self};
 
 /// Any top declaration in the Prisma schema.
 pub type TopWalker<'db> = super::Walker<'db, crate::TopId>;

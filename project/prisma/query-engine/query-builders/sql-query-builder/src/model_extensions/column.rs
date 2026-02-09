@@ -1,7 +1,13 @@
-use crate::{Context, model_extensions::ScalarFieldExt};
 use itertools::Itertools;
-use quaint::ast::{Column, NativeColumnType};
-use query_structure::{Field, ModelProjection, RelationField, ScalarField};
+use quaint::ast::Column;
+use quaint::ast::NativeColumnType;
+use query_structure::Field;
+use query_structure::ModelProjection;
+use query_structure::RelationField;
+use query_structure::ScalarField;
+
+use crate::Context;
+use crate::model_extensions::ScalarFieldExt;
 
 pub struct ColumnIterator {
     inner: Box<dyn Iterator<Item = Column<'static>> + 'static>,
@@ -97,7 +103,8 @@ impl AsColumn for ScalarField {
         let col = match style {
             ColumnStyle::ExplicitTable => {
                 // Unwrap is safe: SQL connectors do not anything other than models as field containers.
-                let full_table_name = super::table::db_name_with_schema(&self.container().as_model().unwrap(), ctx);
+                let full_table_name =
+                    super::table::db_name_with_schema(&self.container().as_model().unwrap(), ctx);
                 let col = self.db_name().to_string();
                 Column::from((full_table_name, col))
             }
@@ -105,7 +112,10 @@ impl AsColumn for ScalarField {
         };
 
         col.type_family(self.type_family())
-            .native_column_type(self.native_type().map(|nt| NativeColumnType::from(nt.name())))
+            .native_column_type(
+                self.native_type()
+                    .map(|nt| NativeColumnType::from(nt.name())),
+            )
             .set_is_enum(self.type_identifier().is_enum())
             .set_is_list(self.is_list())
             .default(quaint::ast::DefaultValue::Generated)

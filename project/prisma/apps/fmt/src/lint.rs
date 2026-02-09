@@ -1,9 +1,8 @@
-use crate::offsets::span_to_lsp_offsets;
-use psl::{
-    ValidatedSchema,
-    diagnostics::{DatamodelError, DatamodelWarning},
-};
+use psl::ValidatedSchema;
+use psl::diagnostics::DatamodelError;
+use psl::diagnostics::DatamodelWarning;
 
+use crate::offsets::span_to_lsp_offsets;
 use crate::schema_file_input::SchemaFileInput;
 
 #[derive(Debug, serde::Serialize)]
@@ -20,7 +19,9 @@ pub(crate) fn run(schema: SchemaFileInput) -> Vec<MiniError> {
         SchemaFileInput::Single(file) => psl::validate_without_extensions(file.into()),
         SchemaFileInput::Multiple(files) => psl::validate_multi_file_without_extensions(&files),
     };
-    let ValidatedSchema { diagnostics, db, .. } = &validated_schema;
+    let ValidatedSchema {
+        diagnostics, db, ..
+    } = &validated_schema;
 
     let mut mini_errors: Vec<MiniError> = diagnostics
         .errors()
@@ -59,15 +60,15 @@ pub(crate) fn run(schema: SchemaFileInput) -> Vec<MiniError> {
 
 #[cfg(test)]
 mod tests {
-    use super::SchemaFileInput;
     use expect_test::expect;
     use indoc::indoc;
 
+    use super::SchemaFileInput;
+
     fn lint(schema: SchemaFileInput) -> String {
         let result = super::run(schema);
-        let value: serde_json::Value = serde_json::from_str(
-          &serde_json::to_string(&result).unwrap()
-        ).unwrap();
+        let value: serde_json::Value =
+            serde_json::from_str(&serde_json::to_string(&result).unwrap()).unwrap();
 
         serde_json::to_string_pretty(&value).unwrap()
     }

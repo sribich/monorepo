@@ -1,16 +1,29 @@
-use crate::ser_raw::SerializedResultSet;
-use crate::{SqlRow, ToSqlRow, error::*};
+use std::collections::HashMap;
+use std::panic::AssertUnwindSafe;
+
 use async_trait::async_trait;
 use futures::future::FutureExt;
 use itertools::Itertools;
 use prisma_value::Placeholder as PrismaValuePlaceholder;
-use quaint::{ast::*, connector::Queryable};
+use quaint::ast::*;
+use quaint::connector::Queryable;
 use query_structure::*;
-use sql_query_builder::value::{GeneratorCall, Placeholder};
-use sql_query_builder::{AsColumns, AsTable, ColumnMetadata, Context, FilterBuilder, SqlTraceComment, column_metadata};
-use std::{collections::HashMap, panic::AssertUnwindSafe};
+use sql_query_builder::AsColumns;
+use sql_query_builder::AsTable;
+use sql_query_builder::ColumnMetadata;
+use sql_query_builder::Context;
+use sql_query_builder::FilterBuilder;
+use sql_query_builder::SqlTraceComment;
+use sql_query_builder::column_metadata;
+use sql_query_builder::value::GeneratorCall;
+use sql_query_builder::value::Placeholder;
 use tracing::info_span;
 use tracing_futures::Instrument;
+
+use crate::SqlRow;
+use crate::ToSqlRow;
+use crate::error::*;
+use crate::ser_raw::SerializedResultSet;
 
 #[async_trait]
 impl<Q: Queryable + ?Sized> QueryExt for Q {
@@ -76,7 +89,12 @@ impl<Q: Queryable + ?Sized> QueryExt for Q {
         Ok(changes as usize)
     }
 
-    async fn find(&self, q: Select<'_>, meta: &[ColumnMetadata<'_>], ctx: &Context<'_>) -> crate::Result<SqlRow> {
+    async fn find(
+        &self,
+        q: Select<'_>,
+        meta: &[ColumnMetadata<'_>],
+        ctx: &Context<'_>,
+    ) -> crate::Result<SqlRow> {
         self.filter(q.limit(1).into(), meta, ctx)
             .await?
             .into_iter()
@@ -138,7 +156,10 @@ impl<Q: Queryable + ?Sized> QueryExt for Q {
         let result = rows
             .into_iter()
             .map(|row| {
-                let tuples = model_id.scalar_fields().zip(row.values.into_iter()).collect();
+                let tuples = model_id
+                    .scalar_fields()
+                    .zip(row.values.into_iter())
+                    .collect();
                 SelectionResult::new(tuples)
             })
             .collect();
@@ -175,7 +196,12 @@ pub(crate) trait QueryExt {
     ) -> std::result::Result<usize, crate::error::RawError>;
 
     /// Select one row from the database.
-    async fn find(&self, q: Select<'_>, meta: &[ColumnMetadata<'_>], ctx: &Context<'_>) -> crate::Result<SqlRow>;
+    async fn find(
+        &self,
+        q: Select<'_>,
+        meta: &[ColumnMetadata<'_>],
+        ctx: &Context<'_>,
+    ) -> crate::Result<SqlRow>;
 
     /// Process the record filter and either return directly with precomputed values,
     /// or fetch IDs from the database.
@@ -187,8 +213,12 @@ pub(crate) trait QueryExt {
     ) -> crate::Result<Vec<SelectionResult>>;
 
     /// Read the all columns as a (primary) identifier.
-    async fn filter_ids(&self, model: &Model, filter: Filter, ctx: &Context<'_>)
-    -> crate::Result<Vec<SelectionResult>>;
+    async fn filter_ids(
+        &self,
+        model: &Model,
+        filter: Filter,
+        ctx: &Context<'_>,
+    ) -> crate::Result<Vec<SelectionResult>>;
 
     async fn select_ids(
         &self,
@@ -210,14 +240,17 @@ pub fn convert_prisma_value_to_quaint_lossy<'a>(pv: PrismaValue) -> Value<'a> {
         PrismaValue::Int(i) => i.into(),
         PrismaValue::BigInt(i) => i.into(),
         PrismaValue::Uuid(u) => u.to_string().into(),
-        PrismaValue::List(l) => Value::array(l.into_iter().map(convert_prisma_value_to_quaint_lossy)),
+        PrismaValue::List(l) => {
+            Value::array(l.into_iter().map(convert_prisma_value_to_quaint_lossy))
+        }
         PrismaValue::Json(s) => Value::json(serde_json::from_str(&s).unwrap()),
         PrismaValue::Bytes(b) => Value::bytes(b),
         PrismaValue::Null => Value::null_int32(), // Can't tell which type the null is supposed to be.
         PrismaValue::Object(_) => unimplemented!(),
-        PrismaValue::Placeholder(PrismaValuePlaceholder { name, r#type }) => {
-            Value::opaque(Placeholder::new(name), convert_prisma_type_to_opaque_type(&r#type))
-        }
+        PrismaValue::Placeholder(PrismaValuePlaceholder { name, r#type }) => Value::opaque(
+            Placeholder::new(name),
+            convert_prisma_type_to_opaque_type(&r#type),
+        ),
         PrismaValue::GeneratorCall {
             name,
             args,
@@ -239,7 +272,9 @@ pub fn convert_prisma_type_to_opaque_type(pt: &PrismaValueType) -> OpaqueType {
         PrismaValueType::Float => OpaqueType::Numeric,
         PrismaValueType::Boolean => OpaqueType::Boolean,
         PrismaValueType::DateTime => OpaqueType::DateTime,
-        PrismaValueType::List(t) => OpaqueType::Array(Box::new(convert_prisma_type_to_opaque_type(t))),
+        PrismaValueType::List(t) => {
+            OpaqueType::Array(Box::new(convert_prisma_type_to_opaque_type(t)))
+        }
         PrismaValueType::Json => OpaqueType::Json,
         PrismaValueType::Object => OpaqueType::Object,
         PrismaValueType::Bytes => OpaqueType::Bytes,

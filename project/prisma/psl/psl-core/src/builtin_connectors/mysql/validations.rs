@@ -1,16 +1,18 @@
-use crate::{
-    datamodel_connector::{Connector, walker_ext_traits::ScalarFieldWalkerExt},
-    diagnostics::Diagnostics,
-    diagnostics::{DatamodelWarning, Span},
-    parser_database::{
-        ReferentialAction,
-        ast::WithSpan,
-        walkers::{IndexWalker, PrimaryKeyWalker, RelationFieldWalker},
-    },
-};
 use indoc::formatdoc;
 
-const LENGTH_GUIDE: &str = " Please use the `length` argument to the field in the index definition to allow this.";
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::walker_ext_traits::ScalarFieldWalkerExt;
+use crate::diagnostics::DatamodelWarning;
+use crate::diagnostics::Diagnostics;
+use crate::diagnostics::Span;
+use crate::parser_database::ReferentialAction;
+use crate::parser_database::ast::WithSpan;
+use crate::parser_database::walkers::IndexWalker;
+use crate::parser_database::walkers::PrimaryKeyWalker;
+use crate::parser_database::walkers::RelationFieldWalker;
+
+const LENGTH_GUIDE: &str =
+    " Please use the `length` argument to the field in the index definition to allow this.";
 
 const NATIVE_TYPES_THAT_CAN_NOT_BE_USED_IN_KEY_SPECIFICATION: &[&str] = &[
     super::TEXT_TYPE_NAME,

@@ -1,14 +1,19 @@
-use indoc::{formatdoc, indoc};
+use std::io::Write;
+
+use indoc::formatdoc;
+use indoc::indoc;
 use pretty_assertions::assert_eq;
 use sql_migration_tests::test_api::*;
-use std::io::Write;
-use user_facing_errors::{UserFacingError, schema_engine::ApplyMigrationError};
+use user_facing_errors::UserFacingError;
+use user_facing_errors::schema_engine::ApplyMigrationError;
 
 #[test_connector]
 fn apply_migrations_with_an_empty_migrations_folder_works(api: TestApi) {
     let dir = api.create_migrations_directory();
 
-    api.apply_migrations(&dir).send_sync().assert_applied_migrations(&[]);
+    api.apply_migrations(&dir)
+        .send_sync()
+        .assert_applied_migrations(&[]);
 }
 
 #[test_connector]
@@ -30,7 +35,9 @@ fn applying_a_single_migration_should_work(api: TestApi) {
         .send_sync()
         .assert_applied_migrations(&["init"]);
 
-    api.apply_migrations(&dir).send_sync().assert_applied_migrations(&[]);
+    api.apply_migrations(&dir)
+        .send_sync()
+        .assert_applied_migrations(&[]);
 }
 
 #[test_connector(tags(Postgres), namespaces("one", "two"))]
@@ -49,7 +56,8 @@ fn multi_schema_applying_two_migrations_works(api: TestApi) {
 
     let migrations_directory = api.create_migrations_directory();
 
-    api.create_migration("initial", &dm1, &migrations_directory).send_sync();
+    api.create_migration("initial", &dm1, &migrations_directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider_and_features(
         r#"
@@ -88,7 +96,8 @@ fn applying_two_migrations_works(api: TestApi) {
 
     let migrations_directory = api.create_migrations_directory();
 
-    api.create_migration("initial", &dm1, &migrations_directory).send_sync();
+    api.create_migration("initial", &dm1, &migrations_directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -125,7 +134,8 @@ fn migrations_should_fail_when_the_script_is_invalid(api: TestApi) {
 
     let migrations_directory = api.create_migrations_directory();
 
-    api.create_migration("initial", &dm1, &migrations_directory).send_sync();
+    api.create_migration("initial", &dm1, &migrations_directory)
+        .send_sync();
 
     let dm2 = api.datamodel_with_provider(
         r#"
@@ -178,7 +188,8 @@ fn migrations_should_fail_when_the_script_is_invalid(api: TestApi) {
                 t if t.contains(Tags::Mysql) =>
                     "You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near \'^.^)_n\' at line 1",
                 t if t.contains(Tags::Postgres) => "ERROR: syntax error at or near \"^\"",
-                t if t.contains(Tags::Sqlite) => "unrecognized token: \"^\" in \n\nSELECT (^.^)_n;\n at offset 10",
+                t if t.contains(Tags::Sqlite) =>
+                    "unrecognized token: \"^\" in \n\nSELECT (^.^)_n;\n at offset 10",
                 _ => todo!(),
             },
         );
@@ -192,7 +203,9 @@ fn migrations_should_fail_when_the_script_is_invalid(api: TestApi) {
         );
     }
 
-    let mut migrations = tok(api.migration_persistence().list_migrations()).unwrap().unwrap();
+    let mut migrations = tok(api.migration_persistence().list_migrations())
+        .unwrap()
+        .unwrap();
 
     assert_eq!(migrations.len(), 2);
 
@@ -230,7 +243,10 @@ fn migrations_should_not_reapply_modified_migrations(api: TestApi) {
 
     api.apply_migrations(&migrations_directory).send_sync();
 
-    let mut file = std::fs::OpenOptions::new().append(true).open(initial_path).unwrap();
+    let mut file = std::fs::OpenOptions::new()
+        .append(true)
+        .open(initial_path)
+        .unwrap();
     file.write_all(b"-- this is just a harmless comment\nSELECT 1;")
         .unwrap();
 
@@ -285,7 +301,9 @@ fn migrations_should_fail_on_an_uninitialized_nonempty_database(api: TestApi) {
 
 // Reference for the tables created by PostGIS: https://postgis.net/docs/manual-1.4/ch04.html#id418599
 #[test_connector(tags(Postgres))]
-fn migrations_should_succeed_on_an_uninitialized_nonempty_database_with_postgis_tables(api: TestApi) {
+fn migrations_should_succeed_on_an_uninitialized_nonempty_database_with_postgis_tables(
+    api: TestApi,
+) {
     let dm = api.datamodel_with_provider(
         r#"
         model Cat {
@@ -295,9 +313,11 @@ fn migrations_should_succeed_on_an_uninitialized_nonempty_database_with_postgis_
     "#,
     );
 
-    let create_spatial_ref_sys_table = "CREATE TABLE IF NOT EXISTS \"spatial_ref_sys\" ( id SERIAL PRIMARY KEY )";
+    let create_spatial_ref_sys_table =
+        "CREATE TABLE IF NOT EXISTS \"spatial_ref_sys\" ( id SERIAL PRIMARY KEY )";
     // The capitalized Geometry is intentional here, because we want the matching to be case-insensitive.
-    let create_geometry_columns_table = "CREATE TABLE IF NOT EXiSTS \"Geometry_columns\" ( id SERIAL PRIMARY KEY )";
+    let create_geometry_columns_table =
+        "CREATE TABLE IF NOT EXiSTS \"Geometry_columns\" ( id SERIAL PRIMARY KEY )";
 
     api.raw_cmd(create_spatial_ref_sys_table);
     api.raw_cmd(create_geometry_columns_table);
@@ -334,7 +354,10 @@ fn applying_a_single_migration_multi_file_should_work(api: TestApi) {
 
     api.create_migration_multi_file(
         "init",
-        &[("schema_a.prisma", schema_a.as_str()), ("schema_b.prisma", schema_b)],
+        &[
+            ("schema_a.prisma", schema_a.as_str()),
+            ("schema_b.prisma", schema_b),
+        ],
         &dir,
     )
     .send_sync();
@@ -343,5 +366,7 @@ fn applying_a_single_migration_multi_file_should_work(api: TestApi) {
         .send_sync()
         .assert_applied_migrations(&["init"]);
 
-    api.apply_migrations(&dir).send_sync().assert_applied_migrations(&[]);
+    api.apply_migrations(&dir)
+        .send_sync()
+        .assert_applied_migrations(&[]);
 }

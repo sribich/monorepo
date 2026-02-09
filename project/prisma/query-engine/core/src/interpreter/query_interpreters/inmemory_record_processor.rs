@@ -1,6 +1,7 @@
+use std::ops::Deref;
+
 use itertools::Itertools;
 use query_structure::*;
-use std::ops::Deref;
 
 #[derive(Debug)]
 /// Allows to manipulate a set of records in-memory instead of on the database level.
@@ -82,7 +83,11 @@ impl InMemoryRecordProcessor {
     }
 
     fn is_nested(records: &ManyRecords) -> bool {
-        records.records.first().map(|x| x.parent_id.is_some()).unwrap_or(false)
+        records
+            .records
+            .first()
+            .map(|x| x.parent_id.is_some())
+            .unwrap_or(false)
     }
 
     fn apply_distinct(&self, mut records: ManyRecords) -> ManyRecords {
@@ -105,7 +110,10 @@ impl InMemoryRecordProcessor {
                         .into_iter()
                         .unique_by(|record| {
                             record
-                                .extract_selection_result_from_db_name(field_names, &distinct_selection)
+                                .extract_selection_result_from_db_name(
+                                    field_names,
+                                    &distinct_selection,
+                                )
                                 .unwrap()
                         })
                         .collect();

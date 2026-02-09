@@ -41,7 +41,10 @@ pub fn tags_from_comma_separated_list(input: &str) -> BitFlags<Tags> {
     let mut tags = Default::default();
 
     for s in input.split(',').map(|s| s.trim()) {
-        match ALL_TAG_NAMES.iter().find(|(name, _t)| name.eq_ignore_ascii_case(s)) {
+        match ALL_TAG_NAMES
+            .iter()
+            .find(|(name, _t)| name.eq_ignore_ascii_case(s))
+        {
             Some((_, tag)) => tags |= *tag,
             None => panic!("unknown tag: {s}"),
         }

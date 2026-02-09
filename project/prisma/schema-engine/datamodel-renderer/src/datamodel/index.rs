@@ -1,15 +1,20 @@
 mod field;
 mod id;
 
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    datamodel::attributes::BlockAttribute,
-    value::{Array, Constant, Function, Text, Value},
-};
+pub use field::IndexFieldInput;
+pub use field::UniqueFieldAttribute;
+pub use id::IdDefinition;
+pub use id::IdFieldDefinition;
 
-pub use field::{IndexFieldInput, UniqueFieldAttribute};
-pub use id::{IdDefinition, IdFieldDefinition};
+use crate::datamodel::attributes::BlockAttribute;
+use crate::value::Array;
+use crate::value::Constant;
+use crate::value::Function;
+use crate::value::Text;
+use crate::value::Value;
 
 /// Defines an index in a model block.
 #[derive(Debug)]
@@ -45,7 +50,8 @@ impl<'a> IndexDefinition<'a> {
 
     /// Defines the `clustered` argument inside the attribute.
     pub fn clustered(&mut self, clustered: bool) {
-        self.0.push_param(("clustered", Constant::new_no_validate(clustered)));
+        self.0
+            .push_param(("clustered", Constant::new_no_validate(clustered)));
     }
 
     /// Defines the `type` argument inside the attribute.

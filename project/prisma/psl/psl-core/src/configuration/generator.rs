@@ -1,13 +1,17 @@
-use crate::{
-    PreviewFeature,
-    configuration::{EnvFunction, StringFromEnvVar},
-};
-use diagnostics::{Diagnostics, Span};
+use std::collections::HashMap;
+
+use diagnostics::Diagnostics;
+use diagnostics::Span;
 use enumflags2::BitFlags;
 use parser_database::ast::Expression;
 use psl_ast::ast::WithSpan;
-use serde::{Serialize, Serializer, ser::SerializeSeq};
-use std::collections::HashMap;
+use serde::Serialize;
+use serde::Serializer;
+use serde::ser::SerializeSeq;
+
+use crate::PreviewFeature;
+use crate::configuration::EnvFunction;
+use crate::configuration::StringFromEnvVar;
 
 #[derive(Debug, Serialize, Clone)]
 #[serde(untagged)]
@@ -24,7 +28,10 @@ impl From<String> for GeneratorConfigValue {
 }
 
 impl GeneratorConfigValue {
-    pub(crate) fn try_from_expression(expr: &Expression, diagnostics: &mut Diagnostics) -> Option<Self> {
+    pub(crate) fn try_from_expression(
+        expr: &Expression,
+        diagnostics: &mut Diagnostics,
+    ) -> Option<Self> {
         Some(match expr {
             Expression::NumericValue(val, _) => val.clone().into(),
             Expression::StringValue(val, _) => val.clone().into(),
@@ -68,7 +75,10 @@ impl WithSpan for Generator {
     }
 }
 
-pub fn mcf_preview_features<S>(feats: &Option<BitFlags<PreviewFeature>>, s: S) -> Result<S::Ok, S::Error>
+pub fn mcf_preview_features<S>(
+    feats: &Option<BitFlags<PreviewFeature>>,
+    s: S,
+) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {

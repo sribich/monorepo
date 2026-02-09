@@ -1,4 +1,5 @@
-use railgun_error::{Error, Location};
+use railgun_error::Error;
+use railgun_error::Location;
 
 use crate::cache::TypeCache;
 

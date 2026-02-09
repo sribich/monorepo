@@ -1,4 +1,5 @@
-use crate::{BoxFuture, ConnectorResult};
+use crate::BoxFuture;
+use crate::ConnectorResult;
 
 /// An abstract host for a migration connector. It exposes IO that is not directly performed by the
 /// connectors.

@@ -4,29 +4,41 @@ mod renderer;
 mod schema_calculator;
 mod schema_differ;
 
-use super::{SqlDialect, UsingExternalShadowDb};
-use crate::{error::SystemDatabase, flavour::SqlConnector};
-use connector::{Connection, shadow_db};
+use std::future;
+use std::sync::LazyLock;
+
+use connector::Connection;
+use connector::shadow_db;
 use destructive_change_checker::MysqlDestructiveChangeCheckerFlavour;
 use enumflags2::BitFlags;
 use indoc::indoc;
-use psl::{ValidatedSchema, datamodel_connector, parser_database::ScalarType};
+use psl::ValidatedSchema;
+use psl::datamodel_connector;
+use psl::parser_database::ScalarType;
 use quaint::connector::MysqlUrl;
-use regex::{Regex, RegexSet};
+use regex::Regex;
+use regex::RegexSet;
 use renderer::MysqlRenderer;
 use schema_calculator::MysqlSchemaCalculatorFlavour;
-use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorParams, ConnectorResult, Namespaces,
-    migrations_directory::Migrations,
-};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorParams;
+use schema_connector::ConnectorResult;
+use schema_connector::Namespaces;
+use schema_connector::migrations_directory::Migrations;
 use schema_differ::MysqlSchemaDifferFlavour;
 use sql_schema_describer::SqlSchema;
-use std::{future, sync::LazyLock};
 use url::Url;
 use versions::Versioning;
 
+use super::SqlDialect;
+use super::UsingExternalShadowDb;
+use crate::error::SystemDatabase;
+use crate::flavour::SqlConnector;
+
 const ADVISORY_LOCK_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
-static QUALIFIED_NAME_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"`[^ ]+`\.`[^ ]+`").unwrap());
+static QUALIFIED_NAME_RE: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"`[^ ]+`\.`[^ ]+`").unwrap());
 
 type State = super::State<Params, (BitFlags<Circumstances>, Connection)>;
 
@@ -38,7 +50,10 @@ struct Params {
 impl Params {
     fn new(connector_params: ConnectorParams) -> ConnectorResult<Self> {
         if let Some(shadow_db_url) = &connector_params.shadow_database_connection_string {
-            super::validate_connection_infos_do_not_match(&connector_params.connection_string, shadow_db_url)?;
+            super::validate_connection_infos_do_not_match(
+                &connector_params.connection_string,
+                shadow_db_url,
+            )?;
         }
 
         let url = connector_params
@@ -46,7 +61,10 @@ impl Params {
             .parse()
             .map_err(ConnectorError::url_parse_error)?;
         let url = MysqlUrl::new(url).map_err(ConnectorError::url_parse_error)?;
-        Ok(Self { connector_params, url })
+        Ok(Self {
+            connector_params,
+            url,
+        })
     }
 }
 
@@ -70,7 +88,9 @@ impl SqlDialect for MysqlDialect {
         Box::new(MysqlSchemaDifferFlavour::new(self.circumstances))
     }
 
-    fn schema_calculator(&self) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
+    fn schema_calculator(
+        &self,
+    ) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
         Box::new(MysqlSchemaCalculatorFlavour)
     }
 
@@ -95,7 +115,9 @@ impl SqlDialect for MysqlDialect {
         preview_features: psl::PreviewFeatures,
     ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
         let params = ConnectorParams::new(url, preview_features, None);
-        Box::pin(async move { Ok(Box::new(MysqlConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
+        Box::pin(async move {
+            Ok(Box::new(MysqlConnector::new_with_params(params)?) as Box<dyn SqlConnector>)
+        })
     }
 }
 
@@ -151,7 +173,10 @@ impl SqlConnector for MysqlConnector {
     fn acquire_lock(&mut self) -> BoxFuture<'_, ConnectorResult<()>> {
         with_connection(&mut self.state, |params, _, connection| async move {
             // https://dev.mysql.com/doc/refman/8.0/en/locking-functions.html
-            let query = format!("SELECT GET_LOCK('prisma_migrate', {})", ADVISORY_LOCK_TIMEOUT.as_secs());
+            let query = format!(
+                "SELECT GET_LOCK('prisma_migrate', {})",
+                ADVISORY_LOCK_TIMEOUT.as_secs()
+            );
             connection.raw_cmd(&query, &params.url).await
         })
     }
@@ -160,10 +185,16 @@ impl SqlConnector for MysqlConnector {
         "mysql"
     }
 
-    fn describe_schema(&mut self, _namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
-        with_connection(&mut self.state, |params, circumstances, connection| async move {
-            connection.describe_schema(circumstances, params).await
-        })
+    fn describe_schema(
+        &mut self,
+        _namespaces: Option<Namespaces>,
+    ) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
+        with_connection(
+            &mut self.state,
+            |params, circumstances, connection| async move {
+                connection.describe_schema(circumstances, params).await
+            },
+        )
     }
 
     fn table_names(
@@ -189,7 +220,10 @@ impl SqlConnector for MysqlConnector {
             let rows = self
                 .query_raw(
                     select,
-                    &[database_name.to_string().into(), database_name.to_string().into()],
+                    &[
+                        database_name.to_string().into(),
+                        database_name.to_string().into(),
+                    ],
                 )
                 .await?;
 
@@ -207,11 +241,14 @@ impl SqlConnector for MysqlConnector {
         migration_name: &'a str,
         script: &'a str,
     ) -> BoxFuture<'a, ConnectorResult<()>> {
-        with_connection(&mut self.state, move |_params, circumstances, connection| async move {
-            connection
-                .apply_migration_script(migration_name, script, circumstances)
-                .await
-        })
+        with_connection(
+            &mut self.state,
+            move |_params, circumstances, connection| async move {
+                connection
+                    .apply_migration_script(migration_name, script, circumstances)
+                    .await
+            },
+        )
     }
 
     fn check_database_version_compatibility(
@@ -227,7 +264,8 @@ impl SqlConnector for MysqlConnector {
                 return None;
             }
 
-            let mut errors_string = String::with_capacity(errors.iter().map(|err| err.len() + 3).sum());
+            let mut errors_string =
+                String::with_capacity(errors.iter().map(|err| err.len() + 3).sum());
 
             for error in &errors {
                 errors_string.push_str("- ");
@@ -247,15 +285,17 @@ impl SqlConnector for MysqlConnector {
     fn create_database(&mut self) -> BoxFuture<'_, ConnectorResult<String>> {
         Box::pin(async {
             let params = self.state.get_unwrapped_params();
-            let mut url =
-                Url::parse(&params.connector_params.connection_string).map_err(ConnectorError::url_parse_error)?;
+            let mut url = Url::parse(&params.connector_params.connection_string)
+                .map_err(ConnectorError::url_parse_error)?;
             url.set_path("/mysql");
 
             let mysql_url = MysqlUrl::new(url.clone()).unwrap();
             let mut conn = Connection::new(url).await?;
             let db_name = params.url.dbname_or_default();
 
-            let query = format!("CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;");
+            let query = format!(
+                "CREATE DATABASE `{db_name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+            );
 
             conn.raw_cmd(&query, &mysql_url).await?;
 
@@ -328,24 +368,29 @@ impl SqlConnector for MysqlConnector {
     }
 
     fn reset(&mut self, _namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<()>> {
-        with_connection(&mut self.state, move |params, circumstances, connection| async move {
-            if circumstances.contains(Circumstances::IsVitess) {
-                return Err(ConnectorError::from_msg(
-                    "We do not drop databases on Vitess until it works better.".into(),
-                ));
-            }
+        with_connection(
+            &mut self.state,
+            move |params, circumstances, connection| async move {
+                if circumstances.contains(Circumstances::IsVitess) {
+                    return Err(ConnectorError::from_msg(
+                        "We do not drop databases on Vitess until it works better.".into(),
+                    ));
+                }
 
-            let db_name = params.url.dbname_or_default();
-            connection
-                .raw_cmd(&format!("DROP DATABASE `{db_name}`"), &params.url)
-                .await?;
-            connection
-                .raw_cmd(&format!("CREATE DATABASE `{db_name}`"), &params.url)
-                .await?;
-            connection.raw_cmd(&format!("USE `{db_name}`"), &params.url).await?;
+                let db_name = params.url.dbname_or_default();
+                connection
+                    .raw_cmd(&format!("DROP DATABASE `{db_name}`"), &params.url)
+                    .await?;
+                connection
+                    .raw_cmd(&format!("CREATE DATABASE `{db_name}`"), &params.url)
+                    .await?;
+                connection
+                    .raw_cmd(&format!("USE `{db_name}`"), &params.url)
+                    .await?;
 
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     #[tracing::instrument(skip(self, migrations))]
@@ -369,43 +414,64 @@ impl SqlConnector for MysqlConnector {
 
             // If we're not using an external shadow database, one must be created manually.
             UsingExternalShadowDb::No => {
-                with_connection(&mut self.state, move |params, _circumstances, conn| async move {
-                    let shadow_database_name = crate::new_shadow_database_name();
+                with_connection(
+                    &mut self.state,
+                    move |params, _circumstances, conn| async move {
+                        let shadow_database_name = crate::new_shadow_database_name();
 
-                    let create_database = format!("CREATE DATABASE `{shadow_database_name}`");
-                    conn.raw_cmd(&create_database, &params.url)
-                        .await
-                        .map_err(|err| err.into_shadow_db_creation_error())?;
+                        let create_database = format!("CREATE DATABASE `{shadow_database_name}`");
+                        conn.raw_cmd(&create_database, &params.url)
+                            .await
+                            .map_err(|err| err.into_shadow_db_creation_error())?;
 
-                    let mut shadow_database_url = params.url.url().clone();
-                    shadow_database_url.set_path(&format!("/{shadow_database_name}"));
-                    let host = shadow_database_url.host();
+                        let mut shadow_database_url = params.url.url().clone();
+                        shadow_database_url.set_path(&format!("/{shadow_database_name}"));
+                        let host = shadow_database_url.host();
 
-                    tracing::debug!("Connecting to shadow database at {:?}/{}", host, shadow_database_name);
+                        tracing::debug!(
+                            "Connecting to shadow database at {:?}/{}",
+                            host,
+                            shadow_database_name
+                        );
 
-                    let preview_features = params.connector_params.preview_features;
-                    let connector_params =
-                        ConnectorParams::new(shadow_database_url.to_string(), preview_features, None);
-                    let mut shadow_database = MysqlConnector::new_with_params(connector_params)?;
-                    // We go through the whole process without early return, then clean up
-                    // the shadow database, and only then return the result. This avoids
-                    // leaving shadow databases behind in case of e.g. faulty migrations.
-                    let ret = shadow_db::sql_schema_from_migrations_history(migrations, &mut shadow_database).await;
+                        let preview_features = params.connector_params.preview_features;
+                        let connector_params = ConnectorParams::new(
+                            shadow_database_url.to_string(),
+                            preview_features,
+                            None,
+                        );
+                        let mut shadow_database =
+                            MysqlConnector::new_with_params(connector_params)?;
+                        // We go through the whole process without early return, then clean up
+                        // the shadow database, and only then return the result. This avoids
+                        // leaving shadow databases behind in case of e.g. faulty migrations.
+                        let ret = shadow_db::sql_schema_from_migrations_history(
+                            migrations,
+                            &mut shadow_database,
+                        )
+                        .await;
 
-                    let drop_database = format!("DROP DATABASE IF EXISTS `{shadow_database_name}`");
-                    conn.raw_cmd(&drop_database, &params.url).await?;
+                        let drop_database =
+                            format!("DROP DATABASE IF EXISTS `{shadow_database_name}`");
+                        conn.raw_cmd(&drop_database, &params.url).await?;
 
-                    ret
-                })
+                        ret
+                    },
+                )
             }
         }
     }
 
-    fn set_preview_features(&mut self, preview_features: enumflags2::BitFlags<psl::PreviewFeature>) {
+    fn set_preview_features(
+        &mut self,
+        preview_features: enumflags2::BitFlags<psl::PreviewFeature>,
+    ) {
         match &mut self.state {
             super::State::Initial => {
                 if !preview_features.is_empty() {
-                    tracing::warn!("set_preview_feature on Initial state has no effect ({preview_features}).");
+                    tracing::warn!(
+                        "set_preview_feature on Initial state has no effect ({preview_features})."
+                    );
                 }
             }
             super::State::WithParams(params) | super::State::Connected(params, _) => {
@@ -519,7 +585,10 @@ where
                             .next()
                             .and_then(|row| {
                                 let mut columns = row.into_iter();
-                                Some((columns.next()?.into_string()?, columns.next()?.into_string()?))
+                                Some((
+                                    columns.next()?.into_string()?,
+                                    columns.next()?.into_string()?,
+                                ))
                             });
 
                         let mut circumstances = BitFlags::<Circumstances>::default();
@@ -608,7 +677,8 @@ mod tests {
     #[test]
     fn qualified_name_re_matches_as_expected() {
         let should_match = r#"ALTER TABLE `mydb`.`cat` DROP PRIMARY KEY"#;
-        let should_not_match = r#"ALTER TABLE `cat` ADD FOREIGN KEY (`ab`, cd`) REFERENCES `dog`(`id`)"#;
+        let should_not_match =
+            r#"ALTER TABLE `cat` ADD FOREIGN KEY (`ab`, cd`) REFERENCES `dog`(`id`)"#;
 
         assert!(
             QUALIFIED_NAME_RE.is_match_at(should_match, 12),

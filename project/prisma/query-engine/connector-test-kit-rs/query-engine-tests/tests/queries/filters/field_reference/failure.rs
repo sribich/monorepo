@@ -1,7 +1,7 @@
-use super::setup;
-
 use indoc::indoc;
 use query_engine_tests::*;
+
+use super::setup;
 
 #[test_suite(schema(schema))]
 mod failure {
@@ -181,7 +181,11 @@ mod failure {
         Ok(())
     }
 
-    #[connector_test(schema(schemas::json), capabilities(JsonFiltering), exclude(MySql(5.6)))]
+    #[connector_test(
+        schema(schemas::json),
+        capabilities(JsonFiltering),
+        exclude(MySql(5.6))
+    )]
     async fn json_string_expect_string_field_ref(runner: Runner) -> TestResult<()> {
         assert_error!(
             runner,

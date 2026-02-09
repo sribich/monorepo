@@ -1,4 +1,5 @@
-use railgun_error::{Error, Location};
+use railgun_error::Error;
+use railgun_error::Location;
 
 pub type BootstrapResult<T> = core::result::Result<T, BootstrapError>;
 

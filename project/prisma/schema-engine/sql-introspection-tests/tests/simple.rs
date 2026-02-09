@@ -1,19 +1,23 @@
+use std::fs;
+use std::io::Write as _;
+use std::path::PathBuf;
+use std::path::{self};
+
 use enumflags2::BitFlags;
 use indoc::formatdoc;
-use psl::{PreviewFeature, parser_database::NoExtensionTypes};
+use psl::PreviewFeature;
+use psl::parser_database::NoExtensionTypes;
 use quaint::single::Quaint;
-use schema_connector::{ConnectorParams, IntrospectionContext, SchemaConnector};
-use sql_introspection_tests::test_api::{Queryable, ToIntrospectionTestResult};
+use schema_connector::ConnectorParams;
+use schema_connector::IntrospectionContext;
+use schema_connector::SchemaConnector;
+use sql_introspection_tests::test_api::Queryable;
+use sql_introspection_tests::test_api::ToIntrospectionTestResult;
 use sql_schema_connector::SqlSchemaConnector;
-use std::{
-    fs,
-    io::Write as _,
-    path::{self, PathBuf},
-};
-use test_setup::{
-    mysql::create_mysql_database, postgres::create_postgres_database,
-    runtime::run_with_thread_local_runtime as tok, sqlite_test_url,
-};
+use test_setup::mysql::create_mysql_database;
+use test_setup::postgres::create_postgres_database;
+use test_setup::runtime::run_with_thread_local_runtime as tok;
+use test_setup::sqlite_test_url;
 
 const TESTS_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/simple");
 
@@ -44,7 +48,12 @@ fn run_simple_test(test_file_path: &str, test_function_name: &'static str) {
             let line = lines.next().expect("Expected file not to be empty.");
             let line = line.trim_start_matches("-- schemas=");
 
-            Some(line.split(',').map(|s| s.trim()).map(ToString::to_string).collect())
+            Some(
+                line.split(',')
+                    .map(|s| s.trim())
+                    .map(ToString::to_string)
+                    .collect(),
+            )
         }
         _ => None,
     };
@@ -96,7 +105,11 @@ source .test_database_urls/mysql_5_6
             .map(|prefix_end| &database_url[..prefix_end])
             .unwrap_or_else(|| database_url.as_str());
 
-        if provider == "file" { "sqlite" } else { provider }
+        if provider == "file" {
+            "sqlite"
+        } else {
+            provider
+        }
     };
 
     match provider {
@@ -197,11 +210,7 @@ source .test_database_urls/mysql_5_6
         };
 
         let re_introspected = {
-            let ctx = IntrospectionContext::new(
-                introspected_schema,
-                namespaces,
-                PathBuf::new(),
-            );
+            let ctx = IntrospectionContext::new(introspected_schema, namespaces, PathBuf::new());
 
             tok(api.introspect(&ctx, &NoExtensionTypes))
                 .map(ToIntrospectionTestResult::to_single_test_result)

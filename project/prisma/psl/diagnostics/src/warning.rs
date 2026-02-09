@@ -1,10 +1,12 @@
-use crate::{
-    Span,
-    pretty_print::{DiagnosticColorer, pretty_print},
-};
-use colored::{ColoredString, Colorize};
-use indoc::indoc;
 use std::fmt::Display;
+
+use colored::ColoredString;
+use colored::Colorize;
+use indoc::indoc;
+
+use crate::Span;
+use crate::pretty_print::DiagnosticColorer;
+use crate::pretty_print::pretty_print;
 
 /// A non-fatal warning emitted by the schema parser.
 /// For fancy printing, please use the `pretty_print_error` function.
@@ -22,8 +24,9 @@ impl DatamodelWarning {
     }
 
     pub fn new_preview_feature_deprecated(feature: &str, span: Span) -> DatamodelWarning {
-        let message =
-            format!("Preview feature \"{feature}\" is deprecated. It will be removed in a future version of Prisma.");
+        let message = format!(
+            "Preview feature \"{feature}\" is deprecated. It will be removed in a future version of Prisma."
+        );
         Self::new(message, span)
     }
 
@@ -81,7 +84,12 @@ impl DatamodelWarning {
         Self::new(message, span)
     }
 
-    pub fn new_field_validation(message: &str, model: &str, field: &str, span: Span) -> DatamodelWarning {
+    pub fn new_field_validation(
+        message: &str,
+        model: &str,
+        field: &str,
+        span: Span,
+    ) -> DatamodelWarning {
         let msg = format!(
             "Warning validating field `{}` in {} `{}`: {}",
             field, "model", model, message
@@ -100,7 +108,12 @@ impl DatamodelWarning {
         self.span
     }
 
-    pub fn pretty_print(&self, f: &mut dyn std::io::Write, file_name: &str, text: &str) -> std::io::Result<()> {
+    pub fn pretty_print(
+        &self,
+        f: &mut dyn std::io::Write,
+        file_name: &str,
+        text: &str,
+    ) -> std::io::Result<()> {
         pretty_print(
             f,
             file_name,

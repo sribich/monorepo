@@ -1,15 +1,23 @@
 use std::fmt::Debug;
 
 use base64::prelude::*;
-use either::Either::{Left, Right};
+use either::Either::Left;
+use either::Either::Right;
+use psl::Diagnostics;
+use psl::StringFromEnvVar;
 use psl::datamodel_connector::Connector;
 use psl::diagnostics::DatamodelWarning;
-use psl::parser_database::{
-    IndexAlgorithm, ModelId, OperatorClass, ReferentialAction, ScalarFieldType, ScalarType, SortOrder, walkers,
-};
+use psl::parser_database::IndexAlgorithm;
+use psl::parser_database::ModelId;
+use psl::parser_database::OperatorClass;
+use psl::parser_database::ReferentialAction;
+use psl::parser_database::ScalarFieldType;
+use psl::parser_database::ScalarType;
+use psl::parser_database::SortOrder;
+use psl::parser_database::walkers;
+use psl::psl_ast::ast::FieldArity;
 use psl::psl_ast::ast::WithDocumentation;
-use psl::psl_ast::ast::{self, FieldArity};
-use psl::{Diagnostics, StringFromEnvVar};
+use psl::psl_ast::ast::{self};
 
 pub(crate) trait DatamodelAssert<'a> {
     fn assert_has_model(&'a self, name: &str) -> walkers::ModelWalker<'a>;
@@ -32,7 +40,11 @@ pub(crate) trait ModelAssert<'a> {
     fn assert_with_documentation(&self, t: &str) -> &Self;
     fn assert_index_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a>;
     fn assert_unique_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a>;
-    fn assert_unique_on_fields_and_name(&self, fields: &[&str], name: &str) -> walkers::IndexWalker<'a>;
+    fn assert_unique_on_fields_and_name(
+        &self,
+        fields: &[&str],
+        name: &str,
+    ) -> walkers::IndexWalker<'a>;
     fn assert_fulltext_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a>;
     fn assert_id_on_fields(&self, fields: &[&str]) -> walkers::PrimaryKeyWalker<'a>;
     fn assert_mapped_name(&self, name: &str) -> &Self;
@@ -166,7 +178,10 @@ impl RelationFieldAssert for walkers::RelationFieldWalker<'_> {
 impl<'a> ModelAssert<'a> for walkers::ModelWalker<'a> {
     #[track_caller]
     fn assert_field_count(&self, count: usize) -> &Self {
-        assert_eq!(self.scalar_fields().count() + self.relation_fields().count(), count);
+        assert_eq!(
+            self.scalar_fields().count() + self.relation_fields().count(),
+            count
+        );
         self
     }
 
@@ -200,7 +215,10 @@ impl<'a> ModelAssert<'a> for walkers::ModelWalker<'a> {
     fn assert_index_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a> {
         self.indexes()
             .filter(|i| i.is_normal())
-            .find(|i| i.fields().len() == fields.len() && i.fields().zip(fields).all(|(a, b)| a.name() == *b))
+            .find(|i| {
+                i.fields().len() == fields.len()
+                    && i.fields().zip(fields).all(|(a, b)| a.name() == *b)
+            })
             .expect("Could not find index with the given fields.")
     }
 
@@ -208,12 +226,19 @@ impl<'a> ModelAssert<'a> for walkers::ModelWalker<'a> {
     fn assert_unique_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a> {
         self.indexes()
             .filter(|i| i.is_unique())
-            .find(|i| i.fields().len() == fields.len() && i.fields().zip(fields).all(|(a, b)| a.name() == *b))
+            .find(|i| {
+                i.fields().len() == fields.len()
+                    && i.fields().zip(fields).all(|(a, b)| a.name() == *b)
+            })
             .expect("Could not find index with the given fields.")
     }
 
     #[track_caller]
-    fn assert_unique_on_fields_and_name(&self, fields: &[&str], name: &str) -> walkers::IndexWalker<'a> {
+    fn assert_unique_on_fields_and_name(
+        &self,
+        fields: &[&str],
+        name: &str,
+    ) -> walkers::IndexWalker<'a> {
         self.indexes()
             .filter(|i| i.is_unique())
             .find(|i| {
@@ -228,7 +253,10 @@ impl<'a> ModelAssert<'a> for walkers::ModelWalker<'a> {
     fn assert_fulltext_on_fields(&self, fields: &[&str]) -> walkers::IndexWalker<'a> {
         self.indexes()
             .filter(|i| i.is_fulltext())
-            .find(|i| i.fields().len() == fields.len() && i.fields().zip(fields).all(|(a, b)| a.name() == *b))
+            .find(|i| {
+                i.fields().len() == fields.len()
+                    && i.fields().zip(fields).all(|(a, b)| a.name() == *b)
+            })
             .expect("Could not find index with the given fields.")
     }
 
@@ -237,7 +265,8 @@ impl<'a> ModelAssert<'a> for walkers::ModelWalker<'a> {
         self.primary_key()
             .filter(|pk| {
                 let pk_fields = pk.fields();
-                pk_fields.len() == fields.len() && pk_fields.zip(fields).all(|(a, b)| a.name() == *b)
+                pk_fields.len() == fields.len()
+                    && pk_fields.zip(fields).all(|(a, b)| a.name() == *b)
             })
             .expect("Model does not have a primary key with the given fields")
     }
@@ -355,7 +384,8 @@ impl ScalarFieldAssert for walkers::ScalarFieldWalker<'_> {
 
     #[track_caller]
     fn assert_default_value(&self) -> walkers::DefaultValueWalker<'_> {
-        self.default_value().expect("Field does not have a default value")
+        self.default_value()
+            .expect("Field does not have a default value")
     }
 
     #[track_caller]
@@ -574,7 +604,9 @@ impl DefaultValueAssert for ast::Expression {
 
     #[track_caller]
     fn assert_bool(&self, expected: bool) -> &Self {
-        assert!(matches!(self, ast::Expression::ConstantValue(actual, _) if actual == &format!("{expected}")));
+        assert!(
+            matches!(self, ast::Expression::ConstantValue(actual, _) if actual == &format!("{expected}"))
+        );
 
         self
     }
@@ -589,7 +621,9 @@ impl DefaultValueAssert for ast::Expression {
     #[track_caller]
     fn assert_bytes(&self, expected: &[u8]) -> &Self {
         match self {
-            ast::Expression::StringValue(actual, _) => assert_eq!(BASE64_STANDARD.decode(actual).unwrap(), expected),
+            ast::Expression::StringValue(actual, _) => {
+                assert_eq!(BASE64_STANDARD.decode(actual).unwrap(), expected)
+            }
             _ => panic!("Not a bytes value"),
         }
 
@@ -598,7 +632,9 @@ impl DefaultValueAssert for ast::Expression {
 
     #[track_caller]
     fn assert_now(&self) -> &Self {
-        assert!(matches!(self, ast::Expression::Function(name, args, _) if name == "now" && args.arguments.is_empty()));
+        assert!(
+            matches!(self, ast::Expression::Function(name, args, _) if name == "now" && args.arguments.is_empty())
+        );
 
         self
     }

@@ -1,7 +1,17 @@
-use darling::{Error, FromAttributes, FromMeta, Result, ast::NestedMeta};
+use darling::Error;
+use darling::FromAttributes;
+use darling::FromMeta;
+use darling::Result;
+use darling::ast::NestedMeta;
 use macro_util::ast::Attributes;
 use proc_macro2::Span;
-use syn::{Ident, Lit, LitStr, Meta, Path, Type, TypePath};
+use syn::Ident;
+use syn::Lit;
+use syn::LitStr;
+use syn::Meta;
+use syn::Path;
+use syn::Type;
+use syn::TypePath;
 
 #[derive(Debug, FromAttributes)]
 #[darling(attributes(error))]

@@ -1,6 +1,9 @@
 use bon::bon;
-use hashbrown::{Equivalent, HashMap};
-use psl::parser_database::{ExtensionTypeEntry, ExtensionTypeId, ExtensionTypes};
+use hashbrown::Equivalent;
+use hashbrown::HashMap;
+use psl::parser_database::ExtensionTypeEntry;
+use psl::parser_database::ExtensionTypeId;
+use psl::parser_database::ExtensionTypes;
 use serde::Deserialize;
 
 /// Configuration for extension types.
@@ -34,17 +37,25 @@ impl ExtensionTypeConfig {
 
 impl ExtensionTypes for ExtensionTypeConfig {
     fn get_by_prisma_name(&self, name: &str) -> Option<ExtensionTypeId> {
-        self.by_prisma_name.get(name).map(|&i| ExtensionTypeId::from(i))
+        self.by_prisma_name
+            .get(name)
+            .map(|&i| ExtensionTypeId::from(i))
     }
 
-    fn get_by_db_name_and_modifiers(&self, name: &str, modifiers: Option<&[String]>) -> Option<ExtensionTypeEntry<'_>> {
+    fn get_by_db_name_and_modifiers(
+        &self,
+        name: &str,
+        modifiers: Option<&[String]>,
+    ) -> Option<ExtensionTypeEntry<'_>> {
         self.by_db_name_and_modifiers
             .get(&(name, modifiers))
             .or_else(|| self.by_db_name_and_modifiers.get(&(name, None)))
             .map(|&i| self.types[i].entry(i))
     }
 
-    fn enumerate(&self) -> Box<dyn Iterator<Item = psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
+    fn enumerate(
+        &self,
+    ) -> Box<dyn Iterator<Item = psl::parser_database::ExtensionTypeEntry<'_>> + '_> {
         Box::new(self.types.iter().enumerate().map(|(i, ext)| ext.entry(i)))
     }
 }

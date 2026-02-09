@@ -81,7 +81,11 @@ mod auto_inc_create {
     // "Creating an item with a non primary key autoincrement without indexes" should "work"
     #[connector_test(
         schema(schema_3),
-        capabilities(AutoIncrement, AutoIncrementNonIndexedAllowed, AutoIncrementAllowedOnNonId)
+        capabilities(
+            AutoIncrement,
+            AutoIncrementNonIndexedAllowed,
+            AutoIncrementAllowedOnNonId
+        )
     )]
     async fn non_primary_key_autoinc_without_idx(runner: Runner) -> TestResult<()> {
         insta::assert_snapshot!(

@@ -1,14 +1,22 @@
-use super::{arguments, fields::data_input_mapper::*, *};
 use constants::args;
 use psl::datamodel_connector::ConnectorCapability;
+
+use super::arguments;
+use super::fields::data_input_mapper::*;
+use super::*;
 
 pub(crate) fn update_one_input_types(
     ctx: &'_ QuerySchema,
     model: Model,
     parent_field: Option<RelationFieldRef>,
 ) -> Vec<InputType<'_>> {
-    let checked_input = InputType::object(checked_update_one_input_type(ctx, model.clone(), parent_field.clone()));
-    let unchecked_input = InputType::object(unchecked_update_one_input_type(ctx, model, parent_field));
+    let checked_input = InputType::object(checked_update_one_input_type(
+        ctx,
+        model.clone(),
+        parent_field.clone(),
+    ));
+    let unchecked_input =
+        InputType::object(unchecked_update_one_input_type(ctx, model, parent_field));
 
     vec![checked_input, unchecked_input]
 }
@@ -48,7 +56,8 @@ fn unchecked_update_one_input_type(
     let mut input_object = init_input_object_type(ident);
     input_object.set_container(model.clone());
     input_object.set_fields(move || {
-        let mut filtered_fields = filter_unchecked_update_fields(ctx, &model, parent_field.as_ref());
+        let mut filtered_fields =
+            filter_unchecked_update_fields(ctx, &model, parent_field.as_ref());
         let field_mapper = UpdateDataInputFieldMapper::new_unchecked();
         field_mapper.map_all(ctx, &mut filtered_fields)
     });
@@ -170,7 +179,11 @@ pub(crate) fn update_one_where_combination_object<'a>(
     input_object.set_container(parent_field.related_model());
     input_object.set_fields(move || {
         vec![
-            simple_input_field(args::WHERE, InputType::object(where_input_object.clone()), None),
+            simple_input_field(
+                args::WHERE,
+                InputType::object(where_input_object.clone()),
+                None,
+            ),
             input_field(args::DATA, update_types.clone(), None),
         ]
     });

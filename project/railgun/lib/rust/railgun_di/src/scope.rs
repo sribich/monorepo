@@ -1,5 +1,6 @@
 use core::any::Any;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use std::sync::RwLock;
 
 pub trait Scope {
     fn get(&self) -> Option<Arc<dyn Any + Send + Sync>>;

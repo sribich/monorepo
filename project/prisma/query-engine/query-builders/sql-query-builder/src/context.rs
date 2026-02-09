@@ -1,6 +1,8 @@
-use std::sync::{self, atomic::AtomicUsize};
+use std::sync::atomic::AtomicUsize;
+use std::sync::{self};
 
-use quaint::prelude::{ConnectionInfo, SqlFamily};
+use quaint::prelude::ConnectionInfo;
+use quaint::prelude::SqlFamily;
 use telemetry::TraceParent;
 
 use crate::filter::alias::Alias;
@@ -54,10 +56,16 @@ impl<'a> Context<'a> {
     }
 
     pub(crate) fn next_table_alias(&self) -> Alias {
-        Alias::Table(self.alias_counter.fetch_add(1, sync::atomic::Ordering::SeqCst))
+        Alias::Table(
+            self.alias_counter
+                .fetch_add(1, sync::atomic::Ordering::SeqCst),
+        )
     }
 
     pub(crate) fn next_join_alias(&self) -> Alias {
-        Alias::Join(self.alias_counter.fetch_add(1, sync::atomic::Ordering::SeqCst))
+        Alias::Join(
+            self.alias_counter
+                .fetch_add(1, sync::atomic::Ordering::SeqCst),
+        )
     }
 }

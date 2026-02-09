@@ -1,7 +1,8 @@
 use std::sync::LazyLock;
 
 pub fn sqlite_test_url(db_name: &str) -> String {
-    std::env::var("SQLITE_TEST_URL").unwrap_or_else(|_| format!("file:{}", sqlite_test_file(db_name)))
+    std::env::var("SQLITE_TEST_URL")
+        .unwrap_or_else(|_| format!("file:{}", sqlite_test_file(db_name)))
 }
 
 fn sqlite_test_file(db_name: &str) -> String {

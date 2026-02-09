@@ -1,8 +1,14 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::value::{Constant, Documentation, Function};
-
-use super::{Field, IdDefinition, IndexDefinition, attributes::BlockAttribute, model::Commented};
+use super::Field;
+use super::IdDefinition;
+use super::IndexDefinition;
+use super::attributes::BlockAttribute;
+use super::model::Commented;
+use crate::value::Constant;
+use crate::value::Documentation;
+use crate::value::Function;
 
 /// Defines a model block.
 #[derive(Debug)]
@@ -183,8 +189,10 @@ impl fmt::Display for View<'_> {
 mod tests {
     use std::borrow::Cow;
 
-    use crate::{datamodel::*, value::Function};
     use expect_test::expect;
+
+    use crate::datamodel::*;
+    use crate::value::Function;
 
     #[test]
     fn kitchen_sink() {
@@ -235,7 +243,12 @@ mod tests {
         model.push_field(field);
 
         let mut relation = Relation::new();
-        relation.fields(["information"].into_iter().map(ToOwned::to_owned).map(Cow::Owned));
+        relation.fields(
+            ["information"]
+                .into_iter()
+                .map(ToOwned::to_owned)
+                .map(Cow::Owned),
+        );
         relation.references(["id"].into_iter().map(ToOwned::to_owned).map(Cow::Owned));
         relation.on_delete("Cascade");
         relation.on_update("Restrict");
@@ -269,14 +282,17 @@ mod tests {
         id.clustered(false);
         model.id(id);
 
-        let unique = IndexDefinition::unique(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
+        let unique =
+            IndexDefinition::unique(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
         model.push_index(unique);
 
-        let mut index = IndexDefinition::index(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
+        let mut index =
+            IndexDefinition::index(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
         index.index_type("BTree");
         model.push_index(index);
 
-        let fulltext = IndexDefinition::fulltext(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
+        let fulltext =
+            IndexDefinition::fulltext(["foo", "bar"].iter().map(|s| IndexFieldInput::new(*s)));
         model.push_index(fulltext);
 
         model.schema("public");

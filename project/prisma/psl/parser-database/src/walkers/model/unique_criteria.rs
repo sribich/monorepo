@@ -1,8 +1,7 @@
-use crate::{
-    ParserDatabase,
-    types::FieldWithArgs,
-    walkers::{IndexFieldWalker, ScalarFieldWalker},
-};
+use crate::ParserDatabase;
+use crate::types::FieldWithArgs;
+use crate::walkers::IndexFieldWalker;
+use crate::walkers::ScalarFieldWalker;
 
 /// Describes any unique criteria in a model. Can either be a primary
 /// key, or a unique index.
@@ -14,7 +13,9 @@ pub struct UniqueCriteriaWalker<'db> {
 
 impl<'db> UniqueCriteriaWalker<'db> {
     pub fn fields(self) -> impl ExactSizeIterator<Item = IndexFieldWalker<'db>> + 'db {
-        self.fields.iter().map(move |field| IndexFieldWalker::new(self.db.walk(field.path.field_in_index())))
+        self.fields
+            .iter()
+            .map(move |field| IndexFieldWalker::new(self.db.walk(field.path.field_in_index())))
     }
 
     pub fn is_strict_criteria(self) -> bool {
@@ -25,7 +26,10 @@ impl<'db> UniqueCriteriaWalker<'db> {
         self.fields().any(|field| field.is_optional())
     }
 
-    pub fn contains_exactly_fields(self, fields: impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>) -> bool {
+    pub fn contains_exactly_fields(
+        self,
+        fields: impl ExactSizeIterator<Item = ScalarFieldWalker<'db>>,
+    ) -> bool {
         if self.fields().len() != fields.len() {
             return false;
         }

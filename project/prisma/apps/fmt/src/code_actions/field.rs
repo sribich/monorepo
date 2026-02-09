@@ -1,10 +1,13 @@
 use cruet::Inflector;
-use lsp_types::{CodeAction, CodeActionKind, CodeActionOrCommand};
-use psl::{
-    diagnostics::Span,
-    parser_database::walkers::{self, FieldWalker},
-    psl_ast::ast::{WithAttributes, WithName, WithSpan},
-};
+use lsp_types::CodeAction;
+use lsp_types::CodeActionKind;
+use lsp_types::CodeActionOrCommand;
+use psl::diagnostics::Span;
+use psl::parser_database::walkers::FieldWalker;
+use psl::parser_database::walkers::{self};
+use psl::psl_ast::ast::WithAttributes;
+use psl::psl_ast::ast::WithName;
+use psl::psl_ast::ast::WithSpan;
 
 use super::CodeActionsContext;
 
@@ -55,12 +58,18 @@ pub(super) fn add_missing_opposite_relation(
         .attributes
         .iter()
         .find(|attr| attr.name() == "relation")
-        .and_then(|attr| attr.arguments.arguments.iter().find(|arg| arg.value.is_string()));
+        .and_then(|attr| {
+            attr.arguments
+                .arguments
+                .iter()
+                .find(|arg| arg.value.is_string())
+        });
 
     let relation = name_arg.map_or(Default::default(), |arg| format!(" @relation({arg})"));
 
     let field_name = name.to_camel_case().to_plural();
-    let formatted_content = format!("{separator}{indentation}{field_name} {name}[]{relation}{newline}");
+    let formatted_content =
+        format!("{separator}{indentation}{field_name} {name}[]{relation}{newline}");
 
     let Ok(edit) = super::create_text_edit(
         context.db.file_name(target_file_id),

@@ -9,6 +9,7 @@ pub mod time;
 pub mod traceparent;
 
 pub use exporter::Exporter;
-pub use id::{NextId, RequestId};
+pub use id::NextId;
+pub use id::RequestId;
 pub use layer::layer;
 pub use traceparent::TraceParent;

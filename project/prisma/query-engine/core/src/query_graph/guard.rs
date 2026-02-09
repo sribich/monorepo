@@ -8,7 +8,9 @@ pub(super) struct Guard<T: Sized> {
 
 impl<T> Guard<T> {
     pub fn new(content: T) -> Self {
-        Guard { content: Some(content) }
+        Guard {
+            content: Some(content),
+        }
     }
 
     pub fn unset(&mut self) -> T {

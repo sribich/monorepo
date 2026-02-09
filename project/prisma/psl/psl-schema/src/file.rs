@@ -1,7 +1,6 @@
-use std::{
-    fs::read_to_string,
-    path::{Path, PathBuf},
-};
+use std::fs::read_to_string;
+use std::path::Path;
+use std::path::PathBuf;
 
 use crate::locator::LocatedFiles;
 

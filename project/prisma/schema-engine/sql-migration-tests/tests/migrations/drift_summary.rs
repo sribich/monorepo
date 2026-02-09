@@ -1,7 +1,11 @@
-use expect_test::{Expect, expect};
-use schema_core::{commands::diff::{DiffParams, DiffTarget}, json_rpc::types::SchemasContainer};
-use sql_migration_tests::test_api::*;
 use std::sync::Arc;
+
+use expect_test::Expect;
+use expect_test::expect;
+use schema_core::commands::diff::DiffParams;
+use schema_core::commands::diff::DiffTarget;
+use schema_core::json_rpc::types::SchemasContainer;
+use sql_migration_tests::test_api::*;
 
 fn check(from: &str, to: &str, expectation: Expect) {
     let tmpdir = tempfile::tempdir().unwrap();
@@ -34,7 +38,11 @@ fn check(from: &str, to: &str, expectation: Expect) {
     expectation.assert_eq(&printed_messages[0]);
 }
 
-fn write_file_to_tmp(contents: &str, tempdir: &tempfile::TempDir, name: &str) -> std::path::PathBuf {
+fn write_file_to_tmp(
+    contents: &str,
+    tempdir: &tempfile::TempDir,
+    name: &str,
+) -> std::path::PathBuf {
     let tempfile_path = tempdir.path().join(name);
     std::fs::write(&tempfile_path, contents.as_bytes()).unwrap();
     tempfile_path

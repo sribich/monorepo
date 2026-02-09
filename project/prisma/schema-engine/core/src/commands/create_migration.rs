@@ -1,9 +1,15 @@
-use crate::{CoreError, CoreResult, SchemaContainerExt, migration_schema_cache::MigrationSchemaCache};
 use crosstarget_utils::time::format_utc_now;
-use json_rpc::types::{MigrationList, SchemasContainer};
+use json_rpc::types::MigrationList;
+use json_rpc::types::SchemasContainer;
 use psl::parser_database::ExtensionTypes;
-use schema_connector::{SchemaConnector, migrations_directory::*};
+use schema_connector::SchemaConnector;
+use schema_connector::migrations_directory::*;
 use user_facing_errors::schema_engine::MigrationNameTooLong;
+
+use crate::CoreError;
+use crate::CoreResult;
+use crate::SchemaContainerExt;
+use crate::migration_schema_cache::MigrationSchemaCache;
 
 /// The input to the `createMigration` command.
 #[derive(Debug)]
@@ -83,7 +89,9 @@ pub async fn create_migration(
     let from = migration_schema_cache
         .get_or_insert(&input.migrations_list.migration_directories, || async {
             // We pass the namespaces here, because we want to describe all of the namespaces we know about from the "to" schema.
-            connector.schema_from_migrations(&migrations, namespaces).await
+            connector
+                .schema_from_migrations(&migrations, namespaces)
+                .await
         })
         .await?;
 
@@ -102,7 +110,9 @@ pub async fn create_migration(
         });
     }
 
-    let destructive_change_diagnostics = connector.destructive_change_checker().pure_check(&migration);
+    let destructive_change_diagnostics = connector
+        .destructive_change_checker()
+        .pure_check(&migration);
 
     let migration_script = dialect.render_script(&migration, &destructive_change_diagnostics)?;
 

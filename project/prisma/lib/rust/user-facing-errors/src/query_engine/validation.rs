@@ -1,8 +1,12 @@
-use crate::KnownError;
+use std::borrow::Cow;
+use std::error;
+use std::fmt;
+
 use itertools::Itertools;
 use serde::Serialize;
 use serde_json::json;
-use std::{borrow::Cow, error, fmt};
+
+use crate::KnownError;
 
 /// A validation error is a Serializable object that contains the path where the validation error
 /// of a certain `kind` ocurred, and an optional and arbitrary piece of `meta`-information.
@@ -119,12 +123,17 @@ impl ValidationError {
     ///         "selection": {}
     ///     }
     /// }
-    pub fn empty_selection(selection_path: Vec<&str>, output_type_description: OutputTypeDescription) -> Self {
+    pub fn empty_selection(
+        selection_path: Vec<&str>,
+        output_type_description: OutputTypeDescription,
+    ) -> Self {
         let message = String::from("Expected a minimum of 1 field to be present, got 0");
         ValidationError {
             kind: ValidationErrorKind::EmptySelection,
             message,
-            meta: Some(json!({ "outputType": output_type_description, "selectionPath": selection_path })),
+            meta: Some(
+                json!({ "outputType": output_type_description, "selectionPath": selection_path }),
+            ),
         }
     }
 
@@ -199,14 +208,19 @@ impl ValidationError {
         expected_argument_type: &str,
         underlying_err: Option<Box<dyn error::Error>>,
     ) -> Self {
-        let argument_name = argument_path.last().expect("Argument path cannot not be empty");
+        let argument_name = argument_path
+            .last()
+            .expect("Argument path cannot not be empty");
         let (message, meta) = if let Some(err) = underlying_err {
             let err_msg = err.to_string();
             let message = format!(
                 "Invalid argument agument value. `{}` is not a valid `{}`. Underlying error: {}",
                 value, expected_argument_type, &err_msg
             );
-            let argument = ArgumentDescription::new(*argument_name, vec![Cow::Borrowed(expected_argument_type)]);
+            let argument = ArgumentDescription::new(
+                *argument_name,
+                vec![Cow::Borrowed(expected_argument_type)],
+            );
             let meta = json!({"argumentPath": argument_path, "argument": argument, "selectionPath": selection_path, "underlyingError": &err_msg});
             (message, Some(meta))
         } else {
@@ -214,7 +228,10 @@ impl ValidationError {
                 "Invalid argument agument value. `{}` is not a valid `{}`",
                 value, &expected_argument_type
             );
-            let argument = ArgumentDescription::new(*argument_name, vec![Cow::Borrowed(expected_argument_type)]);
+            let argument = ArgumentDescription::new(
+                *argument_name,
+                vec![Cow::Borrowed(expected_argument_type)],
+            );
             let meta = json!({"argumentPath": argument_path, "argument": argument, "selectionPath": selection_path, "underlyingError": serde_json::Value::Null});
             (message, Some(meta))
         };
@@ -236,8 +253,12 @@ impl ValidationError {
         provided_field_count: usize,
         input_type_description: &InputTypeDescription,
     ) -> Self {
-        let constraints =
-            InputTypeConstraints::new(min_field_count, max_field_count, required_fields, provided_field_count);
+        let constraints = InputTypeConstraints::new(
+            min_field_count,
+            max_field_count,
+            required_fields,
+            provided_field_count,
+        );
         let message = format!("Some fields are missing: {constraints}");
         ValidationError {
             kind: ValidationErrorKind::SomeFieldsMissing,
@@ -259,8 +280,12 @@ impl ValidationError {
         provided_field_count: usize,
         input_type_description: &InputTypeDescription,
     ) -> Self {
-        let constraints =
-            InputTypeConstraints::new(min_field_count, max_field_count, required_fields, provided_field_count);
+        let constraints = InputTypeConstraints::new(
+            min_field_count,
+            max_field_count,
+            required_fields,
+            provided_field_count,
+        );
         let message = format!("Too many fields given: {constraints}");
         ValidationError {
             kind: ValidationErrorKind::TooManyFieldsGiven,
@@ -283,13 +308,15 @@ impl ValidationError {
     ///         "selection": {}
     ///     }
     /// }
-    ///
     pub fn required_argument_missing(
         selection_path: Vec<&str>,
         argument_path: Vec<&str>,
         input_type_descriptions: &[InputTypeDescription],
     ) -> Self {
-        let message = format!("`{}`: A value is required but not set", argument_path.join("."));
+        let message = format!(
+            "`{}`: A value is required but not set",
+            argument_path.join(".")
+        );
         ValidationError {
             kind: ValidationErrorKind::RequiredArgumentMissing,
             message,
@@ -402,7 +429,6 @@ impl ValidationError {
     ///         }
     ///     }
     /// }
-    ///
     pub fn unknown_input_field(
         selection_path: Vec<&str>,
         argument_path: Vec<&str>,
@@ -437,16 +463,23 @@ impl ValidationError {
     ///         }
     ///     }
     // }
-    pub fn unknown_selection_field(selection_path: Vec<&str>, output_type_description: OutputTypeDescription) -> Self {
+    pub fn unknown_selection_field(
+        selection_path: Vec<&str>,
+        output_type_description: OutputTypeDescription,
+    ) -> Self {
         let message = format!(
             "Field '{}' not found in enclosing type '{}'",
-            selection_path.last().expect("Selection path must not be empty"),
+            selection_path
+                .last()
+                .expect("Selection path must not be empty"),
             output_type_description.name
         );
         ValidationError {
             kind: ValidationErrorKind::UnknownSelectionField,
             message,
-            meta: Some(json!({ "outputType": output_type_description, "selectionPath": selection_path })),
+            meta: Some(
+                json!({ "outputType": output_type_description, "selectionPath": selection_path }),
+            ),
         }
     }
 
@@ -481,7 +514,11 @@ impl ValidationError {
     pub fn union(errors: Vec<ValidationError>) -> Self {
         let message = format!(
             "Unable to match input value to any allowed input type for the field. Parse errors: [{}]",
-            errors.iter().map(|err| format!("{err}")).collect::<Vec<_>>().join(", ")
+            errors
+                .iter()
+                .map(|err| format!("{err}"))
+                .collect::<Vec<_>>()
+                .join(", ")
         );
         ValidationError {
             message,
@@ -510,9 +547,14 @@ impl ValidationError {
     ///         }
     ///     }
     /// }
-    ///
-    pub fn value_too_large(selection_path: Vec<&str>, argument_path: Vec<&str>, value: String) -> Self {
-        let argument_name = argument_path.last().expect("Argument path cannot not be empty");
+    pub fn value_too_large(
+        selection_path: Vec<&str>,
+        argument_path: Vec<&str>,
+        value: String,
+    ) -> Self {
+        let argument_name = argument_path
+            .last()
+            .expect("Argument path cannot not be empty");
         let message = format!(
             "Unable to fit float value (or large JS integer serialized in exponent notation) '{value}' into a 64 Bit signed integer for field '{argument_name}'. If you're trying to store large integers, consider using `BigInt`",
         );
@@ -520,7 +562,9 @@ impl ValidationError {
         ValidationError {
             kind: ValidationErrorKind::ValueTooLarge,
             message,
-            meta: Some(json!({"argumentPath": argument_path, "argument": argument, "selectionPath": selection_path})),
+            meta: Some(
+                json!({"argumentPath": argument_path, "argument": argument, "selectionPath": selection_path}),
+            ),
         }
     }
 }
@@ -558,7 +602,11 @@ impl OutputTypeDescriptionField {
     }
 }
 #[derive(Debug, Serialize, Clone)]
-#[serde(tag = "kind", rename_all = "camelCase", rename_all_fields = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum InputTypeDescription {
     Object {
         name: String,
@@ -612,8 +660,18 @@ pub struct InputTypeConstraints<'a> {
 }
 
 impl<'a> InputTypeConstraints<'a> {
-    fn new(min: Option<usize>, max: Option<usize>, fields: Option<Vec<Cow<'a, str>>>, got: usize) -> Self {
-        Self { min, max, fields, got }
+    fn new(
+        min: Option<usize>,
+        max: Option<usize>,
+        fields: Option<Vec<Cow<'a, str>>>,
+        got: usize,
+    ) -> Self {
+        Self {
+            min,
+            max,
+            fields,
+            got,
+        }
     }
 }
 
@@ -624,7 +682,11 @@ impl fmt::Display for InputTypeConstraints<'_> {
         match &self.fields {
             None => match (self.min, self.max) {
                 (Some(1), Some(1)) => {
-                    write!(f, "Expected exactly one field to be present, got {}.", self.got)
+                    write!(
+                        f,
+                        "Expected exactly one field to be present, got {}.",
+                        self.got
+                    )
                 }
                 (Some(min), Some(max)) => write!(
                     f,
@@ -636,7 +698,11 @@ impl fmt::Display for InputTypeConstraints<'_> {
                     "Expected a minimum of {} fields to be present, got {}.",
                     min, self.got
                 ),
-                (None, Some(max)) => write!(f, "Expected at most {} fields to be present, got {}.", max, self.got),
+                (None, Some(max)) => write!(
+                    f,
+                    "Expected at most {} fields to be present, got {}.",
+                    max, self.got
+                ),
                 (None, None) => write!(f, "Expected any selection of fields, got {}.", self.got),
             },
             Some(fields) => match (self.min, self.max) {

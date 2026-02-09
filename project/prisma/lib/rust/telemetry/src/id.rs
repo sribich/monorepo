@@ -1,11 +1,11 @@
-use std::{
-    num::NonZeroU64,
-    str::FromStr,
-    sync::atomic::{AtomicU64, Ordering},
-};
+use std::num::NonZeroU64;
+use std::str::FromStr;
+use std::sync::atomic::AtomicU64;
+use std::sync::atomic::Ordering;
 
 use derive_more::Display;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Debug, Display, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[display(fmt = "{_0}")]
@@ -64,9 +64,9 @@ impl<'de> Deserialize<'de> for SerializableNonZeroU64 {
     {
         let value = String::deserialize(deserializer)?;
         let value = value.parse().map_err(serde::de::Error::custom)?;
-        Ok(SerializableNonZeroU64(
-            NonZeroU64::new(value).ok_or_else(|| serde::de::Error::custom("value must be non-zero"))?,
-        ))
+        Ok(SerializableNonZeroU64(NonZeroU64::new(value).ok_or_else(
+            || serde::de::Error::custom("value must be non-zero"),
+        )?))
     }
 }
 

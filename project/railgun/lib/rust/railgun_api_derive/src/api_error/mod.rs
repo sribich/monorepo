@@ -1,10 +1,11 @@
 mod attributes;
 
-use attributes::{container::ContainerAttributes, variant::VariantAttributes};
-use macro_util::{
-    ast::Input,
-    generics::{generics_with_ident, generics_with_ident_and_bounds, where_clause_with_bounds},
-};
+use attributes::container::ContainerAttributes;
+use attributes::variant::VariantAttributes;
+use macro_util::ast::Input;
+use macro_util::generics::generics_with_ident;
+use macro_util::generics::generics_with_ident_and_bounds;
+use macro_util::generics::where_clause_with_bounds;
 use proc_macro::TokenStream;
 use quote::quote;
 
@@ -89,7 +90,7 @@ fn inner_derive(input: TokenStream) -> syn::Result<proc_macro2::TokenStream> {
                     ))
                 })
                 .collect::<syn::Result<(Vec<_>, Vec<_>)>>()?
-        },
+        }
     };
 
     let match_arms = if match_arms.is_empty() {

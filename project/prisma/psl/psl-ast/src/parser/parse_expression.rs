@@ -1,10 +1,12 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-    parse_arguments::parse_arguments_list,
-};
+use diagnostics::DatamodelError;
+use diagnostics::Diagnostics;
+use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use super::parse_arguments::parse_arguments_list;
 use crate::ast::*;
-use diagnostics::{DatamodelError, Diagnostics, FileId};
 
 pub(crate) fn parse_expression(
     token: Pair<'_>,
@@ -15,7 +17,10 @@ pub(crate) fn parse_expression(
     let span = Span::from((file_id, first_child.as_span()));
     match first_child.as_rule() {
         Rule::numeric_literal => Expression::NumericValue(first_child.as_str().to_string(), span),
-        Rule::string_literal => Expression::StringValue(parse_string_literal(first_child, diagnostics, file_id), span),
+        Rule::string_literal => Expression::StringValue(
+            parse_string_literal(first_child, diagnostics, file_id),
+            span,
+        ),
         Rule::path => Expression::ConstantValue(first_child.as_str().to_string(), span),
         Rule::function_call => parse_function(first_child, diagnostics, file_id),
         Rule::array_expression => parse_array(first_child, diagnostics, file_id),
@@ -34,14 +39,19 @@ fn parse_function(pair: Pair<'_>, diagnostics: &mut Diagnostics, file_id: FileId
     for current in pair.into_inner() {
         match current.as_rule() {
             Rule::path => name = Some(current.as_str().to_string()),
-            Rule::arguments_list => parse_arguments_list(current, &mut arguments, diagnostics, file_id),
+            Rule::arguments_list => {
+                parse_arguments_list(current, &mut arguments, diagnostics, file_id)
+            }
             _ => parsing_catch_all(&current, "function"),
         }
     }
 
     match name {
         Some(name) => Expression::Function(name, arguments, Span::from((file_id, span))),
-        _ => unreachable!("Encountered impossible function during parsing: {:?}", pair_str),
+        _ => unreachable!(
+            "Encountered impossible function during parsing: {:?}",
+            pair_str
+        ),
     }
 }
 
@@ -169,7 +179,8 @@ fn try_parse_unicode_codepoint(
                 }
                 (consumed_second_codepoint, Some(second_codepoint)) => {
                     // UTF-16 surrogate with
-                    let char = match char::decode_utf16([first_codepoint, second_codepoint]).next() {
+                    let char = match char::decode_utf16([first_codepoint, second_codepoint]).next()
+                    {
                         Some(Ok(c)) => Some(c),
                         _ => {
                             diagnostics.push_error(unicode_sequence_error(

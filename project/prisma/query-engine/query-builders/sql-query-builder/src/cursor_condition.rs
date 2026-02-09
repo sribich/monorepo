@@ -1,13 +1,15 @@
-use crate::{
-    Context,
-    join_utils::AliasedJoin,
-    model_extensions::{AsColumn, AsColumns, AsTable, SelectionResultExt},
-    ordering::OrderByDefinition,
-};
 use itertools::Itertools;
 use quaint::ast::*;
 use query_builder::QueryArgumentsExt;
 use query_structure::*;
+
+use crate::Context;
+use crate::join_utils::AliasedJoin;
+use crate::model_extensions::AsColumn;
+use crate::model_extensions::AsColumns;
+use crate::model_extensions::AsTable;
+use crate::model_extensions::SelectionResultExt;
+use crate::ordering::OrderByDefinition;
 
 #[derive(Debug)]
 struct CursorOrderDefinition {
@@ -205,7 +207,9 @@ pub(crate) fn build(
     match query_arguments.cursor {
         None => ConditionTree::NoCondition,
         Some(ref cursor) => {
-            let cursor_fields: Vec<_> = cursor.as_scalar_fields().expect("Cursor fields contain non-scalars.");
+            let cursor_fields: Vec<_> = cursor
+                .as_scalar_fields()
+                .expect("Cursor fields contain non-scalars.");
             let cursor_values: Vec<_> = cursor.db_values(ctx);
             let cursor_columns: Vec<_> = cursor_fields.as_slice().as_columns(ctx).collect();
             let cursor_row = Row::from(cursor_columns);
@@ -242,61 +246,63 @@ pub(crate) fn build(
                     ctx,
                 )))
             } else {
-                let or_conditions = (0..len).fold(Vec::with_capacity(len), |mut conditions_acc, n| {
-                    let (head, tail) = definitions.split_at(len - n - 1);
-                    let mut and_conditions = Vec::with_capacity(head.len() + 1);
+                let or_conditions =
+                    (0..len).fold(Vec::with_capacity(len), |mut conditions_acc, n| {
+                        let (head, tail) = definitions.split_at(len - n - 1);
+                        let mut and_conditions = Vec::with_capacity(head.len() + 1);
 
-                    for order_definition in head {
-                        and_conditions.push(map_equality_condition(&order_subquery, order_definition));
-                    }
+                        for order_definition in head {
+                            and_conditions
+                                .push(map_equality_condition(&order_subquery, order_definition));
+                        }
 
-                    let order_definition = tail.first().unwrap();
+                        let order_definition = tail.first().unwrap();
 
-                    if head.len() == len - 1 {
-                        // Special case where we build lte / gte, not lt / gt.
-                        // - We use the combination of all order-by fields as comparator for the the cursor.
-                        // - This isn't necessarily unique as a combination, i.e. doesn't guarantee stable sort order.
-                        // - Only the first condition, which is done over the full length of the fields, can have the leniency
-                        //   of equality, because if _all_ sorting fields up until the last one are identical _and_ the last field is identical,
-                        //   then the comparison row has multiple identical records and we need to retrieve those for post-processing later (throwing
-                        //   away records up until the cursor ID, but we can't do that in SQL, because we can't assume IDs to be linear).
-                        //
-                        // Example to illustrate the above:
-                        // OrderBy: A ASC | B ASC | C DESC, cursor on 2.
-                        // ID A B C
-                        // 1  2 2 3
-                        // 2  2 2 2 <- cursor
-                        // 3  3 1 4
-                        // 4  5 7 1
-                        //
-                        // The conditions we build to make sure that we only get (2, 2, 2), (3, 1, 4) and (5, 7, 1):
-                        // `(A = 2 AND B = 2 AND C >= 2) OR (A = 2 AND B > 2) OR (A > 2)`
-                        // If we would do `(A = 2 AND B >= 2)` as the middle statement, we suddenly get record with ID 1 a well. However, we can't do
-                        // `(A = 2 AND B = 2 AND C > 2)` either, because then we'd miss out on the cursor row as well as possible duplicates coming after the cursor,
-                        // which also need to be included in the result.
-                        //
-                        // Said differently, we handle all the cases in which the prefixes are equal to len - 1 to account for possible identical comparators,
-                        // but everything else must come strictly "after" the cursor.
-                        and_conditions.push(map_orderby_condition(
-                            &order_subquery,
-                            order_definition,
-                            reverse,
-                            true,
-                            ctx,
-                        ));
-                    } else {
-                        and_conditions.push(map_orderby_condition(
-                            &order_subquery,
-                            order_definition,
-                            reverse,
-                            false,
-                            ctx,
-                        ));
-                    }
+                        if head.len() == len - 1 {
+                            // Special case where we build lte / gte, not lt / gt.
+                            // - We use the combination of all order-by fields as comparator for the the cursor.
+                            // - This isn't necessarily unique as a combination, i.e. doesn't guarantee stable sort order.
+                            // - Only the first condition, which is done over the full length of the fields, can have the leniency
+                            //   of equality, because if _all_ sorting fields up until the last one are identical _and_ the last field is identical,
+                            //   then the comparison row has multiple identical records and we need to retrieve those for post-processing later (throwing
+                            //   away records up until the cursor ID, but we can't do that in SQL, because we can't assume IDs to be linear).
+                            //
+                            // Example to illustrate the above:
+                            // OrderBy: A ASC | B ASC | C DESC, cursor on 2.
+                            // ID A B C
+                            // 1  2 2 3
+                            // 2  2 2 2 <- cursor
+                            // 3  3 1 4
+                            // 4  5 7 1
+                            //
+                            // The conditions we build to make sure that we only get (2, 2, 2), (3, 1, 4) and (5, 7, 1):
+                            // `(A = 2 AND B = 2 AND C >= 2) OR (A = 2 AND B > 2) OR (A > 2)`
+                            // If we would do `(A = 2 AND B >= 2)` as the middle statement, we suddenly get record with ID 1 a well. However, we can't do
+                            // `(A = 2 AND B = 2 AND C > 2)` either, because then we'd miss out on the cursor row as well as possible duplicates coming after the cursor,
+                            // which also need to be included in the result.
+                            //
+                            // Said differently, we handle all the cases in which the prefixes are equal to len - 1 to account for possible identical comparators,
+                            // but everything else must come strictly "after" the cursor.
+                            and_conditions.push(map_orderby_condition(
+                                &order_subquery,
+                                order_definition,
+                                reverse,
+                                true,
+                                ctx,
+                            ));
+                        } else {
+                            and_conditions.push(map_orderby_condition(
+                                &order_subquery,
+                                order_definition,
+                                reverse,
+                                false,
+                                ctx,
+                            ));
+                        }
 
-                    conditions_acc.push(ConditionTree::And(and_conditions));
-                    conditions_acc
-                });
+                        conditions_acc.push(ConditionTree::And(and_conditions));
+                        conditions_acc
+                    });
 
                 ConditionTree::Or(or_conditions.into_iter().map(Into::into).collect())
             }
@@ -313,7 +319,9 @@ fn map_orderby_condition(
     include_eq: bool,
     ctx: &Context<'_>,
 ) -> Expression<'static> {
-    let cmp_column = order_subquery.clone().value(order_definition.order_column.clone());
+    let cmp_column = order_subquery
+        .clone()
+        .value(order_definition.order_column.clone());
     let cloned_cmp_column = cmp_column.clone();
     let order_column = order_definition.order_column.clone();
     let cloned_order_column = order_column.clone();
@@ -390,7 +398,9 @@ fn map_equality_condition(
     order_subquery: &Select<'static>,
     order_definition: &CursorOrderDefinition,
 ) -> Expression<'static> {
-    let cmp_column = order_subquery.clone().value(order_definition.order_column.clone());
+    let cmp_column = order_subquery
+        .clone()
+        .value(order_definition.order_column.clone());
     let order_column = order_definition.order_column.to_owned();
 
     // If we have null values in the ordering or comparison row, those are automatically included because we can't make a
@@ -414,7 +424,9 @@ fn order_definitions(
     ctx: &Context<'_>,
 ) -> Vec<CursorOrderDefinition> {
     if query_arguments.order_by.len() != order_by_defs.len() {
-        unreachable!("There must be an equal amount of order by definition than there are order bys")
+        unreachable!(
+            "There must be an equal amount of order by definition than there are order bys"
+        )
     }
 
     if query_arguments.order_by.is_empty() {
@@ -439,15 +451,22 @@ fn order_definitions(
         .zip(order_by_defs.iter())
         .map(|((_, order_by), order_by_def)| match order_by {
             OrderBy::Scalar(order_by) => cursor_order_def_scalar(order_by, order_by_def),
-            OrderBy::ScalarAggregation(order_by) => cursor_order_def_aggregation_scalar(order_by, order_by_def),
-            OrderBy::ToManyAggregation(order_by) => cursor_order_def_aggregation_rel(order_by, order_by_def),
+            OrderBy::ScalarAggregation(order_by) => {
+                cursor_order_def_aggregation_scalar(order_by, order_by_def)
+            }
+            OrderBy::ToManyAggregation(order_by) => {
+                cursor_order_def_aggregation_rel(order_by, order_by_def)
+            }
             OrderBy::Relevance(order_by) => cursor_order_def_relevance(order_by, order_by_def),
         })
         .collect_vec()
 }
 
 /// Build a CursorOrderDefinition for an order by scalar
-fn cursor_order_def_scalar(order_by: &OrderByScalar, order_by_def: &OrderByDefinition) -> CursorOrderDefinition {
+fn cursor_order_def_scalar(
+    order_by: &OrderByScalar,
+    order_by_def: &OrderByDefinition,
+) -> CursorOrderDefinition {
     // If there are any ordering hops, this finds the foreign key fields for the _last_ hop (we look for the last one because the ordering is done the last one).
     // These fk fields are needed to check whether they are nullable
     // cf: part #2 of the SQL query above, when a field is nullable.
@@ -466,7 +485,8 @@ fn cursor_order_def_aggregation_scalar(
     order_by: &OrderByScalarAggregation,
     order_by_def: &OrderByDefinition,
 ) -> CursorOrderDefinition {
-    let coalesce_exprs: Vec<Expression> = vec![order_by_def.order_column.clone(), Value::int32(0).into()];
+    let coalesce_exprs: Vec<Expression> =
+        vec![order_by_def.order_column.clone(), Value::int32(0).into()];
 
     // We coalesce the order column to 0 when it's compared to the cmp table since the aggregations joins
     // might return NULL on relations that have no connected records
@@ -490,7 +510,8 @@ fn cursor_order_def_aggregation_rel(
     // cf: part #2 of the SQL query above, when a field is nullable.
     let fks = foreign_keys_from_order_path(&order_by.path, &order_by_def.joins);
 
-    let coalesce_exprs: Vec<Expression> = vec![order_by_def.order_column.clone(), Value::int32(0).into()];
+    let coalesce_exprs: Vec<Expression> =
+        vec![order_by_def.order_column.clone(), Value::int32(0).into()];
     // We coalesce the order column to 0 when it's compared to the cmp table since the aggregations joins
     // might return NULL on relations that have no connected records
     let order_column: Expression = coalesce(coalesce_exprs).into();
@@ -504,7 +525,10 @@ fn cursor_order_def_aggregation_rel(
 }
 
 /// Build a CursorOrderDefinition for an order by relevance
-fn cursor_order_def_relevance(order_by: &OrderByRelevance, order_by_def: &OrderByDefinition) -> CursorOrderDefinition {
+fn cursor_order_def_relevance(
+    order_by: &OrderByRelevance,
+    order_by_def: &OrderByDefinition,
+) -> CursorOrderDefinition {
     let order_column = &order_by_def.order_column;
 
     CursorOrderDefinition {
@@ -515,7 +539,10 @@ fn cursor_order_def_relevance(order_by: &OrderByRelevance, order_by_def: &OrderB
     }
 }
 
-fn foreign_keys_from_order_path(path: &[OrderByHop], joins: &[AliasedJoin]) -> Option<Vec<CursorOrderForeignKey>> {
+fn foreign_keys_from_order_path(
+    path: &[OrderByHop],
+    joins: &[AliasedJoin],
+) -> Option<Vec<CursorOrderForeignKey>> {
     let (before_last_hop, last_hop) = take_last_two_elem(path);
 
     last_hop.map(|hop| {
@@ -545,8 +572,9 @@ fn foreign_keys_from_order_path(path: &[OrderByHop], joins: &[AliasedJoin]) -> O
                         match before_last_hop {
                             Some(_) => {
                                 let (before_last_join, _) = take_last_two_elem(joins);
-                                let before_last_join = before_last_join
-                                    .expect("There should be an equal amount of order by hops and joins");
+                                let before_last_join = before_last_join.expect(
+                                    "There should be an equal amount of order by hops and joins",
+                                );
 
                                 CursorOrderForeignKey {
                                     field: fk_field,

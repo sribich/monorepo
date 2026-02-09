@@ -4,7 +4,9 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod update_many {
     use indoc::indoc;
-    use query_engine_tests::{is_one_of, run_query, run_query_json};
+    use query_engine_tests::is_one_of;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -92,7 +94,11 @@ mod update_many {
     async fn update_all_items_if_where_empty(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
         create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
-        create_row(&runner, r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
           run_query!(&runner, r#"mutation {
@@ -186,7 +192,11 @@ mod update_many {
     async fn apply_number_ops_for_int(runner: Runner) -> TestResult<()> {
         create_row(&runner, r#"{ id: 1, optStr: "str1" }"#).await?;
         create_row(&runner, r#"{ id: 2, optStr: "str2", optInt: 2 }"#).await?;
-        create_row(&runner, r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, optStr: "str3", optInt: 3, optFloat: 3.1 }"#,
+        )
+        .await?;
 
         is_one_of!(
             query_number_operation(&runner, "optInt", "increment", "10").await?,
@@ -282,7 +292,12 @@ mod update_many {
         Ok(())
     }
 
-    async fn query_number_operation(runner: &Runner, field: &str, op: &str, value: &str) -> TestResult<String> {
+    async fn query_number_operation(
+        runner: &Runner,
+        field: &str,
+        op: &str,
+        value: &str,
+    ) -> TestResult<String> {
         let res = run_query_json!(
             runner,
             format!(
@@ -313,7 +328,9 @@ mod update_many {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 
@@ -323,7 +340,8 @@ mod update_many {
 
 #[test_suite(schema(json_opt), exclude(MySql(5.6)), capabilities(Json))]
 mod json_update_many {
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     #[connector_test(capabilities(AdvancedJsonNullability))]
     async fn update_json_adv(runner: Runner) -> TestResult<()> {

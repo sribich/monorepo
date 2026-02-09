@@ -1,9 +1,18 @@
-use super::*;
-use crate::{ParsedField, query_ast::*, query_graph::QueryGraph};
-use query_structure::{Model, PrismaValue};
-use std::{collections::HashMap, convert::TryInto};
+use std::collections::HashMap;
+use std::convert::TryInto;
 
-pub(crate) fn execute_raw(graph: &mut QueryGraph, field: ParsedField<'_>) -> QueryGraphBuilderResult<()> {
+use query_structure::Model;
+use query_structure::PrismaValue;
+
+use super::*;
+use crate::ParsedField;
+use crate::query_ast::*;
+use crate::query_graph::QueryGraph;
+
+pub(crate) fn execute_raw(
+    graph: &mut QueryGraph,
+    field: ParsedField<'_>,
+) -> QueryGraphBuilderResult<()> {
     let raw_query = Query::Write(WriteQuery::ExecuteRaw(raw_query(None, None, field)?));
 
     graph.create_node(raw_query);

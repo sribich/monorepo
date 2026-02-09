@@ -1,11 +1,16 @@
 use std::collections::HashMap;
 
-use lsp_types::{
-    CompletionItem, CompletionItemKind, CompletionList, Documentation, InsertTextFormat, MarkupContent, MarkupKind,
-};
+use lsp_types::CompletionItem;
+use lsp_types::CompletionItemKind;
+use lsp_types::CompletionList;
+use lsp_types::Documentation;
+use lsp_types::InsertTextFormat;
+use lsp_types::MarkupContent;
+use lsp_types::MarkupKind;
 use psl::datamodel_connector::format_completion_docs;
 
-use super::{CompletionContext, add_quotes};
+use super::CompletionContext;
+use super::add_quotes;
 
 pub(super) fn relation_mode_completion(completion_list: &mut CompletionList) {
     completion_list.items.push(CompletionItem {
@@ -136,7 +141,11 @@ pub(super) fn url_quotes_completion(completion_list: &mut CompletionList) {
     })
 }
 
-pub(super) fn url_env_db_completion(completion_list: &mut CompletionList, kind: &str, ctx: CompletionContext<'_>) {
+pub(super) fn url_env_db_completion(
+    completion_list: &mut CompletionList,
+    kind: &str,
+    ctx: CompletionContext<'_>,
+) {
     let text = match kind {
         "url" => "DATABASE_URL",
         "directUrl" => "DIRECT_URL",

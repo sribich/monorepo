@@ -1,17 +1,28 @@
+use std::convert::TryInto;
+
+use psl::datamodel_connector::ConnectorCapability;
+use query_structure::Filter;
+use query_structure::Model;
+use schema::QuerySchema;
+use schema::constants::args;
+
 use super::*;
-use crate::inputs::{RecordQueryFilterInput, UpdateManyRecordsSelectorsInput, UpdateRecordSelectorsInput};
+use crate::ArgumentListLookup;
+use crate::DataExpectation;
+use crate::ParsedField;
+use crate::ParsedInputMap;
+use crate::ParsedObject;
+use crate::RowSink;
+use crate::inputs::RecordQueryFilterInput;
+use crate::inputs::UpdateManyRecordsSelectorsInput;
+use crate::inputs::UpdateRecordSelectorsInput;
+use crate::query_ast::*;
+use crate::query_graph::Node;
+use crate::query_graph::NodeRef;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 use crate::query_graph_builder::write::limit::validate_limit;
 use crate::query_graph_builder::write::write_args_parser::*;
-use crate::{
-    ArgumentListLookup, ParsedField, ParsedInputMap,
-    query_ast::*,
-    query_graph::{Node, NodeRef, QueryGraph, QueryGraphDependency},
-};
-use crate::{DataExpectation, ParsedObject, RowSink};
-use psl::datamodel_connector::ConnectorCapability;
-use query_structure::{Filter, Model};
-use schema::{QuerySchema, constants::args};
-use std::convert::TryInto;
 
 /// Creates an update record query and adds it to the query graph, together with it's nested queries and companion read query.
 pub(crate) fn update_record(
@@ -21,7 +32,12 @@ pub(crate) fn update_record(
     mut field: ParsedField<'_>,
 ) -> QueryGraphBuilderResult<()> {
     // "where"
-    let where_arg: ParsedInputMap<'_> = field.arguments.lookup(args::WHERE).unwrap().value.try_into()?;
+    let where_arg: ParsedInputMap<'_> = field
+        .arguments
+        .lookup(args::WHERE)
+        .unwrap()
+        .value
+        .try_into()?;
     let filter = extract_unique_filter(where_arg, &model)?;
 
     // "data"
@@ -39,7 +55,9 @@ pub(crate) fn update_record(
         Some(&field),
     )?;
 
-    if !query_schema.has_capability(ConnectorCapability::UpdateReturning) || query_schema.relation_mode().is_prisma() {
+    if !query_schema.has_capability(ConnectorCapability::UpdateReturning)
+        || query_schema.relation_mode().is_prisma()
+    {
         let read_parent_node = graph.create_node(utils::read_id_infallible(
             model.clone(),
             model.shard_aware_primary_identifier(),
@@ -47,7 +65,13 @@ pub(crate) fn update_record(
         ));
 
         if query_schema.relation_mode().is_prisma() {
-            utils::insert_emulated_on_update(graph, query_schema, &model, &read_parent_node, &update_node)?;
+            utils::insert_emulated_on_update(
+                graph,
+                query_schema,
+                &model,
+                &read_parent_node,
+                &update_node,
+            )?;
         }
 
         graph.create_edge(
@@ -57,7 +81,9 @@ pub(crate) fn update_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::All(&UpdateRecordSelectorsInput),
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Update).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Update)
+                        .build(),
                 )),
             ),
         )?;
@@ -77,7 +103,9 @@ pub(crate) fn update_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::Discard,
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Update).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Update)
+                        .build(),
                 )),
             ),
         )?;
@@ -97,7 +125,9 @@ pub(crate) fn update_record(
                 model.shard_aware_primary_identifier(),
                 RowSink::ExactlyOneFilter(&RecordQueryFilterInput),
                 Some(DataExpectation::non_empty_rows(
-                    MissingRecord::builder().operation(DataOperation::Update).build(),
+                    MissingRecord::builder()
+                        .operation(DataOperation::Update)
+                        .build(),
                 )),
             ),
         )?;
@@ -161,7 +191,13 @@ pub fn update_many_records(
             },
         )?;
 
-        utils::insert_emulated_on_update(graph, query_schema, &model, &pre_read_node, &update_many_node)?;
+        utils::insert_emulated_on_update(
+            graph,
+            query_schema,
+            &model,
+            &pre_read_node,
+            &update_many_node,
+        )?;
 
         graph.create_edge(
             &pre_read_node,
@@ -274,7 +310,11 @@ where
 
     let selected_fields = if let Some(nested_fields) = additional_args.nested_field_selection {
         let (selected_fields, selection_order, nested_read) =
-            super::read::utils::extract_selected_fields(nested_fields.fields, &model, query_schema)?;
+            super::read::utils::extract_selected_fields(
+                nested_fields.fields,
+                &model,
+                query_schema,
+            )?;
 
         Some(UpdateManyRecordsFields {
             fields: selected_fields,
@@ -294,10 +334,17 @@ where
         limit: additional_args.limit,
     };
 
-    let update_many_node = graph.create_node(Query::Write(WriteQuery::UpdateManyRecords(update_many)));
+    let update_many_node =
+        graph.create_node(Query::Write(WriteQuery::UpdateManyRecords(update_many)));
 
     for (relation_field, data_map) in update_args.nested {
-        nested::connect_nested_query(graph, query_schema, update_many_node, relation_field, data_map)?;
+        nested::connect_nested_query(
+            graph,
+            query_schema,
+            update_many_node,
+            relation_field,
+            data_map,
+        )?;
     }
 
     Ok(update_many_node)

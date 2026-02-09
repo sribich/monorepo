@@ -3,22 +3,31 @@ mod postgres;
 mod sqlite;
 mod vitess;
 
-pub use mysql::MySqlVersion;
-pub use sqlite::SqliteVersion;
-pub use vitess::VitessVersion;
+use std::convert::TryFrom;
+use std::fmt;
+use std::fs;
 
+pub use mysql::MySqlVersion;
 pub(crate) use mysql::*;
 pub(crate) use postgres::*;
-pub(crate) use sqlite::*;
-pub(crate) use vitess::*;
-
-use crate::{BoxFuture, CONFIG, TestError, datamodel_rendering::DatamodelRenderer};
 use psl::datamodel_connector::ConnectorCapabilities;
 use quaint::prelude::SqlFamily;
-use std::{convert::TryFrom, fmt, fs};
+pub use sqlite::SqliteVersion;
+pub(crate) use sqlite::*;
+pub use vitess::VitessVersion;
+pub(crate) use vitess::*;
+
+use crate::BoxFuture;
+use crate::CONFIG;
+use crate::TestError;
+use crate::datamodel_rendering::DatamodelRenderer;
 
 pub trait ConnectorTagInterface {
-    fn raw_execute<'a>(&'a self, query: &'a str, connection_url: &'a str) -> BoxFuture<'a, Result<(), TestError>>;
+    fn raw_execute<'a>(
+        &'a self,
+        query: &'a str,
+        connection_url: &'a str,
+    ) -> BoxFuture<'a, Result<(), TestError>>;
 
     /// The name of the datamodel provider for this connector.
     /// Must match valid datamodel provider strings.
@@ -56,18 +65,34 @@ pub(crate) fn connection_string(
             };
 
             match v {
-                Some(PostgresVersion::V9) => format!("postgresql://postgres:prisma@127.0.0.1:5431/{database}"),
-                Some(PostgresVersion::V10) => format!("postgresql://postgres:prisma@127.0.0.1:5432/{database}"),
-                Some(PostgresVersion::V11) => format!("postgresql://postgres:prisma@127.0.0.1:5433/{database}"),
-                Some(PostgresVersion::V12) => format!("postgresql://postgres:prisma@127.0.0.1:5434/{database}"),
+                Some(PostgresVersion::V9) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5431/{database}")
+                }
+                Some(PostgresVersion::V10) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5432/{database}")
+                }
+                Some(PostgresVersion::V11) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5433/{database}")
+                }
+                Some(PostgresVersion::V12) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5434/{database}")
+                }
                 Some(PostgresVersion::V13) => {
                     format!("postgresql://postgres:prisma@127.0.0.1:5435/{database}")
                 }
-                Some(PostgresVersion::V14) => format!("postgresql://postgres:prisma@127.0.0.1:5437/{database}"),
-                Some(PostgresVersion::V15) => format!("postgresql://postgres:prisma@127.0.0.1:5438/{database}"),
-                Some(PostgresVersion::V16) => format!("postgresql://postgres:prisma@127.0.0.1:5439/{database}"),
+                Some(PostgresVersion::V14) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5437/{database}")
+                }
+                Some(PostgresVersion::V15) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5438/{database}")
+                }
+                Some(PostgresVersion::V16) => {
+                    format!("postgresql://postgres:prisma@127.0.0.1:5439/{database}")
+                }
                 Some(PostgresVersion::PgBouncer) => {
-                    format!("postgresql://postgres:prisma@127.0.0.1:6432/db?{database}&pgbouncer=true")
+                    format!(
+                        "postgresql://postgres:prisma@127.0.0.1:6432/db?{database}&pgbouncer=true"
+                    )
                 }
 
                 None => unreachable!("A versioned connector must have a concrete version to run."),
@@ -97,8 +122,12 @@ pub(crate) fn connection_string(
 
             format!("file:{db_dir}/{database}.db")
         }
-        ConnectorVersion::Vitess(Some(VitessVersion::V8_0)) => "mysql://root@localhost:33807/test".into(),
-        ConnectorVersion::Vitess(None) => unreachable!("A versioned connector must have a concrete version to run."),
+        ConnectorVersion::Vitess(Some(VitessVersion::V8_0)) => {
+            "mysql://root@localhost:33807/test".into()
+        }
+        ConnectorVersion::Vitess(None) => {
+            unreachable!("A versioned connector must have a concrete version to run.")
+        }
     }
 }
 
@@ -116,7 +145,7 @@ impl ConnectorVersion {
     fn is_broader(&self, other: &ConnectorVersion) -> bool {
         matches!(
             (self, other),
-                (Self::Postgres(None), Self::Postgres(_))
+            (Self::Postgres(None), Self::Postgres(_))
                 | (Self::MySql(None), Self::MySql(_))
                 | (Self::Sqlite(None), Self::Sqlite(_))
                 | (Self::Vitess(None), Self::Vitess(_))
@@ -138,7 +167,7 @@ impl ConnectorVersion {
             (MySql(a), MySql(b)) => versions_match(a, b),
             (Vitess(a), Vitess(b)) => versions_match(a, b),
             (Sqlite(a), Sqlite(b)) => versions_match(a, b),
-            | (Sqlite(..), _)
+            (Sqlite(..), _)
             | (_, Sqlite(..))
             | (Vitess(..), _)
             | (_, Vitess(..))
@@ -260,10 +289,16 @@ impl TryFrom<(&str, Option<&str>)> for ConnectorVersion {
     fn try_from((connector, version): (&str, Option<&str>)) -> Result<Self, Self::Error> {
         Ok(match connector.to_lowercase().as_str() {
             "sqlite" => ConnectorVersion::Sqlite(version.map(SqliteVersion::try_from).transpose()?),
-            "postgres" => ConnectorVersion::Postgres(version.map(PostgresVersion::try_from).transpose()?),
+            "postgres" => {
+                ConnectorVersion::Postgres(version.map(PostgresVersion::try_from).transpose()?)
+            }
             "mysql" => ConnectorVersion::MySql(version.map(MySqlVersion::try_from).transpose()?),
             "vitess" => ConnectorVersion::Vitess(version.map(|v| v.parse()).transpose()?),
-            _ => return Err(TestError::parse_error(format!("Unknown connector tag `{connector}`"))),
+            _ => {
+                return Err(TestError::parse_error(format!(
+                    "Unknown connector tag `{connector}`"
+                )));
+            }
         })
     }
 }

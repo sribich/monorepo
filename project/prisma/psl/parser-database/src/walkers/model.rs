@@ -4,19 +4,23 @@ mod unique_criteria;
 
 pub use primary_key::*;
 pub use shard_key::*;
-
 pub(crate) use unique_criteria::*;
 
-use super::{
-    CompleteInlineRelationWalker, FieldWalker, IndexWalker, InlineRelationWalker, RelationFieldWalker, RelationWalker,
-    ScalarFieldWalker, newline,
-};
-
-use crate::{
-    FileId,
-    ast::{self, IndentationType, NewlineType, WithName, WithSpan},
-    types::ModelAttributes,
-};
+use super::CompleteInlineRelationWalker;
+use super::FieldWalker;
+use super::IndexWalker;
+use super::InlineRelationWalker;
+use super::RelationFieldWalker;
+use super::RelationWalker;
+use super::ScalarFieldWalker;
+use super::newline;
+use crate::FileId;
+use crate::ast::IndentationType;
+use crate::ast::NewlineType;
+use crate::ast::WithName;
+use crate::ast::WithSpan;
+use crate::ast::{self};
+use crate::types::ModelAttributes;
 
 /// A `model` declaration in the Prisma schema.
 pub type ModelWalker<'db> = super::Walker<'db, crate::ModelId>;
@@ -114,20 +118,26 @@ impl<'db> ModelWalker<'db> {
 
     /// The primary key of the model, if defined.
     pub fn primary_key(self) -> Option<PrimaryKeyWalker<'db>> {
-        self.attributes().primary_key.as_ref().map(|pk| PrimaryKeyWalker {
-            model_id: self.id,
-            attribute: pk,
-            db: self.db,
-        })
+        self.attributes()
+            .primary_key
+            .as_ref()
+            .map(|pk| PrimaryKeyWalker {
+                model_id: self.id,
+                attribute: pk,
+                db: self.db,
+            })
     }
 
     /// The shard key of the model, if defined.
     pub fn shard_key(self) -> Option<ShardKeyWalker<'db>> {
-        self.attributes().shard_key.as_ref().map(|pk| ShardKeyWalker {
-            model_id: self.id,
-            attribute: pk,
-            db: self.db,
-        })
+        self.attributes()
+            .shard_key
+            .as_ref()
+            .map(|pk| ShardKeyWalker {
+                model_id: self.id,
+                attribute: pk,
+                db: self.db,
+            })
     }
 
     /// Iterate all the scalar fields in a given model in the order they were defined.
@@ -147,7 +157,10 @@ impl<'db> ModelWalker<'db> {
             .attributes()
             .primary_key
             .iter()
-            .map(move |pk| UniqueCriteriaWalker { fields: &pk.fields, db });
+            .map(move |pk| UniqueCriteriaWalker {
+                fields: &pk.fields,
+                db,
+            });
 
         let from_indices = self
             .indexes()
@@ -218,15 +231,18 @@ impl<'db> ModelWalker<'db> {
 
     /// 1:n and 1:1 relations that start from this model.
     pub fn inline_relations_from(self) -> impl Iterator<Item = InlineRelationWalker<'db>> {
-        self.relations_from().filter_map(|relation| match relation.refine() {
-            super::RefinedRelationWalker::Inline(relation) => Some(relation),
-            super::RefinedRelationWalker::ImplicitManyToMany(_) => None,
-            super::RefinedRelationWalker::TwoWayEmbeddedManyToMany(_) => None,
-        })
+        self.relations_from()
+            .filter_map(|relation| match relation.refine() {
+                super::RefinedRelationWalker::Inline(relation) => Some(relation),
+                super::RefinedRelationWalker::ImplicitManyToMany(_) => None,
+                super::RefinedRelationWalker::TwoWayEmbeddedManyToMany(_) => None,
+            })
     }
 
     /// 1:n and 1:1 relations, starting from this model and having both sides defined.
-    pub fn complete_inline_relations_from(self) -> impl Iterator<Item = CompleteInlineRelationWalker<'db>> {
+    pub fn complete_inline_relations_from(
+        self,
+    ) -> impl Iterator<Item = CompleteInlineRelationWalker<'db>> {
         self.inline_relations_from()
             .filter_map(|relation| relation.as_complete())
     }
@@ -276,7 +292,9 @@ impl<'db> ModelWalker<'db> {
     ///          ^^^^^^^^
     /// ```
     pub fn schema(self) -> Option<(&'db str, ast::Span)> {
-        self.attributes().schema.map(|(id, span)| (&self.db[id], span))
+        self.attributes()
+            .schema
+            .map(|(id, span)| (&self.db[id], span))
     }
 
     /// The name of the schema the model belongs to.

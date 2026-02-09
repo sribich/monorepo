@@ -19,16 +19,18 @@ pub(crate) fn merge_schemas(params: &str) -> Result<String, String> {
     let validated_schema = crate::validate::run(params.schema, false)?;
 
     let indent_width = 2usize;
-    let merged_schema = reformat_validated_schema_into_single(validated_schema, indent_width).unwrap();
+    let merged_schema =
+        reformat_validated_schema_into_single(validated_schema, indent_width).unwrap();
 
     Ok(merged_schema)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use expect_test::expect;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn merge_two_valid_schemas_succeeds() {

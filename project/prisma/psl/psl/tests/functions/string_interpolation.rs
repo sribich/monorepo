@@ -1,5 +1,6 @@
-use crate::common::*;
 use psl::parser_database::ScalarType;
+
+use crate::common::*;
 
 #[test]
 fn should_not_remove_whitespace() {

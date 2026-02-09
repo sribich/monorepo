@@ -1,6 +1,10 @@
-use serde::{Serialize, Serializer, ser::SerializeMap};
+use std::cell::RefCell;
 use std::cmp::Ordering;
-use std::{cell::RefCell, collections::HashMap};
+use std::collections::HashMap;
+
+use serde::Serialize;
+use serde::Serializer;
+use serde::ser::SerializeMap;
 
 /// Model operations are serialized as an array of objects, each one
 /// corresponding to a model. All other operations are simply an object

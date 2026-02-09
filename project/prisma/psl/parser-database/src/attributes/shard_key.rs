@@ -1,16 +1,25 @@
 use std::borrow::Cow;
 
 use diagnostics::DatamodelError;
-use psl_ast::ast::{self, WithName, WithSpan};
+use psl_ast::ast::WithName;
+use psl_ast::ast::WithSpan;
+use psl_ast::ast::{self};
 
-use crate::{
-    Context, ScalarFieldId,
-    attributes::{FieldResolutionError, format_fields_in_error_with_leading_word, resolve_field_array_without_args},
-    types::{ModelAttributes, ScalarField, ShardKeyAttribute},
-};
+use crate::Context;
+use crate::ScalarFieldId;
+use crate::attributes::FieldResolutionError;
+use crate::attributes::format_fields_in_error_with_leading_word;
+use crate::attributes::resolve_field_array_without_args;
+use crate::types::ModelAttributes;
+use crate::types::ScalarField;
+use crate::types::ShardKeyAttribute;
 
 /// `@@shardKey` on models
-pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, ctx: &mut Context<'_>) {
+pub(super) fn model(
+    model_data: &mut ModelAttributes,
+    model_id: crate::ModelId,
+    ctx: &mut Context<'_>,
+) {
     let attr = ctx.current_attribute();
     let fields = match ctx.visit_default_arg("fields") {
         Ok(value) => value,
@@ -25,12 +34,13 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
             relation_fields,
         }) => {
             if !unresolvable_fields.is_empty() {
-                let field_names = unresolvable_fields
-                    .into_iter()
-                    .map(|((file_id, top_id), field_name)| match top_id {
-                        ast::TopId::Model(_) => Cow::from(field_name),
-                        _ => unreachable!(),
-                    });
+                let field_names =
+                    unresolvable_fields
+                        .into_iter()
+                        .map(|((file_id, top_id), field_name)| match top_id {
+                            ast::TopId::Model(_) => Cow::from(field_name),
+                            _ => unreachable!(),
+                        });
 
                 let msg = format!(
                     "The multi field shard key declaration refers to the unknown {}.",
@@ -71,7 +81,9 @@ pub(super) fn model(model_data: &mut ModelAttributes, model_id: crate::ModelId, 
     let fields_that_are_not_required: Vec<&str> = resolved_fields
         .iter()
         .filter_map(|id| {
-            let ScalarField { model_id, field_id, .. } = ctx.types[*id];
+            let ScalarField {
+                model_id, field_id, ..
+            } = ctx.types[*id];
             let field = &ctx.asts[model_id][field_id];
             (!field.arity.is_required()).then_some(field.name())
         })

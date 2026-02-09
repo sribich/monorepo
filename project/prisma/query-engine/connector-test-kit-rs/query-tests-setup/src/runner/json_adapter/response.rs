@@ -1,9 +1,11 @@
-use query_core::{
-    constants::custom_types,
-    response_ir::{Item, ItemRef, Map},
-};
+use query_core::constants::custom_types;
+use query_core::response_ir::Item;
+use query_core::response_ir::ItemRef;
+use query_core::response_ir::Map;
 use query_structure::PrismaValue;
-use request_handlers::{GQLBatchResponse, GQLResponse, PrismaResponse};
+use request_handlers::GQLBatchResponse;
+use request_handlers::GQLResponse;
+use request_handlers::PrismaResponse;
 
 pub struct JsonResponse;
 
@@ -17,7 +19,9 @@ impl JsonResponse {
         }
 
         match response {
-            PrismaResponse::Single(single) => PrismaResponse::Single(graphql_response_to_json_response(single)),
+            PrismaResponse::Single(single) => {
+                PrismaResponse::Single(graphql_response_to_json_response(single))
+            }
             PrismaResponse::Multi(batch) => {
                 let responses: Vec<_> = batch
                     .into_responses()

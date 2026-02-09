@@ -16,8 +16,16 @@ mod aggregation_max {
 
     #[connector_test]
     async fn max_some_records(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 5.5, int: 5, bInt: "5", string: "a" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 4.5, int: 10, bInt: "10", string: "b" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 5.5, int: 5, bInt: "5", string: "a" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 4.5, int: 10, bInt: "10", string: "b" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(
@@ -32,10 +40,26 @@ mod aggregation_max {
 
     #[connector_test]
     async fn max_with_all_sorts_of_query_args(runner: Runner) -> TestResult<()> {
-        create_row(&runner, r#"{ id: 1, float: 5.5, int: 5, bInt: "5", string: "2" }"#).await?;
-        create_row(&runner, r#"{ id: 2, float: 4.5, int: 10, bInt: "10", string: "f" }"#).await?;
-        create_row(&runner, r#"{ id: 3, float: 1.5, int: 2, bInt: "2", string: "z" }"#).await?;
-        create_row(&runner, r#"{ id: 4, float: 0.0, int: 1, bInt: "1", string: "g" }"#).await?;
+        create_row(
+            &runner,
+            r#"{ id: 1, float: 5.5, int: 5, bInt: "5", string: "2" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 2, float: 4.5, int: 10, bInt: "10", string: "f" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 3, float: 1.5, int: 2, bInt: "2", string: "z" }"#,
+        )
+        .await?;
+        create_row(
+            &runner,
+            r#"{ id: 4, float: 0.0, int: 1, bInt: "1", string: "g" }"#,
+        )
+        .await?;
 
         insta::assert_snapshot!(
             run_query!(&runner, "query { aggregateTestModel(take: 2) { _max { int bInt float string } } }"),
@@ -72,7 +96,9 @@ mod aggregation_max {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -162,7 +188,9 @@ mod decimal_aggregation_max {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

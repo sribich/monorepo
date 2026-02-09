@@ -1,5 +1,8 @@
-use crate::common::{IndexColumn, IteratorJoin};
-use std::{borrow::Cow, fmt::Display};
+use std::borrow::Cow;
+use std::fmt::Display;
+
+use crate::common::IndexColumn;
+use crate::common::IteratorJoin;
 
 pub struct AlterTable<'a> {
     pub table_name: &'a dyn Display,
@@ -94,7 +97,9 @@ impl Display for Column<'_> {
 /// ```
 /// # use sql_ddl::postgres::DropIndex;
 ///
-/// let drop_index = DropIndex { index_name: "Catidx".into() };
+/// let drop_index = DropIndex {
+///     index_name: "Catidx".into(),
+/// };
 /// assert_eq!(drop_index.to_string(), r#"DROP INDEX "Catidx""#);
 /// ```
 #[derive(Debug)]
@@ -115,10 +120,16 @@ impl Display for DropIndex<'_> {
 /// ```
 /// # use sql_ddl::postgres::DropTable;
 ///
-/// let drop_table = DropTable { table_name: "Cat".into(), cascade: false };
+/// let drop_table = DropTable {
+///     table_name: "Cat".into(),
+///     cascade: false,
+/// };
 /// assert_eq!(drop_table.to_string(), r#"DROP TABLE "Cat""#);
 ///
-/// let drop_table = DropTable { table_name: "Cat".into(), cascade: true };
+/// let drop_table = DropTable {
+///     table_name: "Cat".into(),
+///     cascade: true,
+/// };
 /// assert_eq!(drop_table.to_string(), r#"DROP TABLE "Cat" CASCADE"#);
 /// ```
 #[derive(Debug)]
@@ -146,7 +157,9 @@ impl Display for DropTable<'_> {
 /// ```
 /// # use sql_ddl::postgres::DropType;
 ///
-/// let drop_type = DropType { type_name: "CatMood".into() };
+/// let drop_type = DropType {
+///     type_name: "CatMood".into(),
+/// };
 /// assert_eq!(drop_type.to_string(), r#"DROP TYPE "CatMood""#);
 /// ```
 #[derive(Debug)]
@@ -167,7 +180,9 @@ impl Display for DropType<'_> {
 /// ```
 /// # use sql_ddl::postgres::DropView;
 ///
-/// let drop_view = DropView { view_name: "Cat".into() };
+/// let drop_view = DropView {
+///     view_name: "Cat".into(),
+/// };
 /// assert_eq!(drop_view.to_string(), r#"DROP VIEW "Cat""#);
 /// ```
 #[derive(Debug)]
@@ -200,11 +215,17 @@ impl Display for ForeignKey<'_> {
 
         f.write_str("FOREIGN KEY (")?;
 
-        self.constrained_columns.iter().map(|s| Ident(s)).join(", ", f)?;
+        self.constrained_columns
+            .iter()
+            .map(|s| Ident(s))
+            .join(", ", f)?;
 
         write!(f, ") REFERENCES {}(", self.referenced_table)?;
 
-        self.referenced_columns.iter().map(|s| Ident(s)).join(", ", f)?;
+        self.referenced_columns
+            .iter()
+            .map(|s| Ident(s))
+            .join(", ", f)?;
 
         f.write_str(")")?;
 
@@ -326,7 +347,11 @@ pub struct CreateEnum<'a> {
 
 impl Display for CreateEnum<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "CREATE TYPE {enum_name} AS ENUM (", enum_name = self.enum_name)?;
+        write!(
+            f,
+            "CREATE TYPE {enum_name} AS ENUM (",
+            enum_name = self.enum_name
+        )?;
         self.variants.iter().map(|s| StrLit(s)).join(", ", f)?;
         f.write_str(")")
     }
@@ -394,9 +419,8 @@ impl Display for CreateIndex<'_> {
 
 #[cfg(test)]
 mod tests {
-    use crate::SortOrder;
-
     use super::*;
+    use crate::SortOrder;
 
     #[test]
     fn create_enum_without_variants() {
@@ -405,7 +429,10 @@ mod tests {
             variants: Vec::new(),
         };
 
-        assert_eq!(create_enum.to_string(), r#"CREATE TYPE "myEnum" AS ENUM ()"#);
+        assert_eq!(
+            create_enum.to_string(),
+            r#"CREATE TYPE "myEnum" AS ENUM ()"#
+        );
     }
 
     #[test]

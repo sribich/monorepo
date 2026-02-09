@@ -1,15 +1,20 @@
-use super::{
-    InterpretationResult, InterpreterError,
-    expression::*,
-    query_interpreters::{read, write},
-};
-use crate::{Query, QueryResult};
+use std::collections::HashMap;
+use std::fmt;
+use std::slice;
+
 use connector::ConnectionLike;
 use futures::future::BoxFuture;
 use query_structure::prelude::*;
-use std::{collections::HashMap, fmt, slice};
 use telemetry::TraceParent;
 use tracing::Instrument;
+
+use super::InterpretationResult;
+use super::InterpreterError;
+use super::expression::*;
+use super::query_interpreters::read;
+use super::query_interpreters::write;
+use crate::Query;
+use crate::QueryResult;
 
 #[derive(Debug, Clone)]
 pub enum ExpressionResult {
@@ -42,7 +47,10 @@ impl ExpressionResult {
 
     /// Attempts to transform this `ExpressionResult` into a vector of `SelectionResult`s corresponding to the passed desired selection shape.
     /// A vector is returned as some expression results return more than one result row at once.
-    pub fn as_selection_results(&self, field_selection: &FieldSelection) -> InterpretationResult<Vec<SelectionResult>> {
+    pub fn as_selection_results(
+        &self,
+        field_selection: &FieldSelection,
+    ) -> InterpretationResult<Vec<SelectionResult>> {
         let converted = match self {
             Self::Query(result) => match result {
                 QueryResult::Id(id) => match id {
@@ -104,7 +112,10 @@ impl ExpressionResult {
         };
 
         converted.ok_or_else(|| {
-            InterpreterError::InterpretationError("Unable to convert result into a query result".to_owned(), None)
+            InterpreterError::InterpretationError(
+                "Unable to convert result into a query result".to_owned(),
+                None,
+            )
         })
     }
 }
@@ -188,7 +199,10 @@ impl<'conn> QueryInterpreter<'conn> {
                     let mut results = Vec::with_capacity(seq.len());
 
                     for expr in seq {
-                        results.push(self.interpret(expr, env.clone(), level + 1, traceparent).await?);
+                        results.push(
+                            self.interpret(expr, env.clone(), level + 1, traceparent)
+                                .await?,
+                        );
                         self.log_line(level + 1, || ",");
                     }
 
@@ -226,7 +240,9 @@ impl<'conn> QueryInterpreter<'conn> {
                     };
 
                     self.log_line(level, || "in {");
-                    let result = self.interpret(next_expression, inner_env, level + 1, traceparent).await;
+                    let result = self
+                        .interpret(next_expression, inner_env, level + 1, traceparent)
+                        .await;
                     self.log_line(level, || "}");
                     result
                 })
@@ -281,11 +297,21 @@ impl<'conn> QueryInterpreter<'conn> {
                 self.log_line(level, || format!("if <lambda condition> = {predicate} {{"));
 
                 let result = if predicate {
-                    self.interpret(Expression::Sequence { seq: then }, env, level + 1, traceparent)
-                        .await
+                    self.interpret(
+                        Expression::Sequence { seq: then },
+                        env,
+                        level + 1,
+                        traceparent,
+                    )
+                    .await
                 } else {
-                    self.interpret(Expression::Sequence { seq: elze }, env, level + 1, traceparent)
-                        .await
+                    self.interpret(
+                        Expression::Sequence { seq: elze },
+                        env,
+                        level + 1,
+                        traceparent,
+                    )
+                    .await
                 };
                 self.log_line(level, || "}");
                 result
@@ -314,8 +340,12 @@ impl<'conn> QueryInterpreter<'conn> {
         F: FnOnce() -> S,
     {
         if Self::log_enabled() {
-            self.log
-                .push(format!("{:indent$}{}\n", "", f().as_ref(), indent = level * 2));
+            self.log.push(format!(
+                "{:indent$}{}\n",
+                "",
+                f().as_ref(),
+                indent = level * 2
+            ));
         }
     }
 }

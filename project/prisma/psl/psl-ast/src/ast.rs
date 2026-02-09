@@ -15,24 +15,37 @@ mod source_config;
 mod top;
 mod traits;
 
-pub(crate) use self::comment::Comment;
-
-pub use argument::{Argument, ArgumentsList, EmptyArgument};
-pub use attribute::{Attribute, AttributeContainer, AttributeId};
+pub use argument::Argument;
+pub use argument::ArgumentsList;
+pub use argument::EmptyArgument;
+pub use attribute::Attribute;
+pub use attribute::AttributeContainer;
+pub use attribute::AttributeId;
 pub use config::ConfigBlockProperty;
 pub use diagnostics::Span;
-pub use r#enum::{Enum, EnumValue, EnumValueId};
+pub use r#enum::Enum;
+pub use r#enum::EnumValue;
+pub use r#enum::EnumValueId;
 pub use expression::Expression;
-pub use field::{Field, FieldArity, FieldType};
+pub use field::Field;
+pub use field::FieldArity;
+pub use field::FieldType;
 pub use find_at_position::*;
 pub use generator_config::GeneratorConfig;
 pub use identifier::Identifier;
 pub use indentation_type::IndentationType;
-pub use model::{FieldId, Model};
+pub use model::FieldId;
+pub use model::Model;
 pub use newline_type::NewlineType;
 pub use source_config::SourceConfig;
 pub use top::Top;
-pub use traits::{WithAttributes, WithDocumentation, WithIdentifier, WithName, WithSpan};
+pub use traits::WithAttributes;
+pub use traits::WithDocumentation;
+pub use traits::WithIdentifier;
+pub use traits::WithName;
+pub use traits::WithSpan;
+
+pub(crate) use self::comment::Comment;
 
 /// AST representation of a prisma schema.
 ///
@@ -76,9 +89,9 @@ pub struct ModelId(u32);
 
 impl ModelId {
     /// Used for range bounds when iterating over BTrees.
-    pub const ZERO: ModelId = ModelId(0);
-    /// Used for range bounds when iterating over BTrees.
     pub const MAX: ModelId = ModelId(u32::MAX);
+    /// Used for range bounds when iterating over BTrees.
+    pub const ZERO: ModelId = ModelId(0);
 }
 
 impl std::ops::Index<ModelId> for SchemaAst {

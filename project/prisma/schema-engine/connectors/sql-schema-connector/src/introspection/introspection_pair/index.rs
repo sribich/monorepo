@@ -1,12 +1,12 @@
-use psl::{
-    datamodel_connector::constraint_names::ConstraintNames,
-    parser_database::{IndexType, walkers},
-    psl_ast::ast,
-};
-use sql::{postgres::PostgresSchemaExt};
+use psl::datamodel_connector::constraint_names::ConstraintNames;
+use psl::parser_database::IndexType;
+use psl::parser_database::walkers;
+use psl::psl_ast::ast;
+use sql::postgres::PostgresSchemaExt;
 use sql_schema_describer as sql;
 
-use super::{IndexFieldPair, IntrospectionPair};
+use super::IndexFieldPair;
+use super::IntrospectionPair;
 
 /// Pairing a PSL index to a database index. Both values are
 /// optional, due to in some cases we plainly just copy
@@ -15,7 +15,8 @@ use super::{IndexFieldPair, IntrospectionPair};
 /// This happens with views, where we need at least one unique
 /// field in the view definition, but the database does not
 /// hold constraints on views.
-pub(crate) type IndexPair<'a> = IntrospectionPair<'a, Option<walkers::IndexWalker<'a>>, Option<sql::IndexWalker<'a>>>;
+pub(crate) type IndexPair<'a> =
+    IntrospectionPair<'a, Option<walkers::IndexWalker<'a>>, Option<sql::IndexWalker<'a>>>;
 
 impl<'a> IndexPair<'a> {
     /// The position of the index from the PSL, if existing. Used for
@@ -135,7 +136,8 @@ impl<'a> IndexPair<'a> {
 
     /// If one field defines the index, returns that field.
     pub(crate) fn field(self) -> Option<IndexFieldPair<'a>> {
-        self.defined_in_a_field().then(|| self.fields().next().unwrap())
+        self.defined_in_a_field()
+            .then(|| self.fields().next().unwrap())
     }
 
     /// True, if we add a new index that has non-default deferring.

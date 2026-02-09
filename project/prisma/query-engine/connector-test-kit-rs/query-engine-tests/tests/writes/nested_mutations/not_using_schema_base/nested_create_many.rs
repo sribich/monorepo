@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod nested_create_many {
     use indoc::indoc;
-    use query_engine_tests::{assert_error, run_query};
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
     fn schema() -> String {
         let schema = indoc! {
             r#"model ModelA {
@@ -140,7 +141,9 @@ mod nested_create_many {
     // "Nested createMany" should "allow creating a large number of records (horizontal partitioning check)"
     #[connector_test]
     async fn allow_create_large_number_records(runner: Runner) -> TestResult<()> {
-        let records: Vec<_> = (1..=1000).map(|i| format!(r#"{{ id: {i}, str1: "{i}" }}"#)).collect();
+        let records: Vec<_> = (1..=1000)
+            .map(|i| format!(r#"{{ id: {i}, str1: "{i}" }}"#))
+            .collect();
 
         run_query!(
             runner,

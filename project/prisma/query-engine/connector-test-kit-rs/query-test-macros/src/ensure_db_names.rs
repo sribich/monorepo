@@ -1,5 +1,7 @@
 use std::collections::HashSet;
-use std::sync::{Arc, LazyLock, Mutex};
+use std::sync::Arc;
+use std::sync::LazyLock;
+use std::sync::Mutex;
 
 // Ensures unique test database names.
 // Reusing the same name more than once causes random test failures, retries and overall flakiness.
@@ -14,7 +16,12 @@ impl UniqueTestDatabaseNames {
         }
     }
 
-    pub fn ensure_unique(self: &UniqueTestDatabaseNames, test_database_name: &str, suite_name: &str, test_name: &str) {
+    pub fn ensure_unique(
+        self: &UniqueTestDatabaseNames,
+        test_database_name: &str,
+        suite_name: &str,
+        test_name: &str,
+    ) {
         match self.names.lock() {
             Ok(mut names) => {
                 if names.contains(test_database_name) {

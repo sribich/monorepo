@@ -1,11 +1,22 @@
-use crate::{ConnectorTestArgs, attr_map::NestedAttrMap};
-use darling::{FromMeta, ToTokens, ast::NestedMeta};
+use std::collections::hash_map::Entry;
+
+use darling::FromMeta;
+use darling::ToTokens;
+use darling::ast::NestedMeta;
 use proc_macro::TokenStream;
 use quote::quote;
-use std::collections::hash_map::Entry;
-use syn::{
-    Item, ItemMod, MacroDelimiter, Meta, MetaList, parse_macro_input, parse_quote, spanned::Spanned, token::Paren,
-};
+use syn::Item;
+use syn::ItemMod;
+use syn::MacroDelimiter;
+use syn::Meta;
+use syn::MetaList;
+use syn::parse_macro_input;
+use syn::parse_quote;
+use syn::spanned::Spanned;
+use syn::token::Paren;
+
+use crate::ConnectorTestArgs;
+use crate::attr_map::NestedAttrMap;
 
 /// What does this do?
 /// Test attributes (like `schema(handler)`, `only`, ...) can be defined on the test (`connector_test`) or on the module.
@@ -74,10 +85,17 @@ pub fn test_suite_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
         for item in items {
             if let syn::Item::Fn(f) = item {
                 // Check if the function is marked as `connector_test` or `relation_link_test`.
-                if let Some(ref mut attr) = f.attrs.iter_mut().find(|attr| match attr.path().get_ident() {
-                    Some(ident) => &ident.to_string() == "connector_test" || &ident.to_string() == "relation_link_test",
-                    None => false,
-                }) {
+                if let Some(ref mut attr) =
+                    f.attrs
+                        .iter_mut()
+                        .find(|attr| match attr.path().get_ident() {
+                            Some(ident) => {
+                                &ident.to_string() == "connector_test"
+                                    || &ident.to_string() == "relation_link_test"
+                            }
+                            None => false,
+                        })
+                {
                     let fn_attrs = match attr.meta {
                         // `connector_test` attribute has no futher attributes.
                         Meta::Path(_) => NestedAttrMap::default(),
@@ -94,9 +112,12 @@ pub fn test_suite_impl(attr: TokenStream, input: TokenStream) -> TokenStream {
 
                         // Not supported
                         Meta::NameValue(_) => {
-                            return syn::Error::new(attr.span(), "Unexpected NameValue list for function attribute.")
-                                .into_compile_error()
-                                .into();
+                            return syn::Error::new(
+                                attr.span(),
+                                "Unexpected NameValue list for function attribute.",
+                            )
+                            .into_compile_error()
+                            .into();
                         }
                     };
 

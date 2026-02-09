@@ -4,7 +4,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use railgun_error::ResultExt;
 
-use crate::{GeneratorArgs, PrismaError, error::IoErrorContext};
+use crate::GeneratorArgs;
+use crate::PrismaError;
+use crate::error::IoErrorContext;
 
 pub fn generate_migration_metadata(args: &GeneratorArgs) -> Result<TokenStream, PrismaError> {
     /*

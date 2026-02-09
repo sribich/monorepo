@@ -2,12 +2,12 @@ mod compare;
 mod condition;
 mod projection;
 
+use std::collections::BTreeSet;
+
 pub use condition::*;
 pub use projection::*;
 
 use crate::*;
-
-use std::collections::BTreeSet;
 
 /// Filtering with a scalar value. From a GraphQL point of view this is in the
 /// head of the query:

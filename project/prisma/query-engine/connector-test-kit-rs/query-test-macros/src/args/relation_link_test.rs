@@ -1,6 +1,9 @@
-use super::{connector_test::*, *};
 use darling::FromMeta;
-use syn::{Meta, Path};
+use syn::Meta;
+use syn::Path;
+
+use super::connector_test::*;
+use super::*;
 
 #[derive(Debug)]
 pub(crate) struct RelationField(String, bool);
@@ -9,7 +12,9 @@ impl darling::ToTokens for RelationField {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let s = &self.0;
         let b = &self.1;
-        tokens.extend(quote::quote! { &::query_tests_setup::RelationField::try_from((#s, #b)).unwrap() })
+        tokens.extend(
+            quote::quote! { &::query_tests_setup::RelationField::try_from((#s, #b)).unwrap() },
+        )
     }
 }
 
@@ -101,7 +106,10 @@ impl darling::FromMeta for OnParent {
     }
 }
 
-fn parse_relation_field(lit_str: &syn::LitStr, child: bool) -> Result<RelationField, darling::Error> {
+fn parse_relation_field(
+    lit_str: &syn::LitStr,
+    child: bool,
+) -> Result<RelationField, darling::Error> {
     let path: Path = lit_str.parse()?;
     let tag = if let Some(ident) = path.get_ident() {
         let name = ident.to_string();

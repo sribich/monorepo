@@ -1,13 +1,19 @@
+use std::any::Any;
+use std::borrow::Cow;
+use std::path::Path;
+use std::sync::Arc;
+
 use psl_ast::ast::WithSpan;
 use serde::Deserialize;
 
-use crate::{
-    configuration::StringFromEnvVar,
-    datamodel_connector::{Connector, ConnectorCapabilities, RelationMode},
-    diagnostics::{DatamodelError, Diagnostics, Span},
-    set_config_dir,
-};
-use std::{any::Any, borrow::Cow, path::Path, sync::Arc};
+use crate::configuration::StringFromEnvVar;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapabilities;
+use crate::datamodel_connector::RelationMode;
+use crate::diagnostics::DatamodelError;
+use crate::diagnostics::Diagnostics;
+use crate::diagnostics::Span;
+use crate::set_config_dir;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -94,7 +100,9 @@ impl Datasource {
     }
 
     pub(crate) fn has_schema(&self, name: &str) -> bool {
-        self.namespaces.binary_search_by_key(&name, |(s, _)| s).is_ok()
+        self.namespaces
+            .binary_search_by_key(&name, |(s, _)| s)
+            .is_ok()
     }
 
     pub fn capabilities(&self) -> ConnectorCapabilities {
@@ -166,7 +174,6 @@ impl Datasource {
 
     /// Load the direct database URL, validating it and resolving env vars in the
     /// process. If there is no `directUrl` passed, it will default to `load_url()`.
-    ///
     pub fn load_direct_url<F>(&self, env: F) -> Result<String, Diagnostics>
     where
         F: Fn(&str) -> Option<String>,
@@ -185,7 +192,8 @@ impl Datasource {
                     Err(DatamodelError::new_source_validation_error(&msg, &self.name, span).into())
                 }
                 UrlValidationError::NoEnvValue(env_var) => {
-                    let e = DatamodelError::new_environment_functional_evaluation_error(env_var, span);
+                    let e =
+                        DatamodelError::new_environment_functional_evaluation_error(env_var, span);
                     Err(e.into())
                 }
                 UrlValidationError::NoUrlOrEnv => self.load_url(&env),
@@ -220,7 +228,11 @@ impl Datasource {
     /// context of Node-API integration.
     ///
     /// P.S. Don't forget to add new parameters here if needed!
-    pub fn load_url_with_config_dir<F>(&self, config_dir: &Path, env: F) -> Result<String, Diagnostics>
+    pub fn load_url_with_config_dir<F>(
+        &self,
+        config_dir: &Path,
+        env: F,
+    ) -> Result<String, Diagnostics>
     where
         F: Fn(&str) -> Option<String>,
     {
@@ -251,13 +263,15 @@ impl Datasource {
         };
 
         if !url.trim().is_empty() {
-            self.active_connector.validate_url(&url).map_err(|err_str| {
-                DatamodelError::new_source_validation_error(
-                    &format!("the shadow database URL {}", &err_str),
-                    &self.name,
-                    *url_span,
-                )
-            })?;
+            self.active_connector
+                .validate_url(&url)
+                .map_err(|err_str| {
+                    DatamodelError::new_source_validation_error(
+                        &format!("the shadow database URL {}", &err_str),
+                        &self.name,
+                        *url_span,
+                    )
+                })?;
         }
 
         Ok(Some(url))

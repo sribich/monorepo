@@ -1,6 +1,14 @@
-use psl::parser_database::{ExtensionTypes, NoExtensionTypes};
-use schema_core::{CoreResult, commands::evaluate_data_loss::{EvaluateDataLossInput, EvaluateDataLossOutput, evaluate_data_loss}, json_rpc::types::{SchemaContainer, SchemasContainer}, schema_connector::SchemaConnector};
 use std::borrow::Cow;
+
+use psl::parser_database::ExtensionTypes;
+use psl::parser_database::NoExtensionTypes;
+use schema_core::CoreResult;
+use schema_core::commands::evaluate_data_loss::EvaluateDataLossInput;
+use schema_core::commands::evaluate_data_loss::EvaluateDataLossOutput;
+use schema_core::commands::evaluate_data_loss::evaluate_data_loss;
+use schema_core::json_rpc::types::SchemaContainer;
+use schema_core::json_rpc::types::SchemasContainer;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
 
 use crate::utils;

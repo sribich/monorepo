@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod delete_many {
     use indoc::indoc;
-    use query_engine_tests::{run_query, run_query_json};
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_json;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -292,7 +293,9 @@ mod delete_many {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTodo(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTodo(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

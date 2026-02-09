@@ -1,16 +1,22 @@
 mod relation;
 mod scalar;
 
+use std::borrow::Cow;
+use std::hash::Hash;
+
 use prisma_value::PrismaValueType;
+use psl::parser_database::EnumId;
+use psl::parser_database::ExtensionTypeId;
+use psl::parser_database::ScalarType;
+use psl::parser_database::walkers;
+use psl::psl_ast::ast::FieldArity;
 pub use relation::*;
 pub use scalar::*;
 
-use crate::{Model, NativeTypeInstance, Zipper, parent_container::ParentContainer};
-use psl::{
-    parser_database::{EnumId, ExtensionTypeId, ScalarType, walkers},
-    psl_ast::ast::FieldArity,
-};
-use std::{borrow::Cow, hash::Hash};
+use crate::Model;
+use crate::NativeTypeInstance;
+use crate::Zipper;
+use crate::parent_container::ParentContainer;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Field {
@@ -98,7 +104,11 @@ impl Field {
     }
 
     pub fn as_scalar(&self) -> Option<&ScalarFieldRef> {
-        if let Self::Scalar(v) = self { Some(v) } else { None }
+        if let Self::Scalar(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn related_container(&self) -> ParentContainer {
@@ -131,7 +141,10 @@ impl TypeIdentifier {
     pub fn is_numeric(&self) -> bool {
         matches!(
             self,
-            TypeIdentifier::Int | TypeIdentifier::BigInt | TypeIdentifier::Float | TypeIdentifier::Decimal
+            TypeIdentifier::Int
+                | TypeIdentifier::BigInt
+                | TypeIdentifier::Float
+                | TypeIdentifier::Decimal
         )
     }
 
@@ -216,8 +229,18 @@ impl From<(crate::InternalDataModelRef, walkers::ScalarFieldWalker<'_>)> for Fie
     }
 }
 
-impl From<(crate::InternalDataModelRef, walkers::RelationFieldWalker<'_>)> for Field {
-    fn from((dm, rf): (crate::InternalDataModelRef, walkers::RelationFieldWalker<'_>)) -> Self {
+impl
+    From<(
+        crate::InternalDataModelRef,
+        walkers::RelationFieldWalker<'_>,
+    )> for Field
+{
+    fn from(
+        (dm, rf): (
+            crate::InternalDataModelRef,
+            walkers::RelationFieldWalker<'_>,
+        ),
+    ) -> Self {
         Field::Relation(dm.zip(rf.id))
     }
 }

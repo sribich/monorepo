@@ -1,7 +1,13 @@
-use codspeed_criterion_compat::{Criterion, black_box, criterion_group, criterion_main};
+use codspeed_criterion_compat::Criterion;
+use codspeed_criterion_compat::black_box;
+use codspeed_criterion_compat::criterion_group;
+use codspeed_criterion_compat::criterion_main;
 
 const SMALL: (&str, &str) = ("small", include_str!("../test-schemas/standupbot.prisma"));
-const MEDIUM: (&str, &str) = ("medium", include_str!("../test-schemas/noalyss_folder.prisma"));
+const MEDIUM: (&str, &str) = (
+    "medium",
+    include_str!("../test-schemas/noalyss_folder.prisma"),
+);
 const LARGE: (&str, &str) = ("large", include_str!("../test-schemas/odoo.prisma"));
 
 fn criterion_benchmark(c: &mut Criterion) {

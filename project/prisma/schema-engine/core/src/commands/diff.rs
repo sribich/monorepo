@@ -1,16 +1,25 @@
 use std::sync::Arc;
 
-use crate::{
-    SchemaContainerExt, core_error::CoreResult, dialect_for_provider, extract_namespaces
-};
 use enumflags2::BitFlags;
-use json_rpc::types::{MigrationList, SchemasContainer, SchemasWithConfigDir, UrlContainer};
+use json_rpc::types::MigrationList;
+use json_rpc::types::SchemasContainer;
+use json_rpc::types::SchemasWithConfigDir;
+use json_rpc::types::UrlContainer;
 use psl::parser_database::ExtensionTypes;
-use schema_connector::{
-    ConnectorError, ConnectorHost, DatabaseSchema, ExternalShadowDatabase, Namespaces, SchemaConnector, SchemaDialect,
-    migrations_directory::Migrations,
-};
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorHost;
+use schema_connector::DatabaseSchema;
+use schema_connector::ExternalShadowDatabase;
+use schema_connector::Namespaces;
+use schema_connector::SchemaConnector;
+use schema_connector::SchemaDialect;
+use schema_connector::migrations_directory::Migrations;
 use sql_schema_connector::SqlSchemaConnector;
+
+use crate::SchemaContainerExt;
+use crate::core_error::CoreResult;
+use crate::dialect_for_provider;
+use crate::extract_namespaces;
 
 /// The type of params for the `diff` method.
 #[derive(Debug)]
@@ -217,24 +226,33 @@ async fn json_rpc_diff_target_to_dialect(
             // If connector cannot be created (e.g. due to invalid or missing URL) we use the dialect's default namespace.
             let (default_namespace, dialect) = match crate::schema_to_connector(&sources, None) {
                 Ok(connector) => (
-                    connector.default_runtime_namespace().map(|ns| ns.to_string()),
+                    connector
+                        .default_runtime_namespace()
+                        .map(|ns| ns.to_string()),
                     connector.schema_dialect(),
                 ),
                 Err(_) => {
                     let dialect = crate::schema_to_dialect(&sources)?;
-                    (dialect.default_namespace().map(|ns| ns.to_string()), dialect)
+                    (
+                        dialect.default_namespace().map(|ns| ns.to_string()),
+                        dialect,
+                    )
                 }
             };
 
-
-            let schema = dialect.schema_from_datamodel(sources, default_namespace.as_deref(), extension_types)?;
+            let schema = dialect.schema_from_datamodel(
+                sources,
+                default_namespace.as_deref(),
+                extension_types,
+            )?;
 
             Ok(Some((dialect, schema)))
         }
         DiffTarget::Url(UrlContainer { url }) => {
             // this will not be supported
 
-            let mut connector = crate::connector_for_connection_string(url.clone(), None, BitFlags::empty())?;
+            let mut connector =
+                crate::connector_for_connection_string(url.clone(), None, BitFlags::empty())?;
             connector.ensure_connection_validity().await?;
             connector.set_preview_features(preview_features);
 
@@ -246,8 +264,9 @@ async fn json_rpc_diff_target_to_dialect(
             Ok(Some((dialect, schema)))
         }
         DiffTarget::Migrations(migration_list) => {
-            let provider =
-                schema_connector::migrations_directory::read_provider_from_lock_file(&migration_list.lockfile);
+            let provider = schema_connector::migrations_directory::read_provider_from_lock_file(
+                &migration_list.lockfile,
+            );
             match (provider.as_deref(), shadow_database_url) {
                 (Some(provider), Some(shadow_database_url)) => {
                     let dialect = dialect_for_provider(provider)?;

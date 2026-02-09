@@ -1,4 +1,5 @@
-use quaint::{ValueType, prelude::Insert};
+use quaint::ValueType;
+use quaint::prelude::Insert;
 use sql_migration_tests::test_api::*;
 use sql_schema_describer::DefaultValue;
 
@@ -27,7 +28,10 @@ fn changing_a_column_from_optional_to_required_with_a_default_is_safe(api: TestA
         }
     "#;
 
-    api.schema_push_w_datasource(dm2).force(true).send().assert_green();
+    api.schema_push_w_datasource(dm2)
+        .force(true)
+        .send()
+        .assert_green();
 
     api.assert_schema().assert_table("Test", |table| {
         table.assert_column("age", |column| {

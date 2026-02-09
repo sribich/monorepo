@@ -3,7 +3,8 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod order_by_aggr {
     use indoc::indoc;
-    use query_engine_tests::{match_connector_result, run_query};
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -1228,7 +1229,9 @@ mod order_by_aggr {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneUser(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneUser(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

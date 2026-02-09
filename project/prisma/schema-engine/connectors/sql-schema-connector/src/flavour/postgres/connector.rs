@@ -3,4 +3,7 @@ mod native;
 #[cfg(feature = "postgresql-native")]
 pub use native::*;
 
-use super::{Circumstances, MigratePostgresUrl, PostgresProvider, setup_connection};
+use super::Circumstances;
+use super::MigratePostgresUrl;
+use super::PostgresProvider;
+use super::setup_connection;

@@ -1,6 +1,7 @@
-use crate::common::*;
 use psl::parser_database::ScalarType;
 use psl::psl_ast::ast::WithDocumentation;
+
+use crate::common::*;
 
 #[test]
 fn comments_must_work_in_models() {
@@ -94,8 +95,14 @@ fn comments_must_work_in_enums() {
 
     let schema = psl::parse_schema_without_extensions(dml).unwrap();
     let role_enum = schema.db.find_enum("Role").unwrap();
-    assert_eq!(role_enum.ast_enum().documentation(), Some("Documentation Comment Enum"));
-    let vals: Vec<(_, _)> = role_enum.values().map(|v| (v.name(), v.documentation())).collect();
+    assert_eq!(
+        role_enum.ast_enum().documentation(),
+        Some("Documentation Comment Enum")
+    );
+    let vals: Vec<(_, _)> = role_enum
+        .values()
+        .map(|v| (v.name(), v.documentation()))
+        .collect();
     assert_eq!(
         vals,
         &[

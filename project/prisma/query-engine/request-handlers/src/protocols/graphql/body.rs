@@ -1,8 +1,14 @@
-use super::GraphQLProtocolAdapter;
-use query_core::{BatchDocument, BatchDocumentTransaction, Operation, QueryDocument};
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+
+use query_core::BatchDocument;
+use query_core::BatchDocumentTransaction;
+use query_core::Operation;
+use query_core::QueryDocument;
+use serde::Deserialize;
+use serde::Serialize;
 use tracing::info_span;
+
+use super::GraphQLProtocolAdapter;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", untagged)]
@@ -28,7 +34,11 @@ pub struct MultiQuery {
 }
 
 impl MultiQuery {
-    pub fn new(batch: Vec<SingleQuery>, transaction: bool, isolation_level: Option<String>) -> Self {
+    pub fn new(
+        batch: Vec<SingleQuery>,
+        transaction: bool,
+        isolation_level: Option<String>,
+    ) -> Self {
         Self {
             batch,
             transaction,
@@ -59,7 +69,10 @@ impl GraphqlBody {
         let _span = info_span!("prisma:engine:into_doc").entered();
         match self {
             GraphqlBody::Single(body) => {
-                let operation = GraphQLProtocolAdapter::convert_query_to_operation(&body.query, body.operation_name)?;
+                let operation = GraphQLProtocolAdapter::convert_query_to_operation(
+                    &body.query,
+                    body.operation_name,
+                )?;
 
                 Ok(QueryDocument::Single(operation))
             }
@@ -67,7 +80,12 @@ impl GraphqlBody {
                 let operations: crate::Result<Vec<Operation>> = bodies
                     .batch
                     .into_iter()
-                    .map(|body| GraphQLProtocolAdapter::convert_query_to_operation(&body.query, body.operation_name))
+                    .map(|body| {
+                        GraphQLProtocolAdapter::convert_query_to_operation(
+                            &body.query,
+                            body.operation_name,
+                        )
+                    })
                     .collect();
                 let transaction = if bodies.transaction {
                     Some(BatchDocumentTransaction::new(bodies.isolation_level))
@@ -75,7 +93,10 @@ impl GraphqlBody {
                     None
                 };
 
-                Ok(QueryDocument::Multi(BatchDocument::new(operations?, transaction)))
+                Ok(QueryDocument::Multi(BatchDocument::new(
+                    operations?,
+                    transaction,
+                )))
             }
         }
     }

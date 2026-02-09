@@ -1,9 +1,8 @@
 use std::collections::BTreeMap;
 
-use typegen::{
-    cache::TypeCache,
-    export::{ExportError, TypeExporter},
-};
+use typegen::cache::TypeCache;
+use typegen::export::ExportError;
+use typegen::export::TypeExporter;
 
 use crate::router::Route;
 

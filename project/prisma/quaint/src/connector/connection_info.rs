@@ -1,15 +1,7 @@
-#[cfg(any(
-    feature = "sqlite-native",
-    feature = "mysql-native",
-    feature = "postgresql-native",
-))]
+#[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
 use crate::error::{Error, ErrorKind};
 use std::{borrow::Cow, fmt};
-#[cfg(any(
-    feature = "sqlite-native",
-    feature = "mysql-native",
-    feature = "postgresql-native",
-))]
+#[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
 use url::Url;
 
 #[cfg(feature = "mysql-native")]
@@ -24,11 +16,7 @@ use std::convert::TryFrom;
 /// General information about a SQL connection.
 #[derive(Debug, Clone)]
 pub enum ConnectionInfo {
-    #[cfg(any(
-        feature = "sqlite-native",
-        feature = "mysql-native",
-        feature = "postgresql-native",
-    ))]
+    #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
     Native(NativeConnectionInfo),
 }
 
@@ -37,11 +25,7 @@ impl ConnectionInfo {
     ///
     /// Will fail if URI is invalid or the scheme points to an unsupported
     /// database.
-    #[cfg(any(
-        feature = "sqlite-native",
-        feature = "mysql-native",
-        feature = "postgresql-native",
-    ))]
+    #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
     pub fn from_url(url_str: &str) -> crate::Result<Self> {
         let url_result: Result<Url, _> = url_str.parse();
 
@@ -94,11 +78,7 @@ impl ConnectionInfo {
     /// The provided database name. This will be `None` on SQLite.
     pub fn dbname(&self) -> Option<&str> {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => Some(url.dbname()),
@@ -117,11 +97,7 @@ impl ConnectionInfo {
     /// - In MySQL, it is the database name (may be empty for Vitess).
     pub fn schema_name(&self) -> Option<&str> {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => Some(url.schema()),
@@ -138,11 +114,7 @@ impl ConnectionInfo {
     /// The provided database host. This will be `"localhost"` on SQLite.
     pub fn host(&self) -> &str {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => url.host(),
@@ -158,11 +130,7 @@ impl ConnectionInfo {
     pub fn username(&self) -> Option<Cow<'_, str>> {
         // TODO: why do some of the native `.username()` methods return an `Option<&str>` and others a `Cow<str>`?
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => Some(url.username()),
@@ -177,11 +145,7 @@ impl ConnectionInfo {
     /// The database file for SQLite, otherwise `None`.
     pub fn file_path(&self) -> Option<&str> {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(_) => None,
@@ -201,11 +165,7 @@ impl ConnectionInfo {
 
     pub fn max_bind_values(&self) -> usize {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(_) => self.sql_family().max_bind_values(),
         }
     }
@@ -213,11 +173,7 @@ impl ConnectionInfo {
     /// The family of databases connected.
     pub fn sql_family(&self) -> SqlFamily {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(_) => SqlFamily::Postgres,
@@ -232,11 +188,7 @@ impl ConnectionInfo {
     /// The provided database port, if applicable.
     pub fn port(&self) -> Option<u16> {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => Some(url.port()),
@@ -261,11 +213,7 @@ impl ConnectionInfo {
     /// and port on MySQL/Postgres, and the file path on SQLite.
     pub fn database_location(&self) -> String {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(info) => match info {
                 #[cfg(feature = "postgresql-native")]
                 NativeConnectionInfo::Postgres(url) => format!("{}:{}", url.host(), url.port()),
@@ -282,11 +230,7 @@ impl ConnectionInfo {
     #[allow(unused_variables)]
     pub fn set_version(&mut self, version: Option<String>) {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(native) => native.set_version(version),
         }
     }
@@ -301,11 +245,7 @@ impl ConnectionInfo {
 
     pub fn as_native(&self) -> Option<&NativeConnectionInfo> {
         match self {
-            #[cfg(any(
-                feature = "sqlite-native",
-                feature = "mysql-native",
-                feature = "postgresql-native",
-            ))]
+            #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
             ConnectionInfo::Native(native) => Some(native),
             _ => None,
         }
@@ -351,7 +291,7 @@ pub enum SqlFamily {
     #[cfg(feature = "mysql")]
     Mysql,
     #[cfg(feature = "sqlite")]
-    Sqlite
+    Sqlite,
 }
 
 impl SqlFamily {
@@ -394,11 +334,7 @@ impl SqlFamily {
 
     /// Get the max number of bind parameters for a single query, which in targets other
     /// than Wasm can be controlled with the env var QUERY_BATCH_SIZE.
-    #[cfg(any(
-        feature = "sqlite-native",
-        feature = "mysql-native",
-        feature = "postgresql-native",
-    ))]
+    #[cfg(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",))]
     pub fn max_bind_values(&self) -> usize {
         use std::sync::OnceLock;
         static BATCH_SIZE_OVERRIDE: OnceLock<Option<usize>> = OnceLock::new();
@@ -413,11 +349,7 @@ impl SqlFamily {
 
     /// Get the max number of bind parameters for a single query, in Wasm there's no
     /// environment, and we omit that knob.
-    #[cfg(not(any(
-        feature = "sqlite-native",
-        feature = "mysql-native",
-        feature = "postgresql-native",
-    )))]
+    #[cfg(not(any(feature = "sqlite-native", feature = "mysql-native", feature = "postgresql-native",)))]
     pub fn max_bind_values(&self) -> usize {
         self.default_max_bind_values()
     }

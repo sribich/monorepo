@@ -1,14 +1,22 @@
 use std::fmt::Display;
 
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
+
 use super::*;
-use crate::{BoxFuture, TestError, datamodel_rendering::SqlDatamodelRenderer};
-use quaint::{prelude::Queryable, single::Quaint};
+use crate::BoxFuture;
+use crate::TestError;
+use crate::datamodel_rendering::SqlDatamodelRenderer;
 
 #[derive(Debug, Default, Clone)]
 pub(crate) struct MySqlConnectorTag;
 
 impl ConnectorTagInterface for MySqlConnectorTag {
-    fn raw_execute<'a>(&'a self, query: &'a str, connection_url: &'a str) -> BoxFuture<'a, Result<(), TestError>> {
+    fn raw_execute<'a>(
+        &'a self,
+        query: &'a str,
+        connection_url: &'a str,
+    ) -> BoxFuture<'a, Result<(), TestError>> {
         Box::pin(async move {
             let conn = Quaint::new(connection_url).await?;
             Ok(conn.raw_cmd(query).await?)
@@ -45,7 +53,11 @@ impl TryFrom<&str> for MySqlVersion {
             "5.7" => Self::V5_7,
             "8" => Self::V8,
             "mariadb" => Self::MariaDb,
-            _ => return Err(TestError::parse_error(format!("Unknown MySQL version `{s}`"))),
+            _ => {
+                return Err(TestError::parse_error(format!(
+                    "Unknown MySQL version `{s}`"
+                )));
+            }
         };
 
         Ok(version)

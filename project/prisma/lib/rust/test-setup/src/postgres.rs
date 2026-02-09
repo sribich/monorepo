@@ -1,11 +1,17 @@
-use crate::{AnyError, Tags, runtime::run_with_thread_local_runtime as tok};
 use enumflags2::BitFlags;
-use quaint::{prelude::Queryable, single::Quaint};
+use quaint::prelude::Queryable;
+use quaint::single::Quaint;
 use url::Url;
+
+use crate::AnyError;
+use crate::Tags;
+use crate::runtime::run_with_thread_local_runtime as tok;
 
 pub(crate) fn get_postgres_tags(database_url: &str) -> Result<BitFlags<Tags>, String> {
     let fut = async {
-        let quaint = Quaint::new(database_url).await.map_err(|err| err.to_string())?;
+        let quaint = Quaint::new(database_url)
+            .await
+            .map_err(|err| err.to_string())?;
         let mut tags = Tags::Postgres.into();
         let version = quaint.version().await.map_err(|err| err.to_string())?;
 
@@ -44,7 +50,10 @@ pub(crate) fn get_postgres_tags(database_url: &str) -> Result<BitFlags<Tags>, St
     tok(fut)
 }
 
-pub async fn create_postgres_database(database_url: &str, db_name: &str) -> Result<(Quaint, String), AnyError> {
+pub async fn create_postgres_database(
+    database_url: &str,
+    db_name: &str,
+) -> Result<(Quaint, String), AnyError> {
     let mut url: Url = database_url.parse()?;
     let mut postgres_db_url = url.clone();
 
@@ -77,7 +86,8 @@ pub async fn create_postgres_database(database_url: &str, db_name: &str) -> Resu
 
     let conn = Quaint::new(&url_str).await?;
 
-    conn.raw_cmd("CREATE SCHEMA IF NOT EXISTS \"public\"").await?;
+    conn.raw_cmd("CREATE SCHEMA IF NOT EXISTS \"public\"")
+        .await?;
 
     Ok((conn, url_str))
 }

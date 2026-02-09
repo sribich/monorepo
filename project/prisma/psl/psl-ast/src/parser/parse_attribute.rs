@@ -1,9 +1,10 @@
-use super::{
-    Rule,
-    helpers::{Pair, parsing_catch_all},
-};
-use crate::{ast::*, parser::parse_arguments::parse_arguments_list};
 use diagnostics::FileId;
+
+use super::Rule;
+use super::helpers::Pair;
+use super::helpers::parsing_catch_all;
+use crate::ast::*;
+use crate::parser::parse_arguments::parse_arguments_list;
 
 pub(crate) fn parse_attribute(
     pair: Pair<'_>,
@@ -17,11 +18,17 @@ pub(crate) fn parse_attribute(
     for current in pair.into_inner() {
         match current.as_rule() {
             Rule::path => name = Some(Identifier::new(current, file_id)),
-            Rule::arguments_list => parse_arguments_list(current, &mut arguments, diagnostics, file_id),
+            Rule::arguments_list => {
+                parse_arguments_list(current, &mut arguments, diagnostics, file_id)
+            }
             _ => parsing_catch_all(&current, "attribute"),
         }
     }
 
     let name = name.unwrap();
-    Attribute { name, arguments, span }
+    Attribute {
+        name,
+        arguments,
+        span,
+    }
 }

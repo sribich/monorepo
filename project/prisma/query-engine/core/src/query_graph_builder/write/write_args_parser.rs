@@ -1,11 +1,22 @@
+use std::borrow::Cow;
+use std::convert::TryInto;
+
+use query_structure::DatasourceFieldName;
+use query_structure::Field;
+use query_structure::Model;
+use query_structure::PrismaValue;
+use query_structure::RelationFieldRef;
+use query_structure::ScalarFieldRef;
+use query_structure::TypeIdentifier;
+use query_structure::WriteArgs;
+use query_structure::WriteOperation;
+use schema::constants::args;
+use schema::constants::json_null;
+use schema::constants::operations;
+
 use super::*;
-use crate::query_document::{ParsedInputMap, ParsedInputValue};
-use query_structure::{
-    DatasourceFieldName, Field, Model, PrismaValue, RelationFieldRef, ScalarFieldRef,
-    TypeIdentifier, WriteArgs, WriteOperation,
-};
-use schema::constants::{args, json_null, operations};
-use std::{borrow::Cow, convert::TryInto};
+use crate::query_document::ParsedInputMap;
+use crate::query_document::ParsedInputValue;
 
 #[derive(Debug)]
 pub struct WriteArgsParser<'a> {
@@ -16,7 +27,10 @@ pub struct WriteArgsParser<'a> {
 impl<'a> WriteArgsParser<'a> {
     /// Creates a new set of WriteArgsParser. Expects the parsed input map from the respective data key, not the enclosing map.
     /// E.g.: { data: { THIS MAP } } from the `data` argument of a write query.
-    pub(crate) fn from(model: &Model, data_map: ParsedInputMap<'a>) -> QueryGraphBuilderResult<Self> {
+    pub(crate) fn from(
+        model: &Model,
+        data_map: ParsedInputMap<'a>,
+    ) -> QueryGraphBuilderResult<Self> {
         data_map.into_iter().try_fold(
             WriteArgsParser {
                 args: WriteArgs::new_empty(crate::executor::get_request_now()),
@@ -55,9 +69,14 @@ impl<'a> WriteArgsParser<'a> {
     }
 }
 
-fn parse_scalar(sf: &ScalarFieldRef, v: ParsedInputValue<'_>) -> Result<WriteOperation, QueryGraphBuilderError> {
+fn parse_scalar(
+    sf: &ScalarFieldRef,
+    v: ParsedInputValue<'_>,
+) -> Result<WriteOperation, QueryGraphBuilderError> {
     match v {
-        ParsedInputValue::Single(PrismaValue::Enum(e)) if sf.type_identifier() == TypeIdentifier::Json => {
+        ParsedInputValue::Single(PrismaValue::Enum(e))
+            if sf.type_identifier() == TypeIdentifier::Json =>
+        {
             let val = match e.as_str() {
                 json_null::DB_NULL => PrismaValue::Null,
                 json_null::JSON_NULL => PrismaValue::Json("null".to_owned()),

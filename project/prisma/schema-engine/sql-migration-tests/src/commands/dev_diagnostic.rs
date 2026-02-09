@@ -1,6 +1,10 @@
-use schema_core::{
-    CoreError, CoreResult, commands::dev_diagnostic::{DevAction, DevDiagnosticInput, DevDiagnosticOutput, dev_diagnostic}, schema_connector::SchemaConnector,
-};
+use schema_core::CoreError;
+use schema_core::CoreResult;
+use schema_core::commands::dev_diagnostic::DevAction;
+use schema_core::commands::dev_diagnostic::DevDiagnosticInput;
+use schema_core::commands::dev_diagnostic::DevDiagnosticOutput;
+use schema_core::commands::dev_diagnostic::dev_diagnostic;
+use schema_core::schema_connector::SchemaConnector;
 use tempfile::TempDir;
 
 use crate::utils;
@@ -12,10 +16,7 @@ pub struct DevDiagnostic<'a> {
 }
 
 impl<'a> DevDiagnostic<'a> {
-    pub(crate) fn new(
-        api: &'a mut dyn SchemaConnector,
-        migrations_directory: &'a TempDir,
-    ) -> Self {
+    pub(crate) fn new(api: &'a mut dyn SchemaConnector, migrations_directory: &'a TempDir) -> Self {
         DevDiagnostic {
             api,
             migrations_directory,
@@ -26,9 +27,7 @@ impl<'a> DevDiagnostic<'a> {
         let migrations_list = utils::list_migrations(self.migrations_directory.path()).unwrap();
         let mut migration_schema_cache = Default::default();
         let fut = dev_diagnostic(
-            DevDiagnosticInput {
-                migrations_list,
-            },
+            DevDiagnosticInput { migrations_list },
             None,
             self.api,
             &mut migration_schema_cache,

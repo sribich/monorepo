@@ -29,7 +29,8 @@ fn starting_a_migration_works(api: TestApi) {
     assert_eq!(first_migration.rolled_back_at, None);
     assert_eq!(first_migration.applied_steps_count, 0);
 
-    let duration_since_started_at = chrono::Utc::now().signed_duration_since(first_migration.started_at);
+    let duration_since_started_at =
+        chrono::Utc::now().signed_duration_since(first_migration.started_at);
 
     assert!(duration_since_started_at >= Duration::seconds(0));
     assert!(duration_since_started_at < Duration::seconds(1));
@@ -62,7 +63,8 @@ fn finishing_a_migration_works(api: TestApi) {
     assert_eq!(first_migration.rolled_back_at, None);
     assert_eq!(first_migration.applied_steps_count, 0);
 
-    let duration_since_started_at = chrono::Utc::now().signed_duration_since(first_migration.started_at);
+    let duration_since_started_at =
+        chrono::Utc::now().signed_duration_since(first_migration.started_at);
     let duration_between_started_at_and_finished_at =
         chrono::Utc::now().signed_duration_since(first_migration.started_at);
 
@@ -100,7 +102,8 @@ fn updating_then_finishing_a_migration_works(api: TestApi) {
     assert_eq!(first_migration.rolled_back_at, None);
     assert_eq!(first_migration.applied_steps_count, 1);
 
-    let duration_since_started_at = chrono::Utc::now().signed_duration_since(first_migration.started_at);
+    let duration_since_started_at =
+        chrono::Utc::now().signed_duration_since(first_migration.started_at);
     let duration_between_started_at_and_finished_at =
         chrono::Utc::now().signed_duration_since(first_migration.started_at);
 
@@ -146,7 +149,8 @@ fn multiple_successive_migrations_work(api: TestApi) {
         assert_eq!(first_migration.rolled_back_at, None);
         assert_eq!(first_migration.applied_steps_count, 1);
 
-        let duration_since_started_at = chrono::Utc::now().signed_duration_since(first_migration.started_at);
+        let duration_since_started_at =
+            chrono::Utc::now().signed_duration_since(first_migration.started_at);
         let duration_between_started_at_and_finished_at =
             chrono::Utc::now().signed_duration_since(first_migration.started_at);
 
@@ -171,7 +175,8 @@ fn multiple_successive_migrations_work(api: TestApi) {
         assert_eq!(second_migration.applied_steps_count, 1);
         assert_eq!(second_migration.finished_at, None);
 
-        let duration_since_started_at = chrono::Utc::now().signed_duration_since(second_migration.started_at);
+        let duration_since_started_at =
+            chrono::Utc::now().signed_duration_since(second_migration.started_at);
 
         assert!(duration_since_started_at >= Duration::seconds(0));
         assert!(duration_since_started_at < Duration::seconds(10));

@@ -63,7 +63,9 @@ mod datetime {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -123,7 +125,9 @@ mod mysql_decimal {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -198,7 +202,9 @@ mod mysql_string {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())
@@ -276,7 +282,9 @@ mod mysql_bytes {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneParent(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneParent(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

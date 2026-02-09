@@ -6,22 +6,31 @@ mod transformers;
 use std::fmt;
 
 pub use error::*;
-use psl::datamodel_connector::{ConnectorCapabilities, ConnectorCapability};
-use serde::Serialize;
-use smallvec::{SmallVec, smallvec};
-
-use crate::{
-    ManyRecordsQuery, Query, QueryGraphBuilderError, QueryGraphBuilderResult, QueryOptions, ReadQuery,
-    inputs::ManyRecordsQueryFilterInput, interpreter::ExpressionResult,
-};
 use guard::*;
 use itertools::Itertools;
-use petgraph::{
-    graph::*,
-    visit::{EdgeRef as PEdgeRef, NodeIndexable},
-    *,
-};
-use query_structure::{FieldSelection, Filter, QueryArguments, SelectionResult, WriteArgs};
+use petgraph::graph::*;
+use petgraph::visit::EdgeRef as PEdgeRef;
+use petgraph::visit::NodeIndexable;
+use petgraph::*;
+use psl::datamodel_connector::ConnectorCapabilities;
+use psl::datamodel_connector::ConnectorCapability;
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::QueryArguments;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use serde::Serialize;
+use smallvec::SmallVec;
+use smallvec::smallvec;
+
+use crate::ManyRecordsQuery;
+use crate::Query;
+use crate::QueryGraphBuilderError;
+use crate::QueryGraphBuilderResult;
+use crate::QueryOptions;
+use crate::ReadQuery;
+use crate::inputs::ManyRecordsQueryFilterInput;
+use crate::interpreter::ExpressionResult;
 
 pub type QueryGraphResult<T> = std::result::Result<T, QueryGraphError>;
 
@@ -44,11 +53,19 @@ pub enum Node {
 
 impl Node {
     pub fn as_query(&self) -> Option<&Query> {
-        if let Self::Query(v) = self { Some(v) } else { None }
+        if let Self::Query(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub(crate) fn as_query_mut(&mut self) -> Option<&mut Query> {
-        if let Self::Query(v) = self { Some(v) } else { None }
+        if let Self::Query(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 }
 
@@ -67,7 +84,10 @@ impl From<Flow> for Node {
 pub enum Flow {
     /// Expresses a conditional control flow in the graph.
     /// Possible outgoing edges are `then` and `else`, each at most once, with `then` required to be present.
-    If { rule: DataRule, data: Vec<SelectionResult> },
+    If {
+        rule: DataRule,
+        data: Vec<SelectionResult>,
+    },
 
     /// Returns a fixed set of results at runtime.
     Return(Vec<SelectionResult>),
@@ -285,9 +305,15 @@ pub enum DataRule {
 impl DataRule {
     pub fn matches_result(&self, result: &ExpressionResult) -> bool {
         match self {
-            Self::RowCountEq(expected) => result.returned_row_count().is_some_and(|count| count == *expected),
-            Self::RowCountNeq(expected) => result.returned_row_count().is_some_and(|count| count != *expected),
-            Self::AffectedRowCountEq(expected) => result.affected_row_count().is_some_and(|count| count == *expected),
+            Self::RowCountEq(expected) => result
+                .returned_row_count()
+                .is_some_and(|count| count == *expected),
+            Self::RowCountNeq(expected) => result
+                .returned_row_count()
+                .is_some_and(|count| count != *expected),
+            Self::AffectedRowCountEq(expected) => result
+                .affected_row_count()
+                .is_some_and(|count| count == *expected),
             Self::Never => false,
         }
     }
@@ -405,7 +431,9 @@ impl QueryGraph {
     }
 
     pub fn result_nodes(&self) -> impl Iterator<Item = NodeRef> + '_ {
-        self.result_nodes.iter().map(|node_ix| NodeRef { node_ix: *node_ix })
+        self.result_nodes
+            .iter()
+            .map(|node_ix| NodeRef { node_ix: *node_ix })
     }
 
     /// Adds a result node to the graph.
@@ -441,7 +469,12 @@ impl QueryGraph {
     /// A root node is defined by having no incoming edges.
     pub fn root_nodes(&self) -> impl Iterator<Item = NodeRef> + '_ {
         self.graph.node_indices().filter_map(|node_ix| {
-            if self.graph.edges_directed(node_ix, Direction::Incoming).next().is_some() {
+            if self
+                .graph
+                .edges_directed(node_ix, Direction::Incoming)
+                .next()
+                .is_some()
+            {
                 None
             } else {
                 Some(NodeRef { node_ix })
@@ -482,7 +515,9 @@ impl QueryGraph {
         to: &NodeRef,
         content: QueryGraphDependency,
     ) -> QueryGraphResult<EdgeRef> {
-        let edge_ix = self.graph.add_edge(from.node_ix, to.node_ix, Guard::new(content));
+        let edge_ix = self
+            .graph
+            .add_edge(from.node_ix, to.node_ix, Guard::new(content));
         let edge = EdgeRef { edge_ix };
 
         Ok(edge)
@@ -505,7 +540,10 @@ impl QueryGraph {
 
     /// Returns a reference to the content of `node`, if the content is still present.
     pub(crate) fn node_content_mut(&mut self, node: &NodeRef) -> Option<&mut Node> {
-        self.graph.node_weight_mut(node.node_ix).unwrap().borrow_mut()
+        self.graph
+            .node_weight_mut(node.node_ix)
+            .unwrap()
+            .borrow_mut()
     }
 
     /// Returns a reference to the content of `edge`, if the content is still present.
@@ -801,17 +839,25 @@ impl QueryGraph {
 
                     for (_, sibling) in siblings {
                         let possible_edge = self.graph.find_edge(node.node_ix, sibling.node_ix);
-                        let is_if_node_child = self.incoming_edges(&sibling).into_iter().any(|edge| {
-                            let content = self.edge_content(&edge).unwrap();
-                            matches!(content, QueryGraphDependency::Then | QueryGraphDependency::Else)
-                        });
+                        let is_if_node_child =
+                            self.incoming_edges(&sibling).into_iter().any(|edge| {
+                                let content = self.edge_content(&edge).unwrap();
+                                matches!(
+                                    content,
+                                    QueryGraphDependency::Then | QueryGraphDependency::Else
+                                )
+                            });
 
                         if sibling != node
                             && possible_edge.is_none()
                             && !is_if_node_child
                             && !matches!(self.node_content(&sibling).unwrap(), Node::Flow(_))
                         {
-                            self.create_edge(&node, &sibling, QueryGraphDependency::ExecutionOrder)?;
+                            self.create_edge(
+                                &node,
+                                &sibling,
+                                QueryGraphDependency::ExecutionOrder,
+                            )?;
                         }
                     }
                 }
@@ -849,8 +895,11 @@ impl QueryGraph {
             let dependencies: Vec<FieldSelection> = out_edges
                 .into_iter()
                 .filter_map(|edge| {
-                    if let QueryGraphDependency::ProjectedDataDependency(requested_selection, _, _) =
-                        self.edge_content(&edge).unwrap()
+                    if let QueryGraphDependency::ProjectedDataDependency(
+                        requested_selection,
+                        _,
+                        _,
+                    ) = self.edge_content(&edge).unwrap()
                     {
                         Some(requested_selection.clone())
                     } else {
@@ -877,12 +926,18 @@ impl QueryGraph {
                     .remove_edge(incoming_edge)
                     .expect("Expected edges between marked nodes to be non-empty.");
 
-                if let QueryGraphDependency::ProjectedDataDependency(existing, sink, expectation) = content {
+                if let QueryGraphDependency::ProjectedDataDependency(existing, sink, expectation) =
+                    content
+                {
                     let merged_dependencies = dependencies.merge(existing);
                     self.create_edge(
                         &source,
                         &target,
-                        QueryGraphDependency::ProjectedDataDependency(merged_dependencies, sink, expectation),
+                        QueryGraphDependency::ProjectedDataDependency(
+                            merged_dependencies,
+                            sink,
+                            expectation,
+                        ),
                     )?;
                 }
             }
@@ -947,7 +1002,10 @@ impl QueryGraph {
         let reloads = self.find_unsatisfied_dependencies();
 
         for (node, identifiers) in reloads {
-            let query = self.node_content(&node).and_then(|node| node.as_query()).unwrap();
+            let query = self
+                .node_content(&node)
+                .and_then(|node| node.as_query())
+                .unwrap();
 
             trace!(
                 "Query {:?} does not return requested selection {:?} and will be reloaded.",
@@ -1034,7 +1092,10 @@ impl QueryGraph {
     /// This is only possible when the parent node _can_ fulfill the selection set.
     /// In the case of updates and inserts, for instance, only connectors supporting `InsertReturning` and `UpdateReturning` can do it,
     /// or else they're only able to return the primary identifier of the model inserted or updated.
-    fn normalize_data_dependencies(&mut self, capabilities: ConnectorCapabilities) -> QueryGraphResult<()> {
+    fn normalize_data_dependencies(
+        &mut self,
+        capabilities: ConnectorCapabilities,
+    ) -> QueryGraphResult<()> {
         let unsatisfied_deps = self.find_unsatisfied_dependencies();
 
         for (node, identifiers) in unsatisfied_deps {
@@ -1045,19 +1106,22 @@ impl QueryGraph {
 
             // If the connector does not support returning more than the primary identifier for an update,
             // do not update the selection set.
-            if query.is_update_one() && !capabilities.contains(ConnectorCapability::UpdateReturning) {
+            if query.is_update_one() && !capabilities.contains(ConnectorCapability::UpdateReturning)
+            {
                 continue;
             }
 
             // If the connector does not support returning more than the primary identifier for a create,
             // do not update the selection set.
-            if query.is_create_one() && !capabilities.contains(ConnectorCapability::InsertReturning) {
+            if query.is_create_one() && !capabilities.contains(ConnectorCapability::InsertReturning)
+            {
                 continue;
             }
 
             // If the connector does not support returning more than the primary identifier for a delete,
             // do not update the selection set.
-            if query.is_delete_one() && !capabilities.contains(ConnectorCapability::DeleteReturning) {
+            if query.is_delete_one() && !capabilities.contains(ConnectorCapability::DeleteReturning)
+            {
                 continue;
             }
 
@@ -1087,9 +1151,11 @@ impl QueryGraph {
                     let unsatisfied_dependencies: Vec<_> = edges
                         .into_iter()
                         .filter_map(|edge| match self.edge_content(&edge).unwrap() {
-                            QueryGraphDependency::ProjectedDataDependency(requested_selection, _, _)
-                                if !q.satisfies(requested_selection) =>
-                            {
+                            QueryGraphDependency::ProjectedDataDependency(
+                                requested_selection,
+                                _,
+                                _,
+                            ) if !q.satisfies(requested_selection) => {
                                 Some(requested_selection.clone())
                             }
                             _ => None,
@@ -1119,7 +1185,9 @@ impl ToGraphviz for QueryGraph {
             format!(
                 "(n{})\\n{}\\l",
                 idx,
-                node.to_graphviz().replace('\"', "\\\"").replace('\n', "\\l")
+                node.to_graphviz()
+                    .replace('\"', "\\\"")
+                    .replace('\n', "\\l")
             )
         };
 

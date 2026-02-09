@@ -1,7 +1,8 @@
+use std::fmt::Write as _;
+
 use psl::ValidatedSchema;
 use serde::Deserialize;
 use serde_json::json;
-use std::fmt::Write as _;
 
 use crate::schema_file_input::SchemaFileInput;
 
@@ -56,8 +57,9 @@ pub fn run(input_schema: SchemaFileInput, no_color: bool) -> Result<ValidatedSch
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use expect_test::expect;
+
+    use super::*;
 
     #[test]
     fn validate_non_ascii_identifiers() {

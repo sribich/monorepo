@@ -1,16 +1,30 @@
-use query_structure::{
-    AggregationSelection, FieldSelection, Filter, Model, Placeholder, PrismaValue, QueryArguments, RecordFilter,
-    RelationField, RelationLoadStrategy, ScalarCondition, ScalarField, SelectedField, SelectionResult, WriteArgs,
-};
-use serde::Serialize;
 use std::collections::BTreeMap;
+use std::collections::HashMap;
+use std::fmt;
 use std::fmt::Formatter;
-use std::{collections::HashMap, fmt};
+
+use query_structure::AggregationSelection;
+use query_structure::FieldSelection;
+use query_structure::Filter;
+use query_structure::Model;
+use query_structure::Placeholder;
+use query_structure::PrismaValue;
+use query_structure::QueryArguments;
+use query_structure::RecordFilter;
+use query_structure::RelationField;
+use query_structure::RelationLoadStrategy;
+use query_structure::ScalarCondition;
+use query_structure::ScalarField;
+use query_structure::SelectedField;
+use query_structure::SelectionResult;
+use query_structure::WriteArgs;
+use serde::Serialize;
 
 mod query_arguments_ext;
 
 pub use query_arguments_ext::QueryArgumentsExt;
-use query_template::{Fragment, PlaceholderFormat};
+use query_template::Fragment;
+use query_template::PlaceholderFormat;
 
 pub trait QueryBuilder {
     fn build_get_records(

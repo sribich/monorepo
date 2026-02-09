@@ -6,14 +6,16 @@ mod slug;
 mod url;
 mod util;
 
-use command::{
-    db::DbArgs, format::FormatArgs, generate::GenerateArgs, migrate::MigrateCli, validate::ValidateArgs,
-    version::VersionArgs,
-};
-
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use clap::Subcommand;
 use clap_verbosity_flag::Verbosity;
+use command::db::DbArgs;
+use command::format::FormatArgs;
+use command::generate::GenerateArgs;
+use command::migrate::MigrateCli;
+use command::validate::ValidateArgs;
+use command::version::VersionArgs;
 
 #[derive(Parser)]
 #[command(author, version, about)]

@@ -1,10 +1,17 @@
-use super::*;
-use fmt::Debug;
-use query_structure::{DefaultKind, prelude::ParentContainer};
-use std::{borrow::Cow, boxed::Box, fmt, sync::LazyLock};
+use std::borrow::Cow;
+use std::boxed::Box;
+use std::fmt;
+use std::sync::LazyLock;
 
-type InputObjectFields<'a> =
-    Option<Arc<LazyLock<Vec<InputField<'a>>, Box<dyn FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a>>>>;
+use fmt::Debug;
+use query_structure::DefaultKind;
+use query_structure::prelude::ParentContainer;
+
+use super::*;
+
+type InputObjectFields<'a> = Option<
+    Arc<LazyLock<Vec<InputField<'a>>, Box<dyn FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a>>>,
+>;
 
 #[derive(Clone)]
 pub struct InputObjectType<'a> {
@@ -63,7 +70,10 @@ impl<'a> InputObjectType<'a> {
         self.fields.as_ref().map(|f| -> &[_] { f }).unwrap_or(&[])
     }
 
-    pub(crate) fn set_fields(&mut self, f: impl FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a) {
+    pub(crate) fn set_fields(
+        &mut self,
+        f: impl FnOnce() -> Vec<InputField<'a>> + Send + Sync + 'a,
+    ) {
         self.fields = Some(Arc::new(LazyLock::new(Box::new(f))));
     }
 
@@ -306,11 +316,19 @@ impl<'a> InputType<'a> {
     }
 
     pub fn as_object(&self) -> Option<&InputObjectType<'a>> {
-        if let Self::Object(v) = self { Some(v) } else { None }
+        if let Self::Object(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn as_list(&self) -> Option<&InputType<'a>> {
-        if let Self::List(list) = self { Some(list) } else { None }
+        if let Self::List(list) = self {
+            Some(list)
+        } else {
+            None
+        }
     }
 
     pub fn into_object(self) -> Option<InputObjectType<'a>> {

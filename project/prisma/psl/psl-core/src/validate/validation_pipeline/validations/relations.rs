@@ -4,24 +4,29 @@ pub(super) mod one_to_one;
 
 mod visited_relation;
 
-use super::constraint_namespace::ConstraintName;
-use crate::datamodel_connector::{Connector, ConnectorCapability, RelationMode, walker_ext_traits::*};
-use crate::{diagnostics::DatamodelError, validate::validation_pipeline::context::Context};
+use std::collections::BTreeSet;
+use std::collections::HashMap;
+use std::collections::HashSet;
+use std::rc::Rc;
+
 use diagnostics::DatamodelWarning;
 use indoc::formatdoc;
 use itertools::Itertools;
 use parser_database::ReferentialAction;
+use parser_database::ScalarFieldType;
+use parser_database::ast::WithSpan;
+use parser_database::walkers::CompleteInlineRelationWalker;
+use parser_database::walkers::InlineRelationWalker;
 use parser_database::walkers::RelationFieldId;
-use parser_database::{
-    ScalarFieldType,
-    ast::WithSpan,
-    walkers::{CompleteInlineRelationWalker, InlineRelationWalker},
-};
-use std::{
-    collections::{BTreeSet, HashMap, HashSet},
-    rc::Rc,
-};
 use visited_relation::*;
+
+use super::constraint_namespace::ConstraintName;
+use crate::datamodel_connector::Connector;
+use crate::datamodel_connector::ConnectorCapability;
+use crate::datamodel_connector::RelationMode;
+use crate::datamodel_connector::walker_ext_traits::*;
+use crate::diagnostics::DatamodelError;
+use crate::validate::validation_pipeline::context::Context;
 
 const PRISMA_FORMAT_HINT: &str = "You can run `prisma format` to fix this automatically.";
 const RELATION_ATTRIBUTE_NAME: &str = "@relation";
@@ -85,7 +90,11 @@ pub(super) fn field_arity(relation: InlineRelationWalker<'_>, ctx: &mut Context<
         }
         _ => return,
     }
-    let scalar_field_names: Vec<&str> = relation.referencing_fields().unwrap().map(|f| f.name()).collect();
+    let scalar_field_names: Vec<&str> = relation
+        .referencing_fields()
+        .unwrap()
+        .map(|f| f.name())
+        .collect();
 
     ctx.push_error(DatamodelError::new_validation_error(
         &format!(
@@ -98,14 +107,20 @@ pub(super) fn field_arity(relation: InlineRelationWalker<'_>, ctx: &mut Context<
 }
 
 /// The `fields` and `references` arguments should hold the same number of fields.
-pub(super) fn same_length_in_referencing_and_referenced(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(super) fn same_length_in_referencing_and_referenced(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     let relation_field = if let Some(forward) = relation.forward_relation_field() {
         forward
     } else {
         return;
     };
 
-    match (relation_field.referencing_fields(), relation_field.referenced_fields()) {
+    match (
+        relation_field.referencing_fields(),
+        relation_field.referenced_fields(),
+    ) {
         (Some(fields), Some(references)) if fields.len() != references.len() => {
             ctx.push_error(DatamodelError::new_validation_error(
                 "You must specify the same number of fields in `fields` and `references`.",
@@ -124,19 +139,29 @@ pub(super) fn references_unique_fields(relation: InlineRelationWalker<'_>, ctx: 
         return;
     };
 
-    if relation_field.referenced_fields().map(|f| f.len() == 0).unwrap_or(true) {
+    if relation_field
+        .referenced_fields()
+        .map(|f| f.len() == 0)
+        .unwrap_or(true)
+    {
         return;
     }
 
-    let references_unique_criterion = relation.referenced_model().unique_criterias().any(|criteria| {
-        let mut criteria_field_names: Vec<_> = criteria.fields().map(|f| f.name()).collect();
-        criteria_field_names.sort_unstable();
+    let references_unique_criterion =
+        relation
+            .referenced_model()
+            .unique_criterias()
+            .any(|criteria| {
+                let mut criteria_field_names: Vec<_> =
+                    criteria.fields().map(|f| f.name()).collect();
+                criteria_field_names.sort_unstable();
 
-        let mut references_sorted: Vec<_> = relation.referenced_fields().map(|f| f.name()).collect();
-        references_sorted.sort_unstable();
+                let mut references_sorted: Vec<_> =
+                    relation.referenced_fields().map(|f| f.name()).collect();
+                references_sorted.sort_unstable();
 
-        criteria_field_names == references_sorted
-    });
+                criteria_field_names == references_sorted
+            });
 
     if references_unique_criterion {
         referencing_fields_in_correct_order(relation, ctx);
@@ -187,21 +212,24 @@ fn referencing_fields_in_correct_order(relation: InlineRelationWalker<'_>, ctx: 
         return;
     }
 
-    let reference_order_correct = relation.referenced_model().unique_criterias().any(|criteria| {
-        let criteria_fields = criteria.fields().map(|f| f.name());
+    let reference_order_correct = relation
+        .referenced_model()
+        .unique_criterias()
+        .any(|criteria| {
+            let criteria_fields = criteria.fields().map(|f| f.name());
 
-        if criteria_fields.len()
-            != relation_field
-                .referenced_fields()
-                .map(|fields| fields.len())
-                .unwrap_or(0)
-        {
-            return false;
-        }
+            if criteria_fields.len()
+                != relation_field
+                    .referenced_fields()
+                    .map(|fields| fields.len())
+                    .unwrap_or(0)
+            {
+                return false;
+            }
 
-        let references = relation.referenced_fields().map(|f| f.name());
-        criteria_fields.zip(references).all(|(a, b)| a == b)
-    });
+            let references = relation.referenced_fields().map(|f| f.name());
+            criteria_fields.zip(references).all(|(a, b)| a == b)
+        });
 
     if reference_order_correct {
         return;
@@ -307,8 +335,13 @@ pub(super) fn cycles(relation: CompleteInlineRelationWalker<'_>, ctx: &mut Conte
 ///
 /// The user must set one of these relations to use NoAction for onUpdate and
 /// onDelete.
-pub(super) fn multiple_cascading_paths(relation: CompleteInlineRelationWalker<'_>, ctx: &mut Context<'_>) {
-    if !ctx.has_capability(ConnectorCapability::ReferenceCycleDetection) || ctx.relation_mode.is_prisma() {
+pub(super) fn multiple_cascading_paths(
+    relation: CompleteInlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
+    if !ctx.has_capability(ConnectorCapability::ReferenceCycleDetection)
+        || ctx.relation_mode.is_prisma()
+    {
         return;
     }
 
@@ -413,7 +446,10 @@ pub(super) fn multiple_cascading_paths(relation: CompleteInlineRelationWalker<'_
         }
     }
 
-    let models = reachable.iter().map(|model_name| format!("`{model_name}`")).join(", ");
+    let models = reachable
+        .iter()
+        .map(|model_name| format!("`{model_name}`"))
+        .join(", ");
 
     #[allow(clippy::comparison_chain)] // match looks horrible here...
     if reachable.len() == 1 {
@@ -452,7 +488,10 @@ fn cascade_error_with_default_values(
     msg: &str,
 ) -> DatamodelError {
     let on_delete = match relation.referencing_field().explicit_on_delete() {
-        None if relation.on_delete(connector, relation_mode).triggers_modification() => {
+        None if relation
+            .on_delete(connector, relation_mode)
+            .triggers_modification() =>
+        {
             Some(relation.on_delete(connector, relation_mode))
         }
         _ => None,
@@ -473,10 +512,18 @@ fn cascade_error_with_default_values(
             )
         }
         (Some(on_delete), None) => {
-            format!("{} (Implicit default `onDelete`: `{}`)", msg, on_delete.as_str())
+            format!(
+                "{} (Implicit default `onDelete`: `{}`)",
+                msg,
+                on_delete.as_str()
+            )
         }
         (None, Some(on_update)) => {
-            format!("{} (Implicit default `onUpdate`: `{}`)", msg, on_update.as_str())
+            format!(
+                "{} (Implicit default `onUpdate`: `{}`)",
+                msg,
+                on_update.as_str()
+            )
         }
         (None, None) => msg.to_string(),
     };
@@ -487,7 +534,10 @@ fn cascade_error_with_default_values(
 }
 
 /// The types of the referencing and referenced scalar fields in a relation must be compatible.
-pub(super) fn referencing_scalar_field_types(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(super) fn referencing_scalar_field_types(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     let referencing_fields = if let Some(fields) = relation.referencing_fields() {
         fields
     } else {
@@ -495,7 +545,10 @@ pub(super) fn referencing_scalar_field_types(relation: InlineRelationWalker<'_>,
     };
 
     for (referencing, referenced) in referencing_fields.zip(relation.referenced_fields()) {
-        if !field_types_match(referencing.scalar_field_type(), referenced.scalar_field_type()) {
+        if !field_types_match(
+            referencing.scalar_field_type(),
+            referenced.scalar_field_type(),
+        ) {
             ctx.push_error(DatamodelError::new_attribute_validation_error(
                 &format!(
                     "The type of the field `{}` in the model `{}` is not matching the type of the referenced field `{}` in model `{}`.",
@@ -513,7 +566,9 @@ pub(super) fn referencing_scalar_field_types(relation: InlineRelationWalker<'_>,
     fn field_types_match(referencing: ScalarFieldType, referenced: ScalarFieldType) -> bool {
         match (referencing, referenced) {
             (ScalarFieldType::Enum(a), ScalarFieldType::Enum(b)) if a == b => true,
-            (ScalarFieldType::BuiltInScalar(a), ScalarFieldType::BuiltInScalar(b)) if a == b => true,
+            (ScalarFieldType::BuiltInScalar(a), ScalarFieldType::BuiltInScalar(b)) if a == b => {
+                true
+            }
             (ScalarFieldType::Unsupported(a), ScalarFieldType::Unsupported(b)) if a == b => true,
             _ => false,
         }
@@ -528,7 +583,10 @@ fn is_empty_fields<T>(fields: Option<impl ExactSizeIterator<Item = T>>) -> bool 
 }
 
 /// There cannot be any required field in a relation where one of the referential actions is SetNull.
-pub(crate) fn required_relation_cannot_use_set_null(relation: InlineRelationWalker<'_>, ctx: &mut Context<'_>) {
+pub(crate) fn required_relation_cannot_use_set_null(
+    relation: InlineRelationWalker<'_>,
+    ctx: &mut Context<'_>,
+) {
     // return early if there's no relation field on the referencing model
     let forward = match relation.forward_relation_field() {
         Some(forward) => forward,

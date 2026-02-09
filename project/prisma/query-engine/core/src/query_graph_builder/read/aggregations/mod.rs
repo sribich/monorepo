@@ -3,12 +3,14 @@ mod group_by;
 
 pub(crate) use aggregate::*;
 pub(crate) use group_by::*;
+use itertools::Itertools;
+use query_structure::AggregationSelection;
+use query_structure::Model;
+use query_structure::ScalarFieldRef;
+use schema::constants::aggregations::*;
 
 use super::*;
 use crate::FieldPair;
-use itertools::Itertools;
-use query_structure::{AggregationSelection, Model, ScalarFieldRef};
-use schema::constants::aggregations::*;
 
 /// Resolves the given field as a aggregation query.
 fn resolve_query(
@@ -103,7 +105,11 @@ fn collect_selection_tree(fields: &[FieldPair<'_>]) -> Vec<(String, Option<Vec<S
                         .map(|f| f.parsed_field.name.clone())
                         .collect();
 
-                    if nested.is_empty() { None } else { Some(nested) }
+                    if nested.is_empty() {
+                        None
+                    } else {
+                        Some(nested)
+                    }
                 }),
             )
         })

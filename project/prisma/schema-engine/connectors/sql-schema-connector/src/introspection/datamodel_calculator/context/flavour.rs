@@ -2,14 +2,15 @@ mod mysql;
 mod postgresql;
 mod sqlite;
 
-use sql::{ForeignKeyWalker, IndexColumnWalker, IndexWalker, TableWalker};
-use sql_schema_describer as sql;
-
 pub(super) use mysql::MysqlIntrospectionFlavour;
 pub(super) use postgresql::PostgresIntrospectionFlavour;
-pub(super) use sqlite::SqliteIntrospectionFlavour;
-
 use schema_connector::Warnings;
+use sql::ForeignKeyWalker;
+use sql::IndexColumnWalker;
+use sql::IndexWalker;
+use sql::TableWalker;
+use sql_schema_describer as sql;
+pub(super) use sqlite::SqliteIntrospectionFlavour;
 
 use super::DatamodelCalculatorContext;
 
@@ -32,11 +33,19 @@ pub(crate) trait IntrospectionFlavour {
 
     fn generate_warnings(&self, _ctx: &DatamodelCalculatorContext<'_>, _warnings: &mut Warnings) {}
 
-    fn uses_row_level_ttl(&self, _ctx: &DatamodelCalculatorContext<'_>, _table: TableWalker<'_>) -> bool {
+    fn uses_row_level_ttl(
+        &self,
+        _ctx: &DatamodelCalculatorContext<'_>,
+        _table: TableWalker<'_>,
+    ) -> bool {
         false
     }
 
-    fn uses_non_default_index_deferring(&self, _ctx: &DatamodelCalculatorContext<'_>, _index: IndexWalker<'_>) -> bool {
+    fn uses_non_default_index_deferring(
+        &self,
+        _ctx: &DatamodelCalculatorContext<'_>,
+        _index: IndexWalker<'_>,
+    ) -> bool {
         false
     }
 
@@ -56,7 +65,11 @@ pub(crate) trait IntrospectionFlavour {
         false
     }
 
-    fn uses_exclude_constraint(&self, _ctx: &DatamodelCalculatorContext<'_>, _table: TableWalker<'_>) -> bool {
+    fn uses_exclude_constraint(
+        &self,
+        _ctx: &DatamodelCalculatorContext<'_>,
+        _table: TableWalker<'_>,
+    ) -> bool {
         false
     }
 

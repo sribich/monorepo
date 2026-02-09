@@ -1,5 +1,9 @@
-use crate::common::{Indented, IteratorJoin, SQL_INDENTATION};
-use std::{borrow::Cow, fmt::Display};
+use std::borrow::Cow;
+use std::fmt::Display;
+
+use crate::common::Indented;
+use crate::common::IteratorJoin;
+use crate::common::SQL_INDENTATION;
 
 struct SqliteIdentifier<T>(T);
 
@@ -98,7 +102,11 @@ impl Display for ForeignKey<'_> {
             referenced_table = self.references.0,
         )?;
 
-        self.references.1.iter().map(SqliteIdentifier).join(", ", f)?;
+        self.references
+            .1
+            .iter()
+            .map(SqliteIdentifier)
+            .join(", ", f)?;
 
         f.write_str(")")?;
 
@@ -136,7 +144,11 @@ impl Display for Column<'_> {
             tpe = self.r#type,
             not_null = if self.not_null { " NOT NULL" } else { "" },
             primary_key = if self.primary_key { " PRIMARY KEY" } else { "" },
-            autoincrement = if self.autoincrement { " AUTOINCREMENT" } else { "" },
+            autoincrement = if self.autoincrement {
+                " AUTOINCREMENT"
+            } else {
+                ""
+            },
         )?;
 
         if let Some(default) = &self.default {
@@ -150,8 +162,9 @@ impl Display for Column<'_> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use indoc::indoc;
+
+    use super::*;
 
     #[test]
     fn basic_create_table() {

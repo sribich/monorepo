@@ -1,10 +1,13 @@
 //! The `@default` attribute rendering.
 
-use crate::introspection::introspection_pair::{DefaultKind, DefaultValuePair};
-use datamodel_renderer::{
-    datamodel as renderer,
-    value::{Constant, Function, Text, Value},
-};
+use datamodel_renderer::datamodel as renderer;
+use datamodel_renderer::value::Constant;
+use datamodel_renderer::value::Function;
+use datamodel_renderer::value::Text;
+use datamodel_renderer::value::Value;
+
+use crate::introspection::introspection_pair::DefaultKind;
+use crate::introspection::introspection_pair::DefaultValuePair;
 
 /// Render a default value for the given scalar field.
 pub(crate) fn render(default: DefaultValuePair<'_>) -> Option<renderer::DefaultValue<'_>> {
@@ -44,7 +47,9 @@ pub(crate) fn render(default: DefaultValuePair<'_>) -> Option<renderer::DefaultV
 
                 Some(renderer::DefaultValue::function(fun))
             }
-            DefaultKind::Autoincrement => Some(renderer::DefaultValue::function(Function::new("autoincrement"))),
+            DefaultKind::Autoincrement => Some(renderer::DefaultValue::function(Function::new(
+                "autoincrement",
+            ))),
             DefaultKind::Uuid(version) => {
                 let mut fun = Function::new("uuid");
 

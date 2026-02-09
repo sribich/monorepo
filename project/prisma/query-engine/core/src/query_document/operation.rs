@@ -1,6 +1,7 @@
+use schema::QuerySchema;
+
 use super::Selection;
 use crate::ArgumentValue;
-use schema::QuerySchema;
 
 #[derive(Debug, Clone)]
 pub enum Operation {
@@ -38,7 +39,11 @@ impl Operation {
     }
 
     pub fn as_read(&self) -> Option<&Selection> {
-        if let Self::Read(v) = self { Some(v) } else { None }
+        if let Self::Read(v) = self {
+            Some(v)
+        } else {
+            None
+        }
     }
 
     pub fn arguments(&self) -> &[(String, ArgumentValue)] {

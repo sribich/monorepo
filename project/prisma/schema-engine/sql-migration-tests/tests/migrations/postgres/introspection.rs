@@ -1,11 +1,16 @@
-use schema_core::{commands::{db_execute::{DbExecuteDatasourceType, DbExecuteParams}, introspect::IntrospectParams}, json_rpc::types::SchemasContainer};
+use schema_core::commands::db_execute::DbExecuteDatasourceType;
+use schema_core::commands::db_execute::DbExecuteParams;
+use schema_core::commands::introspect::IntrospectParams;
+use schema_core::json_rpc::types::SchemasContainer;
 use sql_migration_tests::test_api::*;
 
 #[test]
 fn introspect_partition_tables() {
     // Postgres9 does not support partition tables, and Postgres10 does not support primary keys on
     // partition tables.
-    let test_db = test_setup::only!(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16);
+    let test_db = test_setup::only!(
+        Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16
+    );
     let (_, url_str) = tok(test_setup::postgres::create_postgres_database(
         test_db.url(),
         "postgres_introspect_partition_tables",
@@ -37,7 +42,9 @@ ALTER TABLE blocks
         ON DELETE CASCADE; "#;
 
     tok(me.db_execute(DbExecuteParams {
-        datasource_type: DbExecuteDatasourceType::Url(UrlContainer { url: url_str.clone() }),
+        datasource_type: DbExecuteDatasourceType::Url(UrlContainer {
+            url: url_str.clone(),
+        }),
         script: script.to_owned(),
     }))
     .unwrap();
@@ -82,14 +89,19 @@ model blocks {{
 }}
 "#
     );
-    pretty_assertions::assert_eq!(expected, result.schema.files.first().unwrap().content.as_str());
+    pretty_assertions::assert_eq!(
+        expected,
+        result.schema.files.first().unwrap().content.as_str()
+    );
 }
 
 #[test]
 fn inherited_table_regression_fix() {
     // Postgres9 does not support partition tables, and Postgres10 does not support primary keys on
     // partition tables.
-    let test_db = test_setup::only!(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16);
+    let test_db = test_setup::only!(
+        Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16
+    );
     let (_, url_str) = tok(test_setup::postgres::create_postgres_database(
         test_db.url(),
         "inherited_table_regression_fix",
@@ -111,7 +123,9 @@ CREATE TABLE capitals (
 "#;
 
     tok(me.db_execute(DbExecuteParams {
-        datasource_type: DbExecuteDatasourceType::Url(UrlContainer { url: url_str.clone() }),
+        datasource_type: DbExecuteDatasourceType::Url(UrlContainer {
+            url: url_str.clone(),
+        }),
         script: script.to_owned(),
     }))
     .unwrap();
@@ -159,12 +173,17 @@ model cities {{
 }}
 "#
     );
-    pretty_assertions::assert_eq!(expected, result.schema.files.first().unwrap().content.as_str());
+    pretty_assertions::assert_eq!(
+        expected,
+        result.schema.files.first().unwrap().content.as_str()
+    );
 }
 
 #[test]
 fn inherited_table_detect_primary_key() {
-    let test_db = test_setup::only!(Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16);
+    let test_db = test_setup::only!(
+        Postgres11, Postgres12, Postgres13, Postgres14, Postgres15, Postgres16
+    );
     let (_, url_str) = tok(test_setup::postgres::create_postgres_database(
         test_db.url(),
         "inherited_table_detect_primary_key",
@@ -186,7 +205,9 @@ CREATE TABLE capitals (
 "#;
 
     tok(me.db_execute(DbExecuteParams {
-        datasource_type: DbExecuteDatasourceType::Url(UrlContainer { url: url_str.clone() }),
+        datasource_type: DbExecuteDatasourceType::Url(UrlContainer {
+            url: url_str.clone(),
+        }),
         script: script.to_owned(),
     }))
     .unwrap();
@@ -237,5 +258,8 @@ model cities {{
 }}
 "#
     );
-    pretty_assertions::assert_eq!(expected, result.schema.files.first().unwrap().content.as_str());
+    pretty_assertions::assert_eq!(
+        expected,
+        result.schema.files.first().unwrap().content.as_str()
+    );
 }

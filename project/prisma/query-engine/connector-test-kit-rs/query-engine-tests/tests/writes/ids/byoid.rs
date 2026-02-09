@@ -4,7 +4,9 @@ use query_engine_tests::*;
 //  bring_your_own_id
 mod byoid {
     use indoc::indoc;
-    use query_engine_tests::{Runner, assert_error, run_query};
+    use query_engine_tests::Runner;
+    use query_engine_tests::assert_error;
+    use query_engine_tests::run_query;
 
     fn schema_1() -> String {
         let schema = indoc! {
@@ -55,9 +57,7 @@ mod byoid {
         );
 
         let error_target = match runner.connector_version() {
-            query_engine_tests::ConnectorVersion::MySql(_) => {
-                "constraint: `PRIMARY`"
-            }
+            query_engine_tests::ConnectorVersion::MySql(_) => "constraint: `PRIMARY`",
             query_engine_tests::ConnectorVersion::Vitess(_) => "(not available)",
             _ => "fields: (`id`)",
         };
@@ -85,9 +85,7 @@ mod byoid {
         );
 
         let error_target = match runner.connector_version() {
-            query_engine_tests::ConnectorVersion::MySql(_) => {
-                "constraint: `PRIMARY`"
-            }
+            query_engine_tests::ConnectorVersion::MySql(_) => "constraint: `PRIMARY`",
             ConnectorVersion::Vitess(_) => "(not available)",
             _ => "fields: (`id`)",
         };
@@ -145,9 +143,7 @@ mod byoid {
         );
 
         let error_target = match runner.connector_version() {
-            query_engine_tests::ConnectorVersion::MySql(_) => {
-                "constraint: `PRIMARY`"
-            }
+            query_engine_tests::ConnectorVersion::MySql(_) => "constraint: `PRIMARY`",
             ConnectorVersion::Vitess(_) => "(not available)",
             _ => "fields: (`id`)",
         };
@@ -175,9 +171,7 @@ mod byoid {
         );
 
         let error_target = match runner.connector_version() {
-            query_engine_tests::ConnectorVersion::MySql(_) => {
-                "constraint: `PRIMARY`"
-            }
+            query_engine_tests::ConnectorVersion::MySql(_) => "constraint: `PRIMARY`",
             ConnectorVersion::Vitess(_) => "(not available)",
             _ => "fields: (`id`)",
         };

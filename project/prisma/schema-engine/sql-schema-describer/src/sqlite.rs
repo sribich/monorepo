@@ -1,22 +1,34 @@
 //! SQLite description.
-use crate::{
-    Column, ColumnArity, ColumnType, ColumnTypeFamily, DefaultValue, DescriberResult, ForeignKeyAction, PrismaValue,
-    Regex, SQLSortOrder, SqlSchema, getters::Getter, ids::*, parsers::Parser,
-};
+use std::any::type_name;
+use std::borrow::Cow;
+use std::collections::BTreeMap;
+use std::fmt::Debug;
+use std::sync::Arc;
+use std::sync::LazyLock;
+use std::sync::OnceLock;
+
 use either::Either;
 use indexmap::IndexMap;
-use quaint::{
-    ast::{Value, ValueType},
-    prelude::{Queryable, ResultRow},
-};
-use std::{
-    any::type_name,
-    borrow::Cow,
-    collections::BTreeMap,
-    fmt::Debug,
-    sync::{Arc, LazyLock, OnceLock},
-};
+use quaint::ast::Value;
+use quaint::ast::ValueType;
+use quaint::prelude::Queryable;
+use quaint::prelude::ResultRow;
 use tracing::trace;
+
+use crate::Column;
+use crate::ColumnArity;
+use crate::ColumnType;
+use crate::ColumnTypeFamily;
+use crate::DefaultValue;
+use crate::DescriberResult;
+use crate::ForeignKeyAction;
+use crate::PrismaValue;
+use crate::Regex;
+use crate::SQLSortOrder;
+use crate::SqlSchema;
+use crate::getters::Getter;
+use crate::ids::*;
+use crate::parsers::Parser;
 
 #[cfg(feature = "sqlite-native")]
 pub(crate) mod native;
@@ -58,7 +70,8 @@ pub struct SqlSchemaDescriber<'a> {
 
 impl Debug for SqlSchemaDescriber<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct(type_name::<SqlSchemaDescriber<'_>>()).finish()
+        f.debug_struct(type_name::<SqlSchemaDescriber<'_>>())
+            .finish()
     }
 }
 
@@ -144,7 +157,8 @@ impl<'a> SqlSchemaDescriber<'a> {
         let sql = format!(r#"PRAGMA foreign_key_list("{table_name}");"#);
         let result_set = self.conn.query_raw(&sql, &[]).await?;
         let mut current_foreign_key: Option<(i64, ForeignKeyId)> = None;
-        let mut current_foreign_key_columns: Vec<(i64, TableColumnId, Option<TableColumnId>)> = Vec::new();
+        let mut current_foreign_key_columns: Vec<(i64, TableColumnId, Option<TableColumnId>)> =
+            Vec::new();
 
         fn get_ids(
             row: &ResultRow,
@@ -152,8 +166,12 @@ impl<'a> SqlSchemaDescriber<'a> {
             table_ids: &IndexMap<&str, TableId>,
             schema: &SqlSchema,
         ) -> Option<(TableColumnId, TableId, Option<TableColumnId>)> {
-            let column = schema.walk(table_id).column(&row.get_expect_string("from"))?.id;
-            let referenced_table = schema.walk(*table_ids.get(row.get_expect_string("table").as_str())?);
+            let column = schema
+                .walk(table_id)
+                .column(&row.get_expect_string("from"))?
+                .id;
+            let referenced_table =
+                schema.walk(*table_ids.get(row.get_expect_string("table").as_str())?);
             // this can be null if the primary key and shortened fk syntax was used
             let referenced_column = row
                 .get_string("to")
@@ -163,7 +181,8 @@ impl<'a> SqlSchemaDescriber<'a> {
         }
 
         fn get_referential_actions(row: &ResultRow) -> [ForeignKeyAction; 2] {
-            let on_delete_action = match row.get_expect_string("on_delete").to_lowercase().as_str() {
+            let on_delete_action = match row.get_expect_string("on_delete").to_lowercase().as_str()
+            {
                 "no action" => ForeignKeyAction::NoAction,
                 "restrict" => ForeignKeyAction::Restrict,
                 "set null" => ForeignKeyAction::SetNull,
@@ -171,7 +190,8 @@ impl<'a> SqlSchemaDescriber<'a> {
                 "cascade" => ForeignKeyAction::Cascade,
                 s => panic!("Unrecognized on delete action '{s}'"),
             };
-            let on_update_action = match row.get_expect_string("on_update").to_lowercase().as_str() {
+            let on_update_action = match row.get_expect_string("on_update").to_lowercase().as_str()
+            {
                 "no action" => ForeignKeyAction::NoAction,
                 "restrict" => ForeignKeyAction::Restrict,
                 "set null" => ForeignKeyAction::SetNull,
@@ -207,7 +227,9 @@ impl<'a> SqlSchemaDescriber<'a> {
                     .collect::<Vec<_>>();
 
                 if referenced_table_pk_columns.len() == current_columns.len() {
-                    for (col, referenced) in current_columns.drain(..).zip(referenced_table_pk_columns) {
+                    for (col, referenced) in
+                        current_columns.drain(..).zip(referenced_table_pk_columns)
+                    {
                         schema.push_foreign_key_column(fkid, [col.1, referenced]);
                     }
                 }
@@ -234,17 +256,27 @@ impl<'a> SqlSchemaDescriber<'a> {
 
             match &mut current_foreign_key {
                 None => {
-                    let foreign_key_id =
-                        schema.push_foreign_key(None, [table_id, referenced_table_id], get_referential_actions(&row));
+                    let foreign_key_id = schema.push_foreign_key(
+                        None,
+                        [table_id, referenced_table_id],
+                        get_referential_actions(&row),
+                    );
                     current_foreign_key = Some((id, foreign_key_id));
                 }
                 Some((sqlite_id, _)) if *sqlite_id == id => {}
                 Some(_) => {
                     // Flush current foreign key.
-                    flush_current_fk(&mut current_foreign_key, &mut current_foreign_key_columns, schema);
+                    flush_current_fk(
+                        &mut current_foreign_key,
+                        &mut current_foreign_key_columns,
+                        schema,
+                    );
 
-                    let foreign_key_id =
-                        schema.push_foreign_key(None, [table_id, referenced_table_id], get_referential_actions(&row));
+                    let foreign_key_id = schema.push_foreign_key(
+                        None,
+                        [table_id, referenced_table_id],
+                        get_referential_actions(&row),
+                    );
                     current_foreign_key = Some((id, foreign_key_id));
                 }
             }
@@ -253,7 +285,11 @@ impl<'a> SqlSchemaDescriber<'a> {
         }
 
         // Flush the last foreign key.
-        flush_current_fk(&mut current_foreign_key, &mut current_foreign_key_columns, schema);
+        flush_current_fk(
+            &mut current_foreign_key,
+            &mut current_foreign_key_columns,
+            schema,
+        );
 
         Ok(())
     }
@@ -270,7 +306,10 @@ async fn push_columns(
     let mut pk_cols: BTreeMap<i64, TableColumnId> = BTreeMap::new();
     for row in result_set {
         trace!("Got column row {row:?}");
-        let is_required = row.get("notnull").and_then(|x| x.as_bool()).expect("notnull");
+        let is_required = row
+            .get("notnull")
+            .and_then(|x| x.as_bool())
+            .expect("notnull");
 
         let arity = if is_required {
             ColumnArity::Required
@@ -293,43 +332,57 @@ async fn push_columns(
                     None
                 } else {
                     Some(match &tpe.family {
-                        ColumnTypeFamily::Int => match SqlSchemaDescriber::parse_int(&default_string) {
-                            Some(int_value) => DefaultValue::value(int_value),
-                            None => DefaultValue::db_generated(default_string),
-                        },
-                        ColumnTypeFamily::BigInt => match SqlSchemaDescriber::parse_big_int(&default_string) {
-                            Some(int_value) => DefaultValue::value(int_value),
-                            None => DefaultValue::db_generated(default_string),
-                        },
-                        ColumnTypeFamily::Float => match SqlSchemaDescriber::parse_float(&default_string) {
-                            Some(float_value) => DefaultValue::value(float_value),
-                            None => DefaultValue::db_generated(default_string),
-                        },
-                        ColumnTypeFamily::Decimal => match SqlSchemaDescriber::parse_float(&default_string) {
-                            Some(float_value) => DefaultValue::value(float_value),
-                            None => DefaultValue::db_generated(default_string),
-                        },
-                        ColumnTypeFamily::Boolean => match SqlSchemaDescriber::parse_int(&default_string) {
-                            Some(PrismaValue::Int(1)) => DefaultValue::value(true),
-                            Some(PrismaValue::Int(0)) => DefaultValue::value(false),
-                            _ => match SqlSchemaDescriber::parse_bool(&default_string) {
-                                Some(bool_value) => DefaultValue::value(bool_value),
+                        ColumnTypeFamily::Int => {
+                            match SqlSchemaDescriber::parse_int(&default_string) {
+                                Some(int_value) => DefaultValue::value(int_value),
                                 None => DefaultValue::db_generated(default_string),
-                            },
-                        },
-                        ColumnTypeFamily::String => {
-                            DefaultValue::value(unquote_sqlite_string_default(&default_string).into_owned())
-                        }
-                        ColumnTypeFamily::DateTime => match default_string.to_lowercase().as_str() {
-                            "current_timestamp" | "datetime(\'now\')" | "datetime(\'now\', \'localtime\')" => {
-                                DefaultValue::now()
                             }
-                            _ => DefaultValue::db_generated(default_string),
-                        },
+                        }
+                        ColumnTypeFamily::BigInt => {
+                            match SqlSchemaDescriber::parse_big_int(&default_string) {
+                                Some(int_value) => DefaultValue::value(int_value),
+                                None => DefaultValue::db_generated(default_string),
+                            }
+                        }
+                        ColumnTypeFamily::Float => {
+                            match SqlSchemaDescriber::parse_float(&default_string) {
+                                Some(float_value) => DefaultValue::value(float_value),
+                                None => DefaultValue::db_generated(default_string),
+                            }
+                        }
+                        ColumnTypeFamily::Decimal => {
+                            match SqlSchemaDescriber::parse_float(&default_string) {
+                                Some(float_value) => DefaultValue::value(float_value),
+                                None => DefaultValue::db_generated(default_string),
+                            }
+                        }
+                        ColumnTypeFamily::Boolean => {
+                            match SqlSchemaDescriber::parse_int(&default_string) {
+                                Some(PrismaValue::Int(1)) => DefaultValue::value(true),
+                                Some(PrismaValue::Int(0)) => DefaultValue::value(false),
+                                _ => match SqlSchemaDescriber::parse_bool(&default_string) {
+                                    Some(bool_value) => DefaultValue::value(bool_value),
+                                    None => DefaultValue::db_generated(default_string),
+                                },
+                            }
+                        }
+                        ColumnTypeFamily::String => DefaultValue::value(
+                            unquote_sqlite_string_default(&default_string).into_owned(),
+                        ),
+                        ColumnTypeFamily::DateTime => {
+                            match default_string.to_lowercase().as_str() {
+                                "current_timestamp"
+                                | "datetime(\'now\')"
+                                | "datetime(\'now\', \'localtime\')" => DefaultValue::now(),
+                                _ => DefaultValue::db_generated(default_string),
+                            }
+                        }
                         ColumnTypeFamily::Json => DefaultValue::value(default_string),
                         ColumnTypeFamily::Binary => DefaultValue::db_generated(default_string),
                         ColumnTypeFamily::Uuid => DefaultValue::db_generated(default_string),
-                        ColumnTypeFamily::Enum(_) => DefaultValue::value(PrismaValue::Enum(default_string)),
+                        ColumnTypeFamily::Enum(_) => {
+                            DefaultValue::value(PrismaValue::Enum(default_string))
+                        }
                         ColumnTypeFamily::Udt(_) | ColumnTypeFamily::Unsupported(_) => {
                             DefaultValue::db_generated(default_string)
                         }
@@ -348,7 +401,10 @@ async fn push_columns(
 
         match container_id {
             Either::Left(table_id) => {
-                let pk_col = row.get("pk").and_then(|x| x.as_integer()).expect("primary key");
+                let pk_col = row
+                    .get("pk")
+                    .and_then(|x| x.as_integer())
+                    .expect("primary key");
                 let column_id = schema.push_table_column(table_id, column);
 
                 if pk_col > 0 {
@@ -394,8 +450,12 @@ async fn push_columns(
         }
     }
 
-    schema.table_default_values.sort_by_key(|(column_id, _)| *column_id);
-    schema.view_default_values.sort_by_key(|(column_id, _)| *column_id);
+    schema
+        .table_default_values
+        .sort_by_key(|(column_id, _)| *column_id);
+    schema
+        .view_default_values
+        .sort_by_key(|(column_id, _)| *column_id);
 
     Ok(())
 }
@@ -413,9 +473,18 @@ async fn push_indexes(
     let filtered_rows = result_set
         .into_iter()
         // Exclude primary keys, they are inferred separately.
-        .filter(|row| row.get("origin").and_then(|origin| origin.as_str()).unwrap() != "pk")
+        .filter(|row| {
+            row.get("origin")
+                .and_then(|origin| origin.as_str())
+                .unwrap()
+                != "pk"
+        })
         // Exclude partial indices
-        .filter(|row| !row.get("partial").and_then(|partial| partial.as_bool()).unwrap());
+        .filter(|row| {
+            !row.get("partial")
+                .and_then(|partial| partial.as_bool())
+                .unwrap()
+        });
 
     for row in filtered_rows {
         let mut valid_index = true;
@@ -537,11 +606,15 @@ fn get_column_type(mut tpe: String, arity: ColumnArity) -> ColumnType {
 fn unquote_sqlite_string_default(s: &str) -> Cow<'_, str> {
     static SQLITE_STRING_DEFAULT_RE: LazyLock<Regex> =
         LazyLock::new(|| Regex::new(r#"(?ms)^'(.*)'$|^"(.*)"$"#).unwrap());
-    static SQLITE_ESCAPED_CHARACTER_RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r#"''"#).unwrap());
+    static SQLITE_ESCAPED_CHARACTER_RE: LazyLock<Regex> =
+        LazyLock::new(|| Regex::new(r#"''"#).unwrap());
 
     match SQLITE_STRING_DEFAULT_RE.replace(s, "$1$2") {
         Cow::Borrowed(s) => SQLITE_ESCAPED_CHARACTER_RE.replace_all(s, "'"),
-        Cow::Owned(s) => SQLITE_ESCAPED_CHARACTER_RE.replace_all(&s, "'").into_owned().into(),
+        Cow::Owned(s) => SQLITE_ESCAPED_CHARACTER_RE
+            .replace_all(&s, "'")
+            .into_owned()
+            .into(),
     }
 }
 

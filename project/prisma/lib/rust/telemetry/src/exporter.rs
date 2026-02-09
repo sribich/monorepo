@@ -1,16 +1,24 @@
-use std::{borrow::Cow, fmt::Debug, str::FromStr};
+use std::borrow::Cow;
+use std::fmt::Debug;
+use std::str::FromStr;
 
-use ahash::{HashMap, HashMapExt};
-use enumflags2::{BitFlags, bitflags};
+use ahash::HashMap;
+use ahash::HashMapExt;
+use enumflags2::BitFlags;
+use enumflags2::bitflags;
 use serde::Serialize;
-use tokio::sync::{
-    mpsc::{self, UnboundedSender},
-    oneshot,
-};
+use tokio::sync::mpsc::UnboundedSender;
+use tokio::sync::mpsc::{self};
+use tokio::sync::oneshot;
 
-use crate::collector::{AllowAttribute, CollectedEvent, CollectedSpan, Collector};
-use crate::id::{RequestId, SpanId};
-use crate::models::{LogLevel, SpanKind};
+use crate::collector::AllowAttribute;
+use crate::collector::CollectedEvent;
+use crate::collector::CollectedSpan;
+use crate::collector::Collector;
+use crate::id::RequestId;
+use crate::id::SpanId;
+use crate::models::LogLevel;
+use crate::models::SpanKind;
 use crate::time::HrTime;
 
 #[derive(Debug, Clone, Serialize)]
@@ -221,7 +229,11 @@ impl Exporter {
         Self { tx }
     }
 
-    pub async fn start_capturing(&self, request_id: RequestId, settings: CaptureSettings) -> RequestId {
+    pub async fn start_capturing(
+        &self,
+        request_id: RequestId,
+        settings: CaptureSettings,
+    ) -> RequestId {
         self.tx
             .send(Message::StartCapturing(request_id, settings))
             .expect("capturer task panicked");
@@ -270,16 +282,18 @@ impl AllowAttribute for InternalAttributesFilter {
 
 #[cfg(test)]
 mod tests {
-    use std::time::{Duration, SystemTime};
-
-    use crate::NextId;
-
-    use super::*;
+    use std::time::Duration;
+    use std::time::SystemTime;
 
     use CaptureTarget::*;
 
+    use super::*;
+    use crate::NextId;
+
     fn capture_all() -> CaptureSettings {
-        CaptureSettings::new(Spans | TraceEvents | DebugEvents | InfoEvents | WarnEvents | ErrorEvents | QueryEvents)
+        CaptureSettings::new(
+            Spans | TraceEvents | DebugEvents | InfoEvents | WarnEvents | ErrorEvents | QueryEvents,
+        )
     }
 
     fn capture_spans() -> CaptureSettings {
@@ -326,7 +340,9 @@ mod tests {
     #[tokio::test]
     async fn test_export_capture_cycle() {
         let exporter = Exporter::new();
-        let request_id = exporter.start_capturing(RequestId::next(), capture_all()).await;
+        let request_id = exporter
+            .start_capturing(RequestId::next(), capture_all())
+            .await;
 
         let span = CollectedSpan {
             id: SpanId::try_from(1).unwrap(),
@@ -380,7 +396,9 @@ mod tests {
     #[tokio::test]
     async fn test_export_capture_cycle_with_ignored() {
         let exporter = Exporter::new();
-        let request_id = exporter.start_capturing(RequestId::next(), capture_spans()).await;
+        let request_id = exporter
+            .start_capturing(RequestId::next(), capture_spans())
+            .await;
 
         let span = CollectedSpan {
             id: SpanId::try_from(1).unwrap(),

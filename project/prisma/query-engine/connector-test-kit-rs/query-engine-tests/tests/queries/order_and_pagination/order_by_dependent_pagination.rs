@@ -3,7 +3,9 @@ use query_engine_tests::*;
 #[test_suite(schema(schema))]
 mod order_by_dependent_pag {
     use indoc::indoc;
-    use query_engine_tests::{connector_test, match_connector_result, run_query};
+    use query_engine_tests::connector_test;
+    use query_engine_tests::match_connector_result;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -363,7 +365,11 @@ mod order_by_dependent_pag {
         };
 
         let model_c = match c_id {
-            Some(id) => format!("c: {{ create: {{ id: {} \n {} }} }}", id, inline.unwrap_or_default()),
+            Some(id) => format!(
+                "c: {{ create: {{ id: {} \n {} }} }}",
+                id,
+                inline.unwrap_or_default()
+            ),
             None => "".to_string(),
         };
 
@@ -375,7 +381,9 @@ mod order_by_dependent_pag {
         let model_a = format!("{{ id: {a_id} \n {model_b} }}");
 
         runner
-            .query(format!("mutation {{ createOneModelA(data: {model_a}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneModelA(data: {model_a}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
 

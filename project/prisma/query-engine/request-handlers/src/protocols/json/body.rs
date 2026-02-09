@@ -1,9 +1,12 @@
 use indexmap::IndexMap;
-use query_core::{
-    BatchDocument, BatchDocumentTransaction, Operation, QueryDocument,
-    schema::{QuerySchemaRef, QueryTag},
-};
-use serde::{Deserialize, Serialize};
+use query_core::BatchDocument;
+use query_core::BatchDocumentTransaction;
+use query_core::Operation;
+use query_core::QueryDocument;
+use query_core::schema::QuerySchemaRef;
+use query_core::schema::QueryTag;
+use serde::Deserialize;
+use serde::Serialize;
 use tracing::info_span;
 
 use super::protocol_adapter::JsonProtocolAdapter;
@@ -39,7 +42,10 @@ impl JsonBody {
                     None
                 };
 
-                Ok(QueryDocument::Multi(BatchDocument::new(operations?, transaction)))
+                Ok(QueryDocument::Multi(BatchDocument::new(
+                    operations?,
+                    transaction,
+                )))
             }
         }
     }

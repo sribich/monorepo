@@ -13,7 +13,10 @@ fn reset_works(api: TestApi) {
 
     api.assert_schema().assert_tables_count(1);
 
-    api.insert("Cat").value("id", 1).value("name", "Garfield").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Garfield")
+        .result_raw();
 
     api.reset().send_sync(None);
 
@@ -44,7 +47,10 @@ fn reset_then_apply_with_migrations_directory_works(api: TestApi) {
         .assert_has_table("Cat")
         .assert_has_table("_prisma_migrations");
 
-    api.insert("Cat").value("id", 1).value("name", "Garfield").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Garfield")
+        .result_raw();
 
     api.reset().send_sync(None);
 
@@ -78,7 +84,10 @@ fn reset_then_diagnostics_with_migrations_directory_works(api: TestApi) {
         .assert_has_table("Cat")
         .assert_has_table("_prisma_migrations");
 
-    api.insert("Cat").value("id", 1).value("name", "Garfield").result_raw();
+    api.insert("Cat")
+        .value("id", 1)
+        .value("name", "Garfield")
+        .result_raw();
 
     api.reset().send_sync(None);
 
@@ -123,7 +132,11 @@ fn multi_schema_reset(mut api: TestApi) {
     api.apply_migrations(&migrations_dir).send_sync();
     api.raw_cmd("CREATE TABLE randomTable (id INTEGER PRIMARY KEY);");
 
-    let all_namespaces = Namespaces::from_vec(&mut vec!["felines".into(), "rodents".into(), api.schema_name()]);
+    let all_namespaces = Namespaces::from_vec(&mut vec![
+        "felines".into(),
+        "rodents".into(),
+        api.schema_name(),
+    ]);
     let namespaces_in_psl = Namespaces::from_vec(&mut vec!["felines".into(), "rodents".into()]);
 
     api.assert_schema_with_namespaces(all_namespaces.clone())

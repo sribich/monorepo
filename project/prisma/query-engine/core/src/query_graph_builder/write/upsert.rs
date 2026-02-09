@@ -1,12 +1,21 @@
-use super::{write_args_parser::WriteArgsParser, *};
-use crate::{
-    DataExpectation, ParsedField, ParsedInputMap, ParsedInputValue, ParsedObject, RowSink,
-    inputs::{IfInput, RecordQueryFilterInput, UpdateRecordSelectorsInput},
-    query_ast::*,
-    query_graph::{Flow, QueryGraph, QueryGraphDependency},
-};
 use query_structure::Model;
 use schema::QuerySchema;
+
+use super::write_args_parser::WriteArgsParser;
+use super::*;
+use crate::DataExpectation;
+use crate::ParsedField;
+use crate::ParsedInputMap;
+use crate::ParsedInputValue;
+use crate::ParsedObject;
+use crate::RowSink;
+use crate::inputs::IfInput;
+use crate::inputs::RecordQueryFilterInput;
+use crate::inputs::UpdateRecordSelectorsInput;
+use crate::query_ast::*;
+use crate::query_graph::Flow;
+use crate::query_graph::QueryGraph;
+use crate::query_graph::QueryGraphDependency;
 
 /// Handles a top-level upsert
 ///
@@ -96,10 +105,12 @@ pub(crate) fn upsert_record(
 
     let model_id = model.shard_aware_primary_identifier();
 
-    let read_parent_records = utils::read_ids_infallible(model.clone(), model_id.clone(), filter.clone());
+    let read_parent_records =
+        utils::read_ids_infallible(model.clone(), model_id.clone(), filter.clone());
     let read_parent_records_node = graph.create_node(read_parent_records);
 
-    let create_node = create::create_record_node(graph, query_schema, model.clone(), create_argument)?;
+    let create_node =
+        create::create_record_node(graph, query_schema, model.clone(), create_argument)?;
 
     let update_node = update::update_record_node(
         graph,
@@ -121,7 +132,11 @@ pub(crate) fn upsert_record(
     graph.create_edge(
         &read_parent_records_node,
         &if_node,
-        QueryGraphDependency::ProjectedDataDependency(model_id.clone(), RowSink::All(&IfInput), None),
+        QueryGraphDependency::ProjectedDataDependency(
+            model_id.clone(),
+            RowSink::All(&IfInput),
+            None,
+        ),
     )?;
 
     // In case the connector doesn't support referential integrity, we add a subtree to the graph that emulates the ON_UPDATE referential action.
@@ -138,7 +153,11 @@ pub(crate) fn upsert_record(
         &update_node,
     )? {
         graph.create_edge(&if_node, &emulation_node, QueryGraphDependency::Then)?;
-        graph.create_edge(&emulation_node, &update_node, QueryGraphDependency::ExecutionOrder)?;
+        graph.create_edge(
+            &emulation_node,
+            &update_node,
+            QueryGraphDependency::ExecutionOrder,
+        )?;
     } else {
         graph.create_edge(&if_node, &update_node, QueryGraphDependency::Then)?;
     }
@@ -163,7 +182,9 @@ pub(crate) fn upsert_record(
             model_id.clone(),
             RowSink::ExactlyOneFilter(&RecordQueryFilterInput),
             Some(DataExpectation::non_empty_rows(
-                MissingRecord::builder().operation(DataOperation::Upsert).build(),
+                MissingRecord::builder()
+                    .operation(DataOperation::Upsert)
+                    .build(),
             )),
         ),
     )?;
@@ -175,7 +196,9 @@ pub(crate) fn upsert_record(
             model_id,
             RowSink::ExactlyOneFilter(&RecordQueryFilterInput),
             Some(DataExpectation::non_empty_rows(
-                MissingRecord::builder().operation(DataOperation::Upsert).build(),
+                MissingRecord::builder()
+                    .operation(DataOperation::Upsert)
+                    .build(),
             )),
         ),
     )?;
@@ -255,9 +278,9 @@ fn where_and_create_equal<'a>(
     create_map: &ParsedInputMap<'a>,
 ) -> bool {
     match where_value {
-        ParsedInputValue::Map(inner_map) => inner_map
-            .iter()
-            .all(|(inner_field, inner_value)| where_and_create_equal(inner_field, inner_value, create_map)),
+        ParsedInputValue::Map(inner_map) => inner_map.iter().all(|(inner_field, inner_value)| {
+            where_and_create_equal(inner_field, inner_value, create_map)
+        }),
         _ => Some(where_value) == create_map.get(field_name),
     }
 }

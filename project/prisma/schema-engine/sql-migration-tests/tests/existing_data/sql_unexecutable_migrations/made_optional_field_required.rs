@@ -40,8 +40,10 @@ fn making_an_optional_field_required_with_data_without_a_default_is_unexecutable
     api.assert_schema()
         .assert_table("Test", |table| table.assert_does_not_have_column("Int"));
 
-    api.dump_table("Test")
-        .assert_single_row(|row| row.assert_text_value("id", "abc").assert_text_value("name", "george"));
+    api.dump_table("Test").assert_single_row(|row| {
+        row.assert_text_value("id", "abc")
+            .assert_text_value("name", "george")
+    });
 }
 
 #[test_connector(tags(Sqlite))]
@@ -151,7 +153,11 @@ fn making_an_optional_field_required_with_data_with_a_default_is_unexecutable(ap
             .map(|row| row.into_iter().collect::<Vec<Value>>())
             .collect::<Vec<_>>(),
         &[
-            &[Value::text("abc"), Value::text("george"), Value::null_int32()],
+            &[
+                Value::text("abc"),
+                Value::text("george"),
+                Value::null_int32()
+            ],
             &[Value::text("def"), Value::text("X Æ A-12"), Value::int32(7)],
         ]
     );

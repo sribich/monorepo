@@ -1,7 +1,11 @@
-use core::any::{Any, TypeId, type_name};
+use core::any::Any;
+use core::any::TypeId;
+use core::any::type_name;
 use std::sync::Arc;
 
-use crate::{Injector, InjectorBuilder, error::InjectionError};
+use crate::Injector;
+use crate::InjectorBuilder;
+use crate::error::InjectionError;
 
 pub trait Builder: Send + Sync {
     /// Returns the [`TypeId`] of the underlying concrete type.

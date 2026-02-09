@@ -1,7 +1,6 @@
-use schema_core::{
-    CoreResult,
-    schema_connector::{Namespaces, SchemaConnector},
-};
+use schema_core::CoreResult;
+use schema_core::schema_connector::Namespaces;
+use schema_core::schema_connector::SchemaConnector;
 
 #[must_use = "This struct does nothing on its own. See Reset::send()"]
 pub struct Reset<'a> {
@@ -11,10 +10,7 @@ pub struct Reset<'a> {
 
 impl<'a> Reset<'a> {
     pub fn new(api: &'a mut dyn SchemaConnector) -> Self {
-        Reset {
-            api,
-            soft: false,
-        }
+        Reset { api, soft: false }
     }
 
     pub fn soft(mut self, value: bool) -> Self {

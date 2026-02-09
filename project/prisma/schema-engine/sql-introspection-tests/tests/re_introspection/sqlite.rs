@@ -70,7 +70,9 @@ async fn multiple_changed_relation_names_due_to_mapped_models(api: &mut TestApi)
 }
 
 #[test_connector(tags(Sqlite))]
-async fn do_not_try_to_keep_custom_many_to_many_self_relation_field_names(api: &mut TestApi) -> TestResult {
+async fn do_not_try_to_keep_custom_many_to_many_self_relation_field_names(
+    api: &mut TestApi,
+) -> TestResult {
     // We do not have enough information to correctly assign which field should point to column A in the
     // join table and which one to B
     // Upon table creation this is dependant on lexicographic order of the names of the fields, but we
@@ -109,7 +111,8 @@ async fn do_not_try_to_keep_custom_many_to_many_self_relation_field_names(api: &
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
     Ok(())
 }
 
@@ -168,6 +171,7 @@ async fn multiple_changed_relation_names(api: &mut TestApi) -> TestResult {
         }
     "#]];
 
-    api.expect_re_introspected_datamodel(input_dm, expectation).await;
+    api.expect_re_introspected_datamodel(input_dm, expectation)
+        .await;
     Ok(())
 }

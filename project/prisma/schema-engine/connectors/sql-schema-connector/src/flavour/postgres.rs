@@ -5,35 +5,41 @@ mod renderer;
 mod schema_calculator;
 mod schema_differ;
 
+use std::borrow::Cow;
+use std::future::Future;
+use std::future::{self};
+use std::str::FromStr;
+use std::sync::LazyLock;
+use std::time;
+
 use base64::prelude::*;
 use connector as imp;
 use destructive_change_checker::PostgresDestructiveChangeCheckerFlavour;
 use enumflags2::BitFlags;
 use indoc::indoc;
 use psl::PreviewFeature;
-use quaint::{
-    Value,
-    connector::{DEFAULT_POSTGRES_SCHEMA, PostgresUrl, PostgresWebSocketUrl, is_url_localhost},
-};
+use quaint::Value;
+use quaint::connector::DEFAULT_POSTGRES_SCHEMA;
+use quaint::connector::PostgresUrl;
+use quaint::connector::PostgresWebSocketUrl;
+use quaint::connector::is_url_localhost;
 use renderer::PostgresRenderer;
 use schema_calculator::PostgresSchemaCalculatorFlavour;
-use schema_connector::{
-    BoxFuture, ConnectorError, ConnectorResult, Namespaces, migrations_directory::Migrations,
-};
+use schema_connector::BoxFuture;
+use schema_connector::ConnectorError;
+use schema_connector::ConnectorResult;
+use schema_connector::Namespaces;
+use schema_connector::migrations_directory::Migrations;
 use schema_differ::PostgresSchemaDifferFlavour;
 use serde::Deserialize;
-use sql_schema_describer::{SqlSchema, postgres::PostgresSchemaExt};
-use std::{
-    borrow::Cow,
-    future::{self, Future},
-    str::FromStr,
-    sync::LazyLock,
-    time,
-};
+use sql_schema_describer::SqlSchema;
+use sql_schema_describer::postgres::PostgresSchemaExt;
 use url::Url;
 use user_facing_errors::schema_engine::DatabaseSchemaInconsistent;
 
-use super::{SqlConnector, SqlDialect, UsingExternalShadowDb};
+use super::SqlConnector;
+use super::SqlDialect;
+use super::UsingExternalShadowDb;
 
 const ADVISORY_LOCK_TIMEOUT: time::Duration = time::Duration::from_secs(10);
 
@@ -96,7 +102,10 @@ impl<'a> PpgParams<'a> {
         self.with_local_api_key(|key| connection_string::parse(key.shadow_database_url))
     }
 
-    fn with_local_api_key<A>(&self, f: impl Fn(LocalPpgApiKey<'_>) -> ConnectorResult<A>) -> ConnectorResult<A> {
+    fn with_local_api_key<A>(
+        &self,
+        f: impl Fn(LocalPpgApiKey<'_>) -> ConnectorResult<A>,
+    ) -> ConnectorResult<A> {
         let api_key_param = self.api_key()?;
         let api_key_json = BASE64_URL_SAFE_NO_PAD
             .decode(api_key_param)
@@ -140,8 +149,10 @@ impl MigratePostgresUrl {
 
             // Remote Prisma Postgres
             Self::PRISMA_POSTGRES_SCHEME => {
-                let params = PpgParams::parse_from(&url).map_err(ConnectorError::url_parse_error)?;
-                let ws_url = Url::from_str(&MIGRATE_WS_BASE_URL).map_err(ConnectorError::url_parse_error)?;
+                let params =
+                    PpgParams::parse_from(&url).map_err(ConnectorError::url_parse_error)?;
+                let ws_url =
+                    Url::from_str(&MIGRATE_WS_BASE_URL).map_err(ConnectorError::url_parse_error)?;
 
                 let mut ws_url = PostgresWebSocketUrl::new(ws_url, params.api_key()?.to_owned());
 
@@ -204,14 +215,18 @@ impl SqlDialect for PostgresDialect {
         Box::new(PostgresSchemaDifferFlavour::new(self.circumstances))
     }
 
-    fn schema_calculator(&self) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
+    fn schema_calculator(
+        &self,
+    ) -> Box<dyn crate::sql_schema_calculator::SqlSchemaCalculatorFlavour> {
         Box::new(PostgresSchemaCalculatorFlavour::new(self.circumstances))
     }
 
     fn destructive_change_checker(
         &self,
     ) -> Box<dyn crate::sql_destructive_change_checker::DestructiveChangeCheckerFlavour> {
-        Box::new(PostgresDestructiveChangeCheckerFlavour::new(self.circumstances))
+        Box::new(PostgresDestructiveChangeCheckerFlavour::new(
+            self.circumstances,
+        ))
     }
 
     fn datamodel_connector(&self) -> &'static dyn psl::datamodel_connector::Connector {
@@ -220,7 +235,9 @@ impl SqlDialect for PostgresDialect {
 
     fn empty_database_schema(&self) -> SqlSchema {
         let mut schema = SqlSchema::default();
-        schema.set_connector_data(Box::<sql_schema_describer::postgres::PostgresSchemaExt>::default());
+        schema.set_connector_data(
+            Box::<sql_schema_describer::postgres::PostgresSchemaExt>::default(),
+        );
         schema
     }
 
@@ -235,7 +252,9 @@ impl SqlDialect for PostgresDialect {
         preview_features: psl::PreviewFeatures,
     ) -> BoxFuture<'_, ConnectorResult<Box<dyn SqlConnector>>> {
         let params = schema_connector::ConnectorParams::new(url, preview_features, None);
-        Box::pin(async move { Ok(Box::new(PostgresConnector::new_with_params(params)?) as Box<dyn SqlConnector>) })
+        Box::pin(async move {
+            Ok(Box::new(PostgresConnector::new_with_params(params)?) as Box<dyn SqlConnector>)
+        })
     }
 }
 
@@ -260,7 +279,9 @@ impl PostgresConnector {
     }
 
     #[cfg(feature = "postgresql-native")]
-    pub(crate) fn new_with_params(params: schema_connector::ConnectorParams) -> ConnectorResult<Self> {
+    pub(crate) fn new_with_params(
+        params: schema_connector::ConnectorParams,
+    ) -> ConnectorResult<Self> {
         Ok(Self {
             state: State::WithParams(imp::Params::new(params)?),
             provider: PostgresProvider::Unspecified,
@@ -284,7 +305,8 @@ impl PostgresConnector {
         F: Future<Output = ConnectorResult<O>> + Send + 'a,
     {
         Box::pin(async move {
-            let (conn, ctx) = imp::get_connection_and_params(&mut self.state, self.provider).await?;
+            let (conn, ctx) =
+                imp::get_connection_and_params(&mut self.state, self.provider).await?;
             f(conn, ctx).await
         })
     }
@@ -364,13 +386,25 @@ impl SqlConnector for PostgresConnector {
         })
     }
 
-    fn describe_schema(&mut self, namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
+    fn describe_schema(
+        &mut self,
+        namespaces: Option<Namespaces>,
+    ) -> BoxFuture<'_, ConnectorResult<SqlSchema>> {
         Box::pin(async {
             let schema = self.schema_name().to_owned();
             let preview_features = imp::get_preview_features(&self.state);
             let (conn, params, circumstances) =
-                imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider).await?;
-            describe_schema_with(conn, params, circumstances, preview_features, namespaces, schema).await
+                imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider)
+                    .await?;
+            describe_schema_with(
+                conn,
+                params,
+                circumstances,
+                preview_features,
+                namespaces,
+                schema,
+            )
+            .await
         })
     }
 
@@ -383,7 +417,8 @@ impl SqlConnector for PostgresConnector {
             let schema = self.schema_name().to_owned();
             let preview_features = imp::get_preview_features(&self.state);
             let (conn, params, circumstances) =
-                imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider).await?;
+                imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider)
+                    .await?;
             let mut enriched_circumstances = circumstances;
 
             describe_schema_with(
@@ -402,7 +437,9 @@ impl SqlConnector for PostgresConnector {
         &'a mut self,
         q: quaint::ast::Query<'a>,
     ) -> BoxFuture<'a, ConnectorResult<quaint::prelude::ResultSet>> {
-        self.with_connection(|conn, ctx| async { conn.query(q).await.map_err(imp::quaint_error_mapper(ctx)) })
+        self.with_connection(|conn, ctx| async {
+            conn.query(q).await.map_err(imp::quaint_error_mapper(ctx))
+        })
     }
 
     fn query_raw<'a>(
@@ -411,7 +448,9 @@ impl SqlConnector for PostgresConnector {
         params: &'a [quaint::Value<'a>],
     ) -> BoxFuture<'a, ConnectorResult<quaint::prelude::ResultSet>> {
         self.with_connection(|conn, ctx| async {
-            conn.query_raw(sql, params).await.map_err(imp::quaint_error_mapper(ctx))
+            conn.query_raw(sql, params)
+                .await
+                .map_err(imp::quaint_error_mapper(ctx))
         })
     }
 
@@ -420,7 +459,9 @@ impl SqlConnector for PostgresConnector {
         sql: &'a str,
     ) -> BoxFuture<'a, ConnectorResult<quaint::connector::DescribedQuery>> {
         self.with_connection(|conn, ctx| async {
-            conn.describe_query(sql).await.map_err(imp::quaint_error_mapper(ctx))
+            conn.describe_query(sql)
+                .await
+                .map_err(imp::quaint_error_mapper(ctx))
         })
     }
 
@@ -429,7 +470,9 @@ impl SqlConnector for PostgresConnector {
         migration_name: &'a str,
         script: &'a str,
     ) -> BoxFuture<'a, ConnectorResult<()>> {
-        self.with_connection(|conn, _| async { conn.apply_migration_script(migration_name, script).await })
+        self.with_connection(|conn, _| async {
+            conn.apply_migration_script(migration_name, script).await
+        })
     }
 
     fn create_database(&mut self) -> BoxFuture<'_, ConnectorResult<String>> {
@@ -466,7 +509,11 @@ impl SqlConnector for PostgresConnector {
     }
 
     fn raw_cmd<'a>(&'a mut self, sql: &'a str) -> BoxFuture<'a, ConnectorResult<()>> {
-        self.with_connection(|conn, params| async { conn.raw_cmd(sql).await.map_err(imp::quaint_error_mapper(params)) })
+        self.with_connection(|conn, params| async {
+            conn.raw_cmd(sql)
+                .await
+                .map_err(imp::quaint_error_mapper(params))
+        })
     }
 
     fn reset(&mut self, namespaces: Option<Namespaces>) -> BoxFuture<'_, ConnectorResult<()>> {
@@ -499,7 +546,10 @@ impl SqlConnector for PostgresConnector {
         })
     }
 
-    fn set_preview_features(&mut self, preview_features: enumflags2::BitFlags<psl::PreviewFeature>) {
+    fn set_preview_features(
+        &mut self,
+        preview_features: enumflags2::BitFlags<psl::PreviewFeature>,
+    ) {
         imp::set_preview_features(&mut self.state, preview_features)
     }
 
@@ -525,7 +575,10 @@ impl SqlConnector for PostgresConnector {
 
     fn version(&mut self) -> BoxFuture<'_, ConnectorResult<Option<String>>> {
         self.with_connection(|connection, params| async {
-            connection.version().await.map_err(imp::quaint_error_mapper(params))
+            connection
+                .version()
+                .await
+                .map_err(imp::quaint_error_mapper(params))
         })
     }
 
@@ -553,7 +606,9 @@ async fn describe_schema_with(
     namespaces: Option<Namespaces>,
     schema: String,
 ) -> ConnectorResult<SqlSchema> {
-    use sql_schema_describer::{DescriberErrorKind, SqlSchemaDescriberBackend, postgres as describer};
+    use sql_schema_describer::DescriberErrorKind;
+    use sql_schema_describer::SqlSchemaDescriberBackend;
+    use sql_schema_describer::postgres as describer;
 
     let mut describer_circumstances: BitFlags<describer::Circumstances> = Default::default();
 
@@ -563,19 +618,21 @@ async fn describe_schema_with(
     let namespaces_vec = Namespaces::to_vec(namespaces, schema);
     let namespaces_str: Vec<&str> = namespaces_vec.iter().map(AsRef::as_ref).collect();
 
-    let mut schema =
-        sql_schema_describer::postgres::SqlSchemaDescriber::new(conn.as_connector(), describer_circumstances)
-            .describe(namespaces_str.as_slice())
-            .await
-            .map_err(|err| match err.into_kind() {
-                DescriberErrorKind::QuaintError(err) => imp::quaint_error_mapper(params)(err),
-                e @ DescriberErrorKind::CrossSchemaReference { .. } => {
-                    let err = DatabaseSchemaInconsistent {
-                        explanation: e.to_string(),
-                    };
-                    ConnectorError::user_facing(err)
-                }
-            })?;
+    let mut schema = sql_schema_describer::postgres::SqlSchemaDescriber::new(
+        conn.as_connector(),
+        describer_circumstances,
+    )
+    .describe(namespaces_str.as_slice())
+    .await
+    .map_err(|err| match err.into_kind() {
+        DescriberErrorKind::QuaintError(err) => imp::quaint_error_mapper(params)(err),
+        e @ DescriberErrorKind::CrossSchemaReference { .. } => {
+            let err = DatabaseSchemaInconsistent {
+                explanation: e.to_string(),
+            };
+            ConnectorError::user_facing(err)
+        }
+    })?;
 
     normalize_sql_schema(&mut schema, preview_features);
 
@@ -609,11 +666,20 @@ async fn sql_schema_from_migrations_and_db(
             .await
             .map_err(imp::quaint_error_mapper(params))
             .map_err(|connector_error| {
-                connector_error.into_migration_does_not_apply_cleanly(migration.migration_name().to_owned())
+                connector_error
+                    .into_migration_does_not_apply_cleanly(migration.migration_name().to_owned())
             })?;
     }
 
-    describe_schema_with(conn, params, circumstances, preview_features, namespaces, schema).await
+    describe_schema_with(
+        conn,
+        params,
+        circumstances,
+        preview_features,
+        namespaces,
+        schema,
+    )
+    .await
 }
 
 #[enumflags2::bitflags]
@@ -644,9 +710,11 @@ async fn setup_connection(
                 .and_then(|ver_str| row.at(2).map(|ver_num| (ver_str, ver_num)))
         })
         .and_then(|(ver_str, ver_num)| {
-            ver_str
-                .to_string()
-                .and_then(|version| ver_num.as_integer().map(|version_number| (version, version_number)))
+            ver_str.to_string().and_then(|version| {
+                ver_num
+                    .as_integer()
+                    .map(|version_number| (version, version_number))
+            })
         });
 
     match version {

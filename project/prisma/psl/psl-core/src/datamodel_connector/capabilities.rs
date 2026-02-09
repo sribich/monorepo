@@ -1,4 +1,5 @@
-use std::{fmt, str::FromStr};
+use std::fmt;
+use std::str::FromStr;
 
 /// Not all Databases are created equal. Hence connectors for our datasources support different capabilities.
 /// These are used during schema validation. E.g. if a connector does not support enums an error will be raised.
@@ -82,15 +83,15 @@ capabilities!(
     JsonFilteringArrayPath, // Connector supports filtering json fields using array path (eg: postgres).
     JsonFilteringAlphanumeric, // Connector supports alphanumeric json filters (gt, gte, lt, lte...).
     JsonFilteringAlphanumericFieldRef, // Connector supports alphanumeric json filters against a json field reference.
-    JsonArrayContains, // Connector supports the contains operator for json fields.
+    JsonArrayContains,                 // Connector supports the contains operator for json fields.
     CompoundIds,
     AnyId, // Any (or combination of) uniques and not only id fields can constitute an id for a model.
     NativeFullTextSearch,
     NativeFullTextSearchWithoutIndex,
     NativeFullTextSearchWithIndex,
-    AdvancedJsonNullability,    // Connector distinguishes between their null type and JSON null.
-    UndefinedType,              // Connector distinguishes `null` and `undefined`
-    DecimalType,                // Connector supports Prisma Decimal type.
+    AdvancedJsonNullability, // Connector distinguishes between their null type and JSON null.
+    UndefinedType,           // Connector distinguishes `null` and `undefined`
+    DecimalType,             // Connector supports Prisma Decimal type.
     BackwardCompatibleQueryRaw, // Temporary SQLite specific capability. Should be removed once https://github.com/prisma/prisma/issues/12784 is fixed,
     OrderByNullsFirstLast,      // Connector supports ORDER BY NULLS LAST/FIRST
     FilteredInlineChildNestedToOneDisconnect, // Connector supports a filtered nested disconnect on both sides of a to-one relation.
@@ -105,10 +106,10 @@ capabilities!(
     UpdateReturning,
     RowIn,                                  // Connector supports (a, b) IN (c, d) expression.
     DistinctOn,                             // Connector supports DB-level distinct (e.g. postgres)
-    DeleteReturning,                        // Connector supports deleting records and returning them in one operation.
+    DeleteReturning, // Connector supports deleting records and returning them in one operation.
     SupportsFiltersOnRelationsWithoutJoins, // Connector supports rendering filters on relation fields without joins.
-    LateralJoin,                            // Connector supports lateral joins to resolve relations.
-    CorrelatedSubqueries,                   // Connector supports correlated subqueries to resolve relations.
+    LateralJoin,          // Connector supports lateral joins to resolve relations.
+    CorrelatedSubqueries, // Connector supports correlated subqueries to resolve relations.
 );
 
 /// Contains all capabilities that the connector is able to serve.

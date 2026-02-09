@@ -1,5 +1,6 @@
-use crate::common::*;
 use std::path::Path;
+
+use crate::common::*;
 
 fn from_env(key: &str) -> Option<String> {
     std::env::var(key).ok()
@@ -107,7 +108,8 @@ fn relative_sqlite_paths_can_be_modified() {
     );
 
     let config = parse_configuration(schema);
-    let url = config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
+    let url =
+        config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
 
     assert_eq!("file:/path/to/prisma/dev.db", url.unwrap())
 }
@@ -123,7 +125,8 @@ fn absolute_sqlite_paths_are_not_modified() {
     );
 
     let config = parse_configuration(schema);
-    let url = config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
+    let url =
+        config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
 
     assert_eq!("file:/foo/bar/dev.db", url.unwrap())
 }
@@ -139,7 +142,8 @@ fn postgres_relative_sslidentity_can_be_modified() {
     );
 
     let config = parse_configuration(schema);
-    let url = config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
+    let url =
+        config.datasources[0].load_url_with_config_dir(Path::new("/path/to/prisma"), from_env);
 
     assert_eq!(
         "postgres://localhost:420/?foo=bar&sslidentity=%2Fpath%2Fto%2Fprisma%2Fwe%2Fare%2Fhere.key",
@@ -204,7 +208,10 @@ fn mysql_absolute_sslidentity_should_not_be_modified() {
         .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
         .unwrap();
 
-    assert_eq!("mysql://localhost:420/?foo=bar&sslidentity=%2Fwe%2Fare%2Fhere.key", url)
+    assert_eq!(
+        "mysql://localhost:420/?foo=bar&sslidentity=%2Fwe%2Fare%2Fhere.key",
+        url
+    )
 }
 
 #[test]
@@ -243,7 +250,10 @@ fn postgres_absolute_sslcert_should_not_be_modified() {
         .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
         .unwrap();
 
-    assert_eq!("postgres://localhost:420/?foo=bar&sslcert=%2Fwe%2Fare%2Fhere.crt", url)
+    assert_eq!(
+        "postgres://localhost:420/?foo=bar&sslcert=%2Fwe%2Fare%2Fhere.crt",
+        url
+    )
 }
 
 #[test]
@@ -282,6 +292,8 @@ fn mysql_absolute_sslcert_should_not_be_modified() {
         .load_url_with_config_dir(Path::new("/path/to/prisma"), from_env)
         .unwrap();
 
-    assert_eq!("mysql://localhost:420/?foo=bar&sslcert=%2Fwe%2Fare%2Fhere.crt", url)
+    assert_eq!(
+        "mysql://localhost:420/?foo=bar&sslcert=%2Fwe%2Fare%2Fhere.crt",
+        url
+    )
 }
-

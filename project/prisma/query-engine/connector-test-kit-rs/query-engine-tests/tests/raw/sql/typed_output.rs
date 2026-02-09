@@ -3,7 +3,9 @@ use query_engine_tests::*;
 
 #[test_suite]
 mod typed_output {
-    use query_engine_tests::{fmt_query_raw, run_query, run_query_pretty};
+    use query_engine_tests::fmt_query_raw;
+    use query_engine_tests::run_query;
+    use query_engine_tests::run_query_pretty;
 
     fn schema_pg() -> String {
         let schema = indoc! {
@@ -464,7 +466,9 @@ mod typed_output {
 
     async fn create_row(runner: &Runner, data: &str) -> TestResult<()> {
         runner
-            .query(format!("mutation {{ createOneTestModel(data: {data}) {{ id }} }}"))
+            .query(format!(
+                "mutation {{ createOneTestModel(data: {data}) {{ id }} }}"
+            ))
             .await?
             .assert_success();
         Ok(())

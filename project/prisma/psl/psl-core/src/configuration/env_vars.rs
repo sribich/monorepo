@@ -1,9 +1,13 @@
 use std::env::VarError;
 
-use crate::parser_database::{ast, coerce};
-use diagnostics::{DatamodelError, DatamodelWarning, Diagnostics};
+use diagnostics::DatamodelError;
+use diagnostics::DatamodelWarning;
+use diagnostics::Diagnostics;
 use psl_ast::ast::WithSpan;
 use serde::Serialize;
+
+use crate::parser_database::ast;
+use crate::parser_database::coerce;
 
 /// Either an env var or a string literal.
 /// TODO: From Prisma 7 onwards, this struct will not be needed, as the value will always be a plain String.
@@ -19,9 +23,14 @@ pub struct StringFromEnvVar {
 impl StringFromEnvVar {
     pub(crate) fn coerce(expr: &ast::Expression, diagnostics: &mut Diagnostics) -> Option<Self> {
         match expr {
-            ast::Expression::Function(name, _, _) if name == "env" => EnvFunction::from_ast(expr, diagnostics)
-                .map(|env_function| StringFromEnvVar::new_from_env_var(env_function.var_name().to_owned())),
-            ast::Expression::StringValue(value, _) => Some(StringFromEnvVar::new_literal(value.clone())),
+            ast::Expression::Function(name, _, _) if name == "env" => {
+                EnvFunction::from_ast(expr, diagnostics).map(|env_function| {
+                    StringFromEnvVar::new_from_env_var(env_function.var_name().to_owned())
+                })
+            }
+            ast::Expression::StringValue(value, _) => {
+                Some(StringFromEnvVar::new_literal(value.clone()))
+            }
             _ => {
                 diagnostics.push_error(DatamodelError::new_type_mismatch_error(
                     "String",
@@ -76,13 +85,18 @@ pub(crate) struct EnvFunction {
 }
 
 impl EnvFunction {
-    pub(crate) fn from_ast(expr: &ast::Expression, diagnostics: &mut Diagnostics) -> Option<EnvFunction> {
+    pub(crate) fn from_ast(
+        expr: &ast::Expression,
+        diagnostics: &mut Diagnostics,
+    ) -> Option<EnvFunction> {
         let args = if let ast::Expression::Function(name, args, _) = &expr {
             if name == "env" {
                 args.arguments
                     .iter()
                     .filter(|arg| !arg.is_unnamed())
-                    .for_each(|arg| diagnostics.push_warning(DatamodelWarning::new_named_env_val(arg.span())));
+                    .for_each(|arg| {
+                        diagnostics.push_warning(DatamodelWarning::new_named_env_val(arg.span()))
+                    });
 
                 if args.arguments.is_empty() && !args.empty_arguments.is_empty() {
                     diagnostics.push_error(DatamodelError::new_named_env_val(expr.span()));

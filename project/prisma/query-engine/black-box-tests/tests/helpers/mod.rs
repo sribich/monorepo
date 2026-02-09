@@ -1,5 +1,9 @@
+use std::env;
+use std::path;
+use std::process;
+use std::sync::Mutex;
+
 use query_engine_tests::TestResult;
-use std::{env, path, process, sync::Mutex};
 
 /// Runs the command in the background and performs the future given, then kills the process
 pub(crate) async fn with_child_process<F>(command: &mut process::Command, f: F) -> TestResult<()>
@@ -52,7 +56,10 @@ pub(crate) fn query_engine_cmd(dml: &str) -> (process::Command, String) {
     cmd.env_clear();
 
     let port = generate_free_port();
-    cmd.env("PRISMA_DML", dml).arg("--port").arg(port.to_string()).arg("-g");
+    cmd.env("PRISMA_DML", dml)
+        .arg("--port")
+        .arg(port.to_string())
+        .arg("-g");
 
     (cmd, format!("http://0.0.0.0:{port}"))
 }

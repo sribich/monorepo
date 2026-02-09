@@ -1,6 +1,7 @@
 use core::any::TypeId;
 
-use railgun_error::{Error, Location};
+use railgun_error::Error;
+use railgun_error::Location;
 
 #[derive(Error)]
 pub enum InjectionError {

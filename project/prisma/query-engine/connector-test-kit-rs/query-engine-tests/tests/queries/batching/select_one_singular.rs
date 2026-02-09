@@ -3,11 +3,11 @@ use query_engine_tests::*;
 #[test_suite(schema(schema), exclude_executors("QueryCompiler"))]
 mod singular_batch {
     use indoc::indoc;
-    use query_engine_tests::{
-        Runner, TestResult,
-        query_core::{BatchDocument, QueryDocument},
-        run_query,
-    };
+    use query_engine_tests::Runner;
+    use query_engine_tests::TestResult;
+    use query_engine_tests::query_core::BatchDocument;
+    use query_engine_tests::query_core::QueryDocument;
+    use query_engine_tests::run_query;
 
     fn schema() -> String {
         let schema = indoc! {
@@ -38,7 +38,8 @@ mod singular_batch {
     async fn one_success(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let queries = vec![r#"query { findUniqueArtist(where: { ArtistId: 1 }){ Name }}"#.to_string()];
+        let queries =
+            vec![r#"query { findUniqueArtist(where: { ArtistId: 1 }){ Name }}"#.to_string()];
 
         let batch_results = runner.batch(queries, false, None).await?;
         insta::assert_snapshot!(
@@ -117,9 +118,12 @@ mod singular_batch {
         create_test_data(&runner).await?;
 
         let queries = vec![
-            r#"query { findUniqueArtist(where: { ArtistId: 2 }) { Albums { AlbumId, Title }}}"#.to_string(),
-            r#"query { findUniqueArtist(where: { ArtistId: 1 }) { Albums { Title, AlbumId }}}"#.to_string(),
-            r#"query { findUniqueArtist(where: { ArtistId: 420 }) { Albums { AlbumId, Title }}}"#.to_string(),
+            r#"query { findUniqueArtist(where: { ArtistId: 2 }) { Albums { AlbumId, Title }}}"#
+                .to_string(),
+            r#"query { findUniqueArtist(where: { ArtistId: 1 }) { Albums { Title, AlbumId }}}"#
+                .to_string(),
+            r#"query { findUniqueArtist(where: { ArtistId: 420 }) { Albums { AlbumId, Title }}}"#
+                .to_string(),
         ];
 
         let batch_results = runner.batch(queries, false, None).await?;
@@ -199,7 +203,8 @@ mod singular_batch {
     async fn one_failure(runner: Runner) -> TestResult<()> {
         create_test_data(&runner).await?;
 
-        let queries = vec![r#"query { findUniqueArtist(where: { ArtistId: 420 }) { Name }}"#.to_string()];
+        let queries =
+            vec![r#"query { findUniqueArtist(where: { ArtistId: 420 }) { Name }}"#.to_string()];
 
         let batch_results = runner.batch(queries, false, None).await?;
         insta::assert_snapshot!(
@@ -271,9 +276,18 @@ mod singular_batch {
     // Regression test for https://github.com/prisma/prisma/issues/18096
     #[connector_test(schema(bigint_id))]
     async fn batch_bigint_id(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 1 }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 2 }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 3 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: 1 }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: 2 }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: 3 }) { id } }"#
+        );
 
         match runner.protocol() {
             EngineProtocol::Graphql => {
@@ -328,8 +342,14 @@ mod singular_batch {
 
     #[connector_test(schema(enum_id), capabilities(Enums))]
     async fn batch_enum(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: "A" }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: "B" }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: "A" }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: "B" }) { id } }"#
+        );
 
         let (res, compact_doc) = compact_batch(
             &runner,
@@ -399,8 +419,14 @@ mod singular_batch {
     // Regression test for https://github.com/prisma/prisma/issues/16548
     #[connector_test(schema(schemas::generic))]
     async fn repro_16548(runner: Runner) -> TestResult<()> {
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 1 }) { id } }"#);
-        run_query!(&runner, r#"mutation { createOneTestModel(data: { id: 2 }) { id } }"#);
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: 1 }) { id } }"#
+        );
+        run_query!(
+            &runner,
+            r#"mutation { createOneTestModel(data: { id: 2 }) { id } }"#
+        );
 
         // Working case
         let (res, compact_doc) = compact_batch(
@@ -524,7 +550,10 @@ mod singular_batch {
         Ok(())
     }
 
-    async fn compact_batch(runner: &Runner, queries: Vec<String>) -> TestResult<(QueryResult, BatchDocument)> {
+    async fn compact_batch(
+        runner: &Runner,
+        queries: Vec<String>,
+    ) -> TestResult<(QueryResult, BatchDocument)> {
         let res = runner.batch(queries.clone(), false, None).await?;
 
         let doc = GraphqlBody::Multi(MultiQuery::new(
