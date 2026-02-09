@@ -18,6 +18,7 @@ import {
     TextField,
     makeStyles,
     useStyles,
+    TypographyHeading,
 } from "@sribich/fude"
 import { cardMarker } from "@sribich/fude-theme/markers.stylex"
 import { create, defaultMarker, when } from "@stylexjs/stylex"
@@ -51,7 +52,9 @@ export const LibraryPage = () => {
     return (
         <>
             <Flex direction="row" style={{ width: "100%" }}>
-                <h1 style={{ flexGrow: 1 }}>Library</h1>
+                <TypographyHeading level={1} style={{ flexGrow: 1 }}>
+                    Library
+                </TypographyHeading>
                 <NewModal />
 
                 <DelegateButton color="primary">

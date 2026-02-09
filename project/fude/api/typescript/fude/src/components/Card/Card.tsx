@@ -128,10 +128,7 @@ export const Card = createLeafComponent("item", (props: Card.Props | Card.Pressa
         isPressed,
     })
 
-    console.log("p", props)
-    // const { styles, values } = useCardStyles(props)
     const { styles, values } = useStyles(cardStyles, props)
-    console.log(values)
 
     const Component = "isPressable" in props ? "button" : "article"
 
@@ -221,8 +218,6 @@ export namespace CardFooter {
 
 export const CardFooter = (props: CardFooter.Props) => {
     const { styles } = CardStyleContext.use()
-
-    console.log(styles.footer())
 
     return <div {...styles.footer()}>{props.children}</div>
 }

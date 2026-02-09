@@ -294,9 +294,11 @@ export const SidebarMenuButton = (props: SidebarMenuButton.Props) => {
     return (
         <Tag
             {...mergeProps(
-                styles.menuButton(pathname === props.href && styles.menuButton.pathSelected),
+                styles.menuButton(
+                    pathname === props.href && styles.menuButton.pathSelected,
+                    transitionStyles.movement,
+                ),
                 linkProps,
-                transitionStyles.movement,
             )}
         >
             {props.icon}

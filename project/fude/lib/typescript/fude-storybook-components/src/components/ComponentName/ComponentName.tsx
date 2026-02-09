@@ -1,3 +1,4 @@
+import { fonts } from "@sribich/fude-theme/vars/fonts.stylex"
 import { create, props as stylexProps } from "@stylexjs/stylex"
 
 const { style } = create({
@@ -7,7 +8,7 @@ const { style } = create({
         fontSize: "48px",
         letterSpacing: "-1px",
         fontWeight: 800,
-        fontFamily: "figtree",
+        fontFamily: fonts.display,
     },
 })
 
@@ -22,7 +23,5 @@ export namespace ComponentName {
 }
 
 export const ComponentName = (props: ComponentName.Props) => {
-    return (
-        <h1 {...stylexProps(style)}>{props.children}</h1>
-    )
+    return <h1 {...stylexProps(style)}>{props.children}</h1>
 }

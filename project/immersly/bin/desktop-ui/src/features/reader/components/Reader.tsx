@@ -45,7 +45,7 @@ export const Reader = (props: Reader.Props) => {
             }
         })()
     }, [props.timestamp, props.entries])
-
+    console.log(props)
     return (
         <Flex direction="column" style={{ height: "100%" }}>
             <AudioRefContext value={audioRef}>
