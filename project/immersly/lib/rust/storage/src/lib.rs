@@ -11,6 +11,7 @@ use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
 pub use storage_app as app;
+pub use storage_domain as domain;
 use storage_infra as infra;
 
 module!(StorageModule, AppState);

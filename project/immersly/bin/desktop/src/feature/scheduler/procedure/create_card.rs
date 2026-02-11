@@ -5,7 +5,7 @@ use railgun_di::Component;
 
 use crate::feature::av::procedure::ExtractAudioProcedure;
 use crate::feature::scheduler::repository::scheduler::SchedulerRepository;
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 use crate::system::Procedure;
 
 //==============================================================================

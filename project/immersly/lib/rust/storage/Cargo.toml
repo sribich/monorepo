@@ -12,6 +12,7 @@ default = []
 [dependencies]
 shared = { path = "../shared" }
 storage-app = { path = "../storage-app" }
+storage-domain = { path = "../storage-domain" }
 storage-infra = { path = "../storage-infra" }
 
 railgun = { workspace = true }

@@ -5,7 +5,7 @@ use railgun::error::Location;
 use railgun_di::Component;
 use sha256_util::sha256_digest;
 
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 use crate::feature::storage::repository::resource::ResourceRepository;
 use crate::system::Procedure;
 

@@ -53,7 +53,7 @@ impl TryFrom<ProcedureResponse> for ReviewCardResponse {
     fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(Self {
             review: value.map(|value| Review {
-                card: value.card,
+                card: value.card.into(),
                 next_states: value.next_states,
             }),
         })

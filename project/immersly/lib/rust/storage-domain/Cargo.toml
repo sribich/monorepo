@@ -12,6 +12,9 @@ default = []
 [dependencies]
 shared = { path = "../shared" }
 
+# railgun = { workspace = true }
+# serde = { workspace = true }
+
 [dev-dependencies]
 
 [lints]

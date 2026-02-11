@@ -9,7 +9,7 @@ use railgun_di::Component;
 use uuid::Uuid;
 
 use crate::domain::value::existing_path::ExistingPath;
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 
 pub struct Reader;
 pub struct Writer;

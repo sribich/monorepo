@@ -5,7 +5,7 @@ use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
 
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 
 muid_newtype!(CardId);
 
@@ -17,7 +17,7 @@ pub struct NextCardState {
     pub difficulty: Option<f64>,
 }
 
-#[derive(Debug, Typegen, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct Card {
     pub id: CardId,
 

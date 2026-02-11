@@ -12,6 +12,7 @@ default = []
 [dependencies]
 shared = { path = "../shared" }
 {{ feature_name }}-app = { path = "../{{ feature_name }}-app" }
+{{ feature_name }}-domain = { path = "../{{ feature_name }}-domain" }
 {{ feature_name }}-infra = { path = "../{{ feature_name }}-infra" }
 
 railgun = { workspace = true }

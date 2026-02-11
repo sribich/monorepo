@@ -1,3 +1,4 @@
+use shared::muid_new_newtype;
 use shared::muid_newtype;
 
-// muid_newtype!(ResourceId);
+muid_new_newtype!(ResourceId);

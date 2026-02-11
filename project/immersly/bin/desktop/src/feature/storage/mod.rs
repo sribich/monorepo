@@ -8,7 +8,7 @@ use std::sync::Arc;
 use axum::extract::Path;
 use axum::extract::State;
 use axum::response::IntoResponse;
-use domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 use procedure::add_resource::AddResourceProcedure;
 use procedure::commit_resource::CommitResourceProcedure;
 use procedure::prepare_resource::PrepareResourceProcedure;

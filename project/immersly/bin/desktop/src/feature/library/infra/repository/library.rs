@@ -1,20 +1,19 @@
-use std::{marker::PhantomData, sync::Arc};
+use std::marker::PhantomData;
+use std::sync::Arc;
 
-use prisma_client::{PrismaClient, QueryError, model};
+use prisma_client::PrismaClient;
+use prisma_client::QueryError;
+use prisma_client::model;
 use railgun_di::Component;
 
-use crate::{
-    domain::value::existing_path::ExistingPath,
-    feature::{
-        library::domain::{
-            aggregate::{library_title::LibraryTitle, media::Media},
-            cdc::MediaChange,
-            entity::book::Book,
-            value::{library_id::LibraryId, media_kind::MediaKind},
-        },
-        storage::domain::values::ResourceId,
-    },
-};
+use crate::domain::value::existing_path::ExistingPath;
+use crate::feature::library::domain::aggregate::library_title::LibraryTitle;
+use crate::feature::library::domain::aggregate::media::Media;
+use crate::feature::library::domain::cdc::MediaChange;
+use crate::feature::library::domain::entity::book::Book;
+use crate::feature::library::domain::value::library_id::LibraryId;
+use crate::feature::library::domain::value::media_kind::MediaKind;
+use features::storage::domain::value::ResourceId;
 
 pub struct Reader;
 pub struct Writer;
@@ -135,7 +134,7 @@ impl LibraryRepository<Writer> {
                         MediaChange::DeleteBook(book) => self.delete_book(&client, &book).await,
                         MediaChange::SetBook(book) => {
                             self.set_book(&client, &book, media.id()).await;
-                        },
+                        }
                         MediaChange::SetKind(kind) => {
                             client
                                 .media()
@@ -146,7 +145,7 @@ impl LibraryRepository<Writer> {
                                 .exec()
                                 .await
                                 .unwrap();
-                        },
+                        }
                     }
                 }
 
@@ -235,7 +234,7 @@ impl MediaTranslator {
             "None" => MediaKind::None,
             _ => {
                 panic!("Unknown kind {}", from.kind);
-            },
+            }
         }
     }
 }

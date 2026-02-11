@@ -1,7 +1,6 @@
 use features::shared::domain::value::muid::Muid;
+use features::storage::domain::value::ResourceId;
 use prisma_client::model;
-
-use crate::feature::storage::domain::values::ResourceId;
 
 #[derive(Debug, Clone)]
 pub struct Resource {

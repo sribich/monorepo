@@ -8,7 +8,7 @@ use railgun_di::Component;
 use uuid::Uuid;
 
 use crate::feature::storage::domain::entity::resource::Resource;
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 use crate::feature::storage::repository::resource::ResourceRepository;
 use crate::system::Procedure;
 use crate::system::dirs::get_data_dir;

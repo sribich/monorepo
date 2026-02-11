@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use railgun_di::Component;
 
-use crate::feature::storage::domain::values::ResourceId;
+use features::storage::domain::value::ResourceId;
 use crate::feature::storage::procedure::commit_resource::CommitResourceProcedure;
 use crate::feature::storage::procedure::prepare_resource::PrepareResourceProcedure;
 use crate::feature::storage::repository::resource::ResourceRepository;

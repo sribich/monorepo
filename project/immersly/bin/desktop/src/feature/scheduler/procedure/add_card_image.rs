@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use features::shared::domain::value::muid::Muid;
 use features::shared::infra::database::Sqlite;
+use features::storage::domain::value::ResourceId;
 use mime::Mime;
 use prisma_client::model;
 use railgun_di::Component;
 
 use crate::feature::av::procedure::ExtractAudioProcedure;
 use crate::feature::scheduler::repository::scheduler::SchedulerRepository;
-use crate::feature::storage::domain::values::ResourceId;
 use crate::feature::storage::procedure::commit_resource::CommitResourceProcedure;
 use crate::feature::storage::procedure::commit_resource::CommitResourceReq;
 use crate::feature::storage::procedure::prepare_resource::PrepareResourceProcedure;

@@ -1,6 +1,7 @@
+use features::storage::domain::value::ResourceId;
+
 use crate::feature::library::domain::value::library_id::LibraryId;
 use crate::feature::storage::domain::entity::resource::Resource;
-use crate::feature::storage::domain::values::ResourceId;
 
 #[derive(Debug, Clone)]
 pub struct LibraryTitle {

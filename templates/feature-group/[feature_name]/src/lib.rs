@@ -12,6 +12,7 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
+pub use {{ snake_name }}_domain as domain;
 pub use {{ snake_name }}_app as app;
 use {{ snake_name }}_infra as infra;
 
