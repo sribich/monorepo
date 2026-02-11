@@ -2118,7 +2118,6 @@ dependencies = [
  "rand 0.9.2",
  "rayon",
  "reqwest",
- "rfd",
  "rpc",
  "rustc-hash 2.1.1",
  "serde",
@@ -9453,7 +9452,10 @@ dependencies = [
 name = "storage-infra"
 version = "0.0.0"
 dependencies = [
+ "axum",
  "railgun",
+ "rfd",
+ "serde",
  "shared",
  "storage-app",
  "storage-domain",

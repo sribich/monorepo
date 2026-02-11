@@ -16,6 +16,10 @@ storage-domain = { path = "../storage-domain" }
 
 railgun = { workspace = true }
 
+axum = { workspace = true }
+rfd = { workspace = true }
+serde = { workspace = true }
+
 [dev-dependencies]
 
 [lints]

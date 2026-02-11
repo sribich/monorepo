@@ -5,10 +5,10 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use railgun::typegen::Typegen;
-use railgun_api::ApiError;
-use railgun_api::json::ApiErrorKind;
-use railgun_api::json::ApiResponse;
-use railgun_api::json::ApiResult;
+use railgun::api::ApiError;
+use railgun::api::json::ApiErrorKind;
+use railgun::api::json::ApiResponse;
+use railgun::api::json::ApiResult;
 use serde::Deserialize;
 use serde::Serialize;
 
@@ -38,6 +38,8 @@ pub enum ApiError {}
 // Handler
 //==============================================================================
 pub async fn handler(Json(body): Json<PickFileRequest>) -> ApiResult<PickFileResponse, ApiError> {
+    // TODO: We need to not unwrap here and instead handle the Option case for
+    //       when the dialog is closed.
     let res = rfd::AsyncFileDialog::new()
         // .add_filter("text", &["txt", "rs"])
         // .add_filter("rust", &["rs", "toml"])

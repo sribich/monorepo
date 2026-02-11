@@ -29,6 +29,9 @@ impl Routes<AppState> for StorageModule {
         procedure: Procedure<Unresolved>,
         state: Arc<AppState>,
     ) -> Router<AppState> {
-        router
+        router.procedure(
+            "storage:PickFile",
+            procedure.mutation(infra::handler::pick_file::handler),
+        )
     }
 }

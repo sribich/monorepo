@@ -1,5 +1,4 @@
 pub mod domain;
-pub mod infra;
 pub mod procedure;
 pub mod repository;
 
@@ -49,8 +48,7 @@ impl Feature for StorageFeature {
         procedure: Procedure<Unresolved>,
         state: Arc<AppState>,
     ) -> Router<AppState> {
-        infra::routes::router(router, procedure.clone())
-            .apply(|router| router.route("/resource/{id}", axum::routing::get(test)))
+        router.apply(|router| router.route("/resource/{id}", axum::routing::get(test)))
     }
 }
 
