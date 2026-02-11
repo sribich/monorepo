@@ -1,9 +1,12 @@
 use std::sync::Arc;
 use std::time::Duration;
 
+use features::dictionary::DictionaryModule;
+use features::pronunciation::PronunciationModule;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
+use features::storage::StorageModule;
 use opentelemetry::global;
 use opentelemetry::global::meter_provider;
 use opentelemetry::metrics::InstrumentBuilder;
@@ -68,7 +71,12 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
         SchedulerFeature::new(),
     ];
 
-    let modules: Vec<Box<dyn Module<State = AppState>>> = vec![StatisticsModule::new_module()];
+    let modules: Vec<Box<dyn Module<State = AppState>>> = vec![
+        DictionaryModule::new_module(),
+        PronunciationModule::new_module(),
+        StatisticsModule::new_module(),
+        StorageModule::new_module(),
+    ];
 
     let injector = create_injector(&configuration, &features, &modules).await?;
 

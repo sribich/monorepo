@@ -6,5 +6,4 @@ pub mod library;
 pub mod pronunciation;
 pub mod scheduler;
 pub mod settings;
-pub mod srs;
 pub mod storage;

@@ -10,6 +10,8 @@ publish = false
 default = []
 
 [dependencies]
+dictionary = { path = "../dictionary" }
+pronunciation = { path = "../pronunciation" }
 shared = { path = "../shared" }
 statistics = { path = "../statistics" }
 storage = { path = "../storage" }

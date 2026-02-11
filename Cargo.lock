@@ -2161,6 +2161,42 @@ dependencies = [
 ]
 
 [[package]]
+name = "dictionary"
+version = "0.0.0"
+dependencies = [
+ "dictionary-app",
+ "dictionary-infra",
+ "railgun",
+ "shared",
+]
+
+[[package]]
+name = "dictionary-app"
+version = "0.0.0"
+dependencies = [
+ "dictionary-domain",
+ "railgun",
+ "shared",
+]
+
+[[package]]
+name = "dictionary-domain"
+version = "0.0.0"
+dependencies = [
+ "shared",
+]
+
+[[package]]
+name = "dictionary-infra"
+version = "0.0.0"
+dependencies = [
+ "dictionary-app",
+ "dictionary-domain",
+ "railgun",
+ "shared",
+]
+
+[[package]]
 name = "dictionary_parser"
 version = "0.0.0"
 dependencies = [
@@ -2594,7 +2630,9 @@ checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
 name = "features"
 version = "0.0.0"
 dependencies = [
+ "dictionary",
  "hex",
+ "pronunciation",
  "sha2",
  "shared",
  "statistics",
@@ -7069,6 +7107,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eb8486b569e12e2c32ad3e204dbaba5e4b5b216e9367044f25f1dba42341773"
 
 [[package]]
+name = "pronunciation"
+version = "0.0.0"
+dependencies = [
+ "pronunciation-app",
+ "pronunciation-infra",
+ "railgun",
+ "shared",
+]
+
+[[package]]
+name = "pronunciation-app"
+version = "0.0.0"
+dependencies = [
+ "pronunciation-domain",
+ "railgun",
+ "shared",
+]
+
+[[package]]
+name = "pronunciation-domain"
+version = "0.0.0"
+dependencies = [
+ "shared",
+]
+
+[[package]]
+name = "pronunciation-infra"
+version = "0.0.0"
+dependencies = [
+ "pronunciation-app",
+ "pronunciation-domain",
+ "railgun",
+ "shared",
+]
+
+[[package]]
 name = "prost"
 version = "0.13.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9270,6 +9344,7 @@ dependencies = [
 name = "storage-infra"
 version = "0.0.0"
 dependencies = [
+ "railgun",
  "shared",
  "storage-app",
  "storage-domain",

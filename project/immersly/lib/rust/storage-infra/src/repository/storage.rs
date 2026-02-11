@@ -1,15 +1,13 @@
+/*
 use std::marker::PhantomData;
 use std::sync::Arc;
 
-use features::shared::domain::value::muid::Muid;
-use features::shared::infra::database::Sqlite;
-use prisma_client::QueryError;
-use prisma_client::model;
-use railgun_di::Component;
-use uuid::Uuid;
-
-use crate::domain::value::existing_path::ExistingPath;
-use crate::feature::storage::domain::values::ResourceId;
+use railgun::di::Component;
+use shared::domain::value::muid::Muid;
+use shared::infra::database::QueryError;
+use shared::infra::database::Sqlite;
+use shared::infra::database::model;
+use storage_domain::value::ResourceId;
 
 pub struct Reader;
 pub struct Writer;
@@ -42,7 +40,7 @@ impl ResourceRepository<()> {
 impl ResourceRepository<Reader> {
     pub async fn from_id(
         &self,
-        id: &ResourceId,
+        id: &ResourceId
     ) -> core::result::Result<Option<model::resource::Data>, QueryError> {
         self.db
             .client()
@@ -102,17 +100,20 @@ impl ResourceRepository<Writer> {
     ) -> core::result::Result<Muid, QueryError> {
         let id = Muid::new_now();
 
-        let params = model::resource::Create {
-            id: id.as_bytes().to_vec(),
-            state: "committed".to_owned(),
-            kind: String::new(),
-            hash: String::new(),
-            path: path.as_str().to_owned(),
-            mime_type: String::new(),
-            params: vec![],
-        };
-
-        params.to_query(self.db.client()).exec().await?;
+        self.db
+            .client()
+            .resource()
+            .create(
+                id.as_bytes().to_vec(),
+                "committed".to_owned(),
+                String::new(),
+                String::new(),
+                path.as_str().to_owned(),
+                String::new(),
+                vec![],
+            )
+            .exec()
+            .await?;
 
         Ok(id)
     }
@@ -153,3 +154,4 @@ impl ResourceRepository<Writer> {
     //             .unwrap();
     //     }
 }
+*/

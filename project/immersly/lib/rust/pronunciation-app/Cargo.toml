@@ -1,5 +1,5 @@
 [package]
-name = "{{ feature_name }}-app"
+name = "pronunciation-app"
 version.workspace = true
 authors.workspace = true
 edition.workspace = true
@@ -11,7 +11,7 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-{{ feature_name }}-domain = { path = "../{{ feature_name }}-domain" }
+pronunciation-domain = { path = "../pronunciation-domain" }
 
 railgun = { workspace = true }
 

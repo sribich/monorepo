@@ -1,7 +1,14 @@
 #![feature(ptr_metadata, try_as_dyn)]
+use std::sync::Arc;
+
 use railgun::di::Container;
+use railgun::di::InjectorBuilder;
+use railgun::di::InjectorError;
 use railgun::di::Routes;
 use railgun::module;
+use railgun::rpc::procedure::Procedure;
+use railgun::rpc::procedure::Unresolved;
+use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
 pub use storage_app as app;
 use storage_infra as infra;
@@ -9,21 +16,18 @@ use storage_infra as infra;
 module!(StorageModule, AppState);
 
 impl Container for StorageModule {
-    fn inject(
-        &self,
-        injector: &mut railgun::di::InjectorBuilder,
-    ) -> Result<(), railgun::di::InjectorError> {
-        todo!()
+    fn inject(&self, injector: &mut InjectorBuilder) -> Result<(), InjectorError> {
+        Ok(())
     }
 }
 
 impl Routes<AppState> for StorageModule {
     fn routes(
         &self,
-        router: railgun::rpc::router::Router<AppState>,
-        procedure: railgun::rpc::procedure::Procedure<railgun::rpc::procedure::Unresolved>,
-        state: std::sync::Arc<AppState>,
-    ) -> railgun::rpc::router::Router<AppState> {
-        todo!()
+        router: Router<AppState>,
+        procedure: Procedure<Unresolved>,
+        state: Arc<AppState>,
+    ) -> Router<AppState> {
+        router
     }
 }

@@ -14,6 +14,8 @@ shared = { path = "../shared" }
 storage-app = { path = "../storage-app" }
 storage-domain = { path = "../storage-domain" }
 
+railgun = { workspace = true }
+
 [dev-dependencies]
 
 [lints]

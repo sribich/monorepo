@@ -1,8 +1,8 @@
-{% set snake_name = feature_name | snake_case %}
-{% set module_name = [feature_name | pascal_case, "Module"] | join(sep="") %}
 #![feature(ptr_metadata, try_as_dyn)]
 use std::sync::Arc;
 
+pub use pronunciation_app as app;
+use pronunciation_infra as infra;
 use railgun::di::Container;
 use railgun::di::InjectorBuilder;
 use railgun::di::InjectorError;
@@ -12,18 +12,16 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
-pub use {{ snake_name }}_app as app;
-use {{ snake_name }}_infra as infra;
 
-module!({{ module_name }}, AppState);
+module!(PronunciationModule, AppState);
 
-impl Container for {{ module_name }} {
+impl Container for PronunciationModule {
     fn inject(&self, injector: &mut InjectorBuilder) -> Result<(), InjectorError> {
         Ok(())
     }
 }
 
-impl Routes<AppState> for {{ module_name }} {
+impl Routes<AppState> for PronunciationModule {
     fn routes(
         &self,
         router: Router<AppState>,
