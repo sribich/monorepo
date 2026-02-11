@@ -1,0 +1,22 @@
+[package]
+name = "library-infra"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+library-app = { path = "../library-app" }
+library-domain = { path = "../library-domain" }
+
+railgun = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

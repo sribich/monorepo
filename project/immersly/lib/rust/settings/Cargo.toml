@@ -1,0 +1,22 @@
+[package]
+name = "settings"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+settings-app = { path = "../settings-app" }
+settings-infra = { path = "../settings-infra" }
+
+railgun = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

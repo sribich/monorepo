@@ -1,0 +1,22 @@
+[package]
+name = "scheduler"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+scheduler-app = { path = "../scheduler-app" }
+scheduler-infra = { path = "../scheduler-infra" }
+
+railgun = { workspace = true }
+
+[dev-dependencies]
+
+[lints]
+workspace = true

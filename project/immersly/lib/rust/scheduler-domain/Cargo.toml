@@ -1,0 +1,18 @@
+[package]
+name = "scheduler-domain"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+
+publish = false
+
+[features]
+default = []
+
+[dependencies]
+shared = { path = "../shared" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
