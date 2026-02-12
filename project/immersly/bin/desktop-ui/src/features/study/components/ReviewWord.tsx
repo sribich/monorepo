@@ -60,7 +60,7 @@ export const ReviewWord = (props: ReviewWord.Props) => {
             )}
 
             <div {...styles.audio()}>
-                {props.card.reading_audio && (
+                {props.card.readingAudio && (
                     <ContextMenu>
                         <AudioPlayer
                             key={1}
@@ -83,7 +83,7 @@ export const ReviewWord = (props: ReviewWord.Props) => {
                         </Popover>
                     </ContextMenu>
                 )}
-                {props.card.sentence_audio && (
+                {props.card.sentenceAudio && (
                     <AudioPlayer
                         key={2}
                         src={`/rpc/scheduler:playAudio/${props.card.id}/sentence`}
