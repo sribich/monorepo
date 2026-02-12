@@ -145,12 +145,15 @@ model Resource {
 
     state String
 
-    kind String
-
-    hash String
+    hash String?
     path String
+    managed Boolean
 
     mime_type String
+
+    last_access DateTime?
+
+    created_at DateTime @default(now())
 
     // TODO(sr): I should make reverse relations optional.
     BookAudio     Book[]         @relation("audio")

@@ -59,20 +59,17 @@ impl ResourceRepository<Writer> {
         id: &Uuid,
         path: String,
     ) -> core::result::Result<model::resource::Data, QueryError> {
-        self.db
-            .client()
-            .resource()
-            .create(
-                id.as_bytes().to_vec(),
-                "preparing".to_owned(),
-                String::new(),
-                String::new(),
-                path,
-                String::new(),
-                vec![],
-            )
-            .exec()
-            .await
+        let params = model::resource::Create {
+            id: id.as_bytes().to_vec(),
+            state: "preparing".to_owned(),
+            path: path.as_str().to_owned(),
+            managed: true,
+            mime_type: String::new(),
+            params: vec![],
+        };
+
+
+        Ok(params.to_query(self.db.client()).exec().await?)
     }
 
     pub async fn commit(
@@ -87,7 +84,7 @@ impl ResourceRepository<Writer> {
                 model::resource::id::equals(id.to_vec()),
                 vec![
                     model::resource::state::set("committed".to_owned()),
-                    model::resource::hash::set(hash),
+                    model::resource::hash::set(Some(hash)),
                 ],
             )
             .exec()
@@ -105,9 +102,8 @@ impl ResourceRepository<Writer> {
         let params = model::resource::Create {
             id: id.as_bytes().to_vec(),
             state: "committed".to_owned(),
-            kind: String::new(),
-            hash: String::new(),
             path: path.as_str().to_owned(),
+            managed: true,
             mime_type: String::new(),
             params: vec![],
         };
