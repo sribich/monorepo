@@ -11,8 +11,6 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-dictionary-app = { path = "../dictionary-app" }
-dictionary-infra = { path = "../dictionary-infra" }
 
 railgun = { workspace = true }
 

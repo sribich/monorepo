@@ -11,10 +11,12 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-statistics-app = { path = "../statistics-app" }
-statistics-infra = { path = "../statistics-infra" }
 
+language_pack = { workspace = true }
 railgun = { workspace = true }
+
+axum = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 

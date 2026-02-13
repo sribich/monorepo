@@ -2162,34 +2162,6 @@ dependencies = [
 name = "dictionary"
 version = "0.0.0"
 dependencies = [
- "dictionary-app",
- "dictionary-infra",
- "railgun",
- "shared",
-]
-
-[[package]]
-name = "dictionary-app"
-version = "0.0.0"
-dependencies = [
- "dictionary-domain",
- "railgun",
- "shared",
-]
-
-[[package]]
-name = "dictionary-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "dictionary-infra"
-version = "0.0.0"
-dependencies = [
- "dictionary-app",
- "dictionary-domain",
  "railgun",
  "shared",
 ]
@@ -5451,34 +5423,6 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 name = "library"
 version = "0.0.0"
 dependencies = [
- "library-app",
- "library-infra",
- "railgun",
- "shared",
-]
-
-[[package]]
-name = "library-app"
-version = "0.0.0"
-dependencies = [
- "library-domain",
- "railgun",
- "shared",
-]
-
-[[package]]
-name = "library-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "library-infra"
-version = "0.0.0"
-dependencies = [
- "library-app",
- "library-domain",
  "railgun",
  "shared",
 ]
@@ -8515,34 +8459,6 @@ name = "scheduler"
 version = "0.0.0"
 dependencies = [
  "railgun",
- "scheduler-app",
- "scheduler-infra",
- "shared",
-]
-
-[[package]]
-name = "scheduler-app"
-version = "0.0.0"
-dependencies = [
- "railgun",
- "scheduler-domain",
- "shared",
-]
-
-[[package]]
-name = "scheduler-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "scheduler-infra"
-version = "0.0.0"
-dependencies = [
- "railgun",
- "scheduler-app",
- "scheduler-domain",
  "shared",
 ]
 
@@ -8809,34 +8725,6 @@ name = "settings"
 version = "0.0.0"
 dependencies = [
  "railgun",
- "settings-app",
- "settings-infra",
- "shared",
-]
-
-[[package]]
-name = "settings-app"
-version = "0.0.0"
-dependencies = [
- "railgun",
- "settings-domain",
- "shared",
-]
-
-[[package]]
-name = "settings-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "settings-infra"
-version = "0.0.0"
-dependencies = [
- "railgun",
- "settings-app",
- "settings-domain",
  "shared",
 ]
 
@@ -8905,24 +8793,6 @@ version = "0.0.0"
 dependencies = [
  "dirs 6.0.0",
  "prisma-client",
- "railgun",
- "serde",
- "shared-app",
- "shared-domain",
- "typegen",
-]
-
-[[package]]
-name = "shared-app"
-version = "0.0.0"
-dependencies = [
- "shared-domain",
-]
-
-[[package]]
-name = "shared-domain"
-version = "0.0.0"
-dependencies = [
  "railgun",
  "serde",
  "typegen",
@@ -9360,38 +9230,11 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "statistics"
 version = "0.0.0"
 dependencies = [
- "railgun",
- "shared",
- "statistics-app",
- "statistics-infra",
-]
-
-[[package]]
-name = "statistics-app"
-version = "0.0.0"
-dependencies = [
- "shared",
- "statistics-domain",
-]
-
-[[package]]
-name = "statistics-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "statistics-infra"
-version = "0.0.0"
-dependencies = [
  "axum",
  "language_pack",
  "railgun",
  "serde",
  "shared",
- "statistics-app",
- "statistics-domain",
 ]
 
 [[package]]

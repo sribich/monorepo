@@ -10,8 +10,6 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
-pub use dictionary_app as app;
-use dictionary_infra as infra;
 
 module!(DictionaryModule, AppState);
 

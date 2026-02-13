@@ -11,8 +11,6 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-scheduler-app = { path = "../scheduler-app" }
-scheduler-infra = { path = "../scheduler-infra" }
 
 railgun = { workspace = true }
 

@@ -11,14 +11,13 @@ default = []
 
 [dependencies]
 prisma-client = { path = "../prisma-client" }
-shared-app = { path = "../shared-app" }
-shared-domain = { path = "../shared-domain" }
 
 railgun = { workspace = true }
 typegen = { workspace = true, features = ["uuid"] }
 
 dirs = { workspace = true }
 serde = { workspace = true }
+uuid = { workspace = true }
 
 [dev-dependencies]
 

@@ -10,8 +10,6 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
-pub use scheduler_app as app;
-use scheduler_infra as infra;
 
 module!(SchedulerModule, AppState);
 

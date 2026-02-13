@@ -11,8 +11,6 @@ default = []
 
 [dependencies]
 shared = { path = "../shared" }
-settings-app = { path = "../settings-app" }
-settings-infra = { path = "../settings-infra" }
 
 railgun = { workspace = true }
 

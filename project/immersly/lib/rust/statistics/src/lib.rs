@@ -8,8 +8,8 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
-pub use statistics_app as app;
-use statistics_infra::handlers::known_words;
+
+mod infra;
 
 module!(StatisticsModule, AppState);
 
@@ -22,7 +22,7 @@ impl Routes<AppState> for StatisticsModule {
     ) -> Router<AppState> {
         router.procedure(
             "statistics:KnownWords",
-            procedure.query(known_words::handler),
+            procedure.query(infra::handler::known_words::handler),
         )
     }
 }

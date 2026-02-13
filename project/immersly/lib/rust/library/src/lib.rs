@@ -10,8 +10,6 @@ use railgun::rpc::procedure::Procedure;
 use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
-pub use library_app as app;
-use library_infra as infra;
 
 module!(LibraryModule, AppState);
 

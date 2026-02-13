@@ -1,7 +1,6 @@
 #![feature(associated_type_defaults)]
-pub use shared_app as app;
-pub use shared_domain as domain;
-
+pub mod app;
+pub mod domain;
 pub mod infra;
 
 #[doc(hidden)]
