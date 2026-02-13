@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use features::dictionary::DictionaryModule;
 use features::pronunciation::PronunciationModule;
+use features::scheduler::SchedulerModule;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
@@ -24,10 +25,8 @@ use tokio::time::sleep;
 
 use crate::feature::analyze::AnalyzeFeature;
 use crate::feature::anki_bridge::AnkiBridgeFeature;
-use crate::feature::av::AudioVideoFeature;
 use crate::feature::dictionary::DictionaryFeature;
 use crate::feature::library::LibraryFeature;
-use crate::feature::scheduler::SchedulerFeature;
 use crate::feature::settings::SettingsFeature;
 use crate::system::OnStartup;
 use crate::system::actor::Actor;
@@ -59,17 +58,16 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
 
     let features: Vec<Box<dyn Feature>> = vec![
         SettingsFeature::new(),
-        AudioVideoFeature::new(),
         DictionaryFeature::new(),
         LibraryFeature::new(),
         AnalyzeFeature::new(),
         AnkiBridgeFeature::new(),
-        SchedulerFeature::new(),
     ];
 
     let modules: Vec<Box<dyn Module<State = AppState>>> = vec![
         DictionaryModule::new_module(),
         PronunciationModule::new_module(),
+        SchedulerModule::new_module(),
         StatisticsModule::new_module(),
         StorageModule::new_module(),
     ];

@@ -150,3 +150,13 @@ macro_rules! muid_new_newtype {
         }
     };
 }
+
+#[macro_export]
+macro_rules! handler_aliases {
+    ($ty:ident) => {
+        type ProcedureFn = $ty;
+        type ProcedureError = <ProcedureFn as Procedure>::Err;
+        type ProcedureRequest = <ProcedureFn as Procedure>::Req;
+        type ProcedureResponse = <ProcedureFn as Procedure>::Res;
+    };
+}

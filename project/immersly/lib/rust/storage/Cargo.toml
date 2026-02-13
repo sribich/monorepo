@@ -17,6 +17,7 @@ sha256-util = { workspace = true }
 
 axum = { workspace = true }
 chrono = { workspace = true }
+ffmpeg-sidecar = { workspace = true }
 hex = { workspace = true }
 mime = { workspace = true }
 rfd = { workspace = true }

@@ -11,7 +11,10 @@ default = []
 
 [dependencies]
 dictionary = { path = "../dictionary" }
+library = { path = "../library" }
 pronunciation = { path = "../pronunciation" }
+scheduler = { path = "../scheduler" }
+settings = { path = "../settings" }
 shared = { path = "../shared" }
 statistics = { path = "../statistics" }
 storage = { path = "../storage" }

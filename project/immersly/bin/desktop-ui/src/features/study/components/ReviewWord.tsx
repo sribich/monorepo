@@ -62,7 +62,7 @@ export const ReviewWord = (props: ReviewWord.Props) => {
                     <ContextMenu>
                         <AudioPlayer
                             key={1}
-                            src={`${host}/rpc/scheduler:playAudio/${props.card.id}/reading`}
+                            src={`${host}/rpc/resource/${props.card.readingAudio}`}
                             autoPlay
                             onEnded={() => {
                                 audioRef.current.play()
@@ -87,7 +87,7 @@ export const ReviewWord = (props: ReviewWord.Props) => {
                 {props.card.sentenceAudio && (
                     <AudioPlayer
                         key={2}
-                        src={`/rpc/scheduler:playAudio/${props.card.id}/sentence`}
+                        src={`/rpc/resource/${props.card.sentenceAudio}`}
                         ref={audioRef}
                     >
                         <PlayButton />

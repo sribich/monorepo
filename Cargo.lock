@@ -2602,7 +2602,10 @@ version = "0.0.0"
 dependencies = [
  "dictionary",
  "hex",
+ "library",
  "pronunciation",
+ "scheduler",
+ "settings",
  "sha2",
  "shared",
  "statistics",
@@ -8458,8 +8461,19 @@ dependencies = [
 name = "scheduler"
 version = "0.0.0"
 dependencies = [
+ "axum",
+ "axum-extra",
+ "base64 0.22.1",
+ "chrono",
+ "fsrs",
+ "mime",
+ "prisma-client",
  "railgun",
+ "rand 0.9.2",
+ "serde",
  "shared",
+ "storage",
+ "tower-http",
 ]
 
 [[package]]
@@ -9243,6 +9257,7 @@ version = "0.0.0"
 dependencies = [
  "axum",
  "chrono",
+ "ffmpeg-sidecar",
  "hex",
  "mime",
  "railgun",

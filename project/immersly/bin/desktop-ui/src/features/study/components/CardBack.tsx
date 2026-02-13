@@ -92,7 +92,7 @@ function DroppableGridList() {
     if (card.image_id) {
         return (
             <img
-                src={`${host}/rpc/scheduler:playAudio/${card.id}/image`}
+                src={`${host}/rpc/resource/${card.image_id}`}
                 style={{ minWidth: 0, flex: "1 1 auto" }}
             />
         )

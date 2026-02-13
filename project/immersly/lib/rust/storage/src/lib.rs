@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use app::procedure::add_resource::AddResourceProcedure;
 use app::procedure::commit_resource::CommitResourceProcedure;
+use app::procedure::extract_audio::ExtractAudioProcedure;
 use app::procedure::get_resource::GetResourceProcedure;
 use app::procedure::prepare_resource::PrepareResourceProcedure;
 use infra::repository::resource::ResourceRepository;
@@ -26,10 +27,11 @@ impl Container for StorageModule {
     fn inject(&self, injector: &mut InjectorBuilder) -> Result<(), InjectorError> {
         injector
             .add::<AddResourceProcedure>()?
-            .add::<ResourceRepository>()?
             .add::<CommitResourceProcedure>()?
+            .add::<ExtractAudioProcedure>()?
             .add::<GetResourceProcedure>()?
-            .add::<PrepareResourceProcedure>()?;
+            .add::<PrepareResourceProcedure>()?
+            .add::<ResourceRepository>()?;
 
         Ok(())
     }
