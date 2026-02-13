@@ -49,8 +49,6 @@ export const ReviewWord = (props: ReviewWord.Props) => {
 
     const audioRef = useObjectRef<HTMLMediaControls>()
 
-    console.log(data)
-
     return (
         <Card {...styles.card()}>
             <Ruby {...styles.reading()}>{props.word.reading_ruby ?? props.word.word}</Ruby>

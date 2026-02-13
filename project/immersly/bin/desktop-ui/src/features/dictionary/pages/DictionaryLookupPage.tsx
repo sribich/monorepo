@@ -96,7 +96,6 @@ export const PronunciationSelection = (props: PronunciationSelection.Props) => {
         ["pronunciation", props.word, speakerId],
         {
             word: props.word,
-            // reading: props.reading,
             speakerId: speakerId,
         },
         {
@@ -124,7 +123,7 @@ export const PronunciationSelection = (props: PronunciationSelection.Props) => {
     return (
         <>
             {speakerData && (
-                <AudioPlayer src={`${host}/rpc/resource/${speakerData.id}`} autoPlay>
+                <AudioPlayer src={`${host}/rpc/resource/${speakerData.resourceId}`} autoPlay>
                     ...
                 </AudioPlayer>
             )}
