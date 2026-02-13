@@ -1,5 +1,5 @@
-use storage::domain::value::ResourceId;
 use fsrs::MemoryState;
+use storage::domain::value::ResourceId;
 
 use crate::domain::value::card_id::CardId;
 use crate::domain::value::card_state::CardState;

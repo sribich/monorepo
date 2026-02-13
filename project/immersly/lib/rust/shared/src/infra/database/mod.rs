@@ -1,7 +1,6 @@
 use std::path::Path;
 
 use prisma_client::PrismaClient;
-
 pub use prisma_client::QueryError;
 pub use prisma_client::model;
 

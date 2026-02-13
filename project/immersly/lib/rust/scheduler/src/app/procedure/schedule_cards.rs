@@ -4,7 +4,8 @@ use std::sync::Arc;
 use railgun::di::Component;
 use shared::infra::Procedure;
 
-use crate::{app::service::scheduler::SchedulerService, infra::repository::scheduler::SchedulerRepository};
+use crate::app::service::scheduler::SchedulerService;
+use crate::infra::repository::scheduler::SchedulerRepository;
 
 pub struct ScheduleCardsReq {
     /// The number of new cards that should be scheduled.
@@ -40,9 +41,7 @@ impl Procedure for ScheduleCardsProcedure {
         let scheduler = self.scheduler_service.get_scheduler();
         let cards = scheduler.schedule_new_cards(unscheduled_cards);
 
-        self.scheduler_repository
-            .schedule_new_cards(&cards)
-            .await;
+        self.scheduler_repository.schedule_new_cards(&cards).await;
 
         Ok(ScheduleCardsRes {
             count: cards.len() as u32,

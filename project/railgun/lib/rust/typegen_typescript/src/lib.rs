@@ -652,11 +652,10 @@ fn create_enum(
                 } else {
                     Ok(format!("[{items}]"))
                 }
-            }
-            //            EnumRepr::External => format!("{{ {}: {} }}", name, process_type(cache,
-            // variant.inner)),            EnumRepr::Adjacent { tag, content } =>
-            // todo!(),            EnumRepr::Internal { tag } => todo!(),
-            //            EnumRepr::Untagged => todo!(),
+            } //            EnumRepr::External => format!("{{ {}: {} }}", name, process_type(cache,
+              // variant.inner)),            EnumRepr::Adjacent { tag, content } =>
+              // todo!(),            EnumRepr::Internal { tag } => todo!(),
+              //            EnumRepr::Untagged => todo!(),
         })
         .collect::<Result<Vec<_>, ExportError>>()?;
 

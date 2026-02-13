@@ -7,7 +7,6 @@ use railgun::error::Location;
 use railgun::ext::UnwrapInfallible;
 
 /// Represents a file that currently exists on the filesystem.
-///
 #[derive(Clone, Debug)]
 pub struct ExistingFile {
     inner: PathBuf,

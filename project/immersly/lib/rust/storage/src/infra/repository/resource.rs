@@ -7,6 +7,7 @@ use railgun::di::Component;
 use shared::infra::database::QueryError;
 use shared::infra::database::Sqlite;
 use shared::infra::database::model;
+
 use crate::domain::entity::resource::Resource;
 use crate::domain::entity::resource::ResourceData;
 use crate::domain::value::ResourceId;
@@ -62,7 +63,11 @@ impl ResourceRepository {
     }
 
     #[must_use]
-    pub async fn commit_resource(&self, id: &ResourceId, hash: String) -> Result<Resource, QueryError> {
+    pub async fn commit_resource(
+        &self,
+        id: &ResourceId,
+        hash: String,
+    ) -> Result<Resource, QueryError> {
         self.model()
             .update(
                 model::resource::id::equals(id.to_vec()),

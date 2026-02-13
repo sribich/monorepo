@@ -3,12 +3,12 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use railgun::typegen::Typegen;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;
 use railgun::api::json::ApiResult;
 use railgun::di::Component;
+use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::infra::Procedure;
@@ -53,7 +53,9 @@ impl TryInto<Req> for GetPronunciationsRequest {
         Ok(Req {
             word: self.word,
             // reading: self.reading,
-            speaker_id: self.speaker_id.map(|id| PronunciationId::try_from_str(id).unwrap()),
+            speaker_id: self
+                .speaker_id
+                .map(|id| PronunciationId::try_from_str(id).unwrap()),
         })
     }
 }
@@ -63,7 +65,11 @@ impl TryFrom<Res> for GetPronunciationsResponse {
 
     fn try_from(value: Res) -> Result<Self, Self::Error> {
         Ok(GetPronunciationsResponse {
-            pronunciations: value.pronunciations.into_iter().map(Into::into).collect::<Vec<_>>(),
+            pronunciations: value
+                .pronunciations
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<_>>(),
         })
     }
 }

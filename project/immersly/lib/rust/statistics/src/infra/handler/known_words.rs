@@ -15,8 +15,8 @@ use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::infra::database::Sqlite;
-use shared::infra::http::AppState;
 use shared::infra::database::model;
+use shared::infra::http::AppState;
 
 //==============================================================================
 // Handler Request

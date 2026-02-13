@@ -76,8 +76,7 @@ impl<'client, TClient: PrismaClient> TransactionBuilder<'client, TClient> {
                         err
                     }
                 }
-            }
-            // _ => tx(self.client.with_tx_id(None)).await,
+            } // _ => tx(self.client.with_tx_id(None)).await,
         }
     }
 

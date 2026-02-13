@@ -37,10 +37,7 @@ impl Procedure for GetPronunciationsProcedure {
     type Res = GetPronunciationsRes;
 
     async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
-        let Self::Req {
-            word,
-            speaker_id,
-        } = data;
+        let Self::Req { word, speaker_id } = data;
 
         self.pronunciation_service.fetch_pronunciations(&word).await;
 
@@ -53,8 +50,6 @@ impl Procedure for GetPronunciationsProcedure {
                 .collect::<Vec<_>>();
         }
 
-        Ok(Self::Res {
-            pronunciations,
-        })
+        Ok(Self::Res { pronunciations })
     }
 }

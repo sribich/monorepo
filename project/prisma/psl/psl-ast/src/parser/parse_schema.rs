@@ -40,8 +40,7 @@ pub fn parse_schema(
                             }
                             _ => unreachable!(),
                         }
-
-                    },                    
+                    },
                     Rule::enum_declaration => top_level_definitions.push(Top::Enum(parse_enum(current,pending_block_comment.take(),  diagnostics, file_id))),
                     Rule::config_block => {
                         top_level_definitions.push(parse_config_block(current, diagnostics, file_id));

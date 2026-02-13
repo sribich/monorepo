@@ -2,13 +2,12 @@ use std::fs::read_to_string;
 use std::sync::Arc;
 
 use features::shared::domain::value::muid::Muid;
+use features::shared::infra::Procedure;
 use features::shared::infra::database::Sqlite;
 use prisma_client::model;
 use railgun::typegen::Typegen;
 use railgun_di::Component;
 use serde::Serialize;
-
-use features::shared::infra::Procedure;
 
 #[derive(Debug, Serialize, Typegen)]
 pub struct SeriesDto {

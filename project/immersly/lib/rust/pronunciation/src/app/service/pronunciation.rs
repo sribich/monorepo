@@ -8,12 +8,12 @@ use prisma_client::model;
 use railgun::di::Component;
 use reqwest::Method;
 use reqwest::Url;
+use shared::infra::Procedure;
 use storage::app::procedure::commit_resource::CommitResourceProcedure;
 use storage::app::procedure::commit_resource::CommitResourceReq;
 use storage::app::procedure::prepare_resource::PrepareResourceProcedure;
 use storage::app::procedure::prepare_resource::PrepareResourceReq;
 use tokio::io::AsyncWriteExt;
-use shared::infra::Procedure;
 
 use crate::infra::forvo::ForvoFetcher;
 use crate::infra::repository::pronunciation::PronunciationRepository;
@@ -38,7 +38,11 @@ fn format_command(cmd: &Command) -> String {
 
 impl PronunciationService {
     pub async fn needs_pronunciations(&self, word: String) -> bool {
-        let pronunciations = self.pronunciation_repository.count_words(word).await.unwrap();
+        let pronunciations = self
+            .pronunciation_repository
+            .count_words(word)
+            .await
+            .unwrap();
 
         pronunciations == 0
     }
@@ -58,7 +62,7 @@ impl PronunciationService {
                 let (commit_resource, prepare_resource, pronunciation_repository) = (
                     self.commit_resource.clone(),
                     self.prepare_resource.clone(),
-self.pronunciation_repository.clone()
+                    self.pronunciation_repository.clone(),
                 );
 
                 tokio::spawn(async move {

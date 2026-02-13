@@ -12,7 +12,8 @@ mod write_args_parser;
 pub(crate) mod utils;
 
 // Expose top level write operation builder functions.
-pub(crate) use create::{create_many_records, create_record};
+pub(crate) use create::create_many_records;
+pub(crate) use create::create_record;
 pub(crate) use delete::delete_many_records;
 pub(crate) use delete::delete_record;
 pub(crate) use raw::execute_raw;

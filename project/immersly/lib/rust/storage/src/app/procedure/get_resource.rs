@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun::di::Component;
 use sha256_util::sha256_digest;
 use shared::infra::Procedure;
 
@@ -40,11 +40,6 @@ impl Procedure for GetResourceProcedure {
     type Res = Option<Resource>;
 
     async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
-        Ok(self
-            .resource_repository
-            .from_id(&data.id)
-            .await
-            .unwrap()
-        )
+        Ok(self.resource_repository.from_id(&data.id).await.unwrap())
     }
 }

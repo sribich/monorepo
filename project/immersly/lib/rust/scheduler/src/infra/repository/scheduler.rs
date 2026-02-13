@@ -14,8 +14,7 @@ use crate::domain::value::card_state::CardState;
 use crate::domain::value::next_card_state::NextCardState;
 
 #[derive(Component)]
-pub struct SchedulerRepository
-{
+pub struct SchedulerRepository {
     db: Arc<Sqlite>,
 }
 
@@ -37,9 +36,7 @@ impl SchedulerRepository {
             .map(Convert::into)
     }
 
-    pub async fn get_next_due(
-        &self,
-    ) -> Result<Option<Card>, QueryError> {
+    pub async fn get_next_due(&self) -> Result<Option<Card>, QueryError> {
         let now = chrono::Local::now();
 
         self.model()
@@ -66,22 +63,20 @@ impl SchedulerRepository {
 // Writer
 //==============================================================================
 impl SchedulerRepository {
-    pub async fn set_image(&self, card_id: &CardId, resource_id: &ResourceId) -> Result<Card, QueryError> {
+    pub async fn set_image(
+        &self,
+        card_id: &CardId,
+        resource_id: &ResourceId,
+    ) -> Result<Card, QueryError> {
         self.model()
             .update(
                 model::card::id::equals(card_id.to_vec()),
-                vec![model::card::image_id::set(Some(
-                    resource_id.to_vec(),
-                ))],
+                vec![model::card::image_id::set(Some(resource_id.to_vec()))],
             )
             .exec()
             .await
             .map(Convert::into)
     }
-
-
-
-
 
     pub async fn apply_learning_state(&self, card: &Card) {
         let card_data = card.as_data();

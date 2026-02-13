@@ -4,6 +4,7 @@ use std::sync::Arc;
 
 use epub::archive::EpubArchive;
 use features::shared::domain::value::existing_file::ExistingFile;
+use features::shared::infra::Procedure;
 use features::shared::infra::database::Sqlite;
 use features::storage::app::procedure::add_resource::AddResourceProcedure;
 use features::storage::app::procedure::add_resource::AddResourceReq;
@@ -23,7 +24,6 @@ use crate::feature::library::use_case::reprocess_sync::Segment;
 use crate::feature::library::use_case::reprocess_sync::TimestampedSegments;
 use crate::feature::settings::app::service::settings::SettingService;
 use crate::feature::settings::domain::value::setting::data_path::DataPath;
-use features::shared::infra::Procedure;
 use crate::system::fs::Fs;
 
 #[derive(Debug)]

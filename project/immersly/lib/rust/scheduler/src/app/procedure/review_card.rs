@@ -4,7 +4,10 @@ use std::sync::Arc;
 use railgun::di::Component;
 use shared::infra::Procedure;
 
-use crate::{app::service::scheduler::SchedulerService, domain::{entity::card::Card, state::NextStates}, infra::repository::scheduler::SchedulerRepository};
+use crate::app::service::scheduler::SchedulerService;
+use crate::domain::entity::card::Card;
+use crate::domain::state::NextStates;
+use crate::infra::repository::scheduler::SchedulerRepository;
 
 pub struct ReviewCardReq {}
 
@@ -25,11 +28,7 @@ impl Procedure for ReviewCardProcedure {
     type Res = Option<ReviewCardRes>;
 
     async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
-        let result = self
-            .scheduler_repository
-            .get_next_due()
-            .await
-            .unwrap();
+        let result = self.scheduler_repository.get_next_due().await.unwrap();
 
         if result.is_none() {
             return Ok(None);

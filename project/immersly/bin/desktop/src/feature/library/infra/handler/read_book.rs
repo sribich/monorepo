@@ -5,6 +5,7 @@ use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use features::shared::domain::value::muid::Muid;
+use features::shared::infra::Procedure;
 use railgun::typegen::Typegen;
 use railgun_api::ApiError;
 use railgun_api::json::ApiErrorKind;
@@ -16,7 +17,6 @@ use serde::Serialize;
 
 use crate::feature::library::application::procedure::read_book::ReadBookProcedure;
 use crate::handler_aliases;
-use features::shared::infra::Procedure;
 
 //==============================================================================
 // Alias

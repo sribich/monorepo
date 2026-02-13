@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun::di::Component;
 use sha256_util::sha256_digest;
 use shared::infra::Procedure;
 
@@ -52,11 +52,9 @@ impl Procedure for CommitResourceProcedure {
 
         let hash = sha256_digest(resource.path()).unwrap();
 
-        let _ = self.resource_repository
-            .commit_resource(
-                resource.id(),
-                hash.clone(),
-            )
+        let _ = self
+            .resource_repository
+            .commit_resource(resource.id(), hash.clone())
             .await
             .unwrap();
 
