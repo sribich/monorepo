@@ -3,19 +3,19 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use features::shared::domain::value::muid::Muid;
 use railgun::typegen::Typegen;
-use railgun_api::ApiError;
-use railgun_api::json::ApiErrorKind;
-use railgun_api::json::ApiResponse;
-use railgun_api::json::ApiResult;
-use railgun_di::Component;
+use railgun::api::ApiError;
+use railgun::api::json::ApiErrorKind;
+use railgun::api::json::ApiResponse;
+use railgun::api::json::ApiResult;
+use railgun::di::Component;
 use serde::Deserialize;
 use serde::Serialize;
+use shared::infra::Procedure;
 
-use crate::feature::pronunciation::procedure::get_pronunciations::GetPronunciationsProcedure;
-use crate::feature::pronunciation::procedure::get_pronunciations::Pronunciation;
-use features::shared::infra::Procedure;
+use crate::app::procedure::get_pronunciations::GetPronunciationsProcedure;
+use crate::domain::value::PronunciationId;
+use crate::infra::dto::pronunciation::PronunciationDto;
 
 //==============================================================================
 // Aliases
@@ -26,7 +26,7 @@ type Res = <GetPronunciationsProcedure as Procedure>::Res;
 //==============================================================================
 // Request Payload
 //==============================================================================
-#[derive(Debug, Deserialize, Typegen)]
+#[derive(Deserialize, Typegen)]
 #[serde(rename_all = "camelCase")]
 pub struct GetPronunciationsRequest {
     word: String,
@@ -37,10 +37,10 @@ pub struct GetPronunciationsRequest {
 //==============================================================================
 // Handler Response
 //==============================================================================
-#[derive(Debug, Serialize, Typegen)]
+#[derive(Serialize, Typegen)]
 #[serde(rename_all = "camelCase")]
 pub struct GetPronunciationsResponse {
-    pronunciations: Vec<Pronunciation>,
+    pronunciations: Vec<PronunciationDto>,
 }
 
 //==============================================================================
@@ -53,7 +53,7 @@ impl TryInto<Req> for GetPronunciationsRequest {
         Ok(Req {
             word: self.word,
             // reading: self.reading,
-            speaker_id: self.speaker_id.map(|id| Muid::try_from_str(id).unwrap()),
+            speaker_id: self.speaker_id.map(|id| PronunciationId::try_from_str(id).unwrap()),
         })
     }
 }
@@ -63,7 +63,7 @@ impl TryFrom<Res> for GetPronunciationsResponse {
 
     fn try_from(value: Res) -> Result<Self, Self::Error> {
         Ok(GetPronunciationsResponse {
-            pronunciations: value.pronunciations,
+            pronunciations: value.pronunciations.into_iter().map(Into::into).collect::<Vec<_>>(),
         })
     }
 }

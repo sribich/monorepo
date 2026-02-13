@@ -42,6 +42,13 @@ impl Routes<AppState> for StorageModule {
         procedure: Procedure<Unresolved>,
         state: Arc<AppState>,
     ) -> Router<AppState> {
+        let router = router.apply(|router| {
+            router.route(
+                "/resource/{id}",
+                axum::routing::get(infra::handler::play::handler).with_state(state),
+            )
+        });
+
         router.procedure(
             "storage:PickFile",
             procedure.mutation(infra::handler::pick_file::handler),

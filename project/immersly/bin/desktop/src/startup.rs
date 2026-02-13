@@ -27,7 +27,6 @@ use crate::feature::anki_bridge::AnkiBridgeFeature;
 use crate::feature::av::AudioVideoFeature;
 use crate::feature::dictionary::DictionaryFeature;
 use crate::feature::library::LibraryFeature;
-use crate::feature::pronunciation::PronunciationFeature;
 use crate::feature::scheduler::SchedulerFeature;
 use crate::feature::settings::SettingsFeature;
 use crate::system::OnStartup;
@@ -64,7 +63,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
         DictionaryFeature::new(),
         LibraryFeature::new(),
         AnalyzeFeature::new(),
-        PronunciationFeature::new(),
         AnkiBridgeFeature::new(),
         SchedulerFeature::new(),
     ];

@@ -49,15 +49,15 @@ export const ReviewWord = (props: ReviewWord.Props) => {
 
     const audioRef = useObjectRef<HTMLMediaControls>()
 
+    console.log(data)
+
     return (
         <Card {...styles.card()}>
             <Ruby {...styles.reading()}>{props.word.reading_ruby ?? props.word.word}</Ruby>
 
             <PitchAccentItems {...styles.pitchAccents()} items={accents} />
 
-            {speakerId && (
-                <AudioPlayer src={`${host}/rpc/pronunciation/${speakerId}/play`} autoPlay />
-            )}
+            {speakerId && <AudioPlayer src={`${host}/rpc/resource/${speakerId}`} autoPlay />}
 
             <div {...styles.audio()}>
                 {props.card.readingAudio && (
@@ -75,7 +75,10 @@ export const ReviewWord = (props: ReviewWord.Props) => {
                         <Popover placement={"bottom start"}>
                             <Menu items={data?.pronunciations ?? []}>
                                 {(item) => (
-                                    <MenuItem id={item.id} onAction={() => setSpeakerId(item.id)}>
+                                    <MenuItem
+                                        id={item.id}
+                                        onAction={() => setSpeakerId(item.resourceId)}
+                                    >
                                         {item.speaker}
                                     </MenuItem>
                                 )}

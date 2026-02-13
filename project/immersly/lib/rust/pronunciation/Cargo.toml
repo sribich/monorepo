@@ -10,11 +10,19 @@ publish = false
 default = []
 
 [dependencies]
+prisma-client = { path = "../prisma-client" }
 shared = { path = "../shared" }
-pronunciation-app = { path = "../pronunciation-app" }
-pronunciation-infra = { path = "../pronunciation-infra" }
+storage = { path = "../storage" }
 
 railgun = { workspace = true }
+forvo = { workspace = true }
+
+axum = { workspace = true }
+ffmpeg-sidecar = { workspace = true }
+futures-util = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
 
 [dev-dependencies]
 

@@ -3,31 +3,24 @@ use std::io::Write;
 use std::process::Command;
 use std::sync::Arc;
 
-use features::shared::infra::database::Sqlite;
-use features::storage::app::procedure::commit_resource::CommitResourceProcedure;
-use features::storage::app::procedure::commit_resource::CommitResourceReq;
-use features::storage::app::procedure::prepare_resource::PrepareResourceProcedure;
-use features::storage::app::procedure::prepare_resource::PrepareResourceReq;
 use futures_util::future::join_all;
-use itertools::Itertools;
 use prisma_client::model;
-use railgun_di::Component;
+use railgun::di::Component;
 use reqwest::Method;
 use reqwest::Url;
-use serde_json::Value;
+use storage::app::procedure::commit_resource::CommitResourceProcedure;
+use storage::app::procedure::commit_resource::CommitResourceReq;
+use storage::app::procedure::prepare_resource::PrepareResourceProcedure;
+use storage::app::procedure::prepare_resource::PrepareResourceReq;
 use tokio::io::AsyncWriteExt;
+use shared::infra::Procedure;
 
-use crate::feature::pronunciation::infra::forvo::ForvoFetcher;
-use crate::feature::pronunciation::repository::pronunciation::PronunciationRepository;
-use crate::feature::settings::app::service::settings::SettingService;
-use features::shared::infra::Procedure;
+use crate::infra::forvo::ForvoFetcher;
+use crate::infra::repository::pronunciation::PronunciationRepository;
 
 #[derive(Component)]
 pub struct PronunciationService {
-    db: Arc<Sqlite>,
-    repository: Arc<PronunciationRepository>,
-    settings: Arc<SettingService>,
-
+    pronunciation_repository: Arc<PronunciationRepository>,
     commit_resource: Arc<CommitResourceProcedure>,
     prepare_resource: Arc<PrepareResourceProcedure>,
 }
@@ -45,22 +38,16 @@ fn format_command(cmd: &Command) -> String {
 
 impl PronunciationService {
     pub async fn needs_pronunciations(&self, word: String) -> bool {
-        let num_pronunciations = self
-            .db
-            .client()
-            .pronunciation()
-            .count(vec![
-                model::pronunciation::word::equals(word),
-                // model::pronunciation::reading::equals(Some(reading)),
-            ])
-            .exec()
-            .await
-            .unwrap();
+        let pronunciations = self.pronunciation_repository.count_words(word).await.unwrap();
 
-        num_pronunciations == 0
+        pronunciations == 0
     }
 
     pub async fn fetch_pronunciations<S: AsRef<str>>(&self, word: S) {
+        if !self.needs_pronunciations(word.as_ref().to_owned()).await {
+            return ();
+        }
+
         let fetcher = ForvoFetcher {};
         let results = fetcher.get_pronunciations(word.as_ref().to_owned()).await;
 
@@ -68,26 +55,22 @@ impl PronunciationService {
             .items
             .into_iter()
             .map(|pronunciation| {
-                // DISABLED FOR NOW. API IS FUCKED.
-                let (commit_resource, prepare_resource, repository) = (
+                let (commit_resource, prepare_resource, pronunciation_repository) = (
                     self.commit_resource.clone(),
                     self.prepare_resource.clone(),
-                    self.repository.clone(),
+self.pronunciation_repository.clone()
                 );
 
                 tokio::spawn(async move {
-                    // Forvo API broke
-                    // return;
-
                     let resource = prepare_resource
                         .run(PrepareResourceReq {
                             filename: "audio.webm".to_owned(),
                         })
                         .await
                         .unwrap();
-                    let data = repository
-                        .writer()
-                        .create(&pronunciation, resource.resource.to_vec())
+
+                    let data = pronunciation_repository
+                        .create(&pronunciation, &resource.resource)
                         .await;
 
                     let response = reqwest::get(&pronunciation.pathogg)
@@ -113,7 +96,7 @@ impl PronunciationService {
                     command.take_stdin().unwrap().write_all(&response).unwrap();
                     command.wait().unwrap();
 
-                    commit_resource
+                    let _ = commit_resource
                         .run(CommitResourceReq {
                             resource: resource.resource,
                         })
@@ -124,15 +107,5 @@ impl PronunciationService {
             .collect::<Vec<_>>();
 
         join_all(tasks).await;
-    }
-
-    pub async fn list_pronunciations(&self, word: String) -> Vec<model::pronunciation::Data> {
-        self.db
-            .client()
-            .pronunciation()
-            .find_many(vec![model::pronunciation::word::equals(word)])
-            .exec()
-            .await
-            .unwrap()
     }
 }

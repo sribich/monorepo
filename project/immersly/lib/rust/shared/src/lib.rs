@@ -84,7 +84,7 @@ macro_rules! muid_newtype {
 #[macro_export]
 macro_rules! muid_new_newtype {
     ($ident:ident) => {
-        #[derive(Clone, Debug)]
+        #[derive(Clone, Debug, PartialEq, Eq)]
         pub struct $ident($crate::domain::value::muid::Muid);
 
         #[automatically_derived]

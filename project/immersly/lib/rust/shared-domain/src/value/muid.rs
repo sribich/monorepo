@@ -26,7 +26,7 @@ pub enum MuidParseError {
 /// state.
 ///
 /// TODO: This should not be Typegen/Serialize/Deserialize.
-#[derive(Debug, Clone, Typegen, Serialize, Deserialize)]
+#[derive(Debug, Clone, Typegen, Serialize, Deserialize, Eq, PartialEq)]
 pub struct Muid(Uuid);
 
 impl Muid {

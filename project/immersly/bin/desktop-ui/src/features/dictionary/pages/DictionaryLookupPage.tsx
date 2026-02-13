@@ -124,7 +124,7 @@ export const PronunciationSelection = (props: PronunciationSelection.Props) => {
     return (
         <>
             {speakerData && (
-                <AudioPlayer src={`${host}/rpc/pronunciation/${speakerData.id}/play`} autoPlay>
+                <AudioPlayer src={`${host}/rpc/resource/${speakerData.id}`} autoPlay>
                     ...
                 </AudioPlayer>
             )}

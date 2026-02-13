@@ -3,6 +3,5 @@ pub mod anki_bridge;
 pub mod av;
 pub mod dictionary;
 pub mod library;
-pub mod pronunciation;
 pub mod scheduler;
 pub mod settings;
