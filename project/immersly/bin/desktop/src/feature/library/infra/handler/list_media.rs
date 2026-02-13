@@ -16,7 +16,7 @@ use super::dto::BookView;
 use crate::feature::library::application::procedure::list_media::ListMedia;
 use crate::handler_aliases;
 use crate::system::IntoVec;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

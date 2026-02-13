@@ -2,12 +2,12 @@ use std::sync::Arc;
 
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun_di::Component;
+use railgun::di::Component;
 use sha256_util::sha256_digest;
+use shared::infra::Procedure;
 
-use features::storage::domain::value::ResourceId;
-use crate::feature::storage::repository::resource::ResourceRepository;
-use crate::system::Procedure;
+use crate::domain::value::ResourceId;
+use crate::infra::repository::resource::ResourceRepository;
 
 //==============================================================================
 // Data
@@ -42,21 +42,19 @@ impl Procedure for CommitResourceProcedure {
     type Req = CommitResourceReq;
     type Res = CommitResourceRes;
 
-    async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
+    async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
         let resource = self
             .resource_repository
-            .reader()
             .from_id(&data.resource)
             .await
             .unwrap()
             .unwrap();
 
-        let hash = sha256_digest(&resource.path).unwrap();
+        let hash = sha256_digest(resource.path()).unwrap();
 
-        self.resource_repository
-            .writer()
-            .commit(
-                &ResourceId::from_slice_unchecked(&resource.id),
+        let _ = self.resource_repository
+            .commit_resource(
+                resource.id(),
                 hash.clone(),
             )
             .await

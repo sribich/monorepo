@@ -8,7 +8,7 @@ use railgun::typegen::Typegen;
 use railgun_di::Component;
 use serde::Serialize;
 
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 #[derive(Debug, Serialize, Typegen)]
 pub struct SeriesDto {

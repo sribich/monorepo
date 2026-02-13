@@ -6,7 +6,7 @@ use railgun_di::Component;
 use crate::feature::scheduler::domain::card::Card;
 use crate::feature::scheduler::repository::scheduler::SchedulerRepository;
 use crate::feature::scheduler::service::scheduler::SchedulerService;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 pub struct Req {
     /// The number of new cards that should be scheduled.

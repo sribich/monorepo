@@ -10,12 +10,14 @@ publish = false
 default = []
 
 [dependencies]
+prisma-client = { path = "../prisma-client" }
 shared-app = { path = "../shared-app" }
 shared-domain = { path = "../shared-domain" }
-shared-infra = { path = "../shared-infra" }
 
+railgun = { workspace = true }
 typegen = { workspace = true, features = ["uuid"] }
 
+dirs = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]

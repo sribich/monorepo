@@ -16,7 +16,7 @@ use serde::Serialize;
 
 use crate::feature::library::application::procedure::read_book::ReadBookProcedure;
 use crate::handler_aliases;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Alias

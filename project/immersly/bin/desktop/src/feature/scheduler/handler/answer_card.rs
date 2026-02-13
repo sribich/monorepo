@@ -16,7 +16,7 @@ use serde::Serialize;
 use crate::feature::scheduler::domain::card::CardId;
 use crate::feature::scheduler::domain::state::NextState;
 use crate::feature::scheduler::procedure::answer_card::AnswerCardProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

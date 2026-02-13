@@ -16,7 +16,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::feature::scheduler::procedure::add_card_image::AddCardImageProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 mod base64 {
     use serde::Deserialize;

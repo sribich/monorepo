@@ -3,7 +3,14 @@ use std::fs::read_to_string;
 use std::sync::Arc;
 
 use epub::archive::EpubArchive;
+use features::shared::domain::value::existing_file::ExistingFile;
 use features::shared::infra::database::Sqlite;
+use features::storage::app::procedure::add_resource::AddResourceProcedure;
+use features::storage::app::procedure::add_resource::AddResourceReq;
+use features::storage::app::procedure::commit_resource::CommitResourceProcedure;
+use features::storage::app::procedure::commit_resource::CommitResourceReq;
+use features::storage::app::procedure::prepare_resource::PrepareResourceProcedure;
+use features::storage::app::procedure::prepare_resource::PrepareResourceReq;
 use language_pack::jp::transcription::JapaneseTranscriptionContext;
 use prisma_client::model;
 use railgun_di::Component;
@@ -16,13 +23,7 @@ use crate::feature::library::use_case::reprocess_sync::Segment;
 use crate::feature::library::use_case::reprocess_sync::TimestampedSegments;
 use crate::feature::settings::app::service::settings::SettingService;
 use crate::feature::settings::domain::value::setting::data_path::DataPath;
-use crate::feature::storage::procedure::add_resource::AddResourceProcedure;
-use crate::feature::storage::procedure::add_resource::AddResourceReq;
-use crate::feature::storage::procedure::commit_resource::CommitResourceProcedure;
-use crate::feature::storage::procedure::commit_resource::CommitResourceReq;
-use crate::feature::storage::procedure::prepare_resource::PrepareResourceProcedure;
-use crate::feature::storage::procedure::prepare_resource::PrepareResourceReq;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 use crate::system::fs::Fs;
 
 #[derive(Debug)]
@@ -72,15 +73,16 @@ impl Procedure for AddBookProcedure {
         // Load audio path and timing information
         let timing_data = read_to_string(data.audio_path.as_path().with_extension("json")).unwrap();
 
-        let audio_id = self
+        let existing_file = ExistingFile::from_path(data.audio_path.as_path().to_owned());
+
+        let resource = self
             .add_resource
             .run(AddResourceReq {
-                path: data.audio_path.clone(),
+                path: existing_file,
             })
             .await
             .unwrap();
-
-        println!("{:#?}", result.chapters[0]);
+        let audio_id = resource.id().into();
 
         let transcriber = JapaneseTranscriptionContext {};
         let fit_data = transcriber.fit_new(result.chapters, timing_data);
@@ -144,7 +146,7 @@ impl Procedure for AddBookProcedure {
         let book = Book::new(
             title,
             data.book_path,
-            ExistingPath::new(resource.path.clone()).unwrap(),
+            ExistingPath::new(resource.path().to_str().unwrap()).unwrap(),
             ExistingPath::new(audio_resource.path.clone()).unwrap(),
             audio_id,
         );

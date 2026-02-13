@@ -1,20 +1,19 @@
 use std::sync::Arc;
 
-use features::shared::domain::value::muid::Muid;
+use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun_di::Component;
+use shared::domain::value::existing_file::ExistingFile;
+use shared::infra::Procedure;
 
-use crate::domain::value::existing_path::ExistingPath;
-use features::storage::domain::value::ResourceId;
-use crate::feature::storage::repository::resource::ResourceRepository;
-use crate::system::Procedure;
+use crate::domain::entity::resource::Resource;
+use crate::infra::repository::resource::ResourceRepository;
 
 //==============================================================================
 // Data
 //==============================================================================
 pub struct AddResourceReq {
-    pub path: ExistingPath,
+    pub path: ExistingFile,
 }
 
 //==============================================================================
@@ -28,16 +27,13 @@ pub struct AddResourceProcedure {
 impl Procedure for AddResourceProcedure {
     type Err = core::convert::Infallible;
     type Req = AddResourceReq;
-    type Res = Muid;
+    type Res = Resource;
 
-    async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
-        let id = self
+    async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
+        Ok(self
             .resource_repository
-            .writer()
-            .create_from_path(&data.path)
+            .create_existing_resource(&data.path.as_path().to_owned())
             .await
-            .unwrap();
-
-        Ok(id)
+            .unwrap())
     }
 }

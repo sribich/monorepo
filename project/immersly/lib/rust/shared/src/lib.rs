@@ -1,6 +1,8 @@
+#![feature(associated_type_defaults)]
 pub use shared_app as app;
 pub use shared_domain as domain;
-pub use shared_infra as infra;
+
+pub mod infra;
 
 #[doc(hidden)]
 pub mod __internal__ {
@@ -139,6 +141,12 @@ macro_rules! muid_new_newtype {
         impl From<$ident> for $crate::domain::value::muid::Muid {
             fn from(value: $ident) -> Self {
                 value.0
+            }
+        }
+
+        impl From<&$ident> for $crate::domain::value::muid::Muid {
+            fn from(value: &$ident) -> Self {
+                value.0.clone()
             }
         }
     };

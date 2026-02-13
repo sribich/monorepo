@@ -1,12 +1,14 @@
 use std::sync::Arc;
 
-use railgun_di::Component;
-
+use features::shared::infra::Procedure;
+use features::storage::app::procedure::commit_resource::CommitResourceProcedure;
+use features::storage::app::procedure::commit_resource::CommitResourceReq;
+use features::storage::app::procedure::get_resource::GetResourceProcedure;
+use features::storage::app::procedure::get_resource::GetResourceReq;
+use features::storage::app::procedure::prepare_resource::PrepareResourceProcedure;
+use features::storage::app::procedure::prepare_resource::PrepareResourceReq;
 use features::storage::domain::value::ResourceId;
-use crate::feature::storage::procedure::commit_resource::CommitResourceProcedure;
-use crate::feature::storage::procedure::prepare_resource::PrepareResourceProcedure;
-use crate::feature::storage::repository::resource::ResourceRepository;
-use crate::system::Procedure;
+use railgun_di::Component;
 
 //==============================================================================
 // Data
@@ -27,8 +29,8 @@ pub struct Res {
 #[derive(Component)]
 pub struct ExtractAudioProcedure {
     commit_resource: Arc<CommitResourceProcedure>,
+    get_resource: Arc<GetResourceProcedure>,
     prepare_resource: Arc<PrepareResourceProcedure>,
-    resource_repository: Arc<ResourceRepository>,
 }
 
 impl Procedure for ExtractAudioProcedure {
@@ -38,16 +40,17 @@ impl Procedure for ExtractAudioProcedure {
 
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
         let base_resource = self
-            .resource_repository
-            .reader()
-            .from_id(&data.source)
+            .get_resource
+            .run(GetResourceReq {
+                id: data.source.clone(),
+            })
             .await
             .unwrap()
             .unwrap();
 
         let resource = self
             .prepare_resource
-            .run(<PrepareResourceProcedure as Procedure>::Req {
+            .run(PrepareResourceReq {
                 filename: "audio.webm".to_owned(),
             })
             .await
@@ -55,7 +58,7 @@ impl Procedure for ExtractAudioProcedure {
 
         ffmpeg_sidecar::command::FfmpegCommand::new()
             .seek(format!("{}ms", data.timestamp_start))
-            .input(base_resource.path)
+            .input(base_resource.path().to_str().unwrap())
             .duration(format!("{}ms", data.timestamp_end - data.timestamp_start))
             .output(&resource.path)
             .codec_audio("libopus")
@@ -70,7 +73,7 @@ impl Procedure for ExtractAudioProcedure {
             .unwrap();
 
         self.commit_resource
-            .run(<CommitResourceProcedure as Procedure>::Req {
+            .run(CommitResourceReq {
                 resource: resource.resource.clone(),
             })
             .await

@@ -16,7 +16,7 @@ use serde::Serialize;
 use super::dto::review::Review;
 use crate::feature::scheduler::procedure::review_card::ReviewCardProcedure;
 use crate::handler_aliases;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

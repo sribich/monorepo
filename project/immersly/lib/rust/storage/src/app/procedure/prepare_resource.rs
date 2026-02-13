@@ -1,17 +1,15 @@
 use std::fs::create_dir_all;
 use std::sync::Arc;
 
+use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
 use railgun::error::OptionExt;
-use railgun_di::Component;
-use uuid::Uuid;
+use shared::infra::Procedure;
+use shared::infra::dirs::get_data_dir;
 
-use crate::feature::storage::domain::entity::resource::Resource;
-use features::storage::domain::value::ResourceId;
-use crate::feature::storage::repository::resource::ResourceRepository;
-use crate::system::Procedure;
-use crate::system::dirs::get_data_dir;
+use crate::domain::value::ResourceId;
+use crate::infra::repository::resource::ResourceRepository;
 
 //==============================================================================
 // Data
@@ -50,7 +48,7 @@ impl Procedure for PrepareResourceProcedure {
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
         let data_dir = get_data_dir(); // .context(NoDataDirectoryContext {})?;
 
-        let uuid = Uuid::now_v7();
+        let uuid = ResourceId::new_now();
         let (dir1, dir2) = (uuid.as_bytes()[14], uuid.as_bytes()[15]);
 
         let dirname = data_dir
@@ -61,18 +59,15 @@ impl Procedure for PrepareResourceProcedure {
 
         let filename = dirname.join(data.filename);
 
-        let data: Resource = self
+        let data = self
             .resource_repository
-            .writer()
             .prepare_resource(&uuid, filename.to_str().unwrap().to_owned())
             .await
-            .unwrap()
-            .try_into()
             .unwrap();
 
         Ok(PrepareResourceRes {
-            resource: data.id,
-            path: data.path,
+            resource: data.id().clone(),
+            path: data.path().to_str().unwrap().to_string(),
         })
     }
 }

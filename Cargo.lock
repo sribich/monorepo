@@ -2099,7 +2099,6 @@ dependencies = [
  "fsrs",
  "futures-util",
  "generator-runtime",
- "hex",
  "itertools 0.14.0",
  "language_pack",
  "language_pack_jp",
@@ -8923,10 +8922,12 @@ dependencies = [
 name = "shared"
 version = "0.0.0"
 dependencies = [
+ "dirs 6.0.0",
+ "prisma-client",
+ "railgun",
  "serde",
  "shared-app",
  "shared-domain",
- "shared-infra",
  "typegen",
 ]
 
@@ -8945,16 +8946,6 @@ dependencies = [
  "serde",
  "typegen",
  "uuid",
-]
-
-[[package]]
-name = "shared-infra"
-version = "0.0.0"
-dependencies = [
- "prisma-client",
- "railgun",
- "shared-app",
- "shared-domain",
 ]
 
 [[package]]
@@ -9426,39 +9417,15 @@ dependencies = [
 name = "storage"
 version = "0.0.0"
 dependencies = [
- "railgun",
- "shared",
- "storage-app",
- "storage-domain",
- "storage-infra",
-]
-
-[[package]]
-name = "storage-app"
-version = "0.0.0"
-dependencies = [
- "shared",
- "storage-domain",
-]
-
-[[package]]
-name = "storage-domain"
-version = "0.0.0"
-dependencies = [
- "shared",
-]
-
-[[package]]
-name = "storage-infra"
-version = "0.0.0"
-dependencies = [
  "axum",
+ "chrono",
+ "hex",
+ "mime",
  "railgun",
  "rfd",
  "serde",
+ "sha256-util",
  "shared",
- "storage-app",
- "storage-domain",
 ]
 
 [[package]]

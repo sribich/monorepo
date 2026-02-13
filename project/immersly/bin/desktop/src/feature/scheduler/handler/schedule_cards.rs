@@ -14,7 +14,7 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::feature::scheduler::procedure::schedule_cards::ScheduleCardsProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

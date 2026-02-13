@@ -16,7 +16,7 @@ use serde::Serialize;
 
 use crate::feature::scheduler::procedure::create_card::AudioSegment;
 use crate::feature::scheduler::procedure::create_card::CreateCardProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

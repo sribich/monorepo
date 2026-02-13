@@ -1,9 +1,8 @@
+use features::storage::domain::entity::resource::Resource;
 use features::storage::domain::value::ResourceId;
 
 use crate::feature::library::domain::value::library_id::LibraryId;
-use crate::feature::storage::domain::entity::resource::Resource;
 
-#[derive(Debug, Clone)]
 pub struct LibraryTitle {
     id: LibraryId,
     title: String,
@@ -25,7 +24,7 @@ impl LibraryTitle {
     }
 
     pub fn image_id(&self) -> Option<&ResourceId> {
-        self.image.as_ref().map(|it| &it.id)
+        self.image.as_ref().map(|it| it.id())
     }
 
     /*

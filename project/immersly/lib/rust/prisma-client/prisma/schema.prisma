@@ -149,7 +149,7 @@ model Resource {
     path String
     managed Boolean
 
-    mime_type String
+    mime_type String?
 
     last_access DateTime?
 

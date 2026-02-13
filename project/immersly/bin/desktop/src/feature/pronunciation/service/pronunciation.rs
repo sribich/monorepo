@@ -4,6 +4,10 @@ use std::process::Command;
 use std::sync::Arc;
 
 use features::shared::infra::database::Sqlite;
+use features::storage::app::procedure::commit_resource::CommitResourceProcedure;
+use features::storage::app::procedure::commit_resource::CommitResourceReq;
+use features::storage::app::procedure::prepare_resource::PrepareResourceProcedure;
+use features::storage::app::procedure::prepare_resource::PrepareResourceReq;
 use futures_util::future::join_all;
 use itertools::Itertools;
 use prisma_client::model;
@@ -16,9 +20,7 @@ use tokio::io::AsyncWriteExt;
 use crate::feature::pronunciation::infra::forvo::ForvoFetcher;
 use crate::feature::pronunciation::repository::pronunciation::PronunciationRepository;
 use crate::feature::settings::app::service::settings::SettingService;
-use crate::feature::storage::procedure::commit_resource::CommitResourceProcedure;
-use crate::feature::storage::procedure::prepare_resource::PrepareResourceProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 #[derive(Component)]
 pub struct PronunciationService {
@@ -78,7 +80,7 @@ impl PronunciationService {
                     // return;
 
                     let resource = prepare_resource
-                        .run(<PrepareResourceProcedure as Procedure>::Req {
+                        .run(PrepareResourceReq {
                             filename: "audio.webm".to_owned(),
                         })
                         .await
@@ -112,7 +114,7 @@ impl PronunciationService {
                     command.wait().unwrap();
 
                     commit_resource
-                        .run(<CommitResourceProcedure as Procedure>::Req {
+                        .run(CommitResourceReq {
                             resource: resource.resource,
                         })
                         .await

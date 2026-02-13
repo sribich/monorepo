@@ -30,7 +30,6 @@ use crate::feature::library::LibraryFeature;
 use crate::feature::pronunciation::PronunciationFeature;
 use crate::feature::scheduler::SchedulerFeature;
 use crate::feature::settings::SettingsFeature;
-use crate::feature::storage::StorageFeature;
 use crate::system::OnStartup;
 use crate::system::actor::Actor;
 use crate::system::configuration::Configuration;
@@ -61,7 +60,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
 
     let features: Vec<Box<dyn Feature>> = vec![
         SettingsFeature::new(),
-        StorageFeature::new(),
         AudioVideoFeature::new(),
         DictionaryFeature::new(),
         LibraryFeature::new(),

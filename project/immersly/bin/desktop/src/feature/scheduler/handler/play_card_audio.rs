@@ -12,7 +12,7 @@ use tower_http::services::fs::ServeFileSystemResponseBody;
 
 use crate::AppState;
 use crate::feature::scheduler::procedure::play_card_audio::PlayCardAudioProcedure;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

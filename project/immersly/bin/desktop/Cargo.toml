@@ -50,7 +50,7 @@ serde-untagged = { workspace = true }
 typegen = { workspace = true, features = ["axum"] }
 rpc = { workspace = true }
 
-hex = { workspace = true }
+
 async-trait = { workspace = true }
 base64 = { workspace = true }
 difflib = { workspace = true }

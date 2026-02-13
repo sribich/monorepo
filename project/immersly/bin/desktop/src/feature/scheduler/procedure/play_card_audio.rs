@@ -7,7 +7,7 @@ use prisma_client::model;
 use railgun_di::Component;
 
 use crate::feature::scheduler::handler::play_card_audio::AudioKind;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 pub struct Req {
     pub card_id: Muid,

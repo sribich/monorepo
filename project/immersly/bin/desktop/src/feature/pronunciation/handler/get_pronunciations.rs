@@ -15,7 +15,7 @@ use serde::Serialize;
 
 use crate::feature::pronunciation::procedure::get_pronunciations::GetPronunciationsProcedure;
 use crate::feature::pronunciation::procedure::get_pronunciations::Pronunciation;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Aliases

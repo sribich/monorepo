@@ -6,7 +6,7 @@ use railgun_di::Component;
 use serde::Serialize;
 
 use crate::feature::pronunciation::service::pronunciation::PronunciationService;
-use crate::system::Procedure;
+use features::shared::infra::Procedure;
 
 //==============================================================================
 // Data
