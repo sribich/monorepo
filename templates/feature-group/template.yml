@@ -1,9 +1,0 @@
-id: "feature-group"
-title: "Feature Group"
-description: "..."
-destination: project/immersly/lib/rust/
-variables:
-  feature_name:
-    type: "string"
-    required: true
-    prompt: "Feature name (dashed)?"
