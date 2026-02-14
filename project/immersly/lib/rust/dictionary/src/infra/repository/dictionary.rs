@@ -68,13 +68,14 @@ impl DictionaryRepository {
 // Writer
 //==============================================================================
 impl DictionaryRepository {
-    pub async fn create(&self,
+    pub async fn create(
+        &self,
         client: &PrismaClient,
         dictionary_id: &DictionaryId,
         file_path: &Path,
         data_path: &Path,
         language_type: String,
-        dictionary: &Arc<dyn dictionary_parser::Dictionary>
+        dictionary: &Arc<dyn dictionary_parser::Dictionary>,
     ) -> Result<(), QueryError> {
         let info = dictionary.info();
 
@@ -112,7 +113,8 @@ impl Convert<Dictionary> for model::dictionary::Data {
             kinds: HashSet::default(), // TODO(sr): self.kinds,
             file_path: self.file_path,
             data_path: self.data_path,
-        }.into()
+        }
+        .into()
     }
 }
 

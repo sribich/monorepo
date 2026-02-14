@@ -2,8 +2,8 @@ use std::fs::read_to_string;
 use std::sync::Arc;
 
 use prisma_client::model;
-use railgun::typegen::Typegen;
 use railgun::di::Component;
+use railgun::typegen::Typegen;
 use serde::Serialize;
 use shared::infra::Procedure;
 use shared::infra::database::Sqlite;
@@ -50,7 +50,8 @@ impl Procedure for ReadBookProcedure {
 
         Ok(Self::Res {
             text: data,
-            audio_id: ResourceId::from_slice_unchecked(&book.audio_resource_id.unwrap()).to_string(),
+            audio_id: ResourceId::from_slice_unchecked(&book.audio_resource_id.unwrap())
+                .to_string(),
             progress,
         })
     }

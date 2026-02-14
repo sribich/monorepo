@@ -4,7 +4,8 @@ use async_trait::async_trait;
 use railgun::di::Component;
 use shared::OnStartup;
 
-use crate::{app::service::settings::SettingService, infra::repository::setting::SettingRepository};
+use crate::app::service::settings::SettingService;
+use crate::infra::repository::setting::SettingRepository;
 
 #[derive(Component)]
 #[component(implements(Vec<dyn OnStartup>))]

@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use railgun::di::Component;
-use shared::{IntoVec, infra::Procedure};
+use shared::IntoVec;
+use shared::infra::Procedure;
 
-use crate::{app::dto::book::BookDto, infra::repository::book::BookRepository};
+use crate::app::dto::book::BookDto;
+use crate::infra::repository::book::BookRepository;
 
 pub struct MediaListRes {
     pub books: Vec<BookDto>,

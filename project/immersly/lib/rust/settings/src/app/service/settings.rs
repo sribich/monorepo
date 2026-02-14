@@ -4,7 +4,9 @@ use prisma_client::model;
 use railgun::di::Component;
 use shared::infra::database::Sqlite;
 
-use crate::domain::{entity::setting::Setting, value::setting::{SettingMeta, data_path::DataPath}};
+use crate::domain::entity::setting::Setting;
+use crate::domain::value::setting::SettingMeta;
+use crate::domain::value::setting::data_path::DataPath;
 
 #[derive(Component)]
 pub struct SettingService {

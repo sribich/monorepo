@@ -121,33 +121,31 @@ impl Procedure for ReprocessSyncProcedure {
         file.write_all(fit_data.as_bytes()).await.unwrap();
          */
 
-
-
         /*
-OLD
+        OLD
 
-        /*
-        let result = EpubArchive::open(data.path.as_str()).unwrap();
+                /*
+                let result = EpubArchive::open(data.path.as_str()).unwrap();
 
-        let title = result.package.metadata.title.first().unwrap().value.clone();
-        let rendered = result.rendered;
+                let title = result.package.metadata.title.first().unwrap().value.clone();
+                let rendered = result.rendered;
 
-        let mut media = Media::new(title, data.series_id);
+                let mut media = Media::new(title, data.series_id);
 
-        let base_data_path = self.setting_service.get_setting::<DataPath>().await;
-        let fs = Fs::new(base_data_path.path());
+                let base_data_path = self.setting_service.get_setting::<DataPath>().await;
+                let fs = Fs::new(base_data_path.path());
 
-        let rendered_path = fs
-            .write(format!("{}/rendered.txt", media.id().to_string()), rendered)
-            .await;
+                let rendered_path = fs
+                    .write(format!("{}/rendered.txt", media.id().to_string()), rendered)
+                    .await;
 
-        let book = Book::new(data.path, ExistingPath::from_path(rendered_path));
+                let book = Book::new(data.path, ExistingPath::from_path(rendered_path));
 
-        media.set_book(book);
+                media.set_book(book);
 
-        self.library_repository.writer().save_media(media).await;
-         */
-         */
+                self.library_repository.writer().save_media(media).await;
+                 */
+                 */
 
         Ok(())
     }

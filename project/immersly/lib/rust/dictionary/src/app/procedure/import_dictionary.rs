@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
+use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;
 use shared::infra::Procedure;
 
@@ -26,7 +26,9 @@ impl Procedure for ImportDictionaryProcedure {
 
     #[must_use]
     async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
-        self.load_dictionary.send(data.dictionary_path, data.language_type).await;
+        self.load_dictionary
+            .send(data.dictionary_path, data.language_type)
+            .await;
 
         Ok(())
     }

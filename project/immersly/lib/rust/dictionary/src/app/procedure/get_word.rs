@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use prisma_client::model::SortOrder;
 use prisma_client::model::{self};
-use railgun::typegen::Typegen;
 use railgun::di::Component;
+use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::domain::value::muid::Muid;

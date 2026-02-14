@@ -31,7 +31,11 @@ impl BookRepository {
 //==============================================================================
 impl BookRepository {
     pub async fn find_all(&self) -> Result<Vec<Book>, QueryError> {
-        self.model().find_many(vec![]).exec().await.map(Convert::into)
+        self.model()
+            .find_many(vec![])
+            .exec()
+            .await
+            .map(Convert::into)
     }
 }
 
@@ -78,8 +82,11 @@ impl Convert<Book> for model::book::Data {
             rendered_path: ExistingFile::new_unchecked(self.rendered_path),
             timing_path: ExistingFile::new_unchecked(self.rendered_audio_path.unwrap()),
             audio_resource: ResourceId::from_slice_unchecked(&self.audio_resource_id.unwrap()),
-            image_resource: self.image_resource_id.map(|it| ResourceId::from_slice_unchecked(&it)),
-        }.into()
+            image_resource: self
+                .image_resource_id
+                .map(|it| ResourceId::from_slice_unchecked(&it)),
+        }
+        .into()
     }
 }
 

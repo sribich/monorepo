@@ -3,12 +3,12 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use railgun::typegen::Typegen;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;
 use railgun::api::json::ApiResult;
 use railgun::di::Component;
+use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::handler_aliases;
@@ -53,9 +53,7 @@ impl TryFrom<ProcedureResponse> for ListMediaResponse {
     type Error = core::convert::Infallible;
 
     fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
-        Ok(ListMediaResponse {
-            books: value.books,
-        })
+        Ok(ListMediaResponse { books: value.books })
     }
 }
 

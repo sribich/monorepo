@@ -2,14 +2,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use features::dictionary::DictionaryModule;
+use features::library::LibraryModule;
 use features::pronunciation::PronunciationModule;
 use features::scheduler::SchedulerModule;
+use features::settings::SettingsModule;
 use features::shared::infra::actor::Actor;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
-use features::settings::SettingsModule;
-use features::library::LibraryModule;
 use features::storage::StorageModule;
 use opentelemetry::global;
 use opentelemetry::global::meter_provider;

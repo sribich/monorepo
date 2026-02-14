@@ -4,7 +4,8 @@ use dictionary_parser::load_dictionary;
 use prisma_client::QueryError;
 use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;
-use shared::infra::actor::{Actor, Task};
+use shared::infra::actor::Actor;
+use shared::infra::actor::Task;
 use shared::infra::database::Sqlite;
 
 use crate::app::service::dictionary::DictionaryService;
