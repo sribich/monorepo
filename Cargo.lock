@@ -5434,8 +5434,16 @@ checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
 name = "library"
 version = "0.0.0"
 dependencies = [
+ "axum",
+ "epub",
+ "language_pack",
+ "prisma-client",
  "railgun",
+ "serde",
+ "serde_json",
  "shared",
+ "storage",
+ "tokio",
 ]
 
 [[package]]

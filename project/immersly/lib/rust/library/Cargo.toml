@@ -10,9 +10,18 @@ publish = false
 default = []
 
 [dependencies]
+prisma-client = { path = "../prisma-client" }
 shared = { path = "../shared" }
+storage = { path = "../storage" }
 
+epub = { workspace = true }
+language_pack = { workspace = true }
 railgun = { workspace = true }
+
+axum = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 

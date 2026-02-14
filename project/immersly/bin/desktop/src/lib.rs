@@ -4,8 +4,6 @@
 #![feature(more_qualified_paths)]
 pub use features::shared::infra::http::AppState;
 
-pub mod domain;
-pub mod feature;
 pub mod system;
 
 pub mod startup;

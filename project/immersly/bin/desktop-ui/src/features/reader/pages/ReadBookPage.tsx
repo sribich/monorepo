@@ -13,7 +13,7 @@ export namespace ReadBookPage {
 }
 
 export const ReadBookPage = (props: ReadBookPage.Props) => {
-    const { entries, timestamp, isLoading, error } = useBook(props.bookId)
+    const { entries, timestamp, bookAudioId, isLoading, error } = useBook(props.bookId)
 
     const { styles } = useStyles(readBookPageStyles, {})
 
@@ -30,7 +30,7 @@ export const ReadBookPage = (props: ReadBookPage.Props) => {
                 </SidebarTrigger>
             </div>
             <div {...styles.content()}>
-                <Reader bookId={props.bookId} entries={entries} timestamp={timestamp} />
+                <Reader bookId={props.bookId} bookAudioId={bookAudioId} entries={entries} timestamp={timestamp} />
             </div>
         </div>
     )

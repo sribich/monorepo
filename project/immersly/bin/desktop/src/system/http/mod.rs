@@ -12,8 +12,6 @@ use railgun_di::Injector;
 use tokio::net::TcpListener;
 use tracing::debug;
 
-use crate::startup::Feature;
-
 pub struct HttpServerContext {
     pub port: u16,
     pub injector: Arc<Injector>,
@@ -26,7 +24,6 @@ pub struct HttpServer {
 
 impl HttpServer {
     pub async fn from_features(
-        features: Vec<Box<dyn Feature>>,
         modules: Vec<Box<dyn Module<State = AppState>>>,
         context: HttpServerContext,
     ) -> Self {
@@ -34,18 +31,9 @@ impl HttpServer {
 
         let state = AppState {
             injector: context.injector,
-            //            db: context.state.db,
-            //            dictionary: context.state.dictionary,
-            //            library: context.state.library,
-            //            study: context.state.study,
-            //            pronunciation: context.state.pronunciation,
-            //            channel: channel.0,
-            //            /* db: Arc::new(context.db),
-            //             * settings: Arc::new(context.settings),
-            //             * recording: (0, false), */
         };
 
-        let router = Self::router(&features, &modules, Arc::new(state.clone()));
+        let router = Self::router(&modules, Arc::new(state.clone()));
 
         let cors = tower_http::cors::CorsLayer::new()
             .allow_methods([
@@ -90,7 +78,6 @@ impl HttpServer {
     }
 
     fn router(
-        features: &[Box<dyn Feature>],
         modules: &[Box<dyn Module<State = AppState>>],
         state: Arc<AppState>,
     ) -> Router<AppState> {
@@ -98,14 +85,6 @@ impl HttpServer {
         let router = context.router();
 
         let mut rpc_router = context.router();
-
-        for feature in features {
-            rpc_router = rpc_router.merge(feature.routes(
-                context.router(),
-                context.procedure(),
-                state.clone(),
-            ));
-        }
 
         for module in modules {
             if let Some(router) = module.as_routes() {
@@ -199,113 +178,6 @@ impl HttpServer {
 }
 
 /*
-use std::{env::current_dir, sync::Arc};
-
-use axum::{Json, extract::State, response::IntoResponse, routing::get, serve};
-use futures_util::{
-    SinkExt, StreamExt,
-    stream::{SplitSink, SplitStream},
-};
-use railgun::{
-    rpc::{
-        Empty, RpcContext,
-        axum::{TypedMessage, TypedWebSocket, TypedWebSocketUpgrade},
-        export::clients::typescript::TypescriptClient,
-        router::Router,
-    },
-    typegen::{Typegen, export::config::ExportConfig},
-};
-use serde::{Deserialize, Serialize};
-use tokio::{net::TcpListener, select, sync::broadcast};
-use tracing::debug;
-
-use crate::{
-    context::{
-        dictionary::{DictionaryPorts, infra::handler::get_dictionary_router},
-        immerse::infra::provides::handler::get_immerse_router,
-        library::{LibraryDomain, get_library_router},
-        study::{StudyDomain, get_study_router},
-    },
-    module::pronunciation::{PronunciationDomain, get_pronunciation_router},
-};
-
-#[derive(Clone)]
-pub struct AppState {
-    pub db: Arc<Sqlite>,
-    pub dictionary: Arc<DictionaryPorts>,
-    pub library: Arc<LibraryDomain>,
-    pub study: Arc<StudyDomain>,
-    pub pronunciation: Arc<PronunciationDomain>,
-    // db: Arc<PrismaClient>,
-    // settings: Arc<Settings>,
-    // recording: (usize, bool),
-    channel: broadcast::Sender<ServerMessages>,
-}
-
-impl core::fmt::Debug for AppState {
-    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("AppState").finish()
-    }
-}
-
-pub struct HttpServerContext {
-    // pub db: PrismaClient,
-    // pub settings: Settings,
-
-    // startup_notifier: Option<Sender<u16>>
-    pub state: HttpStateContext,
-}
-
-pub struct HttpStateContext {
-    pub db: Arc<Sqlite>,
-    pub dictionary: Arc<DictionaryPorts>,
-    pub library: Arc<LibraryDomain>,
-    pub study: Arc<StudyDomain>,
-    pub pronunciation: Arc<PronunciationDomain>,
-}
-
-impl HttpServer {
-    fn rpc_router(state: Arc<AppState>) -> Router<AppState> {
-        let context = RpcContext::<AppState>::new();
-        let _procedure = context.procedure();
-
-        let router = context.router();
-
-        let router = router.child(
-            "/rpc",
-            context
-                .router()
-                .merge(get_study_router(
-                    context.router(),
-                    context.procedure(),
-                    Arc::clone(&state),
-                ))
-                .merge(get_dictionary_router(context.router(), context.procedure()))
-                .merge(get_immerse_router(context.router(), context.procedure()))
-                .merge(get_library_router(
-                    context.router(),
-                    context.procedure(),
-                    Arc::clone(&state),
-                ))
-                .merge(get_pronunciation_router(
-                    context.router(),
-                    context.procedure(),
-                    Arc::clone(&state),
-                ))
-                .procedure("card:knownWords", _procedure.query(test)),
-        );
-
-        Self::generate_type_exports(&router);
-
-        router
-    }
-
-
-}
-
-// #[derive(Debug, Typegen, Deserialize, Serialize)]
-// pub struct Empty {}
-
 #[derive(Clone, Debug, Typegen, Serialize)]
 #[serde(tag = "kind", content = "content")]
 enum ServerMessages {
@@ -398,166 +270,4 @@ async fn socket_send(
 //         freqs,
 //     })
 // }
-
-/*
-#[tokio::main]
-async fn main() -> Result<()> {
-    color_eyre::install()?;
-
-
-
-    let mut export_path = current_dir().unwrap();
-    export_path.push("generated/client.ts");
-
-    let export_config = ExportConfig::new(export_path);
-    router.generate_client::<TypescriptClient>(export_config)?;
-
-    println!("{}", current_dir().unwrap().to_str().unwrap());
-
-    // let server = TcpListener::bind("127.0.0.1:4444").await.unwrap();
-    // axum::serve(server, router.to_axum_router()).await.unwrap();
-
-    Ok(())
-}
-
-
-
-#[derive(Type)]
-struct Foo {
-    name: String
-}
-
-*/
-
-#[derive(Serialize, Typegen, Debug, Clone)]
-pub struct KnownWord {
-    word: String,
-    reading: String,
-}
-
-#[derive(Serialize, Typegen, Debug, Clone)]
-pub struct KnownWords {
-    words: Vec<KnownWord>,
-}
-
-async fn test() -> Json<KnownWords> {
-    use std::iter;
-
-    use chrono::DateTime;
-    use fsrs::{FSRS, FSRSItem, FSRSReview};
-    use itertools::Itertools;
-    use srs_bridge_anki::client::{
-        AnkiClient,
-        actions::{
-            card::{CardsInfoRequest, FindCardsRequest},
-            deck::{DeckNamesAndIdsRequest, DeckNamesRequest},
-            statistic::card_reviews::{CardReviewsRequest, CardReviewsResponse},
-        },
-    };
-
-    let client = AnkiClient::default();
-
-    let deck_info = client.request(DeckNamesAndIdsRequest {}).await.unwrap();
-    let card_info = client
-        .request(FindCardsRequest {
-            query: "deck:\"Refold JP1K v2\"".into(),
-        })
-        .await
-        .unwrap();
-    let card_data = client
-        .request(CardsInfoRequest { cards: card_info })
-        .await
-        .unwrap();
-
-    let words = card_data
-        .into_iter()
-        .map(|card| {
-            let word = card.fields.get("Word").unwrap().value.clone();
-
-            let reading = get_reading(
-                card.fields
-                    .get("Word With Reading")
-                    .unwrap_or_else(|| card.fields.get("WordReading").unwrap())
-                    .value
-                    .clone(),
-            );
-
-            KnownWord { word, reading }
-        })
-        .collect::<Vec<_>>();
-
-    Json(KnownWords { words })
-}
-
-/// Is a given `char` betwen あ and ゟ?
-///
-/// Strictly compliant with the [Unicode definition of hiragana], including
-/// marks and a digraph.
-///
-/// ```
-/// assert!(kanji::is_hiragana('あ'));
-/// assert!(kanji::is_hiragana('ゟ'));
-/// assert!(!kanji::is_hiragana('a'));
-/// ```
-///
-/// [Unicode definition of hiragana]: https://www.unicode.org/charts/PDF/U3040.pdf
-pub fn is_hiragana(c: char) -> bool {
-    c >= '\u{3041}' && c <= '\u{309f}'
-}
-
-/// Is a given `char` between ゠ and ヿ?
-///
-/// Strictly compliant with the [Unicode definition of katakana], including
-/// punctuation, marks and a digraph.
-///
-/// ```
-/// assert!(kanji::is_katakana('ン'));
-/// assert!(kanji::is_katakana('ヿ'));
-/// assert!(!kanji::is_katakana('a'));
-/// ```
-///
-/// [Unicode definition of katakana]: https://www.unicode.org/charts/PDF/U30A0.pdf
-pub fn is_katakana(c: char) -> bool {
-    c >= '\u{30a0}' && c <= '\u{30ff}'
-}
-
-/// Kanji appear in the Unicode range 4e00 to 9ffc.
-/// The final Japanese Kanji is 9fef (鿯).
-///
-/// For a chart of the full official range, see [this pdf] from the Unicode
-/// organization.
-///
-/// A number of Level Pre-One Kanji appear in the [CJK Compatibility
-/// Ideographs][compat] list, so there is an extra check here for those.
-///
-/// ```
-/// assert!(kanji::is_kanji('澄')); // Obviously a legal Kanji.
-/// assert!(!kanji::is_kanji('a')); // Obviously not.
-/// ```
-///
-/// [compat]: https://www.unicode.org/charts/PDF/UF900.pdf
-/// [this pdf]: https://www.unicode.org/charts/PDF/U4E00.pdf
-pub fn is_kanji(c: char) -> bool {
-    (c >= '\u{4e00}' && c <= '\u{9ffc}') // Standard set.
-        || (c >= '\u{f900}' && c <= '\u{faff}') // CJK Compatibility Ideographs.
-        || (c >= '\u{3400}' && c <= '\u{4dbf}') // Extension A
-        || (c >= '\u{20000}' && c <= '\u{2a6dd}') // Extension B
-        || (c >= '\u{2a700}' && c <= '\u{2b734}') // Extension C
-        || (c >= '\u{2b740}' && c <= '\u{2b81d}') // Extension D
-        || (c >= '\u{2b820}' && c <= '\u{2cea1}') // Extension E
-        || (c >= '\u{2ceb0}' && c <= '\u{2ebe0}') // Extension F
-        || (c >= '\u{30000}' && c <= '\u{3134a}') // Extension G
-}
-
-fn get_reading(s: String) -> String {
-    let mut reading = "".to_owned();
-
-    for c in s.chars() {
-        if is_hiragana(c) || is_katakana(c) {
-            reading.push(c);
-        }
-    }
-
-    reading
-}
 */

@@ -14,6 +14,7 @@ import { useSingleKey } from "../../../hooks/useSingleKey"
 export namespace Reader {
     export interface Props {
         bookId: string
+        bookAudioId: string
 
         entries: BookEntry[]
         timestamp?: number | undefined
@@ -50,7 +51,7 @@ export const Reader = (props: Reader.Props) => {
         <Flex direction="column" style={{ height: "100%" }}>
             <AudioRefContext value={audioRef}>
                 <ReaderPage audioRef={audioRef} entries={props.entries} />
-                <ReaderAudio audioRef={audioRef} bookId={props.bookId} />
+                <ReaderAudio audioRef={audioRef} bookId={props.bookAudioId} />
             </AudioRefContext>
         </Flex>
     )

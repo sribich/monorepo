@@ -9,6 +9,7 @@ use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
 use features::settings::SettingsModule;
+use features::library::LibraryModule;
 use features::storage::StorageModule;
 use opentelemetry::global;
 use opentelemetry::global::meter_provider;
@@ -25,7 +26,6 @@ use railgun_di::InjectorBuilder;
 use railgun_di::InjectorError;
 use tokio::time::sleep;
 
-use crate::feature::library::LibraryFeature;
 use crate::system::configuration::Configuration;
 use crate::system::configuration::get_configuration;
 use crate::system::dirs::get_app_dir;
@@ -33,31 +33,15 @@ use crate::system::hooks::LifecycleHooks;
 use crate::system::http::HttpServer;
 use crate::system::http::HttpServerContext;
 
-pub trait Feature {
-    fn inject(&self, injector: &mut InjectorBuilder) -> Result<(), InjectorError>;
-
-    fn routes(
-        &self,
-        router: Router<AppState>,
-        procedure: Procedure<Unresolved>,
-        state: Arc<AppState>,
-    ) -> Router<AppState> {
-        router
-    }
-}
-
 pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
     let service_info = service_info!();
     let configuration = get_configuration(&service_info).unwrap();
 
     telemetry::init(service_info, &configuration.telemetry)?;
 
-    let features: Vec<Box<dyn Feature>> = vec![
-        LibraryFeature::new(),
-    ];
-
     let modules: Vec<Box<dyn Module<State = AppState>>> = vec![
         DictionaryModule::new_module(),
+        LibraryModule::new_module(),
         PronunciationModule::new_module(),
         SchedulerModule::new_module(),
         SettingsModule::new_module(),
@@ -65,12 +49,11 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
         StorageModule::new_module(),
     ];
 
-    let injector = create_injector(&configuration, &features, &modules).await?;
+    let injector = create_injector(&configuration, &modules).await?;
 
     injector.run_startup_hooks().await?;
 
     let http_server = HttpServer::from_features(
-        features,
         modules,
         HttpServerContext {
             port: configuration.port,
@@ -86,7 +69,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
 
 async fn create_injector(
     configuration: &Configuration,
-    features: &[Box<dyn Feature>],
     modules: &[Box<dyn Module<State = AppState>>],
 ) -> Result<Injector, Box<dyn core::error::Error>> {
     let db = {
@@ -101,10 +83,6 @@ async fn create_injector(
 
     injector.add_value(db)?;
     injector.add_value(Actor::new())?;
-
-    for feature in features {
-        feature.inject(&mut injector)?;
-    }
 
     for module in modules {
         module

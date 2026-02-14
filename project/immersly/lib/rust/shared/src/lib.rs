@@ -207,3 +207,16 @@ pub trait OnStartup: Send + Sync {
 pub trait OnShutdown: Send + Sync {
     async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
 }
+
+pub trait IntoVec<T> {
+    fn into_vec(self) -> Vec<T>;
+}
+
+impl<T, F> IntoVec<T> for Vec<F>
+where
+    T: From<F>,
+{
+    fn into_vec(self) -> Vec<T> {
+        self.into_iter().map(Into::into).collect()
+    }
+}
