@@ -51,7 +51,7 @@ export const Reader = (props: Reader.Props) => {
         <Flex direction="column" style={{ height: "100%" }}>
             <AudioRefContext value={audioRef}>
                 <ReaderPage audioRef={audioRef} entries={props.entries} />
-                <ReaderAudio audioRef={audioRef} bookId={props.bookAudioId} />
+                <ReaderAudio audioRef={audioRef} bookId={props.bookId} audioId={props.bookAudioId} />
             </AudioRefContext>
         </Flex>
     )

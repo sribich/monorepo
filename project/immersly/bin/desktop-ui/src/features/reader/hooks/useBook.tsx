@@ -41,7 +41,7 @@ export const useBook = (bookId: string) => {
         entries,
         timestamp: data?.timestamp,
         isLoading,
-        bookAudioId: data.audio_id,
+        bookAudioId: data?.audioId,
         error,
     }
 }

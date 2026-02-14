@@ -15,6 +15,7 @@ export namespace ReaderAudio {
     export interface Props {
         audioRef?: RefObject<AudioPlayer.ImperativeHandle>
 
+        bookId: string
         audioId: string
     }
 }
@@ -45,7 +46,7 @@ export const ReaderAudio = (props: ReaderAudio.Props) => {
 
     return (
         <div {...styles.wrapper()}>
-            <AudioPlayer src={`${host}/rpc/play/${props.audioId}`} type="audio/wav" ref={audioRef}>
+            <AudioPlayer src={`${host}/rpc/resource/${props.audioId}`} type="audio/wav" ref={audioRef}>
                 <div {...styles.controls()}>
                     <PlayButton />
                 </div>

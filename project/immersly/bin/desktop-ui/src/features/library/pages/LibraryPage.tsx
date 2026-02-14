@@ -91,8 +91,8 @@ const LibraryView = (props: LibraryView.Props) => {
             <Card key={book.id} blurFooter footerStyle="sticky" isPressable onPress={onPress}>
                 <SettingsAnchor seriesId={book.id} />
                 <div {...styles.card()}>
-                    {book.image_id && (
-                        <Image src={`${host}/rpc/resource/${book.image_id}`} {...styles.image()} />
+                    {book.imageId && (
+                        <Image src={`${host}/rpc/resource/${book.imageId}`} {...styles.image()} />
                     )}
                     <CardFooter>
                         <p {...styles.text()}>{book.title}</p>
