@@ -22,8 +22,6 @@ use crate::feature::library::domain::aggregate::media::Media;
 use crate::feature::library::domain::repository::book::BookRepository;
 use crate::feature::library::use_case::reprocess_sync::Segment;
 use crate::feature::library::use_case::reprocess_sync::TimestampedSegments;
-use crate::feature::settings::app::service::settings::SettingService;
-use crate::feature::settings::domain::value::setting::data_path::DataPath;
 use crate::system::fs::Fs;
 
 #[derive(Debug)]

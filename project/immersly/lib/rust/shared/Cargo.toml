@@ -15,8 +15,10 @@ prisma-client = { path = "../prisma-client" }
 railgun = { workspace = true }
 typegen = { workspace = true, features = ["uuid"] }
 
+async-trait = { workspace = true }
 dirs = { workspace = true }
 serde = { workspace = true }
+tokio = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]

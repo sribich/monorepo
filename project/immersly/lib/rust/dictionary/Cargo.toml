@@ -10,9 +10,18 @@ publish = false
 default = []
 
 [dependencies]
+prisma-client = { path = "../prisma-client" }
+settings = { path = "../settings" }
 shared = { path = "../shared" }
 
+dictionary_parser = { workspace = true }
+language_pack = { workspace = true }
+lexorank = { workspace = true }
 railgun = { workspace = true }
+
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 

@@ -3,6 +3,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use epub::archive::EpubArchive;
+use features::settings::app::service::settings::SettingService;
+use features::settings::domain::value::setting::data_path::DataPath;
 use features::shared::domain::value::muid::Muid;
 use features::shared::infra::database::Sqlite;
 use language_pack::jp::transcription::JapaneseTranscriptionContext;
@@ -15,19 +17,11 @@ use tokio::fs::File;
 use tokio::fs::read_to_string;
 use tokio::io::AsyncWriteExt;
 
-use crate::feature::settings::app::service::settings::SettingService;
-use crate::feature::settings::domain::value::setting::data_path::DataPath;
 use crate::system::UseCase;
 
 #[derive(Debug)]
 pub struct ReprocessSyncData {
     pub book_id: Muid,
-}
-
-#[derive(Component)]
-pub struct ReprocessSyncUseCase {
-    db: Arc<Sqlite>,
-    setting_service: Arc<SettingService>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -43,6 +37,12 @@ pub struct Segment {
     pub word: String,
     pub base: String,
     pub freq: Option<i32>,
+}
+
+#[derive(Component)]
+pub struct ReprocessSyncUseCase {
+    db: Arc<Sqlite>,
+    setting_service: Arc<SettingService>,
 }
 
 impl UseCase for ReprocessSyncUseCase {

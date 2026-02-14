@@ -1,6 +1,9 @@
-#![feature(ptr_metadata, try_as_dyn)]
+#![feature(ptr_metadata, try_as_dyn, macro_metavar_expr_concat)]
 use std::sync::Arc;
 
+use app::hook::initialise_settings::InitialiseSettings;
+use app::service::settings::SettingService;
+use infra::repository::setting::SettingRepository;
 use railgun::di::Container;
 use railgun::di::InjectorBuilder;
 use railgun::di::InjectorError;
@@ -11,10 +14,19 @@ use railgun::rpc::procedure::Unresolved;
 use railgun::rpc::router::Router;
 use shared::infra::http::AppState;
 
+pub mod app;
+pub mod domain;
+mod infra;
+
 module!(SettingsModule, AppState);
 
 impl Container for SettingsModule {
     fn inject(&self, injector: &mut InjectorBuilder) -> Result<(), InjectorError> {
+        injector
+            .add::<SettingRepository>()?
+            .add::<SettingService>()?
+            .add::<InitialiseSettings>()?;
+
         Ok(())
     }
 }

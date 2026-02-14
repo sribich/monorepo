@@ -1,7 +1,6 @@
 use async_trait::async_trait;
+use features::shared::OnStartup;
 use railgun_di::Injector;
-
-use super::OnStartup;
 
 #[async_trait]
 pub trait LifecycleHooks {

@@ -19,7 +19,6 @@ use features::shared::infra::http::AppState;
 use infra::handler::add_book::add_book_handler;
 use infra::handler::play_audio::play_audio_handler;
 use infra::handler::read_book::read_book_handler;
-use infra::handler::reprocess_sync::reprocess_sync_handler;
 use infra::handler::{self};
 use infra::repository::book::SqliteBookReader;
 use infra::repository::book::SqliteBookRepository;
@@ -31,7 +30,6 @@ use railgun::rpc::router::Router;
 use railgun_di::InjectorBuilder;
 use railgun_di::InjectorError;
 use tower_http::services::ServeFile;
-use use_case::reprocess_sync::ReprocessSyncUseCase;
 use use_case::set_progress::SetProgressUseCase;
 
 use crate::startup::Feature;
@@ -53,7 +51,7 @@ impl Feature for LibraryFeature {
             .add::<AddBookProcedure>()?
             .add::<ListMedia>()?
             .add::<ReadBookProcedure>()?
-            .add::<ReprocessSyncUseCase>()?
+            // .add::<ReprocessSyncUseCase>()?
             .add::<SetProgressUseCase>()?;
 
         Ok(())
@@ -72,10 +70,10 @@ impl Feature for LibraryFeature {
             )
             .procedure("library:AddBook", procedure.mutation(add_book_handler))
             .procedure("library:ReadBook", procedure.query(read_book_handler))
-            .procedure(
-                "library:ReprocessSync",
-                procedure.mutation(reprocess_sync_handler),
-            )
+            // .procedure(
+            //     "library:ReprocessSync",
+            //     procedure.mutation(reprocess_sync_handler),
+            // )
             .procedure(
                 "library:SetProgress",
                 procedure.mutation(handler::set_progress::handler),

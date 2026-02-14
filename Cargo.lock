@@ -2162,8 +2162,16 @@ dependencies = [
 name = "dictionary"
 version = "0.0.0"
 dependencies = [
+ "axum",
+ "dictionary_parser",
+ "language_pack",
+ "lexorank",
+ "prisma-client",
  "railgun",
+ "serde",
+ "settings",
  "shared",
+ "tokio",
 ]
 
 [[package]]
@@ -8738,7 +8746,11 @@ dependencies = [
 name = "settings"
 version = "0.0.0"
 dependencies = [
+ "async-trait",
+ "dirs 6.0.0",
+ "prisma-client",
  "railgun",
+ "serde",
  "shared",
 ]
 
@@ -8805,10 +8817,12 @@ dependencies = [
 name = "shared"
 version = "0.0.0"
 dependencies = [
+ "async-trait",
  "dirs 6.0.0",
  "prisma-client",
  "railgun",
  "serde",
+ "tokio",
  "typegen",
  "uuid",
 ]

@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 
-pub mod actor;
 pub mod configuration;
 pub mod dirs;
 pub mod fs;
@@ -63,18 +62,6 @@ macro_rules! handler_aliases {
         type ProcedureRequest = <ProcedureFn as Procedure>::Req;
         type ProcedureResponse = <ProcedureFn as Procedure>::Res;
     };
-}
-
-//==============================================================================
-// Hooks
-//==============================================================================
-#[async_trait]
-pub trait OnStartup: Send + Sync {
-    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
-}
-
-pub trait OnShutdown: Send + Sync {
-    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
 }
 
 //

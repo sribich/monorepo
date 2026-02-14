@@ -1,3 +1,4 @@
+pub mod actor;
 pub mod database;
 pub mod dirs;
 pub mod http;

@@ -10,9 +10,14 @@ publish = false
 default = []
 
 [dependencies]
+prisma-client = { path = "../prisma-client" }
 shared = { path = "../shared" }
 
 railgun = { workspace = true }
+
+async-trait = { workspace = true }
+dirs = { workspace = true }
+serde = { workspace = true }
 
 [dev-dependencies]
 

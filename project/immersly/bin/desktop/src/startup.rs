@@ -4,9 +4,11 @@ use std::time::Duration;
 use features::dictionary::DictionaryModule;
 use features::pronunciation::PronunciationModule;
 use features::scheduler::SchedulerModule;
+use features::shared::infra::actor::Actor;
 use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
+use features::settings::SettingsModule;
 use features::storage::StorageModule;
 use opentelemetry::global;
 use opentelemetry::global::meter_provider;
@@ -25,11 +27,7 @@ use tokio::time::sleep;
 
 use crate::feature::analyze::AnalyzeFeature;
 use crate::feature::anki_bridge::AnkiBridgeFeature;
-use crate::feature::dictionary::DictionaryFeature;
 use crate::feature::library::LibraryFeature;
-use crate::feature::settings::SettingsFeature;
-use crate::system::OnStartup;
-use crate::system::actor::Actor;
 use crate::system::configuration::Configuration;
 use crate::system::configuration::get_configuration;
 use crate::system::dirs::get_app_dir;
@@ -57,8 +55,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
     telemetry::init(service_info, &configuration.telemetry)?;
 
     let features: Vec<Box<dyn Feature>> = vec![
-        SettingsFeature::new(),
-        DictionaryFeature::new(),
         LibraryFeature::new(),
         AnalyzeFeature::new(),
         AnkiBridgeFeature::new(),
@@ -68,6 +64,7 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
         DictionaryModule::new_module(),
         PronunciationModule::new_module(),
         SchedulerModule::new_module(),
+        SettingsModule::new_module(),
         StatisticsModule::new_module(),
         StorageModule::new_module(),
     ];

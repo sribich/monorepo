@@ -1,4 +1,6 @@
-#![feature(associated_type_defaults)]
+#![feature(associated_type_defaults, macro_metavar_expr_concat)]
+
+use async_trait::async_trait;
 pub mod app;
 pub mod domain;
 pub mod infra;
@@ -159,4 +161,49 @@ macro_rules! handler_aliases {
         type ProcedureRequest = <ProcedureFn as Procedure>::Req;
         type ProcedureResponse = <ProcedureFn as Procedure>::Res;
     };
+}
+
+#[macro_export]
+macro_rules! entity_data_fns {
+    ($name:ident) => {
+        entity_data_fns!($name, ${concat($name, Data)});
+    };
+    ($name:ident, $data_name:ident) => {
+        impl $name {
+            pub fn from_data(data: $data_name) -> Self {
+                Self(data)
+            }
+
+            pub fn as_inner(&self) -> &$data_name {
+                &self.0
+            }
+
+            pub fn as_inner_mut(&mut self) -> &mut $data_name {
+                &mut self.0
+            }
+
+            pub fn to_inner(self) -> $data_name {
+                self.0
+            }
+        }
+
+        impl From<$data_name> for $name {
+            fn from(value: $data_name) -> $name {
+                $name(value)
+            }
+        }
+    };
+}
+
+//==============================================================================
+// Hooks
+//==============================================================================
+#[async_trait]
+pub trait OnStartup: Send + Sync {
+    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
+}
+
+#[async_trait]
+pub trait OnShutdown: Send + Sync {
+    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
 }
