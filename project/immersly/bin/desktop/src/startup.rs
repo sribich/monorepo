@@ -25,8 +25,6 @@ use railgun_di::InjectorBuilder;
 use railgun_di::InjectorError;
 use tokio::time::sleep;
 
-use crate::feature::analyze::AnalyzeFeature;
-use crate::feature::anki_bridge::AnkiBridgeFeature;
 use crate::feature::library::LibraryFeature;
 use crate::system::configuration::Configuration;
 use crate::system::configuration::get_configuration;
@@ -56,8 +54,6 @@ pub async fn run() -> Result<(), Box<dyn core::error::Error>> {
 
     let features: Vec<Box<dyn Feature>> = vec![
         LibraryFeature::new(),
-        AnalyzeFeature::new(),
-        AnkiBridgeFeature::new(),
     ];
 
     let modules: Vec<Box<dyn Module<State = AppState>>> = vec![

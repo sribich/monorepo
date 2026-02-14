@@ -14,6 +14,7 @@ shared = { path = "../shared" }
 
 language_pack = { workspace = true }
 railgun = { workspace = true }
+srs_bridge_anki = { workspace = true }
 
 axum = { workspace = true }
 serde = { workspace = true }

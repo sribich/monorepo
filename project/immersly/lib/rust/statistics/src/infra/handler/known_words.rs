@@ -17,6 +17,10 @@ use serde::Serialize;
 use shared::infra::database::Sqlite;
 use shared::infra::database::model;
 use shared::infra::http::AppState;
+use srs_bridge_anki::client::AnkiClient;
+use srs_bridge_anki::client::actions::card::CardsInfoRequest;
+use srs_bridge_anki::client::actions::card::FindCardsRequest;
+use srs_bridge_anki::client::actions::deck::DeckNamesAndIdsRequest;
 
 //==============================================================================
 // Handler Request
@@ -101,45 +105,43 @@ pub async fn handler(
     State(state): State<KnownWordsState>,
     Json(_): Json<KnownWordsRequest>,
 ) -> ApiResult<KnownWordsResponse, ApiError> {
-    // let client = AnkiClient::default();
+    let client = AnkiClient::default();
 
-    // let deck_info = client.request(DeckNamesAndIdsRequest {}).await.unwrap();
+    let deck_info = client.request(DeckNamesAndIdsRequest {}).await.unwrap();
 
-    // let card_info = client
-    //     .request(FindCardsRequest {
-    //         query: "deck:\"Refold JP1K v2\"".into(),
-    //     })
-    //     .await
-    //     .unwrap();
+    let card_info = client
+        .request(FindCardsRequest {
+            query: "deck:\"Refold JP1K v2\"".into(),
+        })
+        .await
+        .unwrap();
 
-    // let card_data = client
-    //     .request(CardsInfoRequest { cards: card_info })
-    //     .await
-    //     .unwrap();
+    let card_data = client
+        .request(CardsInfoRequest { cards: card_info })
+        .await
+        .unwrap();
 
-    // println!("{:#?}", card_data.iter().map(|it| it.due).collect::<Vec<_>>());
+    let anki_cards = card_data[0..]
+        .to_vec()
+        .into_iter()
+        .map(|it| {
+            (
+                true,
+                it.fields.get("Word").unwrap().value.clone(),
+                it.fields
+                    .get("Word With Reading")
+                    .map(|it| it.value.clone())
+                    .unwrap_or_else(|| {
+                        it.fields
+                            .get("WordReading")
+                            .map(|it| it.value.clone())
+                            .unwrap_or_default()
+                    }),
+            )
+        })
+        .collect::<Vec<_>>();
 
-    // let anki_cards = card_data[0..]
-    //     .to_vec()
-    //     .into_iter()
-    //     .map(|it| {
-    //         (
-    //             true,
-    //             it.fields.get("Word").unwrap().value.clone(),
-    //             it.fields
-    //                 .get("Word With Reading")
-    //                 .map(|it| it.value.clone())
-    //                 .unwrap_or_else(|| {
-    //                     it.fields
-    //                         .get("WordReading")
-    //                         .map(|it| it.value.clone())
-    //                         .unwrap_or_default()
-    //                 }),
-    //         )
-    //     })
-    //     .collect::<Vec<_>>();
-
-    let cards = state
+    let mut cards = state
         .db
         .client()
         .card()
@@ -151,7 +153,7 @@ pub async fn handler(
         .map(|it| (false, it.word, it.reading))
         .collect::<Vec<_>>();
 
-    // cards.extend_from_slice(&anki_cards);
+    cards.extend_from_slice(&anki_cards);
 
     let mut freq_map: HashMap<String, i32> = HashMap::default();
     let mut known_words: Vec<KnownWord> = vec![];

@@ -30,30 +30,6 @@ pub trait UseCase: Send + Sync {
     ) -> impl std::future::Future<Output = core::result::Result<Self::Res, Self::Err>>;
 }
 
-pub trait Command: Send + Sync {
-    type Err = core::convert::Infallible;
-    type Req;
-    type Res; // TODO: Res here should be limited by a command return type
-
-    #[must_use]
-    fn run(
-        &self,
-        data: Self::Req,
-    ) -> impl std::future::Future<Output = core::result::Result<Self::Res, Self::Err>>;
-}
-
-pub trait Query: Send + Sync {
-    type Err = core::convert::Infallible;
-    type Req;
-    type Res;
-
-    #[must_use]
-    fn run(
-        &self,
-        data: Self::Req,
-    ) -> impl std::future::Future<Output = core::result::Result<Self::Res, Self::Err>>;
-}
-
 #[macro_export]
 macro_rules! handler_aliases {
     ($ty:ident) => {
@@ -62,25 +38,6 @@ macro_rules! handler_aliases {
         type ProcedureRequest = <ProcedureFn as Procedure>::Req;
         type ProcedureResponse = <ProcedureFn as Procedure>::Res;
     };
-}
-
-//
-#[macro_export]
-macro_rules! seal {
-    ($seal:ident => $($name:ident),+) => {
-        mod private {
-            pub trait Sealed {}
-
-            $(impl Sealed for super::$name {})*
-        }
-
-        pub trait $seal: private::Sealed {}
-
-        $(
-            pub struct $name {}
-            impl $seal for $name {}
-        )*
-    }
 }
 
 #[macro_export]

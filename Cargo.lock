@@ -9263,6 +9263,7 @@ dependencies = [
  "railgun",
  "serde",
  "shared",
+ "srs_bridge_anki",
 ]
 
 [[package]]

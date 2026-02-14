@@ -1,5 +1,5 @@
 import { createContext, useMemo } from "react"
-import { knownWords } from "../generated/rpc-client/analyze_KnownWords"
+import { knownWords } from "../generated/rpc-client/statistics_KnownWords"
 
 export const KnownWords = createContext<[number, Map<string, Map<string, boolean>>]>({})
 
