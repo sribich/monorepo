@@ -30,5 +30,8 @@ export default defineConfig({
             "/rpc": { target: "http://127.0.0.1:7057" },
         },
     },
-    plugins: [reactPlugin(), stylexPlugin()],
+    plugins: [
+        reactPlugin(),
+        stylexPlugin()
+    ],
 })

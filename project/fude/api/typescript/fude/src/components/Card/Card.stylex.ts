@@ -10,6 +10,11 @@ import { type CachedStyles, type ExportedStyles, makeStyles } from "../../theme/
 
 export const cardStyles = makeStyles({
     slots: create({
+        wrapper: {
+            display: "flex",
+            flexDirection: "row",
+            gap: newSpacing["8"],
+        },
         card: {
             display: "flex",
             flexDirection: "column",
@@ -65,8 +70,12 @@ export const cardStyles = makeStyles({
                 backdropFilter: "blur(4px)",
             },
         }),
-
         focused: create({}),
+        fullWidth: create({
+            card: {
+                width: "100%",
+            }
+        })
     },
     variants: {
         footerStyle: {

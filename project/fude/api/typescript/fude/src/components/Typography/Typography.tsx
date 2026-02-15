@@ -30,7 +30,7 @@ export const TypographyHeading = (props: TypographyHeading.Props) => {
         ...headingLevels[props.level],
     })
 
-    return <Component {...mergeProps(styles.text(), styleProps)}>{props.children}</Component>
+    return <Component {...mergeProps(styles.base(), styles.heading(), styleProps)}>{props.children}</Component>
 }
 
 //==============================================================================
@@ -65,7 +65,7 @@ export const TypographyText = (props: TypographyTextProps) => {
     const styleProps = useStyleProps(props, {})
 
     return (
-        <span {...mergeProps(styles.text(), styleProps)} ref={props.ref}>
+        <span {...mergeProps(styles.base(), styles.text(), styleProps)} ref={props.ref}>
             {props.children}
         </span>
     )

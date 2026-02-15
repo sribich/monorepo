@@ -81,9 +81,10 @@ export const InnerCardView = (props: InnerCardView.Props) => {
     const ref = useObjectRef(props.props.ref)
 
     const { CollectionRoot } = use(CollectionRendererContext)
+    const { styles, values } = useStyles(cardStyles, {})
 
     return (
-        <div ref={ref}>
+        <div {...styles.wrapper()} ref={ref}>
             <CollectionRoot collection={props.collection} scrollRef={ref} />
         </div>
     )

@@ -1,8 +1,9 @@
 import { RouterProvider } from "@sribich/fude"
 import { lightTheme, darkTheme } from "@sribich/fude-theme"
-import { props as stylexProps } from "@stylexjs/stylex"
+import { create, props as stylexProps } from "@stylexjs/stylex"
 import { Outlet, createRootRoute, useLocation, useNavigate } from "@tanstack/react-router"
 import { lazy, use, type PropsWithChildren } from "react"
+import { fonts } from "@sribich/fude-theme/vars/fonts.stylex"
 
 import { ThemeContext } from "../context/theme"
 import { KnownWords, useKnownWords } from "../context/knownWords"
@@ -26,6 +27,12 @@ export const RootRoute = () => {
     )
 }
 
+const otherThemeStuff = create({
+    wrapper: {
+        fontFamily: fonts.default
+    }
+})
+
 const ThemeWrapper = (props: PropsWithChildren) => {
     const theme = use(ThemeContext)
 
@@ -34,7 +41,7 @@ const ThemeWrapper = (props: PropsWithChildren) => {
         dark: darkTheme,
     }[theme.currentTheme]
 
-    return <div {...stylexProps(themeStyles)}>{props.children}</div>
+    return <div {...stylexProps(themeStyles, otherThemeStuff.wrapper)}>{props.children}</div>
 }
 
 const NavigationWrapper = (props: PropsWithChildren) => {

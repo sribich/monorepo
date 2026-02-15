@@ -23,26 +23,42 @@ export const ReadBookPage = (props: ReadBookPage.Props) => {
     }
 
     return (
-        <div {...styles.container()}>
-            <div {...styles.header()}>
-                <SidebarTrigger>
-                    <Button>A</Button>
-                </SidebarTrigger>
-            </div>
-            <div {...styles.content()}>
-                <Reader bookId={props.bookId} bookAudioId={bookAudioId} entries={entries} timestamp={timestamp} />
-            </div>
+        <div {...styles.wrapper()}>
+                <div {...styles.container()}>
+                    <div {...styles.header()}>
+                        <SidebarTrigger>
+                            <Button>A</Button>
+                        </SidebarTrigger>
+                    </div>
+                    <div {...styles.content()}>
+                        <Reader
+                        bookId={props.bookId}
+                        bookAudioId={bookAudioId}
+                        entries={entries}
+                        timestamp={timestamp}
+                    />
+                    </div>
+                </div>
         </div>
     )
 }
 
 const readBookPageStyles = makeStyles({
     slots: create({
+        wrapper: {
+            height: "100%",
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+        },
         container: {
             height: "100%",
             width: "100%",
             display: "flex",
             flexDirection: "column",
+            maxHeight: "1000px",
+            maxWidth: "800px"
         },
         header: {
             height: "48px",

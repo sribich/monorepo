@@ -166,6 +166,7 @@ export class RolldownBackend extends Backend {
             externalLiveBindings: false, // UNSET_TYPE_CHECK,
             codeSplitting: false,
             legalComments: UNSET_TYPE_CHECK,
+            comments: UNSET_TYPE_CHECK,
             plugins: [],
             polyfillRequire: UNSET_TYPE_CHECK,
             paths: UNSET_TYPE_CHECK,

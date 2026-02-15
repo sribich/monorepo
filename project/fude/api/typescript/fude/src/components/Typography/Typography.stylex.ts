@@ -1,5 +1,6 @@
 import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
+import { fonts } from "@sribich/fude-theme/vars/fonts.stylex"
 import { create } from "@stylexjs/stylex"
 
 import { makeStyles } from "../../theme/props"
@@ -27,7 +28,13 @@ export const headingLevels = {
 
 export const typographyStyles = makeStyles({
     slots: create({
-        text: {},
+        base: {},
+        heading: {
+            fontFamily: fonts.display,
+        },
+        text: {
+            fontFamily: fonts.default,
+        },
     }),
     conditions: {
         b: {},
@@ -36,54 +43,54 @@ export const typographyStyles = makeStyles({
     variants: {
         color: {
             default: create({
-                text: {
+                base: {
                     color: colors.foreground,
                 },
             }),
             secondary: create({
-                text: {
+                base: {
                     color: colors.secondaryForeground,
                 },
             }),
             primary: create({
-                text: {
+                base: {
                     color: colors.primary,
                 },
             }),
         },
         size: {
             xs: create({
-                text: {
+                base: {
                     fontSize: fontSize.xs,
                 },
             }),
             sm: create({
-                text: {
+                base: {
                     fontSize: fontSize.sm,
                 },
             }),
             md: create({
-                text: {
+                base: {
                     fontSize: fontSize.md,
                 },
             }),
             lg: create({
-                text: {
+                base: {
                     fontSize: fontSize.lg,
                 },
             }),
             xl: create({
-                text: {
+                base: {
                     fontSize: fontSize.xl,
                 },
             }),
-            "2xl": create({ text: { fontSize: fontSize["2xl"] } }),
-            "3xl": create({ text: { fontSize: fontSize["3xl"] } }),
-            "4xl": create({ text: { fontSize: fontSize["4xl"] } }),
-            "5xl": create({ text: { fontSize: fontSize["5xl"] } }),
-            "6xl": create({ text: { fontSize: fontSize["6xl"] } }),
-            "7xl": create({ text: { fontSize: fontSize["7xl"] } }),
-            "8xl": create({ text: { fontSize: fontSize["8xl"] } }),
+            "2xl": create({ base: { fontSize: fontSize["2xl"] } }),
+            "3xl": create({ base: { fontSize: fontSize["3xl"] } }),
+            "4xl": create({ base: { fontSize: fontSize["4xl"] } }),
+            "5xl": create({ base: { fontSize: fontSize["5xl"] } }),
+            "6xl": create({ base: { fontSize: fontSize["6xl"] } }),
+            "7xl": create({ base: { fontSize: fontSize["7xl"] } }),
+            "8xl": create({ base: { fontSize: fontSize["8xl"] } }),
         },
     },
     defaultVariants: {

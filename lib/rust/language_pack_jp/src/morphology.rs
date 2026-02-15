@@ -204,3 +204,47 @@ pub fn segment_text<S: AsRef<str>>(line: S) -> Vec<Segment> {
 
     text
 }
+
+#[cfg(test)]
+mod test {
+    use std::ffi::CString;
+    use std::fs::File;
+    use std::fs::read_to_string;
+    use std::io::BufRead;
+    use std::io::BufReader;
+    use std::time::Instant;
+
+    use blart::TreeMap;
+    use rart::AdaptiveRadixTree;
+    use rart::ArrayKey;
+    use rart::KeyTrait;
+    use rart::Partial;
+    use rart::VectorKey;
+    use rart::partials::array_partial::ArrPartial;
+    use rart::partials::vector_partial::VectorPartial;
+
+    #[test]
+    fn test() {
+        let mut adaptive = TreeMap::<CString, u32>::new();
+
+        let lines = BufReader::new(File::open("/home/nulliel/main_Word.csv").unwrap()).lines();
+
+        let time = Instant::now();
+
+        for line in lines.map_while(Result::ok) {
+            if line == r#""""# {
+                continue;
+            }
+
+            adaptive.insert(CString::new(line).unwrap(), 1);
+        }
+
+        println!("{:#?}", time.elapsed().as_millis());
+
+        for it in adaptive.prefix("もう".as_bytes()) {
+            if it.0.to_string_lossy().starts_with("もう少") {
+                println!("MATCH: {:#?}", it.0);
+            }
+        }
+    }
+}

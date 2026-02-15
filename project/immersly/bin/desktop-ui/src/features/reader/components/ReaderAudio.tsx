@@ -1,4 +1,4 @@
-import { makeStyles, useObjectRef, useStyles } from "@sribich/fude"
+import { Card, CardBody, makeStyles, useObjectRef, useStyles } from "@sribich/fude"
 import { type RefObject, use, useEffect } from "react"
 import {
     AudioPlayer,
@@ -45,14 +45,16 @@ export const ReaderAudio = (props: ReaderAudio.Props) => {
     const { styles } = useStyles(readerAudioStyles, {})
 
     return (
-        <div {...styles.wrapper()}>
-            <AudioPlayer src={`${host}/rpc/resource/${props.audioId}`} type="audio/wav" ref={audioRef}>
-                <div {...styles.controls()}>
-                    <PlayButton />
-                </div>
-                <AudioPlayerTime />
-            </AudioPlayer>
-        </div>
+        <Card {...styles.wrapper()} fullWidth rounded="lg">
+            <CardBody>
+                <AudioPlayer src={`${host}/rpc/resource/${props.audioId}`} type="audio/wav" ref={audioRef}>
+                    <div {...styles.controls()}>
+                        <PlayButton />
+                    </div>
+                    <AudioPlayerTime />
+                </AudioPlayer>
+            </CardBody>
+        </Card>
     )
 }
 

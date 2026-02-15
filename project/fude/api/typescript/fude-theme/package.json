@@ -11,6 +11,9 @@
       "types": "./dist/esm/index.d.ts",
       "default": "./src/index.js"
     },
+    "./style.css": {
+      "default": "./src/styles.css"
+    },
     "./vars/fonts.stylex": {
       "types": "./dist/esm/vars/fonts.stylex.d.ts",
       "default": "./src/vars/fonts.stylex.js"
@@ -62,47 +65,21 @@
   },
   "typesVersions": {
     "*": {
-      "vars/fonts.stylex": [
-        "./dist/esm/vars/fonts.stylex.d.ts"
-      ],
-      "vars/colors.stylex": [
-        "./dist/esm/vars/colors.stylex.d.ts"
-      ],
-      "vars/shadow.stylex": [
-        "./dist/esm/vars/shadow.stylex.d.ts"
-      ],
-      "vars/sizing.stylex": [
-        "./dist/esm/vars/sizing.stylex.d.ts"
-      ],
-      "vars/zindex.stylex": [
-        "./dist/esm/vars/zindex.stylex.d.ts"
-      ],
-      "vars/spacing.stylex": [
-        "./dist/esm/vars/spacing.stylex.d.ts"
-      ],
-      "vars/fontSize.stylex": [
-        "./dist/esm/vars/fontSize.stylex.d.ts"
-      ],
-      "vars/boxShadow.stylex": [
-        "./dist/esm/vars/boxShadow.stylex.d.ts"
-      ],
-      "vars/lineHeight.stylex": [
-        "./dist/esm/vars/lineHeight.stylex.d.ts"
-      ],
-      "vars/borderWidth.stylex": [
-        "./dist/esm/vars/borderWidth.stylex.d.ts"
-      ],
-      "vars/borderRadius.stylex": [
-        "./dist/esm/vars/borderRadius.stylex.d.ts"
-      ],
-      "markers.stylex": [
-        "./dist/esm/markers.stylex.d.ts"
-      ]
+      "vars/fonts.stylex": ["./dist/esm/vars/fonts.stylex.d.ts"],
+      "vars/colors.stylex": ["./dist/esm/vars/colors.stylex.d.ts"],
+      "vars/shadow.stylex": ["./dist/esm/vars/shadow.stylex.d.ts"],
+      "vars/sizing.stylex": ["./dist/esm/vars/sizing.stylex.d.ts"],
+      "vars/zindex.stylex": ["./dist/esm/vars/zindex.stylex.d.ts"],
+      "vars/spacing.stylex": ["./dist/esm/vars/spacing.stylex.d.ts"],
+      "vars/fontSize.stylex": ["./dist/esm/vars/fontSize.stylex.d.ts"],
+      "vars/boxShadow.stylex": ["./dist/esm/vars/boxShadow.stylex.d.ts"],
+      "vars/lineHeight.stylex": ["./dist/esm/vars/lineHeight.stylex.d.ts"],
+      "vars/borderWidth.stylex": ["./dist/esm/vars/borderWidth.stylex.d.ts"],
+      "vars/borderRadius.stylex": ["./dist/esm/vars/borderRadius.stylex.d.ts"],
+      "markers.stylex": ["./dist/esm/markers.stylex.d.ts"]
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "dependencies": {
     "@stylexjs/stylex": "0.17.5",
     "tslib": "2.8.1"

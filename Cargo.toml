@@ -151,6 +151,7 @@ bigdecimal = "0.3" # 0.3 is needed for prisma
 bincode = "2.0.0-rc.3"
 bitflags = "2"
 bit-vec = "0.6"
+blart = "0.4.0"
 bon = "3"
 bson = "2"
 byteorder = "1.5.0"

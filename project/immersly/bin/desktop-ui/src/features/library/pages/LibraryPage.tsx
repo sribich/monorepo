@@ -2,8 +2,6 @@ import {
     Box,
     Button,
     Card,
-    CardHeader,
-    CardBody,
     CardFooter,
     Image,
     CardView,
@@ -11,17 +9,15 @@ import {
     DialogTrigger,
     Flex,
     Form,
-    Heading,
     Link,
     Modal,
-    SidebarTrigger,
     TextField,
     makeStyles,
     useStyles,
     TypographyHeading,
 } from "@sribich/fude"
 import { cardMarker } from "@sribich/fude-theme/markers.stylex"
-import { create, defaultMarker, when } from "@stylexjs/stylex"
+import { create, props, when } from "@stylexjs/stylex"
 import { Settings } from "lucide-react"
 import { use } from "react"
 import { type ListMediaResponse, listMedia } from "../../../generated/rpc-client/library_ListMedia"
@@ -32,12 +28,17 @@ import { colors } from "@sribich/fude-theme/vars/colors.stylex"
 import { borderRadius } from "@sribich/fude-theme/vars/borderRadius.stylex"
 import { borderWidth } from "@sribich/fude-theme/vars/borderWidth.stylex"
 import { addBook } from "../../../generated/rpc-client/library_AddBook"
-import { RouterProvider } from "react-aria"
 import { useRouter } from "@tanstack/react-router"
 
 //==============================================================================
 // LibraryPage
 //==============================================================================
+const libraryPageStyles = create({
+    page: {
+        padding: newSpacing["16"],
+    },
+})
+
 export const LibraryPage = () => {
     const { data, isError, isLoading } = listMedia(["listMedia"], {})
 
@@ -50,19 +51,15 @@ export const LibraryPage = () => {
     }
 
     return (
-        <>
+        <div {...props(libraryPageStyles.page)}>
             <Flex direction="row" style={{ width: "100%" }}>
                 <TypographyHeading level={1} style={{ flexGrow: 1 }}>
                     Library
                 </TypographyHeading>
                 <NewModal />
-
-                <DelegateButton color="primary">
-                    <Link href="/library/new">Add</Link>
-                </DelegateButton>
             </Flex>
             <LibraryView media={data} />
-        </>
+        </div>
     )
 }
 
