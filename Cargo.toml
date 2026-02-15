@@ -56,7 +56,6 @@ forvo = { path = "./lib/rust/forvo" }
 language_pack = { path = "./lib/rust/language_pack" }
 language_pack_jp = { path = "./lib/rust/language_pack_jp" }
 lexorank = { path = "./lib/rust/lexorank" }
-morphology = { path = "./lib/rust/morphology" }
 mpv_plugin = { path = "./app/mpv_plugin" }
 # pitch_detection = { path = "./lib/rust/pitch_detection" }
 # prisma = { path = "./lib/rust/prisma" }

@@ -1,22 +1,8 @@
 use std::fmt::Display;
 use std::path::Path;
 
-pub use error::*;
-use railgun::telemetry::_internal_for_macros_::serde::Deserialize;
-use railgun::telemetry::_internal_for_macros_::serde::Serialize;
-
-mod error;
-
-// use whisper_rs::{FullParams, WhisperContext, WhisperState, WhisperTokenData};
-// pub mod whisper {
-//     pub use whisper_rs::*;
-// }
-
-pub trait TranscriptionContext {
-    // fn whisper_context(&self) -> WhisperContext;
-
-    fn language(&self) -> &'static str;
-}
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Transcription {

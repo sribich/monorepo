@@ -66,25 +66,11 @@ use serde::Serialize;
 use transcription::{
     Segment,
     Transcription,
-    TranscriptionContext,
-    // whisper::{DtwMode, DtwModelPreset, WhisperContext, WhisperContextParameters},
 };
 
 use crate::splitting;
 
 pub struct JapaneseTranscriptionContext {}
-
-impl TranscriptionContext for JapaneseTranscriptionContext {
-    fn language(&self) -> &'static str {
-        "ja"
-    }
-}
-
-impl From<JapaneseTranscriptionContext> for Box<dyn TranscriptionContext> {
-    fn from(value: JapaneseTranscriptionContext) -> Self {
-        Box::new(value)
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 struct Test(Vec<(String, String, u64)>);

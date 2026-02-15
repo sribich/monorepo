@@ -10,16 +10,7 @@ publish = false
 default = []
 
 [dependencies]
-railgun = { workspace = true } #, default-features = false }
-morphology = { workspace = true }
-
-hound = { workspace = true }
-# whisper-rs = { workspace = true, features = ["cuda"] }
-
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true }
-
-rayon = { workspace = true }
 
 [dev-dependencies]
 
