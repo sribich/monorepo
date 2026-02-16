@@ -2,6 +2,8 @@ import { use, useState } from "react"
 
 import { getTitle } from "../../../generated/rpc-client/library_GetTitle"
 import { ApiHostContext } from "../../../hooks/useApiPort"
+import { reprocessSync } from "../../../generated/rpc-client/library_ReprocessSync"
+import { Button } from "@sribich/fude"
 
 export namespace LibraryEditPage {
     export interface Props {
@@ -12,15 +14,25 @@ export namespace LibraryEditPage {
 export const LibraryEditPage = (props: LibraryEditPage.Props) => {
     const { host } = use(ApiHostContext)
 
-    const { data, isLoading } = getTitle([props.mediaId], {
-        titleId: props.mediaId,
-    })
+    // const { data, isLoading } = getTitle([props.bookId], {
+    //     titleId: props.bookId,
+    // })
+
+    const { mutateAsync } = reprocessSync([props.bookId], {})
 
     // const editTitleMutation = editTitle()
 
-    if (isLoading) {
-        return null
+    const mutate = () => {
+        mutateAsync({ bookId: props.bookId })
     }
+
+    return (
+        <>
+            <Button onPress={mutate}>
+                Reprocess
+            </Button>
+        </>
+    )
 
     const submit = async (data: FormData) => {
         // const file = data.get("file") as File

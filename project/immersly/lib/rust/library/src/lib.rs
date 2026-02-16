@@ -60,10 +60,10 @@ impl Routes<AppState> for LibraryModule {
             )
             .procedure("library:AddBook", procedure.mutation(infra::handler::add_book::add_book_handler))
             .procedure("library:ReadBook", procedure.query(infra::handler::read_book::read_book_handler))
-            // .procedure(
-            //     "library:ReprocessSync",
-            //     procedure.mutation(reprocess_sync_handler),
-            // )
+            .procedure(
+                "library:ReprocessSync",
+                procedure.mutation(infra::handler::reprocess_sync::handler),
+            )
             .procedure(
                 "library:SetProgress",
                 procedure.mutation(infra::handler::set_progress::handler),
