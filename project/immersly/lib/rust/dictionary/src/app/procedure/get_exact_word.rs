@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use language_pack::jp::create_reading;
+use language_pack_jp::create_reading;
 use prisma_client::model::SortOrder;
 use prisma_client::model::{self};
 use railgun::di::Component;

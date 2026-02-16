@@ -15,7 +15,7 @@ settings = { path = "../settings" }
 shared = { path = "../shared" }
 
 dictionary_parser = { workspace = true }
-language_pack = { workspace = true }
+language_pack_jp = { workspace = true }
 lexorank = { workspace = true }
 railgun = { workspace = true }
 

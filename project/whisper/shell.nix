@@ -7,7 +7,7 @@
   default = pkgs.mkShell rec {
     buildInputs = with pkgs; [
       ffmpeg
-      
+
       python312
       uv
 
@@ -21,14 +21,14 @@
 
     CUDA_PATH = pkgs.cudaPackages.cudatoolkit;
     CUDA_HOME = pkgs.cudaPackages.cudatoolkit;
-    EXTRA_CCFLAGS="-I/usr/include";
+    EXTRA_CCFLAGS = "-I/usr/include";
     EXTRA_LDFLAGS = "-L/lib -L${pkgs.linuxPackages.nvidia_x11}/lib";
     LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath buildInputs;
 
     shellHook = ''
       echo "Entering WhisperX development shell with CUDA support"
       echo "Note: PyTorch and WhisperX will be installed via uv within a virtual environment"
-      
+
       export LC_ALL="en_US.UTF-8"
       export LANG="en_US.UTF-8"
       export PYTHONIOENCODING="utf-8"
@@ -61,4 +61,3 @@
     '';
   };
 }
-

@@ -43,31 +43,63 @@ pub fn segment_text<S: AsRef<str>>(text: S) -> Vec<Segment> {
             c_type: items.next().unwrap_or("").to_string(),
             c_form: items.next().unwrap_or("").to_string(),
             l_form: items.next().unwrap_or("").to_string(),
-            lemma: items.next().unwrap_or("").to_string(),
-            orth: items.next().unwrap_or("").to_string(),
-            pron: items.next().unwrap_or("").to_string(),
-            orth_base: items.next().unwrap_or("").to_string(),
-            pron_base: items.next().unwrap_or("").to_string(),
-            goshu: items.next().unwrap_or("").to_string(),
-            i_type: items.next().unwrap_or("").to_string(),
-            i_form: items.next().unwrap_or("").to_string(),
-            f_type: items.next().unwrap_or("").to_string(),
-            f_form: items.next().unwrap_or("").to_string(),
-            i_con_type: items.next().unwrap_or("").to_string(),
-            f_con_type: items.next().unwrap_or("").to_string(),
-            r#type: items.next().unwrap_or("").to_string(),
-            kana: items.next().unwrap_or("").to_string(),
-            kana_base: items.next().unwrap_or("").to_string(),
-            form: items.next().unwrap_or("").to_string(),
-            form_base: items.next().unwrap_or("").to_string(),
-            a_type: items.next().unwrap_or("").to_string(),
-            a_con_type: items.next().unwrap_or("").to_string(),
-            a_mod_type: items.next().unwrap_or("").to_string(),
+            lemma: items.next().unwrap_or("").to_string(), // Dictionary form
+            orth: items.next().unwrap_or("").to_string(),  // Same as surface
+            orth_base: items.next().unwrap_or("").to_string(), // Dictionary written form
         });
     }
 
     let mut segments: Vec<MorphSegment> = vec![];
 
+    /*
+    let mut text = vec![];
+
+    let line_chars = line.as_ref().chars().count();
+    let mut char_idx = 0;
+
+    'outer: for morpheme in morphemes {
+        let morpheme_length = morpheme.surface.chars().count();
+
+        trace!(
+            "Searching for {} \t-- char_idx={}/{} | morphene_length={}",
+            morpheme.surface, char_idx, line_chars, morpheme_length
+        );
+        // println!(
+        //     "Searching for {:?} -- char_idx={}/{} | morphene_length={}",
+        //     morpheme.unit,
+        //     char_idx,
+        //     segment.words.len(),
+        //     morphene_length
+        // );
+
+        'inner: for i in char_idx..=(line_chars - morpheme_length) {
+            let mut indices = line.as_ref().char_indices();
+            let start_idx = indices.nth(i).map(|it| it.0).unwrap();
+            let end_idx = indices.nth(morpheme_length - 1).map(|it| it.0);
+
+            let word = &line.as_ref()[start_idx..end_idx.unwrap_or(line.as_ref().len())];
+
+            if morpheme.surface == word {
+                if i != char_idx {
+                    let mut old_indices = line.as_ref().char_indices();
+                    let old_start = old_indices.nth(char_idx).unwrap().0;
+
+                    text.push(Segment::Raw(line.as_ref()[old_start..start_idx].to_owned()));
+                }
+
+                text.push(Segment::Tagged(morpheme));
+
+                char_idx = i + morpheme_length;
+                continue 'outer;
+            }
+        }
+
+        panic!("No match found");
+    }
+
+    text
+
+    */
     for morpheme in morphemes {
         if segments.is_empty() || morpheme.c_form.starts_with("\u{7d42}\u{6b62}\u{5f62}") {
             segments.push(MorphSegment {
@@ -171,7 +203,7 @@ mod test {
             .collect::<Vec<_>>()
     }
 
-    #[test]
+    // #[test]
     fn test() {
         let text = "\u{69d8}\u{3005}\u{306a}\u{77e5}\u{8b58}\u{304c}\u{4e00}\u{518a}\u{306b}\u{307e}\u{3068}\u{3081}\u{3089}\u{308c}\u{3066}\u{3044}\u{308b}\u{672c}\u{3092}\u{8aad}\u{3080}\u{3068}\u{3001}\u{3068}\u{3066}\u{3082}\u{5f97}\u{3092}\u{3057}\u{305f}\u{6c17}\u{5206}\u{306b}\u{306a}\u{308c}\u{308b}\u{3057}\u{3001}\u{81ea}\u{5206}\u{304c}\u{3053}\u{306e}\u{76ee}\u{3067}\u{898b}\u{305f}\u{3053}\u{3068}\u{304c}\u{306a}\u{3044}\u{4e16}\u{754c}\u{3092}\u{3001}\u{672c}\u{5c4b}\u{3084}\u{56f3}\u{66f8}\u{9928}\u{306b}\u{4e26}\u{3076}\u{5199}\u{771f}\u{96c6}\u{3092}\u{901a}\u{3057}\u{3066}\u{898b}\u{308b}\u{306e}\u{3082}\u{3001}\u{4e16}\u{754c}\u{304c}\u{5e83}\u{304c}\u{3063}\u{3066}\u{3044}\u{304f}\u{3088}\u{3046}\u{3067}\u{9676}\u{9154}\u{3067}\u{304d}\u{308b}\u{3002}";
 

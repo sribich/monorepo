@@ -103,65 +103,10 @@ pub struct Word {
     /// 書字形出現形, the word as it appears in text, this appears to be
     /// identical to the surface.
     pub orth: String,
-    /// 発音形出現形, pronunciation. This is similar to kana except that long
-    /// vowels are indicated with a ー, so 講師 is こーし.
-    pub pron: String,
     /// The uninflected form of the word in its current written form.
     /// For example, for 彷徨った the lemma is さ迷う but the orthBase is
     /// 彷徨う.
     pub orth_base: String,
-    /// 発音形基本形, the pronunciation of the base form. Like pron for the
-    /// lemma or orthBase.
-    pub pron_base: String,
-    /// 語種, word type. Etymological category. In order of frequency, 和, 固,
-    /// 漢, 外, 混, 記号, 不明. Defined for all dictionary words, blank for
-    /// unks.
-    pub goshu: String,
-    /// 語頭変化化型, "i" is for "initial". This is the type of initial
-    /// transformation the word undergoes when combining, for example 兵 is
-    /// へ半濁 because it can be read as べい in combination. This is available
-    /// for <2% of entries.
-    pub i_type: String,
-    /// 語頭変化形, this is the initial form of the word in context, such as
-    /// 基本形 or 半濁音形.
-    pub i_form: String,
-    /// 語末変化化型, "f" is for "final", but otherwise as iType. For example
-    /// 医学 is ク促 because it can change to いがっ (apparently). This is
-    /// available for <0.1% of entries.
-    pub f_type: String,
-    /// 語末変化形, as iForm but for final transformations.
-    pub f_form: String,
-    /// 語頭変化結合型, initial change fusion type. Describes phonetic change at
-    /// the start of the word in counting expressions. Only available for a few
-    /// hundred entries, mostly numbers. Values are N followed by a letter or
-    /// number; most entries with this value are numeric.
-    pub i_con_type: String,
-    /// 語末変化結合型, final change fusion type. This is also used for counting
-    /// expressions, and like iConType it is only available for a few hundred
-    /// entries. Unlike iConType the values are very complicated, like
-    /// B1S6SjShS,B1S6S8SjShS.
-    pub f_con_type: String,
-    /// Not entirely clear what this is, seems to have some overlap with POS.
-    pub r#type: String,
-    /// 読みがな, this is the typical representation of a word in kana, unlike
-    /// pron. 講師 is こうし.
-    pub kana: String,
-    /// 仮名形基本形, this is the typical kana representation of the lemma.
-    pub kana_base: String,
-    /// 語形出現形, seems to be the same as pron.
-    pub form: String,
-    /// 語形基本形 seems to be the same as pronBase.
-    pub form_base: String,
-    /// Accent type. This is a (potentially) comma-separated field which has the
-    /// number of the mora taking the accent in 標準語 (standard language). When
-    /// there are multiple values, more common accent patterns come first.
-    pub a_type: String,
-    /// This describes how the accent shifts when the word is used in a counter
-    /// expression. It uses complicated notation.
-    pub a_con_type: String,
-    /// Presumably accent related but unclear use. Available for <25% of entries
-    /// and only has 6 non-default values.
-    pub a_mod_type: String,
 }
 
 #[derive(Debug)]
@@ -279,24 +224,7 @@ impl JapaneseTranscriptionContext {
                     l_form: items.nth(0).unwrap_or("").to_string(),
                     lemma: items.nth(0).unwrap_or("").to_string(),
                     orth: items.nth(0).unwrap_or("").to_string(),
-                    pron: items.nth(0).unwrap_or("").to_string(),
                     orth_base: items.nth(0).unwrap_or("").to_string(),
-                    pron_base: items.nth(0).unwrap_or("").to_string(),
-                    goshu: items.nth(0).unwrap_or("").to_string(),
-                    i_type: items.nth(0).unwrap_or("").to_string(),
-                    i_form: items.nth(0).unwrap_or("").to_string(),
-                    f_type: items.nth(0).unwrap_or("").to_string(),
-                    f_form: items.nth(0).unwrap_or("").to_string(),
-                    i_con_type: items.nth(0).unwrap_or("").to_string(),
-                    f_con_type: items.nth(0).unwrap_or("").to_string(),
-                    r#type: items.nth(0).unwrap_or("").to_string(),
-                    kana: items.nth(0).unwrap_or("").to_string(),
-                    kana_base: items.nth(0).unwrap_or("").to_string(),
-                    form: items.nth(0).unwrap_or("").to_string(),
-                    form_base: items.nth(0).unwrap_or("").to_string(),
-                    a_type: items.nth(0).unwrap_or("").to_string(),
-                    a_con_type: items.nth(0).unwrap_or("").to_string(),
-                    a_mod_type: items.nth(0).unwrap_or("").to_string(),
                 });
             }
 
@@ -853,24 +781,7 @@ impl JapaneseTranscriptionContext {
             l_form: items.nth(0).unwrap_or("").to_string(),
             lemma: items.nth(0).unwrap_or("").to_string(),
             orth: items.nth(0).unwrap_or("").to_string(),
-            pron: items.nth(0).unwrap_or("").to_string(),
             orth_base: items.nth(0).unwrap_or("").to_string(),
-            pron_base: items.nth(0).unwrap_or("").to_string(),
-            goshu: items.nth(0).unwrap_or("").to_string(),
-            i_type: items.nth(0).unwrap_or("").to_string(),
-            i_form: items.nth(0).unwrap_or("").to_string(),
-            f_type: items.nth(0).unwrap_or("").to_string(),
-            f_form: items.nth(0).unwrap_or("").to_string(),
-            i_con_type: items.nth(0).unwrap_or("").to_string(),
-            f_con_type: items.nth(0).unwrap_or("").to_string(),
-            r#type: items.nth(0).unwrap_or("").to_string(),
-            kana: items.nth(0).unwrap_or("").to_string(),
-            kana_base: items.nth(0).unwrap_or("").to_string(),
-            form: items.nth(0).unwrap_or("").to_string(),
-            form_base: items.nth(0).unwrap_or("").to_string(),
-            a_type: items.nth(0).unwrap_or("").to_string(),
-            a_con_type: items.nth(0).unwrap_or("").to_string(),
-            a_mod_type: items.nth(0).unwrap_or("").to_string(),
         })
     }
 

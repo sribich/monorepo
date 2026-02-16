@@ -551,6 +551,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "blart"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "220e5685b0a23b634e9215a69cfa9800e103ccd2f0134bd1a81cc9c584059701"
+dependencies = [
+ "bytemuck",
+ "paste",
+]
+
+[[package]]
 name = "block"
 version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2100,7 +2110,6 @@ dependencies = [
  "futures-util",
  "generator-runtime",
  "itertools 0.14.0",
- "language_pack",
  "language_pack_jp",
  "lexorank",
  "mecab",
@@ -2164,7 +2173,7 @@ version = "0.0.0"
 dependencies = [
  "axum",
  "dictionary_parser",
- "language_pack",
+ "language_pack_jp",
  "lexorank",
  "prisma-client",
  "railgun",
@@ -5298,10 +5307,12 @@ dependencies = [
 name = "language_pack_jp"
 version = "0.0.0"
 dependencies = [
+ "blart",
  "epub",
  "expect-test",
  "itertools 0.14.0",
  "mecab",
+ "memchr",
  "serde",
  "serde_json",
  "tracing",
@@ -5430,7 +5441,7 @@ version = "0.0.0"
 dependencies = [
  "axum",
  "epub",
- "language_pack",
+ "language_pack_jp",
  "prisma-client",
  "railgun",
  "serde",
@@ -5694,9 +5705,9 @@ checksum = "ea47523038076ea0d856cee454421c69aa7d6ad549262a2088f12bfcc385cebb"
 
 [[package]]
 name = "memchr"
-version = "2.7.6"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f52b00d39961fc5b2736ea853c9cc86238e165017a493d1d5c8eac6bdc4cc273"
+checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 
 [[package]]
 name = "memmap2"
@@ -9255,7 +9266,7 @@ name = "statistics"
 version = "0.0.0"
 dependencies = [
  "axum",
- "language_pack",
+ "language_pack_jp",
  "railgun",
  "serde",
  "shared",

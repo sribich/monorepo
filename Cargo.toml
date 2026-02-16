@@ -212,6 +212,7 @@ lru = "0.7"
 lru-cache = "0.1"
 lsp-types = "0.95"
 mecab = "0.1.6"
+memchr = "2.8.0"
 metrics = "0.23.0"
 metrics-util = "0.17.0"
 metrics-exporter-prometheus = { version = "0.15.3", default-features = false }

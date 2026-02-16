@@ -4,7 +4,7 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use language_pack::jp::get_reading_from_anki;
+use language_pack_jp::get_reading_from_anki;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;

@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use epub::archive::EpubArchive;
-use language_pack::jp::transcription::JapaneseTranscriptionContext;
-use language_pack::jp::transcription::SegmentKind;
+use language_pack_jp::transcription::JapaneseTranscriptionContext;
+use language_pack_jp::transcription::SegmentKind;
 use prisma_client::model;
 use railgun::di::Component;
 use serde::Deserialize;

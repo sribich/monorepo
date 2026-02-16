@@ -1,43 +1,12 @@
-#![feature(let_chains)]
+#![feature(new_range_api, const_range, const_trait_impl)]
 
 use itertools::Itertools;
 
-pub mod morphology;
+pub mod scanner;
+pub mod segment;
 pub mod splitting;
 pub mod transcription;
-
-#[cfg(doctest)]
-#[doc = include_str!("../README.md")]
-struct ReadmeDoctests;
-
-// /**
-//  * We split this up into 3 "stages":
-//  *
-//  * - (x) Empty
-//  * - (x) Transcribed
-//  * - ( ) Timestamped
-//  * - ( ) Normalised
-//  *
-//  * # Empty
-//  *
-//  * Nothing has been done yet. We have the required whisper context,
-//  * but have not started any kind of processing.
-//  *
-//  * # Transcribed
-//  *
-//  * We have transcribed the audio and have all necessary data for
-//  * next stages, but might not be required so we don't do the
-//  * processing up.
-//  *
-//  * # Timestamped
-//  *
-//  * We have fit the timestamps
-//  *
-//  * # Normalised
-//  */
-// (DONE) Unfit
-// Fit
-// Normalised
+pub mod transform;
 
 /// Checks whether a given `char` is valid hiragana, based on the
 /// [Unicode definition of hiragana].
@@ -51,8 +20,8 @@ struct ReadmeDoctests;
 /// ```
 ///
 /// [Unicode definition of hiragana]: https://www.unicode.org/charts/PDF/U3040.pdf
-pub fn is_hiragana(c: char) -> bool {
-    ('\u{3041}'..='\u{309f}').contains(&c)
+pub const fn is_hiragana(c: char) -> bool {
+    ('\u{3040}'..='\u{309f}').contains(&c)
 }
 
 /// Checks whether a given `char` is valid katakana based on the
@@ -67,7 +36,7 @@ pub fn is_hiragana(c: char) -> bool {
 /// ```
 ///
 /// [Unicode definition of katakana]: https://www.unicode.org/charts/PDF/U30A0.pdf
-pub fn is_katakana(c: char) -> bool {
+pub const fn is_katakana(c: char) -> bool {
     ('\u{30a0}'..='\u{30ff}').contains(&c)
 }
 

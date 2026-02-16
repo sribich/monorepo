@@ -3,7 +3,7 @@ use std::fs::read_to_string;
 use std::sync::Arc;
 
 use epub::archive::EpubArchive;
-use language_pack::jp::transcription::JapaneseTranscriptionContext;
+use language_pack_jp::transcription::JapaneseTranscriptionContext;
 use prisma_client::model;
 use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;

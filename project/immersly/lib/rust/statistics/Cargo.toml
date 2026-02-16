@@ -12,7 +12,7 @@ default = []
 [dependencies]
 shared = { path = "../shared" }
 
-language_pack = { workspace = true }
+language_pack_jp = { workspace = true }
 railgun = { workspace = true }
 srs_bridge_anki = { workspace = true }
 

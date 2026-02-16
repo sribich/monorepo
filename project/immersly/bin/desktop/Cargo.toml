@@ -32,7 +32,6 @@ dictionary_parser = { workspace = true }
 typegen_typescript = { workspace = true }
 lexorank = { workspace = true }
 
-language_pack = { workspace = true }
 language_pack_jp = { workspace = true }
 transcription = { workspace = true }
 
