@@ -35,26 +35,6 @@ model DataMigration {
     @@map(name: "data_migration")
 }
 
-model Media {
-    id Bytes @id
-
-    title String
-    kind  String
-
-    image_resource_id Bytes?
-    image_resource    Resource? @relation(fields: [image_resource_id], references: [id])
-
-    //====================================
-    // Reverse Relations
-    //====================================
-    Progress Progress?
-
-    //====================================
-    // Indexes
-    //====================================
-    @@unique(fields: [title], map: "library_title_uniq")
-}
-
 model Book {
     id Bytes @id
 
@@ -95,34 +75,6 @@ model BookProgress {
     book    Book  @relation(fields: [book_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
 }
 
-model TimestampedBook {
-    id Int @id @default(autoincrement()) // @virtualType(Ruid)
-
-    audio_path String
-
-    parsed_audio_path String?
-    parsed_book_path  String?
-    final_book_path   String?
-
-    //====================================
-    // Reverse Relations
-    //====================================
-    // book_id Int  @unique
-    // book    Book @relation(fields: [book_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
-}
-
-model Progress {
-    id Bytes @id
-
-    timestamp BigInt
-
-    //====================================
-    // Relations
-    //====================================
-    media_id Bytes @unique
-    media    Media @relation(fields: [media_id], references: [id], onDelete: Restrict, onUpdate: Restrict)
-}
-
 model Pronunciation {
     id Bytes @id
 
@@ -143,12 +95,14 @@ model Pronunciation {
 model Resource {
     id Bytes @id
 
+    kind  String?
     state String
 
-    hash String?
     path String
     managed Boolean
 
+    size BigInt?
+    hash String?
     mime_type String?
 
     last_access DateTime?
@@ -162,7 +116,6 @@ model Resource {
     CardB         Card[]         @relation("sentence")
     CardC         Card[]         @relation("image")
     Pronunciation Pronunciation?
-    Media         Media[]
 }
 
 model Card {

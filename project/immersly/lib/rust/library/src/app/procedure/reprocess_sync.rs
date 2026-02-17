@@ -10,6 +10,7 @@ use railgun::di::Component;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::infra::Procedure;
+use shared::infra::database::Sqlite;
 use tokio::fs::File;
 use tokio::fs::read_to_string;
 use tokio::io::AsyncWriteExt;
@@ -38,7 +39,7 @@ pub struct Segment {
 
 #[derive(Component)]
 pub struct ReprocessSyncProcedure {
-    // db: Arc<Sqlite>,
+    db: Arc<Sqlite>,
     // setting_service: Arc<SettingService>,
 }
 
@@ -48,8 +49,6 @@ impl Procedure for ReprocessSyncProcedure {
     type Res = ();
 
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
-        // book_id is the media_id right now. Need to fix.
-        /*
         let book = self
             .db
             .client()
@@ -60,6 +59,12 @@ impl Procedure for ReprocessSyncProcedure {
             .unwrap()
             .unwrap();
 
+        let result = EpubArchive::open(book.path.as_str()).unwrap();
+        let rendered_data = result.chapters;
+
+        println!("{:#?}", rendered_data);
+
+        /*
         let result = EpubArchive::open(book.path.as_str()).unwrap();
         let rendered_data = result.chapters;
 

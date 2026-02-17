@@ -10,7 +10,7 @@ use shared::domain::value::existing_file::ExistingFile;
 use shared::infra::Procedure;
 
 #[derive(Debug)]
-pub struct AddBookData {
+pub struct AddBookReq {
     pub title: String,
     pub book_path: ExistingFile,
     pub audio_path: ExistingFile,
@@ -27,10 +27,26 @@ pub struct AddBookProcedure {
 
 impl Procedure for AddBookProcedure {
     type Err = core::convert::Infallible;
-    type Req = AddBookData;
+    type Req = AddBookReq;
     type Res = ();
 
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
+        // * book_path
+        // * audio_path
+        //
+        // Derived from `audio_path`:
+        //
+        //   * audio_timing.json
+        //
+        // Outputs:
+        //
+        //  * rendered.json
+        //    * text
+        //    * freq
+        //    * timestamp
+        //    * segments
+        //      * joined / broken down segments for narrowing. (word / base)
+
         /*
         let result = EpubArchive::open(data.book_path.as_str()).unwrap();
 

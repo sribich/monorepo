@@ -4,6 +4,7 @@ use std::sync::Arc;
 use app::procedure::add_book::AddBookProcedure;
 use app::procedure::list_media::ListMediaProcedure;
 use app::procedure::read_book::ReadBookProcedure;
+use app::procedure::reprocess_sync::ReprocessSyncProcedure;
 use app::procedure::set_progress::SetProgressProcedure;
 use axum::extract::Path;
 use axum::extract::State;
@@ -39,7 +40,7 @@ impl Container for LibraryModule {
             .add::<AddBookProcedure>()?
             .add::<ListMediaProcedure>()?
             .add::<ReadBookProcedure>()?
-            // .add::<ReprocessSyncUseCase>()?
+            .add::<ReprocessSyncProcedure>()?
             .add::<SetProgressProcedure>()?;
 
         Ok(())

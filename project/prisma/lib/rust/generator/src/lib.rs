@@ -12,8 +12,9 @@ use std::io::stderr;
 use std::io::stdin;
 use std::sync::Arc;
 
-use ::dmmf::DataModelMetaFormat;
 use args::GeneratorArgs;
+#[rustfmt::skip]
+use ::dmmf::DataModelMetaFormat;
 use error::ExternalErrorContext;
 use error::GenericErrorContext;
 pub use error::PrismaError;
@@ -54,7 +55,7 @@ impl GeneratorContext {
         dmmf: Arc<DataModelMetaFormat>,
     ) -> Result<()> {
         self.generator
-            .generate(GeneratorArgs::new(config, dmmf, schema));
+            .generate(GeneratorArgs::new(config, dmmf, schema))?;
 
         Ok(())
     }
