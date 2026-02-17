@@ -1,9 +1,10 @@
-import { Button, Card, makeStyles, useStyles } from "@sribich/fude"
+import { Button, Card, CardBody, makeStyles, useStyles } from "@sribich/fude"
+import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
+import { newSpacing } from "@sribich/fude-theme/vars/spacing.stylex"
+import { create } from "@stylexjs/stylex"
+
 import type { Review } from "../../../generated/rpc-client/scheduler_reviewCard"
 import { useSingleKey } from "../../../hooks/useSingleKey"
-import { create } from "@stylexjs/stylex"
-import { newSpacing } from "@sribich/fude-theme/vars/spacing.stylex"
-import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
 
 //==============================================================================
 // CardFront
@@ -23,10 +24,12 @@ export const CardFront = (props: CardFront.Props) => {
     return (
         <div {...styles.container()}>
             <Card>
-                <div {...styles.card()}>
-                    <h1 {...styles.word()}>{props.review.card.word}</h1>
-                    <Button onPress={props.reveal}>Reveal</Button>
-                </div>
+                <CardBody>
+                    <div {...styles.card()}>
+                        <h1 {...styles.word()}>{props.review.card.word}</h1>
+                        <Button onPress={props.reveal}>Reveal</Button>
+                    </div>
+                </CardBody>
             </Card>
         </div>
     )
@@ -47,6 +50,7 @@ const cardFrontStyles = makeStyles({
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            justifyContent: "space-between",
         },
         word: {
             fontFamily: "Shippori Mincho",

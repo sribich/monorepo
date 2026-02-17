@@ -1,4 +1,4 @@
-import { Card, makeStyles, useStyles } from "@sribich/fude"
+import { Card, CardBody, makeStyles, useStyles } from "@sribich/fude"
 import { fontSize } from "@sribich/fude-theme/vars/fontSize.stylex"
 import { newSpacing } from "@sribich/fude-theme/vars/spacing.stylex"
 import { create } from "@stylexjs/stylex"
@@ -48,12 +48,16 @@ export const CardBack = (props: CardBack.Props) => {
             <div {...styles.body()}>
                 <Text language="jp">{card.sentence}</Text>
 
-                <Card>
-                    <Definition definition={definition} />
+                <Card fullWidth>
+                    <CardBody>
+                        <Definition definition={definition} />
+                    </CardBody>
                 </Card>
 
-                <Card>
-                    <Definition definition={data.word.bilingual_definition} />
+                <Card fullWidth>
+                    <CardBody>
+                        <Definition definition={data.word.bilingual_definition} />
+                    </CardBody>
                 </Card>
             </div>
 
@@ -168,9 +172,10 @@ const componentStyles = makeStyles({
             flexDirection: "column",
             // justifyContent: "center",
             // alignItems: "center",
+            gap: newSpacing["8"],
             height: "100%",
             width: "100%",
-            maxWidth: newSpacing["768"],
+            maxWidth: newSpacing["992"],
         },
         card: {
             minWidth: newSpacing["384"],
@@ -186,6 +191,10 @@ const componentStyles = makeStyles({
         body: {
             flex: "1",
             overflow: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: newSpacing["8"],
+            listStylePosition: "inside",
         },
         scores: {},
     }),

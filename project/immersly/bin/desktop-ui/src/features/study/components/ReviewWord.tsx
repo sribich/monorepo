@@ -1,5 +1,6 @@
 import {
     Card,
+    CardBody,
     ContextMenu,
     makeStyles,
     Menu,
@@ -51,49 +52,51 @@ export const ReviewWord = (props: ReviewWord.Props) => {
 
     return (
         <Card {...styles.card()}>
-            <Ruby {...styles.reading()}>{props.word.reading_ruby ?? props.word.word}</Ruby>
+            <CardBody>
+                <Ruby {...styles.reading()}>{props.word.reading_ruby ?? props.word.word}</Ruby>
 
-            <PitchAccentItems {...styles.pitchAccents()} items={accents} />
+                <PitchAccentItems {...styles.pitchAccents()} items={accents} />
 
-            {speakerId && <AudioPlayer src={`${host}/rpc/resource/${speakerId}`} autoPlay />}
+                {speakerId && <AudioPlayer src={`${host}/rpc/resource/${speakerId}`} autoPlay />}
 
-            <div {...styles.audio()}>
-                {props.card.readingAudio && (
-                    <ContextMenu>
+                <div {...styles.audio()}>
+                    {props.card.readingAudio && (
+                        <ContextMenu>
+                            <AudioPlayer
+                                key={1}
+                                src={`${host}/rpc/resource/${props.card.readingAudio}`}
+                                autoPlay
+                                onEnded={() => {
+                                    audioRef.current.play()
+                                }}
+                            >
+                                <PlayButton />
+                            </AudioPlayer>
+                            <Popover placement={"bottom start"}>
+                                <Menu items={data?.pronunciations ?? []}>
+                                    {(item) => (
+                                        <MenuItem
+                                            id={item.id}
+                                            onAction={() => setSpeakerId(item.resourceId)}
+                                        >
+                                            {item.speaker}
+                                        </MenuItem>
+                                    )}
+                                </Menu>
+                            </Popover>
+                        </ContextMenu>
+                    )}
+                    {props.card.sentenceAudio && (
                         <AudioPlayer
-                            key={1}
-                            src={`${host}/rpc/resource/${props.card.readingAudio}`}
-                            autoPlay
-                            onEnded={() => {
-                                audioRef.current.play()
-                            }}
+                            key={2}
+                            src={`/rpc/resource/${props.card.sentenceAudio}`}
+                            ref={audioRef}
                         >
                             <PlayButton />
                         </AudioPlayer>
-                        <Popover placement={"bottom start"}>
-                            <Menu items={data?.pronunciations ?? []}>
-                                {(item) => (
-                                    <MenuItem
-                                        id={item.id}
-                                        onAction={() => setSpeakerId(item.resourceId)}
-                                    >
-                                        {item.speaker}
-                                    </MenuItem>
-                                )}
-                            </Menu>
-                        </Popover>
-                    </ContextMenu>
-                )}
-                {props.card.sentenceAudio && (
-                    <AudioPlayer
-                        key={2}
-                        src={`/rpc/resource/${props.card.sentenceAudio}`}
-                        ref={audioRef}
-                    >
-                        <PlayButton />
-                    </AudioPlayer>
-                )}
-            </div>
+                    )}
+                </div>
+            </CardBody>
         </Card>
     )
 }

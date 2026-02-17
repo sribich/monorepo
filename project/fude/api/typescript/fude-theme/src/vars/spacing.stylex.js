@@ -71,4 +71,5 @@ export const newSpacing = defineVars({
     576: "36rem",
     672: "42rem",
     768: "48rem",
+    992: "62rem",
 })

@@ -45,7 +45,11 @@ export const studyPageStyles = makeStyles({
     slots: create({
         wrapper: {
             height: "100%",
+            width: "100%",
             padding: newSpacing["8"],
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
         },
     }),
     conditions: {},

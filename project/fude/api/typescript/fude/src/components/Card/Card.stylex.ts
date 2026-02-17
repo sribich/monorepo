@@ -19,7 +19,7 @@ export const cardStyles = makeStyles({
             display: "flex",
             flexDirection: "column",
             position: "relative",
-            overflow: "hidden",
+            // overflow: "hidden",
             height: "auto",
             color: colors.foreground,
 
@@ -47,7 +47,7 @@ export const cardStyles = makeStyles({
         },
         body: {
             padding: spacing["3"],
-            overflow: "hidden",
+            // overflow: "hidden",
         },
         footer: {
             display: "flex",
@@ -74,8 +74,8 @@ export const cardStyles = makeStyles({
         fullWidth: create({
             card: {
                 width: "100%",
-            }
-        })
+            },
+        }),
     },
     variants: {
         footerStyle: {
