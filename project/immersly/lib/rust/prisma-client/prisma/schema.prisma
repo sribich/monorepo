@@ -40,6 +40,9 @@ model Book {
 
     title String?
 
+    book_id Bytes?
+    book Resource? @relation(name: "book", fields: [book_id], references: [id])
+
     path String
 
     //====================================
@@ -56,6 +59,12 @@ model Book {
     //====================================
     audio_resource_id Bytes?
     audio_resource    Resource? @relation(name: "audio", fields: [audio_resource_id], references: [id])
+
+    audio_timing_id Bytes?
+    audio_timing    Resource? @relation(name: "audio_timing", fields: [audio_timing_id], references: [id])
+
+    rendered_id Bytes?
+    rendered    Resource? @relation(name: "rendered", fields: [rendered_id], references: [id])
 
     //====================================
     // Reverse Relations
@@ -110,8 +119,13 @@ model Resource {
     created_at DateTime @default(now())
 
     // TODO(sr): I should make reverse relations optional.
-    BookAudio     Book[]         @relation("audio")
+    Book          Book[]         @relation("book")
     BookImage     Book[]         @relation("image")
+    BookAudio     Book[]         @relation("audio")
+    BookTiming    Book[]         @relation("audio_timing")
+    BookRendered  Book[]         @relation("rendered")
+
+
     CardA         Card[]         @relation("reading")
     CardB         Card[]         @relation("sentence")
     CardC         Card[]         @relation("image")

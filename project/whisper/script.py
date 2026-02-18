@@ -49,7 +49,7 @@ BATCH_SIZE = 16
 CHUNK_SIZE = 10
 
 PRINT_PROGRESS = True
-CHAR_ALIGNMENT = True # Word level timestamps
+CHAR_ALIGNMENT = False # Word level timestamps
 
 model = whisperx.load_model(MODEL_NAME, DEVICE, compute_type=COMPUTE_TYPE)
 audio = whisperx.load_audio(SOURCE_AUDIO)
@@ -62,18 +62,18 @@ result = model.transcribe(
     print_progress=PRINT_PROGRESS
 )
 
-model_a, metadata = whisperx.load_align_model(
-    language_code=result["language"],
-    device=DEVICE
-)
-result = whisperx.align(
-    result["segments"],
-    model_a,
-    metadata,
-    audio,
-    DEVICE,
-    return_char_alignments=CHAR_ALIGNMENT
-)
+# model_a, metadata = whisperx.load_align_model(
+#     language_code=result["language"],
+#     device=DEVICE
+# )
+# result = whisperx.align(
+#     result["segments"],
+#     model_a,
+#     metadata,
+#     audio,
+#     DEVICE,
+#     return_char_alignments=CHAR_ALIGNMENT
+# )
 
 with open(DEST_JSON, 'w') as fp:
     json.dump(result, fp)

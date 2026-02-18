@@ -18,14 +18,12 @@ use shared::infra::Procedure;
 
 use crate::app::procedure::add_book::AddBookProcedure;
 
-//
-//
-//
+// ---- Handler Util------------------------------------------------------------
+
 handler_aliases!(AddBookProcedure);
 
-//==============================================================================
-// Handler Request
-//==============================================================================
+// ---- Handler Request --------------------------------------------------------
+
 #[derive(Debug, Deserialize, Typegen)]
 #[serde(rename_all = "camelCase")]
 pub struct AddBookRequest {
@@ -34,16 +32,6 @@ pub struct AddBookRequest {
     audio_path: String,
 }
 
-//==============================================================================
-// Handler Response
-//==============================================================================
-#[derive(Debug, Serialize, Typegen)]
-#[serde(rename_all = "camelCase")]
-pub struct AddBookResponse;
-
-//==============================================================================
-// Handler -> Domain -> Handler
-//==============================================================================
 impl TryInto<ProcedureRequest> for AddBookRequest {
     type Error = core::convert::Infallible;
 
@@ -56,45 +44,46 @@ impl TryInto<ProcedureRequest> for AddBookRequest {
     }
 }
 
+// ---- Handler Response -------------------------------------------------------
+
+#[derive(Debug, Serialize, Typegen)]
+#[serde(rename_all = "camelCase")]
+pub struct AddBookResponse;
+
 impl TryFrom<ProcedureResponse> for AddBookResponse {
     type Error = core::convert::Infallible;
 
     fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
-        todo!();
+        Ok(AddBookResponse)
     }
 }
 
-//==============================================================================
-// Error Handling
-//==============================================================================
-#[derive(ApiError, Serialize, Typegen)]
-pub enum ApiError {}
 
-impl From<core::convert::Infallible> for ApiError {
+// ---- Error Handling ---------------------------------------------------------
+
+#[derive(ApiError, Serialize, Typegen)]
+pub enum AddBookError {}
+
+impl From<core::convert::Infallible> for AddBookError {
     fn from(value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }
 
-//==============================================================================
-// Axum State
-//==============================================================================
+// ---- Handler ----------------------------------------------------------------
+
 #[derive(Clone, Component)]
 #[component(from_state)]
 pub struct AddBookState {
     add_book: Arc<AddBookProcedure>,
 }
 
-//==============================================================================
-// Handler
-//==============================================================================
 pub async fn add_book_handler(
     State(state): State<AddBookState>,
     Json(body): Json<AddBookRequest>,
-) -> ApiResult<AddBookResponse, ApiError> {
-    let data = body.try_into().unwrap();
+) -> ApiResult<AddBookResponse, AddBookError> {
+    let request = body.try_into()?;
+    let response = state.add_book.run(request).await?.try_into()?;
 
-    state.add_book.run(data).await.unwrap();
-
-    ApiResponse::success(StatusCode::OK, AddBookResponse {})
+    ApiResponse::success(StatusCode::OK, response)
 }

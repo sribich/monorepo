@@ -31,6 +31,29 @@ impl Procedure for AddBookProcedure {
     type Res = ();
 
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
+        println!("{:#?}", data);
+
+        let mut audio_timing_path = data.audio_path.as_path().to_owned();
+        audio_timing_path.set_extension("json");
+
+        if !audio_timing_path.exists() {
+            panic!("timing not generated");
+        }
+
+        // Extract raw epub data
+        let epub = EpubArchive::open(data.book_path.as_str()).unwrap();
+        let text = epub.rendered;
+
+        // Load timing data
+        let timing_data = read_to_string(&audio_timing_path).unwrap();
+
+        // Timestamp segments
+        let transcriber = JapaneseTranscriptionContext {};
+        let x = transcriber.fit_new(epub.chapters, timing_data);
+
+        println!("{:#?}", x);
+
+
         // * book_path
         // * audio_path
         //
@@ -48,41 +71,7 @@ impl Procedure for AddBookProcedure {
         //      * joined / broken down segments for narrowing. (word / base)
 
         /*
-        let result = EpubArchive::open(data.book_path.as_str()).unwrap();
-
-        let title = result.package.metadata.title.first().unwrap().value.clone();
-        let rendered = result.rendered;
-
-        let resource = self
-            .prepare_resource
-            .run(PrepareResourceReq {
-                filename: "rendered.txt".to_owned(),
-            })
-            .await
-            .unwrap();
-
-        std::fs::write(&resource.path, rendered.clone()).unwrap();
-
-        self.commit_resource
-            .run(CommitResourceReq {
-                resource: resource.resource.clone(),
-            })
-            .await
-            .unwrap();
-
-        // Load audio path and timing information
         let timing_data = read_to_string(data.audio_path.as_path().with_extension("json")).unwrap();
-
-        let existing_file = ExistingFile::from_path(data.audio_path.as_path().to_owned());
-
-        let resource = self
-            .add_resource
-            .run(AddResourceReq {
-                path: existing_file,
-            })
-            .await
-            .unwrap();
-        let audio_id = resource.id().into();
 
         let transcriber = JapaneseTranscriptionContext {};
         let fit_data = transcriber.fit_new(result.chapters, timing_data);
@@ -125,6 +114,46 @@ impl Procedure for AddBookProcedure {
         }
 
         let fit_data = serde_json::to_string(&new_data).unwrap();
+         */
+
+        /*
+        let result = EpubArchive::open(data.book_path.as_str()).unwrap();
+
+        let title = result.package.metadata.title.first().unwrap().value.clone();
+        let rendered = result.rendered;
+
+        let resource = self
+            .prepare_resource
+            .run(PrepareResourceReq {
+                filename: "rendered.txt".to_owned(),
+            })
+            .await
+            .unwrap();
+
+        std::fs::write(&resource.path, rendered.clone()).unwrap();
+
+        self.commit_resource
+            .run(CommitResourceReq {
+                resource: resource.resource.clone(),
+            })
+            .await
+            .unwrap();
+
+        // Load audio path and timing information
+        let timing_data = read_to_string(data.audio_path.as_path().with_extension("json")).unwrap();
+
+        let existing_file = ExistingFile::from_path(data.audio_path.as_path().to_owned());
+
+        let resource = self
+            .add_resource
+            .run(AddResourceReq {
+                path: existing_file,
+            })
+            .await
+            .unwrap();
+        let audio_id = resource.id().into();
+
+
 
         let audio_resource = self
             .prepare_resource

@@ -20,7 +20,11 @@ pub struct Segment {
 }
 
 pub fn segment_text<S: AsRef<str>>(text: S) -> Vec<Segment> {
-    let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+    let home = std::env::var("HOME").unwrap();
+    let tagger = Tagger::new(format!(
+        "-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302",
+        home
+    ));
 
     let output = tagger.parse_str(text.as_ref().to_owned().as_bytes());
 

@@ -156,6 +156,7 @@ impl JapaneseTranscriptionContext {
         audio: String,
     ) -> Vec<TimestampedSegments> {
         let transcription: Transcription = serde_json::from_str(&audio).unwrap();
+
         let words = self.fit_transcription(transcription);
 
         self.timestamp_new(chapters, words)
@@ -185,7 +186,8 @@ impl JapaneseTranscriptionContext {
     }
 
     fn fit_transcription(&self, transcription: Transcription) -> Vec<FitWord> {
-        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+        let home = std::env::var("HOME").unwrap();
+        let tagger = Tagger::new(format!("-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302", home));
 
         let mut list = vec![];
 
@@ -295,7 +297,8 @@ impl JapaneseTranscriptionContext {
         chapters: Vec<(String, Vec<EpubNode>)>,
         mut words: Vec<FitWord>,
     ) -> Vec<TimestampedNodeB> {
-        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
+        let home = std::env::var("HOME").unwrap();
+        let tagger = Tagger::new(format!("-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302", home));
 
         let mut chapters = chapters
             .into_iter()
