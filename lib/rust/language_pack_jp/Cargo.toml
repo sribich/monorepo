@@ -10,7 +10,8 @@ publish = false
 default = []
 
 [dependencies]
-transcription = { workspace = true }
+language_pack = { workspace = true }
+
 epub = { workspace = true }
 typegen = { workspace = true }
 

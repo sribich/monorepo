@@ -33,7 +33,6 @@ typegen_typescript = { workspace = true }
 lexorank = { workspace = true }
 
 language_pack_jp = { workspace = true }
-transcription = { workspace = true }
 
 generator-runtime = { workspace = true }
 prisma-client = { path = "../../lib/rust/prisma-client" }

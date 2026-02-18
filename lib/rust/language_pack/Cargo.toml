@@ -10,7 +10,7 @@ publish = false
 default = []
 
 [dependencies]
-language_pack_jp = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]
 

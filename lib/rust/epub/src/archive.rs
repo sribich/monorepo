@@ -78,16 +78,18 @@ impl EpubArchive {
     where
         P: AsRef<Path>,
     {
-        let superpath = path.as_ref();
         let path = path.as_ref();
-        let file = File::open(path).context(IoErrorContext {})?;
-        let reader = BufReader::with_capacity(1024 * 16, file);
 
-        let mut zip = ZipArchive::new(reader)
+        let file = File::open(path).context(IoErrorContext {})?;
+
+        let mut zip = ZipArchive::new(BufReader::new(file))
             .boxed_local()
             .context(OtherContext {})?;
 
         let container = Self::parse::<Container>(&mut zip)?;
+
+        let x = container.package(&mut zip)?;
+
         let package =
             Self::parse_with::<Package>(&mut zip, &container.rootfiles.rootfile[0].full_path)?;
 
@@ -121,7 +123,7 @@ impl EpubArchive {
                 read_to_string(&mut zip.by_name(&base.join(&path).to_str().unwrap())?)
                     .map(|content| (id, (path, content)))
                     .with_context(|_| {
-                        println!("{:#?} from {:?}", base.join(&cloned), superpath);
+                        // println!("{:#?} from {:?}", base.join(&cloned), superpath);
                         IoErrorContext {}
                     })
             })

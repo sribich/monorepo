@@ -2221,7 +2221,6 @@ dependencies = [
  "tracing-log",
  "tracing-opentelemetry",
  "tracing-subscriber",
- "transcription",
  "typegen",
  "typegen_typescript",
  "urlencoding",
@@ -5400,7 +5399,7 @@ dependencies = [
 name = "language_pack"
 version = "0.0.0"
 dependencies = [
- "language_pack_jp",
+ "serde",
 ]
 
 [[package]]
@@ -5411,12 +5410,12 @@ dependencies = [
  "epub",
  "expect-test",
  "itertools 0.14.0",
+ "language_pack",
  "mecab",
  "memchr",
  "serde",
  "serde_json",
  "tracing",
- "transcription",
  "typegen",
 ]
 
@@ -10429,13 +10428,6 @@ checksum = "ad06847b7afb65c7866a36664b75c40b895e318cea4f71299f013fb22965329d"
 dependencies = [
  "quote",
  "syn 2.0.116",
-]
-
-[[package]]
-name = "transcription"
-version = "0.0.0"
-dependencies = [
- "serde",
 ]
 
 [[package]]

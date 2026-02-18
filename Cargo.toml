@@ -65,7 +65,6 @@ serde-util = { path = "./lib/rust/serde-util" }
 sha256-util = { path = "./lib/rust/sha256-util" }
 srs_bridge_anki = { path = "./lib/rust/srs_bridge_anki" }
 subtitle = { path = "./lib/rust/subtitle" }
-transcription = { path = "./lib/rust/transcription" }
 uuid47 = { path = "./lib/rust/uuid47" }
 
 macro_util = { path = "./project/railgun/lib/rust/macro_util" }

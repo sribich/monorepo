@@ -39,16 +39,23 @@ pub mod test {
         let tagger = JapaneseTextSegmenter::new();
 
         let result = tagger.segment("集めておかなきゃ");
-        println!("{:#?}", result);
+        // println!("{:#?}", result);
 
         let result = tagger.segment("彷徨った");
-        println!("{:#?}", result);
+        // println!("{:#?}", result);
 
         let result = tagger.segment("家ﾊﾛｰﾜｰﾙﾄﾞ家");
-        println!("{:#?}", result);
+        // println!("{:#?}", result);
 
         let result = tagger.segment("ﾊﾛｰﾜｰﾙﾄﾞ");
-        println!("{:#?}", result);
+        // println!("{:#?}", result);
+
+        tagger.segment("こんにちは僕の名前1282のDOG名前はおいじぇろえｗぐぇをﾊﾛｰﾜｰﾙﾄﾞ");
+
+        // println!(
+        //     "{:#?}",
+        //     tagger.segment("こんにちは僕の名前1282のDOG名前はおいじぇろえｗぐぇをﾊﾛｰﾜｰﾙﾄﾞ")
+        // );
     }
 }
 

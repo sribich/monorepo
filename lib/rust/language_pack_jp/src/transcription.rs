@@ -63,11 +63,14 @@ use itertools::Itertools;
 use mecab::Tagger;
 use serde::Deserialize;
 use serde::Serialize;
-use transcription::{
+use language_pack::{
     Segment,
     Transcription,
 };
 
+use crate::segment::JapaneseTextSegmenter;
+use crate::segment::Morpheme;
+use crate::segment::TextSegmenter;
 use crate::splitting;
 
 pub struct JapaneseTranscriptionContext {}
@@ -138,18 +141,15 @@ pub struct TimestampedSegments {
     pub segments: Vec<splitting::Segment>,
 }
 
+//---- New Stuff ---------------------------------------------------------------
+
+struct TimestampedMorpheme {
+    pub t0: Option<u64>,
+    pub t1: Option<u64>,
+    pub morpheme: Morpheme,
+}
+
 impl JapaneseTranscriptionContext {
-    pub fn transcribe(&self, transcription_path: &Path, novel_path: &Path) -> String {
-        let text = read_to_string(transcription_path).unwrap();
-
-        let transcription: Transcription = serde_json::from_str(&text).unwrap();
-        let words = self.fit_transcription(transcription);
-
-        let text = EpubArchive::open(novel_path).unwrap().rendered;
-
-        self.timestamp(text, words)
-    }
-
     pub fn fit_new(
         &self,
         chapters: Vec<(String, Vec<EpubNode>)>,
@@ -178,16 +178,11 @@ impl JapaneseTranscriptionContext {
             .collect::<Vec<_>>()
     }
 
-    pub fn fit(&self, text: String, audio: String) -> String {
-        let transcription: Transcription = serde_json::from_str(&audio).unwrap();
-        let words = self.fit_transcription(transcription);
-
-        self.timestamp(text, words)
-    }
-
     fn fit_transcription(&self, transcription: Transcription) -> Vec<FitWord> {
         let home = std::env::var("HOME").unwrap();
         let tagger = Tagger::new(format!("-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302", home));
+
+        let segmenter = JapaneseTextSegmenter::new();
 
         let mut list = vec![];
 
@@ -203,7 +198,9 @@ impl JapaneseTranscriptionContext {
             // vowels that break our lookahead algorithm.
             Self::remove_duplicate_chunks(&mut segment);
 
-            let output = tagger.parse_str(segment.text.clone().into_bytes());
+            let output = tagger.parse_str(segment.text.as_str());
+
+            let output2 = segmenter.segment(segment.text.as_str());
 
             let mut morphemes = vec![];
 
@@ -245,14 +242,14 @@ impl JapaneseTranscriptionContext {
 
                 'inner: for i in char_idx..=(segment.words.len() - morpheme_length) {
                     let words = &segment.words[i..i + morpheme_length];
-                    let word_str = words.iter().join("");
+                    let word_str = words.iter().map(|it| &it.word).join("");
 
                     // println!("  - {:?} ({})", strtest, i);
 
                     if morpheme.unit == word_str {
                         if i != char_idx {
                             list.push(FitWord {
-                                text: segment.words[char_idx..i].iter().join(""),
+                                text: segment.words[char_idx..i].iter().map(|it| &it.word).join(""),
                                 t0: segment.words[char_idx].start.map(|it| (it * 1000.0) as u64),
                                 t1: segment.words[i - 1].end.map(|it| (it * 1000.0) as u64),
                                 word: None,
@@ -536,233 +533,6 @@ impl JapaneseTranscriptionContext {
             .collect::<Vec<_>>()
             .join("\n")
          */
-    }
-
-    fn timestamp(&self, text: String, mut words: Vec<FitWord>) -> String {
-        let tagger = Tagger::new("-Ounidic --dicdir=~/Projects/sribich/_/unidic-cwj-202302");
-
-        let mut meta_text = text
-            .split('\n')
-            .map(|line| {
-                if line.is_empty() {
-                    return TextLine::Empty;
-                }
-
-                let sublines = Self::split_lines(line)
-                    .iter()
-                    .map(|subline| {
-                        let result = tagger.parse_str(*subline);
-
-                        let mut words = vec![];
-
-                        for result_line in result.split('\n') {
-                            let word = match Self::text_to_word(result_line) {
-                                Some(word) => word,
-                                None => continue,
-                            };
-
-                            words.push(word);
-                        }
-
-                        Line {
-                            text: (*subline).to_owned(),
-                            words,
-                            t0: None,
-                            t1: None,
-                        }
-                    })
-                    .collect::<Vec<_>>();
-
-                match sublines.len() {
-                    1 => TextLine::WithMeta(sublines[0].clone()),
-                    _ => TextLine::Multiple(sublines),
-                }
-            })
-            .collect::<Vec<_>>();
-
-        let start = self.find_start(&meta_text, &words);
-
-        let mut start_idx = start;
-
-        for mut item in &mut meta_text {
-            match &mut item {
-                TextLine::Empty => continue,
-                TextLine::Multiple(lines) => {
-                    for line in lines {
-                        Self::dowork(line, &mut words, &mut start_idx);
-                    }
-                }
-                TextLine::WithMeta(line) => Self::dowork(line, &mut words, &mut start_idx),
-            }
-        }
-
-        meta_text
-            .into_iter()
-            .map(|item| match item {
-                TextLine::Empty => String::new(),
-                TextLine::Multiple(lines) => {
-                    lines
-                        .iter()
-                        .enumerate()
-                        .map(|(i, line)| {
-                            let cont_marker = if i == lines.len() - 1 { "" } else { "-" };
-
-                            let timestamp = if line.t0.is_none() || line.t1.is_none() {
-                                "UNK --> UNK".to_owned()
-                            } else {
-                                let start = line.t0.unwrap() as usize;
-                                let end = line.t1.unwrap() as usize;
-                                /*
-                                let start =
-                                    usize::from_str_radix(&format!("{}0", line.t0.unwrap()), 10)
-                                        .map_err(|e| e)
-                                        .unwrap();
-                                let end =
-                                    usize::from_str_radix(&format!("{}0", line.t1.unwrap()), 10)
-                                        .map_err(|e| e)
-                                        .unwrap();
-                                 */
-
-                                format!("{} --> {}", self.convert(start), self.convert(end))
-                            };
-
-                            let mut word_iter = line.words.iter();
-                            let mut result = vec![];
-
-                            if !line.words.is_empty() {
-                                let first = word_iter.nth(0).unwrap();
-                                result.push((
-                                    first.unit.clone(),
-                                    first.orth_base.clone(),
-                                    first.ts.unwrap_or(0),
-                                ));
-
-                                for word in word_iter {
-                                    if
-                                    /* word.pos1 == "助動詞" || */
-                                    word.pos1 == "\u{63a5}\u{5c3e}\u{8f9e}"
-                                    // || (word.pos1 == "助詞" && word._1 == "接続助詞")
-                                    {
-                                        let item = result.last_mut().unwrap();
-                                        item.0 = format!("{}{}", item.0, word.unit);
-                                    } else {
-                                        result.push((
-                                            word.unit.clone(),
-                                            word.orth_base.clone(),
-                                            word.ts.unwrap_or(0),
-                                        ));
-                                    }
-                                }
-                            }
-
-                            /*
-                            let txt = Test(
-                                line.words
-                                    .iter()
-                                    .map(|word| (word.unit.clone(), word.orth_base.clone()))
-                                    .collect::<Vec<_>>(),
-                            );
-                            */
-                            let txt = Test(result);
-                            let encode = serde_json::to_string(&txt).unwrap();
-
-                            format!("{cont_marker}{timestamp}\n{encode}" /* line.text */)
-                        })
-                        .collect::<Vec<_>>()
-                        .join("\n\n")
-
-                    /*
-                    let first = lines.first().unwrap();
-                    let last = lines.last().unwrap();
-
-                    let line = if first.t0.is_none() || last.t1.is_none() {
-                        "UNK --> UNK".to_owned()
-                    } else {
-                        let start = usize::from_str_radix(&format!("{}0", first.t0.unwrap()), 10)
-                            .map_err(|e| e)
-                            .unwrap();
-                        let end = usize::from_str_radix(&format!("{}0", last.t1.unwrap()), 10)
-                            .map_err(|e| e)
-                            .unwrap();
-
-                        format!("{} --> {}", self.convert(start), self.convert(end))
-                    };
-
-                    format!(
-                        "{}\n{}",
-                        line,
-                        lines
-                            .iter()
-                            .map(|it| it.text.clone())
-                            .collect::<Vec<_>>()
-                            .join("")
-                    )
-                    */
-                }
-                TextLine::WithMeta(meta) => {
-                    let line = if meta.t1.is_none() || meta.t0.is_none() {
-                        "UNK --> UNK".to_owned()
-                    } else {
-                        let start = meta.t0.unwrap() as usize;
-                        let end = meta.t1.unwrap() as usize;
-
-                        /*
-                        let start = usize::from_str_radix(&format!("{}", t0), 10)
-                            .map_err(|e| e)
-                            .unwrap();
-                        let end = usize::from_str_radix(&format!("{}", t1), 10)
-                            .map_err(|e| e)
-                            .unwrap();
-                         */
-
-                        format!("{} --> {}", self.convert(start), self.convert(end))
-                    };
-
-                    let mut word_iter = meta.words.iter();
-                    let mut result = vec![];
-
-                    if !meta.words.is_empty() {
-                        let first = word_iter.nth(0).unwrap();
-                        result.push((
-                            first.unit.clone(),
-                            first.orth_base.clone(),
-                            first.ts.unwrap_or(0),
-                        ));
-
-                        for word in word_iter {
-                            if
-                            //word.pos1 == "助動詞" ||
-                            word.pos1 == "\u{63a5}\u{5c3e}\u{8f9e}"
-                            // || (word.pos1 == "助詞" && word._1 == "接続助詞")
-                            {
-                                let item = result.last_mut().unwrap();
-                                item.0 = format!("{}{}", item.0, word.unit);
-                            } else {
-                                result.push((
-                                    word.unit.clone(),
-                                    word.orth_base.clone(),
-                                    word.ts.unwrap_or(0),
-                                ));
-                            }
-                        }
-                    }
-
-                    /*
-                    let txt = Test(
-                        line.words
-                            .iter()
-                            .map(|word| (word.unit.clone(), word.orth_base.clone()))
-                            .collect::<Vec<_>>(),
-                    );
-                    */
-                    let txt = Test(result);
-                    let encode = serde_json::to_string(&txt).unwrap();
-
-                    format!("{line}\n{encode}" /* meta.text */)
-                }
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
     }
 
     fn text_to_word(text: &str) -> Option<Word> {
