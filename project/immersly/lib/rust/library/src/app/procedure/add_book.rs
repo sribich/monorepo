@@ -1,4 +1,7 @@
+use std::fs::read_to_string;
+
 use epub::archive::EpubArchive;
+use language_pack_jp::transcription::JapaneseTranscriptionContext;
 use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;
 use shared::infra::Procedure;
@@ -31,20 +34,17 @@ impl Procedure for AddBookProcedure {
         assert!(audio_timing_path.exists(), "timing not generated");
 
         // Extract raw epub data
-        let epub = EpubArchive::open(data.book_path.as_str()).unwrap();
+        let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
+        let text = epub.segments();
 
-        /*
-
-        let text = epub.rendered;
+        println!("{:#?}", text);
 
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
-        let fit_text = transcriber.fit_new(epub.chapters, timing_data);
-         */
-
+        // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 
         // * book_path
         // * audio_path

@@ -44,6 +44,33 @@ pub enum EpubNode {
     Paragraph(String),
 }
 
+#[derive(Debug)]
+pub struct EpubSegment<T = ()> {
+    text: String,
+    kind: SemanticIdentifier,
+    data: T,
+}
+
+impl<T> EpubSegment<T> {
+    pub fn refine<R, F>(self, f: F) -> EpubSegment<R>
+    where
+        F: FnOnce(T) -> R,
+    {
+        EpubSegment {
+            text: self.text,
+            kind: self.kind,
+            data: f(self.data),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum SemanticIdentifier {
+    Chapter,
+    Header,
+    Text,
+}
+
 pub struct EpubArchive {
     zip: ZipArchive<BufReader<File>>,
     container: Container,
@@ -129,89 +156,46 @@ impl EpubArchive {
         Ok(navigation)
     }
 
-    pub fn text(&mut self) -> Result<String, Error> {
+    pub fn segments(&mut self) -> Result<Vec<EpubSegment>, Error> {
         let manifest = self.manifest()?;
-        let navigation = self.navigation()?;
 
+        // TODO: assert `it` in manifest and return invarianterror or something if it fails.
         let spine = match &self.package.clone() {
-            Package::V2(package) => package
-                .spine()
-                .map(|it| manifest.get(it).unwrap())
-                .collect::<Vec<_>>(),
-            Package::V3(package) => package
-                .spine()
-                .map(|it| manifest.get(it).unwrap())
-                .collect::<Vec<_>>(),
+            Package::V2(package) => package.spine().map(|it| &manifest[it]).collect::<Vec<_>>(),
+            Package::V3(package) => package.spine().map(|it| &manifest[it]).collect::<Vec<_>>(),
         };
 
-        let mut spine_walker = &*spine;
-
-        let chapters = navigation
-            .clone()
+        Ok(spine
             .into_iter()
-            .circular_tuple_windows()
-            .enumerate()
-            .map(|(i, (a, b))| {
-                let spine_pos_one = spine_walker.iter().position(|it| a.1 == it.0);
-                let spine_pos_two = spine_walker.iter().position(|it| b.1 == it.0);
+            .map(|it| &it.1)
+            .map(|html| {
+                let arena = typed_arena::Arena::new();
+                let sink = Sink {
+                    arena: &arena,
+                    document: arena.alloc(Node::new(NodeData::Document)),
+                    quirks_mode: Cell::new(QuirksMode::NoQuirks),
+                };
 
-                (
-                    a.0,
-                    match (spine_pos_one, spine_pos_two) {
-                        (Some(one), Some(two)) => {
-                            let items = &spine_walker[one..two];
-                            spine_walker = &spine_walker[two..];
-                            items
-                        }
-                        (Some(one), None) => {
-                            let items = &spine_walker[one..];
-                            spine_walker = &[];
-                            items
-                        }
-                        _ => {
-                            if i != navigation.len() - 1 {
-                                println!(
-                                    "{:#?}/{:#?}  -  {:?}/{:?}",
-                                    a.1, b.1, spine_pos_one, spine_pos_two
-                                );
+                let html = html5ever::parse_document(sink, Default::default())
+                    .from_utf8()
+                    .one(html.as_bytes());
 
-                                println!("{:#?} {:#?}", i, navigation.len());
-                                panic!("Invalid spine");
-                            }
+                let mut data = vec![];
+                Self::html_to_segments(&mut data, html, false, false);
 
-                            &[]
-                        }
-                    },
-                )
+                data
             })
-            .collect::<Vec<_>>()
-            .into_iter()
-            .map(|(title, pages)| {
-                let mut text = vec![];
-
-                for (_, html) in pages {
-                    let arena = typed_arena::Arena::new();
-                    let sink = Sink {
-                        arena: &arena,
-                        document: arena.alloc(Node::new(NodeData::Document)),
-                        quirks_mode: Cell::new(QuirksMode::NoQuirks),
-                    };
-
-                    let html = html5ever::parse_document(sink, Default::default())
-                        .from_utf8()
-                        .one(html.as_bytes());
-
-                    Self::html_to_node(&mut text, html, false, false);
-                }
-
-                (title, text)
-            })
-            .collect::<Vec<_>>();
-
-        Ok(String::new())
+            .flatten()
+            .filter(|segment| !segment.text.is_empty())
+            .collect::<Vec<_>>())
     }
 
-    fn html_to_node(text: &mut Vec<EpubNode>, node: &Node, text_mode: bool, inline_text: bool) {
+    fn html_to_segments(
+        text: &mut Vec<EpubSegment>,
+        node: &Node,
+        text_mode: bool,
+        inline_text: bool,
+    ) {
         match &node.data {
             NodeData::Document => {
                 for document_node in node {
@@ -224,7 +208,7 @@ impl EpubArchive {
                         ..
                     } = document_node.data
                     {
-                        Self::html_to_node(text, document_node, false, false);
+                        Self::html_to_segments(text, document_node, false, false);
                     }
                 }
             }
@@ -241,31 +225,44 @@ impl EpubArchive {
                                 let mut title = String::new();
                                 Self::html_to_text(&mut title, element_node, true, false);
 
-                                text.push(EpubNode::Chapter(title));
+                                text.push(EpubSegment {
+                                    text: title,
+                                    kind: SemanticIdentifier::Chapter,
+                                    data: (),
+                                });
                             }
                             local_name!("h2") | local_name!("h3") | local_name!("h4") => {
                                 let mut title = String::new();
                                 Self::html_to_text(&mut title, element_node, true, false);
 
-                                text.push(EpubNode::Header(title));
+                                text.push(EpubSegment {
+                                    text: title,
+                                    kind: SemanticIdentifier::Header,
+                                    data: (),
+                                });
                             }
                             local_name!("p") => {
                                 let mut paragraph = String::new();
                                 Self::html_to_text(&mut paragraph, element_node, true, false);
-                                text.push(EpubNode::Paragraph(paragraph));
+
+                                text.push(EpubSegment {
+                                    text: paragraph,
+                                    kind: SemanticIdentifier::Text,
+                                    data: (),
+                                });
                             }
                             local_name!("span") => {
-                                Self::html_to_node(text, element_node, true, true);
+                                Self::html_to_segments(text, element_node, true, true);
                             }
                             local_name!("ruby") => {
                                 // We only care about the outer part of the ruby node. The inner
                                 // part is the furigana
                                 if let Some(inner) = element_node.first_child.get() {
-                                    Self::html_to_node(text, inner, true, true);
+                                    Self::html_to_segments(text, inner, true, true);
                                 }
                             }
                             local_name!("body") | local_name!("div") | local_name!("a") => {
-                                Self::html_to_node(text, element_node, text_mode, inline_text);
+                                Self::html_to_segments(text, element_node, text_mode, inline_text);
                             }
                             local_name!("head")
                             | local_name!("br")
@@ -276,12 +273,11 @@ impl EpubArchive {
                             | local_name!("ul")
                             | local_name!("img") => {}
                             _ => {
-                                // Self::html_to_node(text, element_node, text_mode, inline_text);
                                 todo!("Element not implemented {:#?}", name);
                             }
                         }
                     } else {
-                        Self::html_to_node(text, element_node, text_mode, inline_text);
+                        Self::html_to_segments(text, element_node, text_mode, inline_text);
                     }
                 }
             }
@@ -303,7 +299,20 @@ impl EpubArchive {
                         // result.push_str("\n\n");
                     }
 
-                    text.push(EpubNode::Paragraph(result));
+                    text.push(EpubSegment {
+                        text: result,
+                        kind: SemanticIdentifier::Text,
+                        data: (),
+                    });
+                } else {
+                    if contents.borrow().trim() == "" {
+                        return;
+                    }
+
+                    println!("{:#?}", contents);
+                    println!("{:#?}", contents.borrow().trim());
+
+                    panic!("Not text mode");
                 }
             }
 
@@ -499,7 +508,7 @@ impl EpubArchive {
                                         .from_utf8()
                                         .one(html.as_bytes());
 
-                                    Self::html_to_node(&mut text, html, false, false);
+                                    Self::h(&mut text, html, false, false);
                                 }
 
                                 (title, text)
@@ -697,7 +706,7 @@ impl EpubArchive {
                                 .from_utf8()
                                 .one(html.as_bytes());
 
-                            Self::html_to_node(&mut text, html, false, false);
+                            Self::h(&mut text, html, false, false);
                         }
 
                         (title, text)
