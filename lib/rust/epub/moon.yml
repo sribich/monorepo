@@ -1,2 +1,6 @@
 # yaml-language-server: $schema=https://moonrepo.dev/schemas/project.json
 language: rust
+
+tasks:
+  check:
+    command: cargo check

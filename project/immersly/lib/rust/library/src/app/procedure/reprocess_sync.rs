@@ -60,9 +60,9 @@ impl Procedure for ReprocessSyncProcedure {
             .unwrap();
 
         let result = EpubArchive::open(book.path.as_str()).unwrap();
-        let rendered_data = result.chapters;
+        // let rendered_data = result.chapters;
 
-        println!("{:#?}", rendered_data);
+        // println!("{:#?}", rendered_data);
 
         /*
         let result = EpubArchive::open(book.path.as_str()).unwrap();

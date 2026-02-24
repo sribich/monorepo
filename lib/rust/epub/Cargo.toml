@@ -19,6 +19,7 @@ railgun = { workspace = true, features = ["error"] }#default-features = false, f
 html5ever = { workspace = true }
 quick-xml = { workspace = true, features = ["serialize", "overlapped-lists"] }
 serde = { workspace = true, features = ["derive"] }
+serde-xml-rs = { workspace = true }
 typed-arena = { workspace = true }
 unicode-normalization = { workspace = true }
 url = { workspace = true }
@@ -27,4 +28,6 @@ itertools = { workspace = true }
 
 [dev-dependencies]
 indoc = { workspace = true }
+insta = { workspace = true }
 rayon = { workspace = true }
+walkdir = { workspace = true }

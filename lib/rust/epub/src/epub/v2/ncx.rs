@@ -1,74 +1,201 @@
-use std::fs::File;
-use std::io::Read;
-use std::io::Seek;
-use std::io::read_to_string;
+use std::str::FromStr;
 
 use quick_xml::de::from_str;
-use railgun::error::ResultExt;
-use serde::Deserialize;
-use zip::ZipArchive;
-use zip::read::ZipFile;
 
 use crate::Error;
-use crate::epub::FromParameterizedZip;
-use crate::error::IoErrorContext;
-use crate::error::Result;
-use crate::error::XmlErrorContext;
-use crate::error::parse_error::MissingRequiredFileContext;
+use crate::archive::EpubArchive;
 
-#[derive(Debug, Deserialize)]
 pub struct Ncx {
-    #[serde(rename = "navMap")]
-    pub navmap: NavMap,
+    spec: spec::Ncx,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct NavMap {
-    #[serde(rename = "navPoint")]
-    pub nav_points: Vec<NavPoint>,
-}
+impl Ncx {
+    pub fn parse(epub: &mut EpubArchive, path: &str) -> Result<Self, Error> {
+        let data = epub.read(path)?;
 
-#[derive(Debug, Deserialize)]
-pub struct NavPoint {
-    #[serde(rename = "navLabel")]
-    pub nav_label: NavLabel,
-    pub content: Content,
-}
+        Ncx::from_str(&data)
+    }
 
-#[derive(Debug, Deserialize)]
-pub struct NavLabel {
-    pub text: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Content {
-    #[serde(rename = "@src")]
-    pub src: String,
-}
-
-impl TryFrom<ZipFile<'_>> for Ncx {
-    type Error = Error;
-
-    fn try_from(value: ZipFile<'_>) -> core::result::Result<Self, Self::Error> {
-        let data = read_to_string(value).context(IoErrorContext {})?;
-        let container: Self = from_str(&data).context(XmlErrorContext {})?;
-
-        Ok(container)
+    pub fn to_entries(self) -> Vec<(String, String)> {
+        self.spec
+            .navmap
+            .nav_points
+            .into_iter()
+            .flat_map(spec::NavPoint::to_entries)
+            .collect::<Vec<_>>()
     }
 }
 
-impl<'a> FromParameterizedZip<'a> for Ncx {
-    type Params = &'a str;
-    type Type = Ncx;
+impl FromStr for Ncx {
+    type Err = Error;
 
-    fn parse(zip: &'a mut ZipArchive<impl Read + Seek>, path: Self::Params) -> Result<Self::Type> {
-        let file = zip
-            .by_name(path)
-            .context(MissingRequiredFileContext { path })?;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Ncx { spec: from_str(s)? })
+    }
+}
 
-        let data = read_to_string(file).context(IoErrorContext {})?;
-        let package: Self = from_str(&data)?;
+#[expect(dead_code, reason = "adhering to spec")]
+mod spec {
+    use serde::Deserialize;
 
-        Ok(package)
+    #[derive(Deserialize)]
+    pub struct Ncx {
+        #[serde(rename = "navMap")]
+        pub navmap: NavMap,
+    }
+
+    #[derive(Deserialize)]
+    pub struct NavMap {
+        #[serde(rename = "navPoint")]
+        pub nav_points: Vec<NavPoint>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct NavPoint {
+        #[serde(rename = "navLabel")]
+        pub nav_label: NavLabel,
+        pub content: Content,
+        #[serde(rename = "navPoint")]
+        pub children: Option<Vec<NavPoint>>,
+    }
+
+    #[derive(Deserialize)]
+    pub struct NavLabel {
+        pub text: String,
+    }
+
+    #[derive(Deserialize)]
+    pub struct Content {
+        #[serde(rename = "@src")]
+        pub src: String,
+    }
+
+    impl NavPoint {
+        pub fn to_entries(self) -> Vec<(String, String)> {
+            let src = self.content.src;
+
+            let items = vec![(self.nav_label.text, src)];
+
+            if let Some(children) = self.children {
+                [
+                    items,
+                    children
+                        .into_iter()
+                        .flat_map(NavPoint::to_entries)
+                        .collect::<Vec<_>>(),
+                ]
+                .concat()
+            } else {
+                items
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::str::FromStr;
+
+    use indoc::indoc;
+    use insta::assert_debug_snapshot;
+
+    use crate::epub::v2::ncx::Ncx;
+
+    #[test]
+    pub fn supports_nested_toc() {
+        let toc = indoc! {r#"
+            <?xml version="1.0"?>
+            <ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+               <head>
+                   <meta name="dtb:uid" content="..."/>
+                   <meta name="dtb:depth" content="3"/>
+                   <meta name="dtb:totalPageCount" content="0"/>
+                   <meta name="dtb:maxPageNumber" content="0"/>
+               </head>
+               <docTitle>
+                   <text>...</text>
+               </docTitle>
+               <navMap>
+                   <navPoint id="navPoint-1" playOrder="1">
+                       <navLabel>
+                           <text>Section with no subsection</text>
+                       </navLabel>
+                       <content src="text/content001.xhtml"/>
+                   </navPoint>
+                   <navPoint id="navPoint-2" playOrder="2">
+                       <navLabel>
+                           <text>TOC entry name Section title</text>
+                       </navLabel>
+                       <content src="text/content001.xhtml#heading_id_3"/>
+                       <navPoint id="navPoint-3" playOrder="3">
+                           <navLabel>
+                               <text>Section entry name.</text>
+                           </navLabel>
+                           <content src="text/content002.xhtml"/>
+                       </navPoint>
+                       <navPoint id="navPoint-4" playOrder="4">
+                           <navLabel>
+                               <text>Introduction.</text>
+                           </navLabel>
+                           <content src="text/content003.xhtml"/>
+                           <navPoint id="navPoint-5" playOrder="5">
+                               <navLabel>
+                                   <text>Preserving the Text.</text>
+                               </navLabel>
+                               <content src="text/content003.xhtml#heading_id_217"/>
+                           </navPoint>
+                           <navPoint id="navPoint-6" playOrder="6">
+                               <navLabel>
+                                   <text>Lower level chapter title</text>
+                               </navLabel>
+                               <content src="text/content003.xhtml#heading_id_218"/>
+                           </navPoint>
+                           <navPoint id="navPoint-7" playOrder="7">
+                               <navLabel>
+                                   <text>Another lower level title.</text>
+                               </navLabel>
+                               <content src="text/content003.xhtml#heading_id_219"/>
+                           </navPoint>
+                       </navPoint>
+                   </navPoint>
+               </navMap>
+            </ncx>
+        "#};
+
+        let data = Ncx::from_str(toc).unwrap();
+        let data = data.to_entries();
+
+        assert_debug_snapshot!(data, @r#"
+        [
+            (
+                "Section with no subsection",
+                "text/content001.xhtml",
+            ),
+            (
+                "TOC entry name Section title",
+                "text/content001.xhtml#heading_id_3",
+            ),
+            (
+                "Section entry name.",
+                "text/content002.xhtml",
+            ),
+            (
+                "Introduction.",
+                "text/content003.xhtml",
+            ),
+            (
+                "Preserving the Text.",
+                "text/content003.xhtml#heading_id_217",
+            ),
+            (
+                "Lower level chapter title",
+                "text/content003.xhtml#heading_id_218",
+            ),
+            (
+                "Another lower level title.",
+                "text/content003.xhtml#heading_id_219",
+            ),
+        ]
+        "#);
     }
 }

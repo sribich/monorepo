@@ -2,8 +2,6 @@ use railgun::error::Error;
 use railgun::error::Location;
 use zip::result::ZipError;
 
-pub type Result<T> = core::result::Result<T, Error>;
-
 #[derive(Error)]
 #[error(module)]
 pub enum ParseError {
@@ -78,9 +76,7 @@ pub enum UnsupportedReason {
 impl From<ZipError> for Error {
     #[track_caller]
     fn from(value: ZipError) -> Self {
-        println!("{:#?}", value);
         let caller = core::panic::Location::caller();
-        println!("{:#?}", caller);
 
         match value {
             ZipError::Io(_) => todo!(),

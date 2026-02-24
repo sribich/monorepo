@@ -5,11 +5,8 @@ use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::BufReader;
-use std::io::Read;
-use std::io::Seek;
 use std::io::read_to_string;
 use std::path::Path;
-use std::path::PathBuf;
 use std::ptr;
 
 use html5ever::Attribute;
@@ -24,16 +21,21 @@ use html5ever::tendril::TendrilSink;
 use itertools::Itertools;
 use railgun::error::ResultExt;
 use unicode_normalization::UnicodeNormalization;
+use url::ParseError;
+use url::Url;
 use zip::ZipArchive;
 
+use crate::Error;
 use crate::epub::Container;
-use crate::epub::FromParameterizedZip;
-use crate::epub::FromZip;
 use crate::epub::Package;
-use crate::epub::v2::ncx::Ncx;
+use crate::epub::PackageSpecifier;
+use crate::epub::PackageVersion;
+use crate::epub::v2;
+use crate::epub::v3;
 use crate::error::IoErrorContext;
 use crate::error::OtherContext;
-use crate::error::Result;
+
+pub type EpubFile = BufReader<File>;
 
 #[derive(Debug)]
 pub enum EpubNode {
@@ -42,21 +44,19 @@ pub enum EpubNode {
     Paragraph(String),
 }
 
-#[derive(Debug)]
 pub struct EpubArchive {
-    // path: PathBuf,
-    // zip: RefCell<ZipArchive<File>>,
-    // container: Container,
+    zip: ZipArchive<BufReader<File>>,
+    container: Container,
+    package: Package,
+    /*
     pub package: Package,
     pub rendered: String,
     pub chapters: Vec<(String, Vec<EpubNode>)>,
+     */
 }
 
 impl EpubArchive {
-    pub fn opennew<P>(path: P) -> Result<()>
-    where
-        P: AsRef<Path>,
-    {
+    pub fn open<P: AsRef<Path>>(path: P) -> Result<Self, Error> {
         let path = path.as_ref();
 
         let file = File::open(path).context(IoErrorContext {})?;
@@ -65,15 +65,345 @@ impl EpubArchive {
             .boxed_local()
             .context(OtherContext {})?;
 
-        let container = Self::parse::<Container>(&mut zip)
-            .boxed_local()
-            .context(OtherContext {})?;
+        let container = Container::parse(&mut zip)?;
 
-        println!("{:#?}", container.package(&mut zip));
+        // Fetch package
+        let package_path = container.package_path();
 
-        Ok(())
+        let PackageSpecifier { version } = PackageSpecifier::parse(&mut zip, package_path)?;
+
+        let package = match version {
+            PackageVersion::V2 => Package::V2(v2::Package::parse(&mut zip, package_path)?),
+            PackageVersion::V3 => Package::V3(v3::Package::parse(&mut zip, package_path)?),
+        };
+
+        let mut me = Self {
+            zip,
+            container,
+            package,
+        };
+
+        let manifest = me.manifest()?;
+        let navigation = me.navigation()?;
+
+        Ok(me)
     }
 
+    pub fn read<P: AsRef<Path>>(&mut self, path: P) -> Result<String, Error> {
+        let file = self.zip.by_path(self.container.basedir().join(path))?;
+
+        Ok(read_to_string(file)?)
+    }
+
+    pub fn manifest(&mut self) -> Result<HashMap<String, (String, String)>, Error> {
+        let mut manifest = match &self.package.clone() {
+            Package::V2(package) => package.manifest(self),
+            Package::V3(package) => package.manifest(self),
+        }?;
+
+        for v in manifest.values_mut() {
+            if v.0.contains('#') {
+                v.0 = v.0.split('#').next().unwrap().to_owned();
+            }
+        }
+
+        Ok(manifest)
+    }
+
+    pub fn navigation(&mut self) -> Result<Vec<(String, String)>, Error> {
+        // TODO:
+        // 目次
+        // Normalize ToC. Remove # from links. Collapse duplicate links up
+        // Remove Table of contents
+        let mut navigation = match &self.package.clone() {
+            Package::V2(package) => package.navigation(self),
+            Package::V3(package) => package.navigation(self),
+        }?;
+
+        for (_, path) in &mut navigation {
+            if path.contains('#') {
+                *path = path.split('#').next().unwrap().to_owned();
+            }
+        }
+
+        Ok(navigation)
+    }
+
+    pub fn text(&mut self) -> Result<String, Error> {
+        let manifest = self.manifest()?;
+        let navigation = self.navigation()?;
+
+        let spine = match &self.package.clone() {
+            Package::V2(package) => package
+                .spine()
+                .map(|it| manifest.get(it).unwrap())
+                .collect::<Vec<_>>(),
+            Package::V3(package) => package
+                .spine()
+                .map(|it| manifest.get(it).unwrap())
+                .collect::<Vec<_>>(),
+        };
+
+        let mut spine_walker = &*spine;
+
+        let chapters = navigation
+            .clone()
+            .into_iter()
+            .circular_tuple_windows()
+            .enumerate()
+            .map(|(i, (a, b))| {
+                let spine_pos_one = spine_walker.iter().position(|it| a.1 == it.0);
+                let spine_pos_two = spine_walker.iter().position(|it| b.1 == it.0);
+
+                (
+                    a.0,
+                    match (spine_pos_one, spine_pos_two) {
+                        (Some(one), Some(two)) => {
+                            let items = &spine_walker[one..two];
+                            spine_walker = &spine_walker[two..];
+                            items
+                        }
+                        (Some(one), None) => {
+                            let items = &spine_walker[one..];
+                            spine_walker = &[];
+                            items
+                        }
+                        _ => {
+                            if i != navigation.len() - 1 {
+                                println!(
+                                    "{:#?}/{:#?}  -  {:?}/{:?}",
+                                    a.1, b.1, spine_pos_one, spine_pos_two
+                                );
+
+                                println!("{:#?} {:#?}", i, navigation.len());
+                                panic!("Invalid spine");
+                            }
+
+                            &[]
+                        }
+                    },
+                )
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+            .map(|(title, pages)| {
+                let mut text = vec![];
+
+                for (_, html) in pages {
+                    let arena = typed_arena::Arena::new();
+                    let sink = Sink {
+                        arena: &arena,
+                        document: arena.alloc(Node::new(NodeData::Document)),
+                        quirks_mode: Cell::new(QuirksMode::NoQuirks),
+                    };
+
+                    let html = html5ever::parse_document(sink, Default::default())
+                        .from_utf8()
+                        .one(html.as_bytes());
+
+                    Self::html_to_node(&mut text, html, false, false);
+                }
+
+                (title, text)
+            })
+            .collect::<Vec<_>>();
+
+        Ok(String::new())
+    }
+
+    fn html_to_node(text: &mut Vec<EpubNode>, node: &Node, text_mode: bool, inline_text: bool) {
+        match &node.data {
+            NodeData::Document => {
+                for document_node in node {
+                    if let NodeData::Element {
+                        name:
+                            QualName {
+                                local: local_name!("html"),
+                                ..
+                            },
+                        ..
+                    } = document_node.data
+                    {
+                        Self::html_to_node(text, document_node, false, false);
+                    }
+                }
+            }
+            NodeData::Element {
+                name,
+                attrs,
+                template_contents,
+                mathml_annotation_xml_integration_point,
+            } => {
+                for element_node in node {
+                    if let NodeData::Element { name, .. } = &element_node.data {
+                        match name.local {
+                            local_name!("h1") => {
+                                let mut title = String::new();
+                                Self::html_to_text(&mut title, element_node, true, false);
+
+                                text.push(EpubNode::Chapter(title));
+                            }
+                            local_name!("h2") | local_name!("h3") | local_name!("h4") => {
+                                let mut title = String::new();
+                                Self::html_to_text(&mut title, element_node, true, false);
+
+                                text.push(EpubNode::Header(title));
+                            }
+                            local_name!("p") => {
+                                let mut paragraph = String::new();
+                                Self::html_to_text(&mut paragraph, element_node, true, false);
+                                text.push(EpubNode::Paragraph(paragraph));
+                            }
+                            local_name!("span") => {
+                                Self::html_to_node(text, element_node, true, true);
+                            }
+                            local_name!("ruby") => {
+                                // We only care about the outer part of the ruby node. The inner
+                                // part is the furigana
+                                if let Some(inner) = element_node.first_child.get() {
+                                    Self::html_to_node(text, inner, true, true);
+                                }
+                            }
+                            local_name!("body") | local_name!("div") | local_name!("a") => {
+                                Self::html_to_node(text, element_node, text_mode, inline_text);
+                            }
+                            local_name!("head")
+                            | local_name!("br")
+                            | local_name!("svg")
+                            | local_name!("hr")
+                            | local_name!("nav")
+                            | local_name!("table")
+                            | local_name!("ul")
+                            | local_name!("img") => {}
+                            _ => {
+                                // Self::html_to_node(text, element_node, text_mode, inline_text);
+                                todo!("Element not implemented {:#?}", name);
+                            }
+                        }
+                    } else {
+                        Self::html_to_node(text, element_node, text_mode, inline_text);
+                    }
+                }
+            }
+            NodeData::Text { contents } => {
+                if text_mode {
+                    let mut result = String::new();
+
+                    result.push_str(&contents.borrow().to_string());
+
+                    if let Some(NodeData::Element { name, .. }) =
+                        node.next_sibling.get().map(|it| &it.data)
+                    {
+                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
+                            return;
+                        }
+                    }
+
+                    if !inline_text {
+                        // result.push_str("\n\n");
+                    }
+
+                    text.push(EpubNode::Paragraph(result));
+                }
+            }
+
+            NodeData::Doctype {
+                name,
+                public_id,
+                system_id,
+            } => todo!("a"),
+            NodeData::Comment { contents } => {}
+            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
+        }
+    }
+
+    fn html_to_text(text: &mut String, node: &Node, text_mode: bool, inline_text: bool) {
+        match &node.data {
+            NodeData::Document => {
+                for document_node in node {
+                    if let NodeData::Element {
+                        name:
+                            QualName {
+                                local: local_name!("html"),
+                                ..
+                            },
+                        ..
+                    } = document_node.data
+                    {
+                        Self::html_to_text(text, document_node, false, false);
+                    }
+                }
+            }
+            NodeData::Text { contents } => {
+                if text_mode {
+                    let normalized = &contents.borrow().to_string().nfkc().collect::<String>();
+
+                    text.push_str(normalized);
+
+                    if let Some(NodeData::Element { name, .. }) =
+                        node.next_sibling.get().map(|it| &it.data)
+                    {
+                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
+                            return;
+                        }
+                    }
+
+                    if !inline_text {
+                        // text.push_str("\n\n");
+                    }
+                }
+            }
+            NodeData::Element {
+                name,
+                attrs,
+                template_contents,
+                mathml_annotation_xml_integration_point,
+            } => {
+                for element_node in node {
+                    if let NodeData::Element { name, .. } = &element_node.data {
+                        match name.local {
+                            local_name!("h1") => {
+                                Self::html_to_text(text, element_node, true, false);
+                            }
+                            local_name!("p") => {
+                                Self::html_to_text(text, element_node, true, false);
+                            }
+                            local_name!("span") => {
+                                Self::html_to_text(text, element_node, true, true);
+                            }
+                            local_name!("ruby") => {
+                                // We only care about the outer part of the ruby node. The inner
+                                // part is the furigana
+                                if let Some(inner) = element_node.first_child.get() {
+                                    Self::html_to_text(text, inner, true, true);
+                                }
+                            }
+                            _ => {
+                                Self::html_to_text(text, element_node, text_mode, inline_text);
+                                // todo!("{:#?}", name);
+                            }
+                        }
+                    } else {
+                        Self::html_to_text(text, element_node, text_mode, inline_text);
+                    }
+                }
+            }
+            NodeData::Doctype {
+                name,
+                public_id,
+                system_id,
+            } => todo!("a"),
+            NodeData::Comment { contents } => {
+                // noop
+            }
+            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
+        }
+    }
+}
+
+/*
+
+impl EpubArchive {
     pub fn open<P>(path: P) -> Result<EpubArchive>
     where
         P: AsRef<Path>,
@@ -86,27 +416,188 @@ impl EpubArchive {
             .boxed_local()
             .context(OtherContext {})?;
 
-        let container = Self::parse::<Container>(&mut zip)?;
+        // let container = Self::parse::<Container>(&mut zip)?;
+        // let package = container.package(&mut zip)?;
+        // let manifest = package.manifest(&container, &mut zip)?;
+        // let navigation = package.navigation(&mut zip)?;
 
-        let x = container.package(&mut zip)?;
+        /*
+        let spine = package
+                    .spine
+                    .itemrefs
+                    .iter()
+                    .map(|item| manifest_html_files.get(&item.idref).unwrap())
+                    .collect::<Vec<_>>();
+
+                let mut spine_walker = &*spine;
+
+                let ncx = Self::parse_with::<Ncx>(&mut zip, "toc.ncx");
+
+                let chapters = ncx
+                    .map(|mut ncx| {
+                        let ncx_toc =
+                            ncx.navmap.nav_points.iter().enumerate().find(|(i, it)| {
+                                it.nav_label.text == "目次" || it.content.src.contains("toc")
+                            });
+                        if let Some((i, toc)) = ncx_toc {
+                            ncx.navmap.nav_points = ncx
+                                .navmap
+                                .nav_points
+                                .into_iter()
+                                .skip(i + 1)
+                                .collect::<Vec<_>>();
+                        }
+
+                        ncx.navmap
+                            .nav_points
+                            .into_iter()
+                            .map(|nav_point| {
+                                let src = nav_point.content.src.split('#').nth(0).unwrap();
+
+                                (nav_point.nav_label.text, src.to_owned())
+                            })
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .circular_tuple_windows()
+                            .map(|(a, b)| {
+                                let spine_pos_one = spine_walker.iter().position(|it| a.1 == it.0);
+                                let spine_pos_two = spine_walker.iter().position(|it| b.1 == it.0);
+
+                                (
+                                    a.0,
+                                    match (spine_pos_one, spine_pos_two) {
+                                        (Some(one), Some(two)) => {
+                                            let items = &spine_walker[one..two];
+                                            spine_walker = &spine_walker[two..];
+                                            items
+                                        }
+                                        (Some(one), None) => {
+                                            let items = &spine_walker[one..];
+                                            spine_walker = &[];
+                                            items
+                                        }
+                                        _ => {
+                                            panic!("Invalid spine");
+                                        }
+                                    },
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .into_iter()
+                            .map(|(title, pages)| {
+                                let mut text = vec![];
+
+                                for (_, html) in pages {
+                                    let arena = typed_arena::Arena::new();
+                                    let sink = Sink {
+                                        arena: &arena,
+                                        document: arena.alloc(Node::new(NodeData::Document)),
+                                        quirks_mode: Cell::new(QuirksMode::NoQuirks),
+                                    };
+
+                                    let html = html5ever::parse_document(sink, Default::default())
+                                        .from_utf8()
+                                        .one(html.as_bytes());
+
+                                    Self::html_to_node(&mut text, html, false, false);
+                                }
+
+                                (title, text)
+                            })
+                            .collect::<Vec<_>>()
+                    })
+                    .ok();
+
+                let start_ch = package
+                    .guide
+                    .as_ref()
+                    .unwrap()
+                    .references
+                    .iter()
+                    .find(|reference| reference.r#type == "text")
+                    .map(|reference| {
+                        println!("5");
+                        let url = &reference.href;
+                        url.split('#').nth(0).unwrap().to_owned()
+                    })
+                    .unwrap_or_else(|| {
+                        let result = spine.iter().enumerate().find(|it| it.1.0.contains("toc"));
+
+                        result
+                            .map(|(a, _)| spine.get(a + 1).unwrap())
+                            .map(|(a, b)| a.clone())
+                            .unwrap_or_else(|| {
+                                let url = &package
+                                    .guide
+                                    .as_ref()
+                                    .unwrap()
+                                    .references
+                                    .first()
+                                    .unwrap()
+                                    .href;
+                                url.split('#').nth(0).unwrap().to_owned()
+                            })
+                    });
+
+                let start = spine
+                    .iter()
+                    .position(|item| {
+                        println!("{:#?}", item.0);
+
+                        item.0 == start_ch
+                    })
+                    .unwrap();
+                let spine = &spine[start..];
+                let ordered = spine.iter().map(|item| item.1.clone()).collect::<Vec<_>>();
+
+                let rendered = ordered
+                    .iter()
+                    .map(|html| {
+                        let arena = typed_arena::Arena::new();
+                        let sink = Sink {
+                            arena: &arena,
+                            document: arena.alloc(Node::new(NodeData::Document)),
+                            quirks_mode: Cell::new(QuirksMode::NoQuirks),
+                        };
+
+                        let html = html5ever::parse_document(sink, Default::default())
+                            .from_utf8()
+                            .one(html.as_bytes());
+
+                        let mut text = String::new();
+                        Self::html_to_text(&mut text, html, false, false);
+
+                        text
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n\n");
+
+                let epub = Self {
+                    package,
+                    rendered,
+                    chapters: chapters.unwrap_or(vec![]),
+                };
+
+                /*
+                let mut epub = Self {
+                    path,
+                    zip: RefCell::new(zip),
+                    package,
+                    container,
+                };
+
+                epub.check_support()?;
+
+                Ok(epub)
+                 */
+
+                Ok(epub)
+        */
+
+        //---- Old -------------------------------------------------------------
 
         let package =
             Self::parse_with::<Package>(&mut zip, &container.rootfiles.rootfile[0].full_path)?;
-
-        // println!("{:#?}", package);
-
-        /*
-        let nav = package
-            .manifest
-            .items
-            .iter()
-            .find(|it| it.properties == Some("nav".to_owned()));
-
-        if nav.is_none() {
-            println!("{:#?}", package);
-            panic!("No nav for epub {:?}", path);
-        }
-        */
 
         let manifest_html_files: HashMap<String, (String, String)> = package
             .manifest
@@ -301,211 +792,7 @@ impl EpubArchive {
         Ok(epub)
     }
 
-    fn html_to_node(text: &mut Vec<EpubNode>, node: &Node, text_mode: bool, inline_text: bool) {
-        match &node.data {
-            NodeData::Document => {
-                for document_node in node {
-                    if let NodeData::Element {
-                        name:
-                            QualName {
-                                local: local_name!("html"),
-                                ..
-                            },
-                        ..
-                    } = document_node.data
-                    {
-                        Self::html_to_node(text, document_node, false, false);
-                    }
-                }
-            }
-            NodeData::Element {
-                name,
-                attrs,
-                template_contents,
-                mathml_annotation_xml_integration_point,
-            } => {
-                for element_node in node {
-                    if let NodeData::Element { name, .. } = &element_node.data {
-                        match name.local {
-                            local_name!("h1") => {
-                                let mut title = String::new();
-                                Self::html_to_text(&mut title, element_node, true, false);
 
-                                text.push(EpubNode::Chapter(title));
-                            }
-                            local_name!("h2") | local_name!("h3") => {
-                                let mut title = String::new();
-                                Self::html_to_text(&mut title, element_node, true, false);
-
-                                text.push(EpubNode::Header(title));
-                            }
-                            local_name!("p") => {
-                                let mut paragraph = String::new();
-                                Self::html_to_text(&mut paragraph, element_node, true, false);
-                                text.push(EpubNode::Paragraph(paragraph));
-                            }
-                            local_name!("span") => {
-                                Self::html_to_node(text, element_node, true, true);
-                            }
-                            local_name!("ruby") => {
-                                // We only care about the outer part of the ruby node. The inner
-                                // part is the furigana
-                                if let Some(inner) = element_node.first_child.get() {
-                                    Self::html_to_node(text, inner, true, true);
-                                }
-                            }
-                            local_name!("body") | local_name!("div") | local_name!("a") => {
-                                Self::html_to_node(text, element_node, text_mode, inline_text);
-                            }
-                            local_name!("head")
-                            | local_name!("br")
-                            | local_name!("svg")
-                            | local_name!("hr")
-                            | local_name!("table")
-                            | local_name!("img") => {}
-                            _ => {
-                                // Self::html_to_node(text, element_node, text_mode, inline_text);
-                                todo!("Element not implemented {:#?}", name);
-                            }
-                        }
-                    } else {
-                        Self::html_to_node(text, element_node, text_mode, inline_text);
-                    }
-                }
-            }
-            NodeData::Text { contents } => {
-                if text_mode {
-                    let mut result = String::new();
-
-                    result.push_str(&contents.borrow().to_string());
-
-                    if let Some(NodeData::Element { name, .. }) =
-                        node.next_sibling.get().map(|it| &it.data)
-                    {
-                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
-                            return;
-                        }
-                    }
-
-                    if !inline_text {
-                        // result.push_str("\n\n");
-                    }
-
-                    text.push(EpubNode::Paragraph(result));
-                }
-            }
-
-            NodeData::Doctype {
-                name,
-                public_id,
-                system_id,
-            } => todo!("a"),
-            NodeData::Comment { contents } => todo!("b"),
-            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
-        }
-    }
-
-    fn html_to_text(text: &mut String, node: &Node, text_mode: bool, inline_text: bool) {
-        match &node.data {
-            NodeData::Document => {
-                for document_node in node {
-                    if let NodeData::Element {
-                        name:
-                            QualName {
-                                local: local_name!("html"),
-                                ..
-                            },
-                        ..
-                    } = document_node.data
-                    {
-                        Self::html_to_text(text, document_node, false, false);
-                    }
-                }
-            }
-            NodeData::Text { contents } => {
-                if text_mode {
-                    let normalized = &contents.borrow().to_string().nfkc().collect::<String>();
-
-                    text.push_str(normalized);
-
-                    if let Some(NodeData::Element { name, .. }) =
-                        node.next_sibling.get().map(|it| &it.data)
-                    {
-                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
-                            return;
-                        }
-                    }
-
-                    if !inline_text {
-                        // text.push_str("\n\n");
-                    }
-                }
-            }
-            NodeData::Element {
-                name,
-                attrs,
-                template_contents,
-                mathml_annotation_xml_integration_point,
-            } => {
-                for element_node in node {
-                    if let NodeData::Element { name, .. } = &element_node.data {
-                        match name.local {
-                            local_name!("h1") => {
-                                Self::html_to_text(text, element_node, true, false);
-                            }
-                            local_name!("p") => {
-                                Self::html_to_text(text, element_node, true, false);
-                            }
-                            local_name!("span") => {
-                                Self::html_to_text(text, element_node, true, true);
-                            }
-                            local_name!("ruby") => {
-                                // We only care about the outer part of the ruby node. The inner
-                                // part is the furigana
-                                if let Some(inner) = element_node.first_child.get() {
-                                    Self::html_to_text(text, inner, true, true);
-                                }
-                            }
-                            _ => {
-                                Self::html_to_text(text, element_node, text_mode, inline_text);
-                                // todo!("{:#?}", name);
-                            }
-                        }
-                    } else {
-                        Self::html_to_text(text, element_node, text_mode, inline_text);
-                    }
-                }
-            }
-            NodeData::Doctype {
-                name,
-                public_id,
-                system_id,
-            } => todo!("a"),
-            NodeData::Comment { contents } => {
-                // noop
-            }
-            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
-        }
-    }
-
-    pub(crate) fn parse<'a, TContainer>(
-        zip: &'a mut ZipArchive<impl Read + Seek>,
-    ) -> Result<TContainer::Type>
-    where
-        TContainer: FromZip<'a>,
-    {
-        TContainer::parse(TContainer::read(zip)?)
-    }
-
-    pub(crate) fn parse_with<'a, TContainer>(
-        zip: &'a mut ZipArchive<impl Read + Seek>,
-        data: TContainer::Params,
-    ) -> Result<TContainer::Type>
-    where
-        TContainer: FromParameterizedZip<'a>,
-    {
-        TContainer::parse(zip, data)
-    }
 
     /*
     fn get_rootfile(&self) -> Result<RootFile, EpubError> {
@@ -540,9 +827,9 @@ impl EpubArchive {
     }
     */
 }
+*/
 
 /*
-#[derive(Debug)]
 pub struct Content<'archive> {
     archive: &'archive EpubArchive,
     head: String,
@@ -620,23 +907,19 @@ impl<'archive> Content<'archive> {
             .href
             .clone();
 
-        let mut zip = self.archive.zip.borrow_mut();
-        let mut content = zip.by_name(&href).expect("Error");
-
-        let mut data = String::new();
-        content.read_to_string(&mut data).unwrap();
+        let mut content = (&mut self.archive).read(&href).expect("Error");
 
         let arena = typed_arena::Arena::new();
 
         let sink = Sink {
             arena: &arena,
             document: arena.alloc(Node::new(NodeData::Document)),
-            quirks_mode: QuirksMode::NoQuirks,
+            quirks_mode: QuirksMode::NoQuirks.into(),
         };
 
         let html = html5ever::parse_document(sink, Default::default())
             .from_utf8()
-            .one(data.as_bytes());
+            .one(content.as_bytes());
 
         let mut text = "".to_owned();
         let result = html_to_text(&mut text, html, false);
@@ -646,6 +929,7 @@ impl<'archive> Content<'archive> {
         Some(text)
     }
 }
+*/
 
 fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
     match &node.data {
@@ -663,7 +947,7 @@ fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
                     html_to_text(text, document_node, false);
                 }
             }
-        },
+        }
         NodeData::Doctype {
             name,
             public_id,
@@ -673,7 +957,7 @@ fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
             if text_mode {
                 text.push_str(&contents.borrow().to_string())
             }
-        },
+        }
         NodeData::Comment { contents } => todo!(),
         NodeData::Element {
             name,
@@ -687,25 +971,25 @@ fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
                         local_name!("p") => {
                             html_to_text(text, element_node, true);
                             // text.push_str("p");
-                        },
+                        }
                         local_name!("ruby") => {
                             // We only care about the outer part of the ruby node. The inner is the
                             // furigana.
                             if let Some(inner) = element_node.first_child.get() {
                                 html_to_text(text, inner, true);
                             }
-                        },
+                        }
                         _ => html_to_text(text, element_node, false),
                     }
                 } else {
                     html_to_text(text, element_node, text_mode);
                 }
             }
-        },
+        }
         NodeData::ProcessingInstruction { target, contents } => todo!(),
     };
 }
-*/
+
 type Arena<'arena> = &'arena typed_arena::Arena<Node<'arena>>;
 type Ref<'arena> = &'arena Node<'arena>;
 type Link<'arena> = Cell<Option<Ref<'arena>>>;

@@ -1,10 +1,4 @@
-use std::collections::HashMap;
-use std::fs::read_to_string;
-use std::sync::Arc;
-
 use epub::archive::EpubArchive;
-use language_pack_jp::transcription::JapaneseTranscriptionContext;
-use prisma_client::model;
 use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;
 use shared::infra::Procedure;
@@ -31,17 +25,16 @@ impl Procedure for AddBookProcedure {
     type Res = ();
 
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
-        println!("{:#?}", data);
-
         let mut audio_timing_path = data.audio_path.as_path().to_owned();
         audio_timing_path.set_extension("json");
 
-        if !audio_timing_path.exists() {
-            panic!("timing not generated");
-        }
+        assert!(audio_timing_path.exists(), "timing not generated");
 
         // Extract raw epub data
         let epub = EpubArchive::open(data.book_path.as_str()).unwrap();
+
+        /*
+
         let text = epub.rendered;
 
         // Load timing data
@@ -50,6 +43,7 @@ impl Procedure for AddBookProcedure {
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
         let fit_text = transcriber.fit_new(epub.chapters, timing_data);
+         */
 
 
         // * book_path
