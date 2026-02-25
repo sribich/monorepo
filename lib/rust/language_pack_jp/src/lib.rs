@@ -5,6 +5,7 @@ use itertools::Itertools;
 pub mod scanner;
 pub mod segment;
 pub mod splitting;
+pub mod text;
 pub mod transcription;
 pub mod transform;
 
