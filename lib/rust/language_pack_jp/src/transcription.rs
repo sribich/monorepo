@@ -151,8 +151,11 @@ struct TimestampedMorpheme {
 }
 
 impl JapaneseTranscriptionContext {
-    pub fn test(&self, segments: Vec<EpubSegment>) {
+    pub fn test(&self, segments: Vec<EpubSegment>, timing_data: &str) {
+        let transcription: Transcription = serde_json::from_str(&timing_data).unwrap();
 
+        println!("{:#?}", transcription);
+        panic!();
         //
 
 
@@ -167,6 +170,9 @@ impl JapaneseTranscriptionContext {
         audio: String,
     ) -> Vec<TimestampedSegments> {
         let transcription: Transcription = serde_json::from_str(&audio).unwrap();
+
+        println!("{:#?}", transcription);
+        panic!();
 
         let words = self.fit_transcription(transcription);
 

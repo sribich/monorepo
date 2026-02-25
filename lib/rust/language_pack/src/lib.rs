@@ -7,14 +7,14 @@ use serde::Deserialize;
 ///
 /// See `transcription.py` in this repository for more
 /// information.
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(transparent)]
 pub struct Transcription {
     pub segments: Vec<Segment>,
 }
 
 /// An individual text segment that was transcribed.
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Segment {
     /// The line of text as it was transcribed.
     pub text: String,
@@ -27,7 +27,7 @@ pub struct Segment {
 }
 
 /// A word that was picked out of the forced alignment model.
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Word {
     /// The word as it was parsed in forced alignment.
     pub word: String,

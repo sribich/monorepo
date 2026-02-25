@@ -44,6 +44,15 @@ pub const fn is_dakuten(c: char) -> bool {
     ANY_DAKUTEN_RANGE.contains(&i) || i == DAKUTEN_HALF_USIZE || i == HANDAKUTEN_HALF_USIZE
 }
 
+pub fn is_cjk_compatibility_character(c: char) -> bool {
+    const CJK_COMPATIBILITY_RANGE: Range<usize> = Range {
+        start: 0x3300,
+        end: 0x33FF + 1,
+    };
+
+    CJK_COMPATIBILITY_RANGE.contains(&(c as usize))
+}
+
 lazy_static! {
     pub static ref HANDAKUTEN_MAP: HashMap<char, char> = [
         ('\u{30CF}', '\u{30D1}'),   //  ハ	30CF	パ	30D1

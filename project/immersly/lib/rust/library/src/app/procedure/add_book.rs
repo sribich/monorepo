@@ -44,7 +44,7 @@ impl Procedure for AddBookProcedure {
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
-        transcriber.test(text);
+        transcriber.test(text, &timing_data);
 
         // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 
