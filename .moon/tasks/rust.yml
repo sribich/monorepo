@@ -13,12 +13,18 @@ tasks:
       - "@globs(rust_tests)"
 
   test:
+    command: noop
+    deps:
+      - test_unit
+      - test_docs
+
+  test_unit:
     command: cargo nextest run
     inputs:
       - "@globs(rust_sources)"
       - "@globs(rust_tests)"
 
-  doctest:
+  test_docs:
     command: cargo test --doc
     inputs:
       - "@globs(rust_sources)"

@@ -1,3 +1,6 @@
+#![feature(new_range_api)]
+use std::range::Range;
+
 use serde::Deserialize;
 
 /// The output from our WhisperX transcription process.
@@ -32,4 +35,51 @@ pub struct Word {
     pub start: Option<f64>,
     /// The end time in <sec>.<msec> format.
     pub end: Option<f64>,
+}
+
+/// A `Transform` represents a transformation that has been applied to some text.
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub struct Transform {
+    /// The transformed text.
+    pub text: String,
+    /// Mapping to the original text.
+    ///
+    /// This is done using byte-position and not character position.
+    pub mappings: Vec<(Range<usize>, Range<usize>)>,
+    /// The previous transform that was done.
+    pub previous: Option<Box<Transform>>,
+}
+
+impl From<String> for Transform {
+    fn from(value: String) -> Self {
+        Transform {
+            text: value.clone(),
+            mappings: vec![((0..value.len()).into(), (0..value.len()).into())],
+            previous: None,
+        }
+    }
+}
+
+impl From<&str> for Transform {
+    fn from(value: &str) -> Self {
+        value.to_string().into()
+    }
+}
+
+pub trait TextProcessor {
+    /// Checks whether the processor can be run over a given text.
+    fn matches(&self, text: &str) -> bool;
+
+    fn process(&self, transform: Transform) -> Transform;
+}
+
+pub struct TextProcessors<'a> {
+    pub pre: &'a [&'a dyn TextProcessor],
+    pub post: &'a [&'a dyn TextProcessor],
+}
+
+pub trait LanguageTransformer {
+    fn text_processors(&self) -> TextProcessors;
+
+    fn transform(&self, text: String) -> Transform;
 }

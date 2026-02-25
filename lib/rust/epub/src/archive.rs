@@ -10,6 +10,7 @@ use std::path::Path;
 use std::ptr;
 
 use html5ever::Attribute;
+use html5ever::ParseOpts;
 use html5ever::QualName;
 use html5ever::interface::ElementFlags;
 use html5ever::interface::NodeOrText;
@@ -168,7 +169,7 @@ impl EpubArchive {
         Ok(spine
             .into_iter()
             .map(|it| &it.1)
-            .map(|html| {
+            .flat_map(|html| {
                 let arena = typed_arena::Arena::new();
                 let sink = Sink {
                     arena: &arena,
@@ -176,7 +177,7 @@ impl EpubArchive {
                     quirks_mode: Cell::new(QuirksMode::NoQuirks),
                 };
 
-                let html = html5ever::parse_document(sink, Default::default())
+                let html = html5ever::parse_document(sink, ParseOpts::default())
                     .from_utf8()
                     .one(html.as_bytes());
 
@@ -185,7 +186,6 @@ impl EpubArchive {
 
                 data
             })
-            .flatten()
             .filter(|segment| !segment.text.is_empty())
             .collect::<Vec<_>>())
     }

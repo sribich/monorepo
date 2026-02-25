@@ -5389,6 +5389,7 @@ dependencies = [
  "expect-test",
  "itertools 0.14.0",
  "language_pack",
+ "lazy_static",
  "mecab",
  "memchr",
  "serde",

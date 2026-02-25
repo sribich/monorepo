@@ -59,6 +59,7 @@ use std::path::Path;
 
 use epub::archive::EpubArchive;
 use epub::archive::EpubNode;
+use epub::archive::EpubSegment;
 use itertools::Itertools;
 use mecab::Tagger;
 use serde::Deserialize;
@@ -150,6 +151,16 @@ struct TimestampedMorpheme {
 }
 
 impl JapaneseTranscriptionContext {
+    pub fn test(&self, segments: Vec<EpubSegment>) {
+
+        //
+
+
+    }
+
+
+
+
     pub fn fit_new(
         &self,
         chapters: Vec<(String, Vec<EpubNode>)>,

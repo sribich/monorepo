@@ -35,7 +35,7 @@ impl Procedure for AddBookProcedure {
 
         // Extract raw epub data
         let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
-        let text = epub.segments();
+        let text = epub.segments().unwrap();
 
         println!("{:#?}", text);
 
@@ -44,6 +44,8 @@ impl Procedure for AddBookProcedure {
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
+        transcriber.test(text);
+
         // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 
         // * book_path
