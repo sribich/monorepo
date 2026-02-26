@@ -76,7 +76,9 @@ use crate::splitting;
 use crate::text::get_single_char;
 use crate::text::is_punctuation;
 
+#[derive(Debug)]
 enum MatchKind {
+    Begin {},
     Exact {
         transcription_pos: usize,
         text_pos: usize,
@@ -87,11 +89,8 @@ enum MatchKind {
         text_pos: usize,
         length: usize,
     },
+    End {},
 }
-
-
-
-
 
 pub struct JapaneseTranscriptionContext {}
 
@@ -131,8 +130,6 @@ pub struct Word {
     /// 彷徨う.
     pub orth_base: String,
 }
-
-
 
 #[derive(Debug)]
 struct TimestampedNode {
@@ -179,7 +176,16 @@ impl PartialEq for TestUnit {
     }
 }
 
+
+// type MappedSegment = (&Morpheme, [usize; 2]);
+
 impl JapaneseTranscriptionContext {
+    fn create_text_segments() {}
+
+    fn create_transcript_segments(transcription: Transcription<Morpheme>) {
+
+    }
+
     pub fn test(&self, segments: Vec<EpubSegment>, timing_data: &str) {
         let segmenter = JapaneseTextSegmenter::new();
 
@@ -273,7 +279,7 @@ impl JapaneseTranscriptionContext {
         });
 
         // For each sample we want to find the longest sequence that we can find in `segment_list`.
-        let longest_sequence = samples
+        let mut longest_sequence = samples
             .iter()
             .flat_map(|sample| {
                 let audio_segment = audio_segment_list[*sample].0;
@@ -313,43 +319,37 @@ impl JapaneseTranscriptionContext {
                             }
                         }
                     })
-                    .filter(|it| it.2 > 75)
+                    .filter(|it| it.2 > 75) // Collect all matches > 75 chars
                     .collect::<Vec<_>>()
-                /*
-                .fold(
-                    (0_usize, 0_usize, 0_usize),
-                    |acc, next| {
-                        if next.2 > acc.2 { next } else { acc }
-                    },
-                )
-                */
             })
-            /*
-            .fold(
-                (0_usize, 0_usize, 0_usize),
-                |acc, next| {
-                    if next.2 > acc.2 { next } else { acc }
-                },
-            );*/
-            .sorted_by(|a, b| Ord::cmp(&b.2, &a.2))
             .fold(vec![], |mut prev, curr| {
+                let curr = (curr, std::range::Range {
+                    start: curr.0,
+                    end: curr.0 + curr.2,
+                });
+
                 if prev.is_empty() {
                     prev.push(curr);
                     return prev;
                 }
 
-                let value = prev
-                    .iter_mut()
-                    .find(|it| it.0 <= curr.0 && curr.0 < (it.0 + it.2));
+                let value = prev.iter_mut().find(|prev| {
+                    if prev.0.0 < curr.0.0 {
+                        prev.1.contains(&curr.0.0)
+                    } else {
+                        curr.1.contains(&prev.0.0)
+                        // prev.1.contains(&(curr.0.0 + curr.0.2))
+                    }
+                });
 
                 // Because of how the algorithm works, if one value is a subset of another
                 // the lowest positions and largest range will always be the winner. The larger
                 // string will ALWAYS contain the full subet.
                 match value {
-                    Some(prev) => {
-                        prev.0 = std::cmp::min(prev.0, curr.0);
-                        prev.1 = std::cmp::min(prev.1, curr.1);
-                        prev.2 = std::cmp::max(prev.2, curr.2);
+                    Some((prev, _)) => {
+                        prev.0 = std::cmp::min(prev.0, curr.0.0);
+                        prev.1 = std::cmp::min(prev.1, curr.0.1);
+                        prev.2 = std::cmp::max(prev.2, curr.0.2);
                     }
                     None => prev.push(curr),
                 }
@@ -357,150 +357,58 @@ impl JapaneseTranscriptionContext {
                 return prev;
             });
 
-        println!("{:#?}", longest_sequence);
-        println!("After collapse: {:#?}", longest_sequence.len());
+        longest_sequence.sort_by(|a, b| Ord::cmp(&a.0, &b.0));
 
-        println!(
-            "Len: {}",
-            longest_sequence
-                .iter()
-                .fold(0_usize, |prev, (_, _, len)| { return prev + len })
-        );
-
-        let gaps = longest_sequence
+        let resolved_gaps = longest_sequence
             .iter()
-            .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
+            .map(|it| it.0)
             .map(Some)
             .chain([None])
             .tuple_windows()
             .filter_map(|(a, b)| Some((a?, b)))
-            .map(|(a, b)| {
-                std::range::Range {
-                    start: a.0 + a.2,
-                    end: if let Some(b) = b { b.0 } else { segment_list.len() },
+            .fold(vec![MatchKind::Begin {}], |mut prev, (curr, next)| {
+                prev.push(MatchKind::Exact {
+                    transcription_pos: curr.0,
+                    text_pos: curr.1,
+                    length: curr.2,
+                });
+
+                match next {
+                    Some(next) => {
+                        println!("{:?} {:?}", curr, next);
+
+                        prev.push(MatchKind::Unknown {
+                            transcription_pos: curr.0 + curr.2,
+                            text_pos: curr.1 + curr.2,
+                            length: next.0 - (curr.0 + curr.2),
+                        });
+                    }
+                    None => {
+                        prev.push(MatchKind::End {});
+                    }
                 }
-            })
-            .map(|range| (range, range.end - range.start))
-            .collect::<Vec<_>>();
 
-        println!("{:#?}", gaps);
-        println!("{:#?}", gaps.len());
-
-
-        panic!();
-
-        let longest_sequence = longest_sequence[0];
-        println!("{:#?}", longest_sequence);
-
-        let (audio_pos, text_pos, matches) = longest_sequence;
+                prev
+            });
 
         // We need to hold an array of mappings...
         // The mapping will be:
         //
         //     [[audio_segment_pos, audio_word_pos], [text_segment_pos, text_word_pos]]
-        let mut mappings: VecDeque<[[usize; 2]; 2]> = VecDeque::with_capacity(segment_list.len());
-        mappings.push_back([audio_segment_list[audio_pos].1, segment_list[text_pos].1]);
 
-        let mut curr_audio_pos = audio_pos + 1;
-        let mut curr_text_pos = text_pos + 1;
+        // Re-iterate over this and try to further resolve the gaps. We should basically run the same
+        // algorithm over the gaps to further narrow them down.
 
-        // Going forwards, we need to fill out to the end
-        loop {
-            // End of work
-            if curr_audio_pos >= audio_segment_list.len() || curr_text_pos >= segment_list.len() {
-                break;
-            }
 
-            let curr_audio = audio_segment_list[curr_audio_pos];
-            let curr_text = segment_list[curr_text_pos];
 
-            if curr_audio.0 == curr_text.0 {
-                mappings.push_back([curr_audio.1, curr_text.1]);
 
-                curr_audio_pos += 1;
-                curr_text_pos += 1;
 
-                continue;
-            }
 
-            // There was no match -- We need to find the next match
-            const N_SAMPLES: usize = 10;
-            const SEARCH_DIST: usize = 20;
 
-            // Try skipping audio chars
 
-            // Try skipping text chars
-
-            break;
-        }
-
-        // Going backwards, we ned to fill to the beginning
-        loop {
-            break;
-        }
-
-        let more = 10;
-
-        println!(
-            "{}",
-            audio_segment_list[audio_pos..(audio_pos + matches)]
-                .iter()
-                .map(|it| it.0.to_string())
-                .join("")
-        );
-        println!(
-            "{}",
-            segment_list[text_pos..(text_pos + matches)]
-                .iter()
-                .map(|it| it.0.to_string())
-                .join("")
-        );
-
-        println!(
-            "{}",
-            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_string())
-                .join("")
-        );
-        println!(
-            "{}",
-            segment_list[(text_pos + matches)..(text_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_string())
-                .join("")
-        );
-
-        println!(
-            "{}",
-            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_kata())
-                .join("")
-        );
-        println!(
-            "{}",
-            segment_list[(text_pos + matches)..(text_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_kata())
-                .join("")
-        );
-
-        println!(
-            "{:#?}",
-            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_full())
-        );
-        println!(
-            "{:#?}",
-            segment_list[(text_pos + matches)..(text_pos + matches + more)]
-                .iter()
-                .map(|it| it.0.to_full())
-        );
+        println!("{:#?}", resolved_gaps);
 
         panic!();
-        //
     }
 
     pub fn fit_new(
