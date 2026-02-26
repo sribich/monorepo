@@ -1,3 +1,4 @@
+use std::collections::VecDeque;
 /// # Mecab Types
 ///
 ///   - 名詞 - Noun
@@ -61,18 +62,36 @@ use epub::archive::EpubArchive;
 use epub::archive::EpubNode;
 use epub::archive::EpubSegment;
 use itertools::Itertools;
+use language_pack::Segment;
+use language_pack::Transcription;
 use mecab::Tagger;
+use rand::Rng;
 use serde::Deserialize;
 use serde::Serialize;
-use language_pack::{
-    Segment,
-    Transcription,
-};
 
 use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
 use crate::segment::TextSegmenter;
 use crate::splitting;
+use crate::text::get_single_char;
+use crate::text::is_punctuation;
+
+enum MatchKind {
+    Exact {
+        transcription_pos: usize,
+        text_pos: usize,
+        length: usize,
+    },
+    Unknown {
+        transcription_pos: usize,
+        text_pos: usize,
+        length: usize,
+    },
+}
+
+
+
+
 
 pub struct JapaneseTranscriptionContext {}
 
@@ -113,6 +132,8 @@ pub struct Word {
     pub orth_base: String,
 }
 
+
+
 #[derive(Debug)]
 struct TimestampedNode {
     t0: Option<u64>,
@@ -150,26 +171,344 @@ struct TimestampedMorpheme {
     pub morpheme: Morpheme,
 }
 
+struct TestUnit((Morpheme, [usize; 2]));
+
+impl PartialEq for TestUnit {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.0 == other.0.0
+    }
+}
+
 impl JapaneseTranscriptionContext {
     pub fn test(&self, segments: Vec<EpubSegment>, timing_data: &str) {
-        let transcription: Transcription = serde_json::from_str(&timing_data).unwrap();
+        let segmenter = JapaneseTextSegmenter::new();
 
-        println!("{:#?}", transcription);
+        // SAFETY: Morpheme holds statically-owned self-referential data, but
+        //         `Transcription` skips deserializing it as it is provided
+        //         later. This static requirement leaks into `timing_data`, but
+        //         because we are not instantiating anything it is safe to fake
+        let timing_data: &'static str = unsafe { std::mem::transmute(timing_data) };
+        let mut transcription: Transcription<Morpheme> = serde_json::from_str(timing_data).unwrap();
+
+        for segment in &mut transcription.segments {
+            segment.segments = segmenter.segment(&segment.text);
+        }
+
+        let audio_segment_list = transcription
+            .segments
+            .iter()
+            .enumerate()
+            .flat_map(|(segment_idx, segment)| {
+                segment
+                    .segments
+                    .iter()
+                    .enumerate()
+                    .map(|(word_idx, word)| (word, [segment_idx, word_idx]))
+                    .collect::<Vec<_>>()
+            })
+            .filter(|it| match it.0 {
+                Morpheme::Unk => true,
+                Morpheme::Tagged(tag) => {
+                    let surface = tag.surface();
+                    match get_single_char(surface) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+
+        let segments = segments
+            .into_iter()
+            .map(|segment| {
+                let morphemes = segmenter.segment(segment.text());
+
+                segment.refine(|_| morphemes)
+            })
+            .collect::<Vec<_>>();
+
+        let segment_list = segments
+            .iter()
+            .enumerate()
+            .flat_map(|(segment_idx, segment)| {
+                segment
+                    .data()
+                    .iter()
+                    .enumerate()
+                    .map(|(word_idx, word)| (word, [segment_idx, word_idx]))
+                    .collect::<Vec<_>>()
+            })
+            .filter(|it| match it.0 {
+                Morpheme::Unk => true,
+                Morpheme::Tagged(tag) => {
+                    let surface = tag.surface();
+                    match get_single_char(surface) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+
+        println!("{:#?}", audio_segment_list.len());
+        println!("{:#?}", segment_list.len());
+
+        // We want to try mapping the audio_segment_list to the segment_list as it should
+        // contain the smaller amount of data.
+        const N_SAMPLES: usize = 500;
+
+        // Find N random points in audio_segment_list
+        let mut samples = [0_usize; N_SAMPLES];
+
+        samples.iter_mut().for_each(|sample| {
+            for i in 0..20 {
+                *sample = rand::rng().random_range(0..audio_segment_list.len());
+
+                if let Morpheme::Tagged(_) = audio_segment_list[*sample].0 {
+                    return;
+                }
+            }
+
+            panic!("Unable to find waystone");
+        });
+
+        // For each sample we want to find the longest sequence that we can find in `segment_list`.
+        let longest_sequence = samples
+            .iter()
+            .flat_map(|sample| {
+                let audio_segment = audio_segment_list[*sample].0;
+
+                segment_list
+                    .iter()
+                    .positions(|item| item.0 == audio_segment)
+                    .map(|position| {
+                        let mut matches = 0;
+
+                        loop {
+                            let audio_pos = *sample + matches;
+                            let text_pos = position + matches;
+
+                            // We're at the end of a buffer
+                            if audio_pos >= audio_segment_list.len()
+                                || text_pos >= segment_list.len()
+                            {
+                                return (*sample, position, matches);
+                            }
+
+                            if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                matches += 1;
+                            } else {
+                                // Allow a single word gap
+                                if let Some(a) = audio_segment_list.get(audio_pos + 1)
+                                    && let Some(b) = segment_list.get(text_pos + 1)
+                                {
+                                    if a.0 == b.0 {
+                                        matches += 1;
+
+                                        continue;
+                                    }
+                                }
+
+                                return (*sample, position, matches);
+                            }
+                        }
+                    })
+                    .filter(|it| it.2 > 75)
+                    .collect::<Vec<_>>()
+                /*
+                .fold(
+                    (0_usize, 0_usize, 0_usize),
+                    |acc, next| {
+                        if next.2 > acc.2 { next } else { acc }
+                    },
+                )
+                */
+            })
+            /*
+            .fold(
+                (0_usize, 0_usize, 0_usize),
+                |acc, next| {
+                    if next.2 > acc.2 { next } else { acc }
+                },
+            );*/
+            .sorted_by(|a, b| Ord::cmp(&b.2, &a.2))
+            .fold(vec![], |mut prev, curr| {
+                if prev.is_empty() {
+                    prev.push(curr);
+                    return prev;
+                }
+
+                let value = prev
+                    .iter_mut()
+                    .find(|it| it.0 <= curr.0 && curr.0 < (it.0 + it.2));
+
+                // Because of how the algorithm works, if one value is a subset of another
+                // the lowest positions and largest range will always be the winner. The larger
+                // string will ALWAYS contain the full subet.
+                match value {
+                    Some(prev) => {
+                        prev.0 = std::cmp::min(prev.0, curr.0);
+                        prev.1 = std::cmp::min(prev.1, curr.1);
+                        prev.2 = std::cmp::max(prev.2, curr.2);
+                    }
+                    None => prev.push(curr),
+                }
+
+                return prev;
+            });
+
+        println!("{:#?}", longest_sequence);
+        println!("After collapse: {:#?}", longest_sequence.len());
+
+        println!(
+            "Len: {}",
+            longest_sequence
+                .iter()
+                .fold(0_usize, |prev, (_, _, len)| { return prev + len })
+        );
+
+        let gaps = longest_sequence
+            .iter()
+            .sorted_by(|a, b| Ord::cmp(&a.0, &b.0))
+            .map(Some)
+            .chain([None])
+            .tuple_windows()
+            .filter_map(|(a, b)| Some((a?, b)))
+            .map(|(a, b)| {
+                std::range::Range {
+                    start: a.0 + a.2,
+                    end: if let Some(b) = b { b.0 } else { segment_list.len() },
+                }
+            })
+            .map(|range| (range, range.end - range.start))
+            .collect::<Vec<_>>();
+
+        println!("{:#?}", gaps);
+        println!("{:#?}", gaps.len());
+
+
+        panic!();
+
+        let longest_sequence = longest_sequence[0];
+        println!("{:#?}", longest_sequence);
+
+        let (audio_pos, text_pos, matches) = longest_sequence;
+
+        // We need to hold an array of mappings...
+        // The mapping will be:
+        //
+        //     [[audio_segment_pos, audio_word_pos], [text_segment_pos, text_word_pos]]
+        let mut mappings: VecDeque<[[usize; 2]; 2]> = VecDeque::with_capacity(segment_list.len());
+        mappings.push_back([audio_segment_list[audio_pos].1, segment_list[text_pos].1]);
+
+        let mut curr_audio_pos = audio_pos + 1;
+        let mut curr_text_pos = text_pos + 1;
+
+        // Going forwards, we need to fill out to the end
+        loop {
+            // End of work
+            if curr_audio_pos >= audio_segment_list.len() || curr_text_pos >= segment_list.len() {
+                break;
+            }
+
+            let curr_audio = audio_segment_list[curr_audio_pos];
+            let curr_text = segment_list[curr_text_pos];
+
+            if curr_audio.0 == curr_text.0 {
+                mappings.push_back([curr_audio.1, curr_text.1]);
+
+                curr_audio_pos += 1;
+                curr_text_pos += 1;
+
+                continue;
+            }
+
+            // There was no match -- We need to find the next match
+            const N_SAMPLES: usize = 10;
+            const SEARCH_DIST: usize = 20;
+
+            // Try skipping audio chars
+
+            // Try skipping text chars
+
+            break;
+        }
+
+        // Going backwards, we ned to fill to the beginning
+        loop {
+            break;
+        }
+
+        let more = 10;
+
+        println!(
+            "{}",
+            audio_segment_list[audio_pos..(audio_pos + matches)]
+                .iter()
+                .map(|it| it.0.to_string())
+                .join("")
+        );
+        println!(
+            "{}",
+            segment_list[text_pos..(text_pos + matches)]
+                .iter()
+                .map(|it| it.0.to_string())
+                .join("")
+        );
+
+        println!(
+            "{}",
+            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_string())
+                .join("")
+        );
+        println!(
+            "{}",
+            segment_list[(text_pos + matches)..(text_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_string())
+                .join("")
+        );
+
+        println!(
+            "{}",
+            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_kata())
+                .join("")
+        );
+        println!(
+            "{}",
+            segment_list[(text_pos + matches)..(text_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_kata())
+                .join("")
+        );
+
+        println!(
+            "{:#?}",
+            audio_segment_list[(audio_pos + matches)..(audio_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_full())
+        );
+        println!(
+            "{:#?}",
+            segment_list[(text_pos + matches)..(text_pos + matches + more)]
+                .iter()
+                .map(|it| it.0.to_full())
+        );
+
         panic!();
         //
-
-
     }
-
-
-
 
     pub fn fit_new(
         &self,
         chapters: Vec<(String, Vec<EpubNode>)>,
         audio: String,
     ) -> Vec<TimestampedSegments> {
-        let transcription: Transcription = serde_json::from_str(&audio).unwrap();
+        let transcription: Transcription<()> = serde_json::from_str(&audio).unwrap();
 
         println!("{:#?}", transcription);
         panic!();
@@ -195,9 +534,12 @@ impl JapaneseTranscriptionContext {
             .collect::<Vec<_>>()
     }
 
-    fn fit_transcription(&self, transcription: Transcription) -> Vec<FitWord> {
+    fn fit_transcription(&self, transcription: Transcription<()>) -> Vec<FitWord> {
         let home = std::env::var("HOME").unwrap();
-        let tagger = Tagger::new(format!("-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302", home));
+        let tagger = Tagger::new(format!(
+            "-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302",
+            home
+        ));
 
         let segmenter = JapaneseTextSegmenter::new();
 
@@ -266,7 +608,10 @@ impl JapaneseTranscriptionContext {
                     if morpheme.unit == word_str {
                         if i != char_idx {
                             list.push(FitWord {
-                                text: segment.words[char_idx..i].iter().map(|it| &it.word).join(""),
+                                text: segment.words[char_idx..i]
+                                    .iter()
+                                    .map(|it| &it.word)
+                                    .join(""),
                                 t0: segment.words[char_idx].start.map(|it| (it * 1000.0) as u64),
                                 t1: segment.words[i - 1].end.map(|it| (it * 1000.0) as u64),
                                 word: None,
@@ -312,7 +657,10 @@ impl JapaneseTranscriptionContext {
         mut words: Vec<FitWord>,
     ) -> Vec<TimestampedNodeB> {
         let home = std::env::var("HOME").unwrap();
-        let tagger = Tagger::new(format!("-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302", home));
+        let tagger = Tagger::new(format!(
+            "-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302",
+            home
+        ));
 
         let mut chapters = chapters
             .into_iter()
@@ -976,7 +1324,7 @@ impl JapaneseTranscriptionContext {
         format!("{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}")
     }
 
-    fn remove_duplicate_chunks(segment: &mut Segment) {
+    fn remove_duplicate_chunks(segment: &mut Segment<()>) {
         // Remove mass duplicates
         let mut idx = 0;
         let mut char_info = ('-', 0);

@@ -1,10 +1,12 @@
 use std::fmt::Debug;
+use std::fmt::Display;
 use std::iter::Enumerate;
 use std::pin::Pin;
 use std::range::Range;
 use std::str::Split;
 
 use memchr::memchr_iter;
+use serde::Deserialize;
 
 #[derive(Debug)]
 pub enum Morpheme {
@@ -12,11 +14,61 @@ pub enum Morpheme {
     Tagged(TaggedMorpheme),
 }
 
+impl Morpheme {
+    pub fn to_kata(&self) -> &str {
+        match self {
+            Morpheme::Unk => "UNK",
+            Morpheme::Tagged(tag) => &tag.feature.l_form,
+        }
+    }
+
+    pub fn to_full(&self) -> String {
+        match self {
+            Morpheme::Unk => "UNK".to_owned(),
+            Morpheme::Tagged(tag) => format!("{:#?}", tag.feature),
+        }
+    }
+}
+
+impl Display for Morpheme {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Morpheme::Unk => write!(f, "UNK"),
+            Morpheme::Tagged(tag) => write!(f, "{}", tag.surface),
+        }
+    }
+}
+
+impl PartialEq for Morpheme {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Tagged(l0), Self::Tagged(r0)) => l0.feature.l_form == r0.feature.l_form,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
+
+impl Deserialize<'static> for Morpheme {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'static>,
+    {
+        unimplemented!()
+    }
+}
+
+impl Default for Morpheme {
+    fn default() -> Self {
+        Self::Unk
+    }
+}
+
 /// # Safety
 ///
 /// This type is self-referential. As it stands, it can not be [`clone`] as
 /// we are not storing any range information. If we stored range data along
 /// with the slices, we could manually implement clone.
+#[derive(Deserialize)]
 pub struct TaggedMorpheme {
     surface: &'static str,
     feature: Feature,
@@ -24,6 +76,7 @@ pub struct TaggedMorpheme {
     ///
     /// This field MUST come last to prevent undefined behavior when the
     /// struct is dropped, as rust drops structs in order.
+    #[serde(skip)]
     data: Pin<Box<[u8]>>,
 }
 
@@ -46,7 +99,7 @@ impl Debug for TaggedMorpheme {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct Feature {
     /// 品詞大分類 - Part of speech field 1 -- Most general
     pub pos1: &'static str,
@@ -117,8 +170,6 @@ impl TextSegmenter for JapaneseTextSegmenter {
     fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
         let output = self.tagger.parse_str(text.as_ref());
         let bytes = output.as_bytes();
-
-        println!("{}", output);
 
         let mut result = Vec::with_capacity(memchr_iter(b'\n', bytes).count());
 

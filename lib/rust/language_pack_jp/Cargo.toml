@@ -28,6 +28,7 @@ memchr = { workspace = true }
 lazy_static = { workspace = true }
 unicode-normalization = { workspace = true }
 phf = { workspace = true }
+rand = { workspace = true }
 
 [dev-dependencies]
 expect-test = { workspace = true }

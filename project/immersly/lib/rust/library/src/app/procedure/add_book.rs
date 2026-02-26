@@ -37,8 +37,6 @@ impl Procedure for AddBookProcedure {
         let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
         let text = epub.segments().unwrap();
 
-        println!("{:#?}", text);
-
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
 

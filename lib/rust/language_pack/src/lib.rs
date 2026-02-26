@@ -9,13 +9,13 @@ use serde::Deserialize;
 /// information.
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
-pub struct Transcription {
-    pub segments: Vec<Segment>,
+pub struct Transcription<T: Default> {
+    pub segments: Vec<Segment<T>>,
 }
 
 /// An individual text segment that was transcribed.
 #[derive(Debug, Deserialize)]
-pub struct Segment {
+pub struct Segment<T> {
     /// The line of text as it was transcribed.
     pub text: String,
     /// The start time in <sec>.<msec> format.
@@ -24,6 +24,8 @@ pub struct Segment {
     pub end: f64,
     /// Word level timestamps from WhisperX's forced alignment.
     pub words: Vec<Word>,
+    #[serde(skip, default)]
+    pub segments: Vec<T>,
 }
 
 /// A word that was picked out of the forced alignment model.

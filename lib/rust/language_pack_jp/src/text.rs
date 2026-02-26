@@ -53,6 +53,24 @@ pub fn is_cjk_compatibility_character(c: char) -> bool {
     CJK_COMPATIBILITY_RANGE.contains(&(c as usize))
 }
 
+pub fn is_punctuation(c: char) -> bool {
+    const CJK_PUNCTUATION_RANGE: Range<usize> = Range {
+        start: 0x3000,
+        end: 0x303F + 1,
+    };
+
+    CJK_PUNCTUATION_RANGE.contains(&(c as usize)) || c == '!'
+}
+
+pub fn get_single_char(s: &str) -> Option<char> {
+    let mut chars = s.chars();
+
+    match chars.next() {
+        Some(c) if chars.next().is_none() => Some(c),
+        _ => None,
+    }
+}
+
 lazy_static! {
     pub static ref HANDAKUTEN_MAP: HashMap<char, char> = [
         ('\u{30CF}', '\u{30D1}'),   //  ハ	30CF	パ	30D1

@@ -63,6 +63,18 @@ impl<T> EpubSegment<T> {
             data: f(self.data),
         }
     }
+
+    pub fn text(&self) -> &str {
+        &self.text
+    }
+
+    pub fn kind(&self) -> &SemanticIdentifier {
+        &self.kind
+    }
+
+    pub fn data(&self) -> &T {
+        &self.data
+    }
 }
 
 #[derive(Debug)]
