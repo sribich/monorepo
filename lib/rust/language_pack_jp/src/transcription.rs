@@ -176,15 +176,12 @@ impl PartialEq for TestUnit {
     }
 }
 
-
 // type MappedSegment = (&Morpheme, [usize; 2]);
 
 impl JapaneseTranscriptionContext {
     fn create_text_segments() {}
 
-    fn create_transcript_segments(transcription: Transcription<Morpheme>) {
-
-    }
+    fn create_transcript_segments(transcription: Transcription<Morpheme>) {}
 
     pub fn test(&self, segments: Vec<EpubSegment>, timing_data: &str) {
         let segmenter = JapaneseTextSegmenter::new();
@@ -289,6 +286,7 @@ impl JapaneseTranscriptionContext {
                     .positions(|item| item.0 == audio_segment)
                     .map(|position| {
                         let mut matches = 0;
+                        let mut rev_matches = 0;
 
                         loop {
                             let audio_pos = *sample + matches;
@@ -298,7 +296,7 @@ impl JapaneseTranscriptionContext {
                             if audio_pos >= audio_segment_list.len()
                                 || text_pos >= segment_list.len()
                             {
-                                return (*sample, position, matches);
+                                break;
                             }
 
                             if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
@@ -315,7 +313,38 @@ impl JapaneseTranscriptionContext {
                                     }
                                 }
 
-                                return (*sample, position, matches);
+                                break;
+                            }
+                        }
+
+                        loop {
+                            let audio_pos = *sample - rev_matches;
+                            let text_pos = position - rev_matches;
+
+                            // We're at the end of a buffer
+                            if audio_pos == 0 || text_pos == 0 {
+                                if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                    rev_matches += 1;
+                                }
+
+                                return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
+                            }
+
+                            if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                rev_matches += 1;
+                            } else {
+                                // Allow a single word gap
+                                if let Some(a) = audio_segment_list.get(audio_pos - 1)
+                                    && let Some(b) = segment_list.get(text_pos - 1)
+                                {
+                                    if a.0 == b.0 {
+                                        rev_matches += 1;
+
+                                        continue;
+                                    }
+                                }
+
+                                return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
                             }
                         }
                     })
@@ -323,10 +352,13 @@ impl JapaneseTranscriptionContext {
                     .collect::<Vec<_>>()
             })
             .fold(vec![], |mut prev, curr| {
-                let curr = (curr, std::range::Range {
-                    start: curr.0,
-                    end: curr.0 + curr.2,
-                });
+                let curr = (
+                    curr,
+                    std::range::Range {
+                        start: curr.0,
+                        end: curr.0 + curr.2,
+                    },
+                );
 
                 if prev.is_empty() {
                     prev.push(curr);
@@ -399,14 +431,29 @@ impl JapaneseTranscriptionContext {
         // Re-iterate over this and try to further resolve the gaps. We should basically run the same
         // algorithm over the gaps to further narrow them down.
 
-
-
-
-
-
-
-
         println!("{:#?}", resolved_gaps);
+
+        for gap in &resolved_gaps {
+            match gap {
+                MatchKind::Begin {} => {}
+                MatchKind::Exact { .. } => {}
+                MatchKind::Unknown {
+                    transcription_pos,
+                    text_pos,
+                    length,
+                } => {
+                    println!("");
+                    println!("{}", audio_segment_list[*transcription_pos..(*transcription_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
+                    println!("{}", segment_list[*text_pos..(*text_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
+                    println!("");
+
+                    // println!("{}",
+                },
+                MatchKind::End {} => {}
+            }
+        }
+
+        println!("{}", longest_sequence.iter().fold(0_usize, |prev, curr| { prev + curr.0.2 }));
 
         panic!();
     }

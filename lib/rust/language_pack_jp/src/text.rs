@@ -54,13 +54,19 @@ pub fn is_cjk_compatibility_character(c: char) -> bool {
     CJK_COMPATIBILITY_RANGE.contains(&(c as usize))
 }
 
+// U+2000 - U+206F[3] General Punctuation
 pub fn is_punctuation(c: char) -> bool {
     const CJK_PUNCTUATION_RANGE: Range<usize> = Range {
         start: 0x3000,
         end: 0x303F + 1,
     };
 
-    CJK_PUNCTUATION_RANGE.contains(&(c as usize)) || c == '!'
+    CJK_PUNCTUATION_RANGE.contains(&(c as usize))
+        || c == '!'
+        || c == '？'
+        || c == '…'
+        || c == '?'
+        || c == '！'
 }
 
 pub fn get_single_char(s: &str) -> Option<char> {

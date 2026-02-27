@@ -357,7 +357,7 @@ impl EpubArchive {
             }
             NodeData::Text { contents } => {
                 if text_mode {
-                    let normalized = &contents.borrow().to_string().nfkc().collect::<String>();
+                    let normalized = &contents.borrow().to_string(); // .nfkc().collect::<String>();
 
                     text.push_str(normalized);
 

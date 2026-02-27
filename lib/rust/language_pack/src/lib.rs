@@ -3,7 +3,21 @@ use std::range::Range;
 
 use serde::Deserialize;
 
-/// The output from our WhisperX transcription process.
+/// Defines functionality for a type that can hold segment information.
+pub trait CanSegment {
+    /// Returns
+    fn text(&self) -> &str;
+
+    fn segments(&self) -> impl Iterator<Item = ()>;
+}
+
+pub trait TextSegmenter {
+    type Feature;
+
+    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature>;
+}
+
+/// The output from the WhisperX transcription process.
 ///
 /// See `transcription.py` in this repository for more
 /// information.
