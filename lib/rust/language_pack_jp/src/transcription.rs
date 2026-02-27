@@ -62,7 +62,6 @@ use epub::archive::EpubArchive;
 use epub::archive::EpubNode;
 use epub::archive::EpubSegment;
 use itertools::Itertools;
-use language_pack::Segment;
 use language_pack::Transcription;
 use mecab::Tagger;
 use rand::Rng;
@@ -193,20 +192,20 @@ impl JapaneseTranscriptionContext {
         let timing_data: &'static str = unsafe { std::mem::transmute(timing_data) };
         let mut transcription: Transcription<Morpheme> = serde_json::from_str(timing_data).unwrap();
 
-        for segment in &mut transcription.segments {
-            segment.segments = segmenter.segment(&segment.text);
+        for line in &mut transcription.lines {
+            line.segments = segmenter.segment(&line.text);
         }
 
         let audio_segment_list = transcription
-            .segments
+            .lines
             .iter()
             .enumerate()
-            .flat_map(|(segment_idx, segment)| {
-                segment
+            .flat_map(|(line_idx, line)| {
+                line
                     .segments
                     .iter()
                     .enumerate()
-                    .map(|(word_idx, word)| (word, [segment_idx, word_idx]))
+                    .map(|(segment_idx, word)| (word, [line_idx, segment_idx]))
                     .collect::<Vec<_>>()
             })
             .filter(|it| match it.0 {
@@ -216,6 +215,7 @@ impl JapaneseTranscriptionContext {
                     match get_single_char(surface) {
                         Some(c) => !is_punctuation(c),
                         None => true,
+
                     }
                 }
             })
@@ -500,21 +500,15 @@ impl JapaneseTranscriptionContext {
 
         let mut list = vec![];
 
-        for mut segment in transcription.segments {
+        for mut line in transcription.lines {
             /// Hallucination
-            if segment.words.is_empty() {
+            if line.words.is_empty() {
                 continue;
             }
 
-            // The model will sometimes put significantly more emphasis on
-            // extended vowel sounds than actually exists and mecab will
-            // often parse them individually, creating a long chain of
-            // vowels that break our lookahead algorithm.
-            Self::remove_duplicate_chunks(&mut segment);
+            let output = tagger.parse_str(line.text.as_str());
 
-            let output = tagger.parse_str(segment.text.as_str());
-
-            let output2 = segmenter.segment(segment.text.as_str());
+            let output2 = segmenter.segment(line.text.as_str());
 
             let mut morphemes = vec![];
 
@@ -554,8 +548,8 @@ impl JapaneseTranscriptionContext {
                 //     morphene_length
                 // );
 
-                'inner: for i in char_idx..=(segment.words.len() - morpheme_length) {
-                    let words = &segment.words[i..i + morpheme_length];
+                'inner: for i in char_idx..=(line.words.len() - morpheme_length) {
+                    let words = &line.words[i..i + morpheme_length];
                     let word_str = words.iter().map(|it| &it.word).join("");
 
                     // println!("  - {:?} ({})", strtest, i);
@@ -563,22 +557,22 @@ impl JapaneseTranscriptionContext {
                     if morpheme.unit == word_str {
                         if i != char_idx {
                             list.push(FitWord {
-                                text: segment.words[char_idx..i]
+                                text: line.words[char_idx..i]
                                     .iter()
                                     .map(|it| &it.word)
                                     .join(""),
-                                t0: segment.words[char_idx].start.map(|it| (it * 1000.0) as u64),
-                                t1: segment.words[i - 1].end.map(|it| (it * 1000.0) as u64),
+                                t0: line.words[char_idx].start.map(|it| (it * 1000.0) as u64),
+                                t1: line.words[i - 1].end.map(|it| (it * 1000.0) as u64),
                                 word: None,
                             });
                         }
 
-                        morpheme.ts = segment.words[i].start.map(|it| (it * 1000.0) as u64);
+                        morpheme.ts = line.words[i].start.map(|it| (it * 1000.0) as u64);
 
                         list.push(FitWord {
                             text: word_str,
-                            t0: segment.words[i].start.map(|it| (it * 1000.0) as u64),
-                            t1: segment.words[i + morpheme_length - 1]
+                            t0: line.words[i].start.map(|it| (it * 1000.0) as u64),
+                            t1: line.words[i + morpheme_length - 1]
                                 .end
                                 .map(|it| (it * 1000.0) as u64),
                             word: Some(morpheme),
@@ -1277,55 +1271,6 @@ impl JapaneseTranscriptionContext {
 
         // Format the string
         format!("{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}")
-    }
-
-    fn remove_duplicate_chunks(segment: &mut Segment<()>) {
-        // Remove mass duplicates
-        let mut idx = 0;
-        let mut char_info = ('-', 0);
-        let mut remove_ranges = vec![];
-
-        for (i, c) in segment.text.chars().enumerate() {
-            idx = i;
-
-            if c == char_info.0 {
-                char_info.1 += 1;
-                continue;
-            }
-
-            if char_info.1 > 6 {
-                // Allow up to 6 repeats
-                let start_idx = i - (char_info.1 - 6);
-                // Ranges are not inclusive
-                let end_idx = i;
-
-                remove_ranges.push((start_idx, end_idx));
-            }
-
-            char_info = (c, 1);
-        }
-
-        if char_info.1 > 6 {
-            // Allow up to 6 repeats
-            let start_idx = idx - (char_info.1 - 6);
-            // Ranges are not inclusive
-            let end_idx = idx;
-
-            remove_ranges.push((start_idx, end_idx));
-        }
-
-        if !remove_ranges.is_empty() {
-            remove_ranges.reverse();
-
-            for range in remove_ranges {
-                let mut indices = segment.text.char_indices();
-
-                let start = indices.nth(range.0).unwrap().0;
-                let end = indices.nth(range.1 - range.0 - 1).unwrap().0;
-
-                segment.text.replace_range(start..end, "");
-            }
-        }
     }
 }
 

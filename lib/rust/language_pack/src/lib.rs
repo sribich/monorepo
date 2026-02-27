@@ -24,12 +24,12 @@ pub trait TextSegmenter {
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
 pub struct Transcription<T: Default> {
-    pub segments: Vec<Segment<T>>,
+    pub lines: Vec<Line<T>>,
 }
 
 /// An individual text segment that was transcribed.
 #[derive(Debug, Deserialize)]
-pub struct Segment<T> {
+pub struct Line<T> {
     /// The line of text as it was transcribed.
     pub text: String,
     /// The start time in <sec>.<msec> format.
