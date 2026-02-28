@@ -1,7 +1,8 @@
 use std::fs::read_to_string;
 
 use epub::archive::EpubArchive;
-use language_pack_jp::transcription::JapaneseTranscriptionContext;
+use language_pack::Transcription;
+use language_pack_jp::transcription::{EbookSegments, JapaneseTranscriptionContext};
 use railgun::di::Component;
 use shared::domain::value::existing_file::ExistingFile;
 use shared::infra::Procedure;
@@ -39,10 +40,11 @@ impl Procedure for AddBookProcedure {
 
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
+        let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
-        transcriber.test(text, &timing_data);
+        transcriber.test(&EbookSegments::new(text), &timing_data);
 
         // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 

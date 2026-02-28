@@ -23,6 +23,7 @@ tasks:
     env:
       GTK_IM_MODULE: ""
       XMODIFIERS: ""
+      RUST_LOG: "debug"
       # RUSTFLAGS: "-Zcodegen-backend=cranelift"
       # CARGO_PROFILE_DEV_CODEGEN_BACKEND: "cranelift"
     options:

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fmt::Debug;
 use std::fmt::Display;
 use std::iter::Enumerate;
@@ -5,6 +6,9 @@ use std::pin::Pin;
 use std::range::Range;
 use std::str::Split;
 
+use language_pack::IsSegment;
+use language_pack::TextSegmenter;
+use lazy_static::lazy_static;
 use memchr::memchr_iter;
 use serde::Deserialize;
 
@@ -12,6 +16,15 @@ use serde::Deserialize;
 pub enum Morpheme {
     Unk,
     Tagged(TaggedMorpheme),
+}
+
+impl IsSegment for Morpheme {
+    fn text(&self) -> &str {
+        match self {
+            Morpheme::Unk => "UNK",
+            Morpheme::Tagged(tag) => &tag.surface,
+        }
+    }
 }
 
 impl Morpheme {
@@ -39,10 +52,20 @@ impl Display for Morpheme {
     }
 }
 
+lazy_static! {
+    pub static ref ORTH_MAPPING: HashMap<&'static str, &'static str> =
+        [("わたし", "私"),].into_iter().collect();
+}
+
 impl PartialEq for Morpheme {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Self::Tagged(l0), Self::Tagged(r0)) => l0.feature.l_form == r0.feature.l_form,
+            (Self::Tagged(l0), Self::Tagged(r0)) => {
+                l0.feature.l_form == r0.feature.l_form
+                    || l0.feature.orth_base == r0.feature.orth_base
+                    || ORTH_MAPPING.get(l0.feature.orth_base) == Some(&r0.feature.orth_base)
+                    || ORTH_MAPPING.get(r0.feature.orth_base) == Some(&l0.feature.orth_base)
+            }
             _ => core::mem::discriminant(self) == core::mem::discriminant(other),
         }
     }
@@ -132,12 +155,6 @@ pub struct Feature {
     /// For example, for 彷徨った the lemma is さ迷う but the orthBase is
     /// 彷徨う.
     pub orth_base: &'static str,
-}
-
-pub trait TextSegmenter {
-    type Feature;
-
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature>;
 }
 
 pub struct JapaneseTextSegmenter {
@@ -232,5 +249,20 @@ impl TextSegmenter for JapaneseTextSegmenter {
         }
 
         result
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use language_pack::TextSegmenter;
+
+    use super::JapaneseTextSegmenter;
+
+    #[test]
+    fn mecab() {
+        let tagger = JapaneseTextSegmenter::new();
+
+        println!("{:#?}", tagger.segment("買い殺しと"));
+        println!("{:#?}", tagger.segment("飼い殺しとどちら"));
     }
 }

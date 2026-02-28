@@ -1,4 +1,7 @@
+use std::collections::BTreeMap;
+use std::collections::HashMap;
 use std::collections::VecDeque;
+use std::fmt::Debug;
 /// # Mecab Types
 ///
 ///   - 名詞 - Noun
@@ -57,20 +60,26 @@ use std::fs::read_to_string;
 ///     - 一般 - General (??)
 ///   - 副詞 - Adverb
 use std::path::Path;
+use std::sync::atomic::AtomicUsize;
 
 use epub::archive::EpubArchive;
 use epub::archive::EpubNode;
 use epub::archive::EpubSegment;
 use itertools::Itertools;
+use language_pack::CanSegment;
+use language_pack::IsSegment;
+use language_pack::Segment;
+use language_pack::TextSegmenter;
 use language_pack::Transcription;
 use mecab::Tagger;
 use rand::Rng;
+use rayon::iter::IntoParallelRefMutIterator;
+use rayon::iter::ParallelIterator;
 use serde::Deserialize;
 use serde::Serialize;
 
 use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
-use crate::segment::TextSegmenter;
 use crate::splitting;
 use crate::text::get_single_char;
 use crate::text::is_punctuation;
@@ -79,14 +88,23 @@ use crate::text::is_punctuation;
 enum MatchKind {
     Begin {},
     Exact {
-        transcription_pos: usize,
+        timing_pos: usize,
         text_pos: usize,
         length: usize,
     },
     Unknown {
-        transcription_pos: usize,
+        timing_pos: usize,
         text_pos: usize,
         length: usize,
+    },
+    Split {
+        from_timing_pos: usize,
+        from_text_pos: usize,
+        from_length: usize,
+
+        match_timing_pos: usize,
+        match_text_pos: usize,
+        match_length: usize,
     },
     End {},
 }
@@ -159,301 +177,653 @@ pub struct TimestampedSegments {
     pub segments: Vec<splitting::Segment>,
 }
 
-//---- New Stuff ---------------------------------------------------------------
-
 struct TimestampedMorpheme {
     pub t0: Option<u64>,
     pub t1: Option<u64>,
     pub morpheme: Morpheme,
 }
 
-struct TestUnit((Morpheme, [usize; 2]));
+//---- New Stuff ---------------------------------------------------------------
 
-impl PartialEq for TestUnit {
-    fn eq(&self, other: &Self) -> bool {
-        self.0.0 == other.0.0
+#[derive(Debug)]
+pub struct EbookSegments(Vec<EpubSegment>);
+
+impl EbookSegments {
+    pub fn new(data: Vec<EpubSegment>) -> Self {
+        Self(data)
     }
 }
 
-// type MappedSegment = (&Morpheme, [usize; 2]);
+impl<T> CanSegment<T> for EbookSegments
+where
+    T: IsSegment + PartialEq + Debug,
+{
+    type Source = ();
 
-impl JapaneseTranscriptionContext {
-    fn create_text_segments() {}
+    fn segments(
+        &self,
+        segmenter: impl TextSegmenter<Feature = T>,
+    ) -> impl Iterator<Item = Segment<T, Self::Source>> {
+        self.0
+            .iter()
+            .enumerate()
+            .flat_map(|(index, item)| {
+                segmenter
+                    .segment(item.text())
+                    .into_iter()
+                    .map(move |segment| Segment {
+                        data: segment,
+                        source: (), // TranscriptionSource { line: line_index },
+                    })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
 
-    fn create_transcript_segments(transcription: Transcription<Morpheme>) {}
+struct SegmentAligner<T, ASource, BSource>
+where
+    T: IsSegment + Debug,
+{
+    a: Vec<Segment<T, ASource>>,
+    b: Vec<Segment<T, BSource>>,
+    options: SegmentAlignerOptions,
+    matches: Vec<MatchKind>,
+}
 
-    pub fn test(&self, segments: Vec<EpubSegment>, timing_data: &str) {
-        let segmenter = JapaneseTextSegmenter::new();
+struct SegmentAlignerOptions {}
 
-        // SAFETY: Morpheme holds statically-owned self-referential data, but
-        //         `Transcription` skips deserializing it as it is provided
-        //         later. This static requirement leaks into `timing_data`, but
-        //         because we are not instantiating anything it is safe to fake
-        let timing_data: &'static str = unsafe { std::mem::transmute(timing_data) };
-        let mut transcription: Transcription<Morpheme> = serde_json::from_str(timing_data).unwrap();
+impl<T, ASource, BSource> SegmentAligner<T, ASource, BSource>
+where
+    T: IsSegment + Send + Sync + Debug,
+    ASource: Send + Sync,
+    BSource: Send + Sync,
+{
+    pub fn new(
+        a: Vec<Segment<T, ASource>>,
+        b: Vec<Segment<T, BSource>>,
+        options: SegmentAlignerOptions,
+    ) -> Self {
+        let a_len = a.len();
 
-        for line in &mut transcription.lines {
-            line.segments = segmenter.segment(&line.text);
+        Self {
+            a,
+            b,
+            options,
+            matches: vec![MatchKind::Unknown {
+                timing_pos: 0,
+                text_pos: 0,
+                length: a_len,
+            }],
+        }
+    }
+
+    pub fn align(mut self) {
+        let mut splits = AtomicUsize::new(0);
+
+        for i in 0..1000 {
+            println!("{:#?}", i);
+
+            self.partial_align(&mut splits);
         }
 
-        let audio_segment_list = transcription
-            .lines
-            .iter()
-            .enumerate()
-            .flat_map(|(line_idx, line)| {
-                line
-                    .segments
-                    .iter()
-                    .enumerate()
-                    .map(|(segment_idx, word)| (word, [line_idx, segment_idx]))
-                    .collect::<Vec<_>>()
-            })
-            .filter(|it| match it.0 {
-                Morpheme::Unk => true,
-                Morpheme::Tagged(tag) => {
-                    let surface = tag.surface();
-                    match get_single_char(surface) {
-                        Some(c) => !is_punctuation(c),
-                        None => true,
+        /*
+        let misheard_map: HashMap<String, HashMap<String, usize>> = HashMap::new();
 
+        for i in self.matches.iter() {
+            match i {
+                MatchKind::Unknown { timing_pos, text_pos, length } => {
+                    if length == 1 {
+                        let timing_value = &self.a[*timing_pos];
+                        let text_value = &self.b[*text_pos];
+
+                        misheard_map.entry(&)
                     }
-                }
-            })
-            .collect::<Vec<_>>();
-
-        let segments = segments
-            .into_iter()
-            .map(|segment| {
-                let morphemes = segmenter.segment(segment.text());
-
-                segment.refine(|_| morphemes)
-            })
-            .collect::<Vec<_>>();
-
-        let segment_list = segments
-            .iter()
-            .enumerate()
-            .flat_map(|(segment_idx, segment)| {
-                segment
-                    .data()
-                    .iter()
-                    .enumerate()
-                    .map(|(word_idx, word)| (word, [segment_idx, word_idx]))
-                    .collect::<Vec<_>>()
-            })
-            .filter(|it| match it.0 {
-                Morpheme::Unk => true,
-                Morpheme::Tagged(tag) => {
-                    let surface = tag.surface();
-                    match get_single_char(surface) {
-                        Some(c) => !is_punctuation(c),
-                        None => true,
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
-
-        println!("{:#?}", audio_segment_list.len());
-        println!("{:#?}", segment_list.len());
-
-        // We want to try mapping the audio_segment_list to the segment_list as it should
-        // contain the smaller amount of data.
-        const N_SAMPLES: usize = 500;
-
-        // Find N random points in audio_segment_list
-        let mut samples = [0_usize; N_SAMPLES];
-
-        samples.iter_mut().for_each(|sample| {
-            for i in 0..20 {
-                *sample = rand::rng().random_range(0..audio_segment_list.len());
-
-                if let Morpheme::Tagged(_) = audio_segment_list[*sample].0 {
-                    return;
-                }
+                },
+                _ => {}
             }
+        }
+        */
 
-            panic!("Unable to find waystone");
+
+
+
+        println!("{:#?}", self.matches);
+
+        self.matches.sort_by(|a, b| {
+            let a_pos = match a {
+                MatchKind::Exact { timing_pos, .. } => timing_pos,
+                MatchKind::Unknown { timing_pos,  .. } => timing_pos,
+                _ => unreachable!()
+            };
+            let b_pos = match b {
+                MatchKind::Exact { timing_pos, .. } => timing_pos,
+                MatchKind::Unknown { timing_pos, .. } => timing_pos,
+                _ => unreachable!()
+            };
+
+            a_pos.cmp(b_pos)
         });
 
-        // For each sample we want to find the longest sequence that we can find in `segment_list`.
-        let mut longest_sequence = samples
-            .iter()
-            .flat_map(|sample| {
-                let audio_segment = audio_segment_list[*sample].0;
-
-                segment_list
-                    .iter()
-                    .positions(|item| item.0 == audio_segment)
-                    .map(|position| {
-                        let mut matches = 0;
-                        let mut rev_matches = 0;
-
-                        loop {
-                            let audio_pos = *sample + matches;
-                            let text_pos = position + matches;
-
-                            // We're at the end of a buffer
-                            if audio_pos >= audio_segment_list.len()
-                                || text_pos >= segment_list.len()
-                            {
-                                break;
-                            }
-
-                            if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
-                                matches += 1;
-                            } else {
-                                // Allow a single word gap
-                                if let Some(a) = audio_segment_list.get(audio_pos + 1)
-                                    && let Some(b) = segment_list.get(text_pos + 1)
-                                {
-                                    if a.0 == b.0 {
-                                        matches += 1;
-
-                                        continue;
-                                    }
-                                }
-
-                                break;
-                            }
-                        }
-
-                        loop {
-                            let audio_pos = *sample - rev_matches;
-                            let text_pos = position - rev_matches;
-
-                            // We're at the end of a buffer
-                            if audio_pos == 0 || text_pos == 0 {
-                                if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
-                                    rev_matches += 1;
-                                }
-
-                                return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
-                            }
-
-                            if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
-                                rev_matches += 1;
-                            } else {
-                                // Allow a single word gap
-                                if let Some(a) = audio_segment_list.get(audio_pos - 1)
-                                    && let Some(b) = segment_list.get(text_pos - 1)
-                                {
-                                    if a.0 == b.0 {
-                                        rev_matches += 1;
-
-                                        continue;
-                                    }
-                                }
-
-                                return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
-                            }
-                        }
-                    })
-                    .filter(|it| it.2 > 75) // Collect all matches > 75 chars
-                    .collect::<Vec<_>>()
-            })
-            .fold(vec![], |mut prev, curr| {
-                let curr = (
-                    curr,
-                    std::range::Range {
-                        start: curr.0,
-                        end: curr.0 + curr.2,
-                    },
-                );
-
-                if prev.is_empty() {
-                    prev.push(curr);
-                    return prev;
-                }
-
-                let value = prev.iter_mut().find(|prev| {
-                    if prev.0.0 < curr.0.0 {
-                        prev.1.contains(&curr.0.0)
-                    } else {
-                        curr.1.contains(&prev.0.0)
-                        // prev.1.contains(&(curr.0.0 + curr.0.2))
-                    }
-                });
-
-                // Because of how the algorithm works, if one value is a subset of another
-                // the lowest positions and largest range will always be the winner. The larger
-                // string will ALWAYS contain the full subet.
-                match value {
-                    Some((prev, _)) => {
-                        prev.0 = std::cmp::min(prev.0, curr.0.0);
-                        prev.1 = std::cmp::min(prev.1, curr.0.1);
-                        prev.2 = std::cmp::max(prev.2, curr.0.2);
-                    }
-                    None => prev.push(curr),
-                }
-
-                return prev;
-            });
-
-        longest_sequence.sort_by(|a, b| Ord::cmp(&a.0, &b.0));
-
-        let resolved_gaps = longest_sequence
-            .iter()
-            .map(|it| it.0)
-            .map(Some)
-            .chain([None])
-            .tuple_windows()
-            .filter_map(|(a, b)| Some((a?, b)))
-            .fold(vec![MatchKind::Begin {}], |mut prev, (curr, next)| {
-                prev.push(MatchKind::Exact {
-                    transcription_pos: curr.0,
-                    text_pos: curr.1,
-                    length: curr.2,
-                });
-
-                match next {
-                    Some(next) => {
-                        println!("{:?} {:?}", curr, next);
-
-                        prev.push(MatchKind::Unknown {
-                            transcription_pos: curr.0 + curr.2,
-                            text_pos: curr.1 + curr.2,
-                            length: next.0 - (curr.0 + curr.2),
-                        });
-                    }
-                    None => {
-                        prev.push(MatchKind::End {});
-                    }
-                }
-
-                prev
-            });
-
-        // We need to hold an array of mappings...
-        // The mapping will be:
-        //
-        //     [[audio_segment_pos, audio_word_pos], [text_segment_pos, text_word_pos]]
-
-        // Re-iterate over this and try to further resolve the gaps. We should basically run the same
-        // algorithm over the gaps to further narrow them down.
-
-        println!("{:#?}", resolved_gaps);
-
-        for gap in &resolved_gaps {
-            match gap {
-                MatchKind::Begin {} => {}
-                MatchKind::Exact { .. } => {}
-                MatchKind::Unknown {
-                    transcription_pos,
-                    text_pos,
-                    length,
-                } => {
-                    println!("");
-                    println!("{}", audio_segment_list[*transcription_pos..(*transcription_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
-                    println!("{}", segment_list[*text_pos..(*text_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
-                    println!("");
-
-                    // println!("{}",
+        let debug_matches = |m: &MatchKind| {
+            match m {
+                MatchKind::Exact { timing_pos, text_pos, length } => {
+                    println!("    {:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                    println!("    {:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
                 },
-                MatchKind::End {} => {}
+                MatchKind::Unknown { timing_pos, text_pos, length } => {
+                    println!("    {:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                    println!("    {:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                },
+                _ => unreachable!()
+            }
+        };
+
+        for (idx, i) in self.matches.iter().enumerate() {
+            if idx == 0 {
+                continue
+            }
+            if idx == self.matches.len() - 1 {
+                continue
+            }
+
+            match i {
+                MatchKind::Unknown { timing_pos, text_pos, length } => {
+                    if *length < 5_usize {
+                        println!("============================");
+                        println!("  BEFORE");
+                        debug_matches(&self.matches[idx - 1]);
+                        println!("");
+                        println!("{:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                        println!("{:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                        println!("");
+                        println!("  AFTER");
+                        debug_matches(&self.matches[idx + 1]);
+                        println!("============================");
+                        println!("");
+                        println!("");
+                    }
+                },
+                _ => {}
             }
         }
 
-        println!("{}", longest_sequence.iter().fold(0_usize, |prev, curr| { prev + curr.0.2 }));
+        println!("{:#?}",
+        self.matches.iter().fold(BTreeMap::<usize, usize>::new(), |mut prev, curr| {
+            match curr {
+                MatchKind::Unknown { timing_pos, text_pos, length } => {
+                    prev.get_mut(&length).map(|mut it| *it += 1).or_else(|| {
+                        prev.insert(*length, 1);
+                        Some(())
+                    });
+                },
+                _ => {},
+            }
+
+            prev
+        }));
+
+        println!("{:#?}", self.matches.len());
+
+        println!(
+            "{:#?}",
+            self.matches.iter().fold((0_usize, 0_usize), |prev, curr| {
+                match curr {
+                    MatchKind::Exact {
+                        timing_pos,
+                        text_pos,
+                        length,
+                    } => (prev.0 + length, prev.1),
+                    MatchKind::Unknown {
+                        timing_pos,
+                        text_pos,
+                        length,
+                    } => (prev.0, prev.1 + length),
+                    _ => prev,
+                }
+            })
+        );
+    }
+
+    fn partial_align(&mut self, splits: &mut AtomicUsize) {
+        self.matches.par_iter_mut().for_each(|item| {
+            if let MatchKind::Unknown {
+                timing_pos,
+                text_pos,
+                length,
+            } = &item
+            {
+                let sample = rand::rng().random_range(*timing_pos..(timing_pos + length));
+                let timing_segment = &self.a[sample];
+
+                let waystones = self.b[*text_pos..(text_pos + length)]
+                    .iter()
+                    .positions(|it| it.data == timing_segment.data)
+                    .map(|position| {
+                        let position = position + text_pos;
+
+                        let mut fwd_matches = 0;
+                        let mut rev_matches = 0;
+
+                        for _ in (sample..(timing_pos + length)) {
+                            let timing_pos = sample + fwd_matches;
+                            let text_pos = position + fwd_matches;
+
+                            if self.a[timing_pos].data == self.b[text_pos].data {
+                                fwd_matches += 1;
+                            } else {
+                                if self.a[timing_pos + 1].data == self.b[text_pos + 1].data {
+                                    fwd_matches += 1;
+                                    continue;
+                                }
+
+                                break;
+                            }
+                        }
+
+                        for _ in (sample..(*timing_pos)) {
+                            let timing_pos = sample - rev_matches;
+                            let text_pos = position - rev_matches;
+
+                            if self.a[timing_pos].data == self.b[text_pos].data {
+                                rev_matches += 1;
+                            } else {
+                                // Allow single gap
+                                if self.a[timing_pos - 1].data == self.b[text_pos - 1].data {
+                                    rev_matches += 1;
+                                    continue;
+                                }
+
+                                break;
+                            }
+                        }
+
+                        return (
+                            sample - rev_matches.saturating_sub(1),
+                            position - rev_matches.saturating_sub(1),
+                            fwd_matches + rev_matches.saturating_sub(1),
+                        );
+                    })
+                    .filter(|it| {
+                        if *length > 50_usize {
+                            it.2 > 25
+                        } else {
+                            it.2 > length.div_ceil(2)
+                        }
+
+                    })
+                    .collect::<Vec<_>>();
+
+                assert!(
+                    waystones.len() <= 1,
+                    "Found text matching at more than 1 position"
+                );
+
+                if waystones.len() == 1 {
+                    if waystones[0].0 < *timing_pos {
+                        println!("{:#?}", item);
+                        println!("SAMPLE: {:#?}", sample);
+
+                        println!(
+                            "({}, {}, {}) -> {:?}",
+                            timing_pos, text_pos, length, waystones[0]
+                        );
+
+                        assert!(waystones[0].0 > *timing_pos);
+                        assert!(waystones[0].1 > *text_pos);
+                        assert!(waystones[0].2 < *length);
+                    }
+
+                    *item = MatchKind::Split {
+                        from_timing_pos: *timing_pos,
+                        from_text_pos: *text_pos,
+                        from_length: *length,
+                        match_timing_pos: waystones[0].0,
+                        match_text_pos: waystones[0].1,
+                        match_length: waystones[0].2,
+                    };
+                }
+            }
+        });
+
+        let mut splits = vec![];
+
+        self.matches = std::mem::take(&mut self.matches)
+            .into_iter()
+            .map(|it| {
+                if let MatchKind::Split {
+                    from_timing_pos,
+                    from_text_pos,
+                    from_length,
+                    match_timing_pos,
+                    match_text_pos,
+                    match_length,
+                } = it
+                {
+                    // First Segment
+                    if from_timing_pos != match_timing_pos && from_text_pos != match_text_pos {
+                        match_timing_pos
+                            .checked_sub(from_timing_pos)
+                            .ok_or_else(|| {
+                                println!(
+                                    "({}, {}, {}) - ({}, {}, {})",
+                                    from_timing_pos,
+                                    from_text_pos,
+                                    from_length,
+                                    match_timing_pos,
+                                    match_text_pos,
+                                    match_length,
+                                );
+
+                                ()
+                            })
+                            .unwrap();
+
+                        splits.push(MatchKind::Unknown {
+                            timing_pos: from_timing_pos,
+                            text_pos: from_text_pos,
+                            length: match_timing_pos - from_timing_pos,
+                        });
+                    }
+
+                    // Second Segment
+                    if match_timing_pos + match_length < from_timing_pos + from_length - 1 {
+                        splits.push(MatchKind::Unknown {
+                            timing_pos: match_timing_pos + match_length,
+                            text_pos: match_text_pos + match_length,
+                            length: from_timing_pos + from_length - match_timing_pos - match_length,
+                        })
+                    }
+
+                    MatchKind::Exact {
+                        timing_pos: match_timing_pos,
+                        text_pos: match_text_pos,
+                        length: match_length,
+                    }
+                } else {
+                    it
+                }
+            })
+            .collect::<Vec<_>>();
+
+        self.matches.append(&mut splits);
+    }
+}
+
+/// Creates an aligned _ where a fits within b.
+pub fn align_segments<T: IsSegment, ASource, BSource>(
+    a: impl Iterator<Item = Segment<T, ASource>>,
+    b: impl Iterator<Item = Segment<T, BSource>>,
+    options: SegmentAlignerOptions,
+) -> ()
+where
+    T: Send + Sync + Debug,
+    ASource: Send + Sync,
+    BSource: Send + Sync,
+{
+    let a = a.collect::<Vec<_>>();
+    let b = b.collect::<Vec<_>>();
+
+    let a_len = a.len();
+    let b_len = b.len();
+
+    let mut aligner = SegmentAligner::new(a, b, options);
+
+    // aligner.align();
+
+    println!("{:#?}", aligner.align());
+
+    ()
+}
+
+impl JapaneseTranscriptionContext {
+    pub fn test<CTiming, CText>(&self, text_data: &CText, timing_data: &CTiming)
+    where
+        CTiming: CanSegment<Morpheme>,
+        CTiming::Source: Send + Sync,
+        CText: CanSegment<Morpheme>,
+        CText::Source: Send + Sync,
+    {
+        let segmenter = JapaneseTextSegmenter::new();
+
+        let timing_segments = timing_data.segments(&segmenter);
+        let text_segments = text_data.segments(&segmenter);
+
+        println!("Timing Segments: {:?}", timing_segments.size_hint());
+        println!("Text Segments: {:?}", text_segments.size_hint());
+
+        let timing_segments = timing_segments.filter(|it| match &it.data {
+            Morpheme::Unk => true,
+            Morpheme::Tagged(tag) => {
+                let surface = tag.surface();
+                match get_single_char(surface) {
+                    Some(c) => !is_punctuation(c),
+                    None => true,
+                }
+            }
+        });
+
+        let text_segments = text_segments.filter(|it| match &it.data {
+            Morpheme::Unk => true,
+            Morpheme::Tagged(tag) => {
+                let surface = tag.surface();
+                match get_single_char(surface) {
+                    Some(c) => !is_punctuation(c),
+                    None => true,
+                }
+            }
+        });
+
+        align_segments(timing_segments, text_segments, SegmentAlignerOptions {});
+
+        /*
+                // We want to try mapping the audio_segment_list to the segment_list as it should
+                // contain the smaller amount of data.
+                const N_SAMPLES: usize = 500;
+
+                // Find N random points in audio_segment_list
+                let mut samples = [0_usize; N_SAMPLES];
+
+                samples.iter_mut().for_each(|sample| {
+                    for i in 0..20 {
+                        *sample = rand::rng().random_range(0..audio_segment_list.len());
+
+                        if let Morpheme::Tagged(_) = audio_segment_list[*sample].0 {
+                            return;
+                        }
+                    }
+
+                    panic!("Unable to find waystone");
+                });
+
+                // For each sample we want to find the longest sequence that we can find in `segment_list`.
+                let mut longest_sequence = samples
+                    .iter()
+                    .flat_map(|sample| {
+                        let audio_segment = audio_segment_list[*sample].0;
+
+                        segment_list
+                            .iter()
+                            .positions(|item| item.0 == audio_segment)
+                            .map(|position| {
+                                let mut matches = 0;
+                                let mut rev_matches = 0;
+
+                                loop {
+                                    let audio_pos = *sample + matches;
+                                    let text_pos = position + matches;
+
+                                    // We're at the end of a buffer
+                                    if audio_pos >= audio_segment_list.len()
+                                        || text_pos >= segment_list.len()
+                                    {
+                                        break;
+                                    }
+
+                                    if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                        matches += 1;
+                                    } else {
+                                        // // Allow a single word gap
+                                        // if let Some(a) = audio_segment_list.get(audio_pos + 1)
+                                        //     && let Some(b) = segment_list.get(text_pos + 1)
+                                        // {
+                                        //     if a.0 == b.0 {
+                                        //         let key = segment_list[text_pos].0.to_string();
+                                        //         let val = audio_segment_list[audio_pos].0.to_string();
+                                        //         if let Some(v) = map.get_mut(&key) {
+                                        //             v.push(val);
+                                        //         } else {
+                                        //             map.insert(key, vec![val]);
+                                        //         }
+                                        //         matches += 1;
+                                        //         continue;
+                                        //     }
+                                        // }
+
+                                        break;
+                                    }
+                                }
+
+                                loop {
+                                    let audio_pos = *sample - rev_matches;
+                                    let text_pos = position - rev_matches;
+
+                                    // We're at the end of a buffer
+                                    if audio_pos == 0 || text_pos == 0 {
+                                        if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                            rev_matches += 1;
+                                        }
+
+                                        return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
+                                    }
+
+                                    if audio_segment_list[audio_pos].0 == segment_list[text_pos].0 {
+                                        rev_matches += 1;
+                                    } else {
+                                        // // Allow a single word gap
+                                        // if let Some(a) = audio_segment_list.get(audio_pos - 1)
+                                        //     && let Some(b) = segment_list.get(text_pos - 1)
+                                        // {
+                                        //     if a.0 == b.0 {
+                                        //         rev_matches += 1;
+                                        //         continue;
+                                        //     }
+                                        // }
+
+                                        return (audio_pos + 1, text_pos + 1, matches + rev_matches - 1);
+                                    }
+                                }
+                            })
+                            .filter(|it| it.2 > 75) // Collect all matches > 75 chars
+                            .collect::<Vec<_>>()
+                    })
+                    .fold(vec![], |mut prev, curr| {
+                        let curr = (
+                            curr,
+                            std::range::Range {
+                                start: curr.0,
+                                end: curr.0 + curr.2,
+                            },
+                        );
+
+                        if prev.is_empty() {
+                            prev.push(curr);
+                            return prev;
+                        }
+
+                        let value = prev.iter_mut().find(|prev| {
+                            if prev.0.0 < curr.0.0 {
+                                prev.1.contains(&curr.0.0)
+                            } else {
+                                curr.1.contains(&prev.0.0)
+                                // prev.1.contains(&(curr.0.0 + curr.0.2))
+                            }
+                        });
+
+                        // Because of how the algorithm works, if one value is a subset of another
+                        // the lowest positions and largest range will always be the winner. The larger
+                        // string will ALWAYS contain the full subet.
+                        match value {
+                            Some((prev, _)) => {
+                                prev.0 = std::cmp::min(prev.0, curr.0.0);
+                                prev.1 = std::cmp::min(prev.1, curr.0.1);
+                                prev.2 = std::cmp::max(prev.2, curr.0.2);
+                            }
+                            None => prev.push(curr),
+                        }
+
+                        return prev;
+                    });
+
+                longest_sequence.sort_by(|a, b| Ord::cmp(&a.0, &b.0));
+
+                let resolved_gaps = longest_sequence
+                    .iter()
+                    .map(|it| it.0)
+                    .map(Some)
+                    .chain([None])
+                    .tuple_windows()
+                    .filter_map(|(a, b)| Some((a?, b)))
+                    .fold(vec![MatchKind::Begin {}], |mut prev, (curr, next)| {
+                        prev.push(MatchKind::Exact {
+                            transcription_pos: curr.0,
+                            text_pos: curr.1,
+                            length: curr.2,
+                        });
+
+                        match next {
+                            Some(next) => {
+                                println!("{:?} {:?}", curr, next);
+
+                                prev.push(MatchKind::Unknown {
+                                    transcription_pos: curr.0 + curr.2,
+                                    text_pos: curr.1 + curr.2,
+                                    length: next.0 - (curr.0 + curr.2),
+                                });
+                            }
+                            None => {
+                                prev.push(MatchKind::End {});
+                            }
+                        }
+
+                        prev
+                    });
+
+
+                // We need to hold an array of mappings...
+                // The mapping will be:
+                //
+                //     [[audio_segment_pos, audio_word_pos], [text_segment_pos, text_word_pos]]
+
+                // Re-iterate over this and try to further resolve the gaps. We should basically run the same
+                // algorithm over the gaps to further narrow them down.
+
+                println!("{:#?}", resolved_gaps);
+
+                for gap in &resolved_gaps {
+                    match gap {
+                        MatchKind::Begin {} => {}
+                        MatchKind::Exact { .. } => {}
+                        MatchKind::Unknown {
+                            transcription_pos,
+                            text_pos,
+                            length,
+                        } => {
+                            println!("");
+                            println!("{}", audio_segment_list[*transcription_pos..(*transcription_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
+                            println!("{}", segment_list[*text_pos..(*text_pos + *length)].iter().map(|it| it.0.to_string()).join(""));
+                            println!("");
+
+                            // println!("{}",
+                        },
+                        MatchKind::End {} => {}
+                    }
+                }
+
+                // println!("{:#?}", map);
+
+                println!("{}", longest_sequence.iter().fold(0_usize, |prev, curr| { prev + curr.0.2 }));
+        */
 
         panic!();
     }
@@ -463,7 +833,7 @@ impl JapaneseTranscriptionContext {
         chapters: Vec<(String, Vec<EpubNode>)>,
         audio: String,
     ) -> Vec<TimestampedSegments> {
-        let transcription: Transcription<()> = serde_json::from_str(&audio).unwrap();
+        let transcription: Transcription = serde_json::from_str(&audio).unwrap();
 
         println!("{:#?}", transcription);
         panic!();
@@ -489,7 +859,7 @@ impl JapaneseTranscriptionContext {
             .collect::<Vec<_>>()
     }
 
-    fn fit_transcription(&self, transcription: Transcription<()>) -> Vec<FitWord> {
+    fn fit_transcription(&self, transcription: Transcription) -> Vec<FitWord> {
         let home = std::env::var("HOME").unwrap();
         let tagger = Tagger::new(format!(
             "-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302",
@@ -557,10 +927,7 @@ impl JapaneseTranscriptionContext {
                     if morpheme.unit == word_str {
                         if i != char_idx {
                             list.push(FitWord {
-                                text: line.words[char_idx..i]
-                                    .iter()
-                                    .map(|it| &it.word)
-                                    .join(""),
+                                text: line.words[char_idx..i].iter().map(|it| &it.word).join(""),
                                 t0: line.words[char_idx].start.map(|it| (it * 1000.0) as u64),
                                 t1: line.words[i - 1].end.map(|it| (it * 1000.0) as u64),
                                 word: None,

@@ -45,8 +45,8 @@ fn validation_pass() {
 
         if is_err {}
 
-        println!("{:#?}", path);
-        archive.map(|mut it| it.text());
+        // println!("{:#?}", path);
+        // archive.map(|mut it| it.text());
 
         println!("{}/{} ({} failed)", good + bad, len, bad);
     });

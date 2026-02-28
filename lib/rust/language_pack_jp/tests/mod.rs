@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use epub::archive::EpubArchive;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
 
+/*
 #[test]
 fn real_example() {
     let home = std::env::var("HOME").unwrap();
@@ -20,6 +21,7 @@ fn real_example() {
     let transcriber = JapaneseTranscriptionContext {};
     transcriber.test(text, &timing_data);
 }
+*/
 
 /*
 

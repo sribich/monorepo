@@ -1,20 +1,84 @@
 #![feature(new_range_api)]
+use std::fmt::Debug;
 use std::range::Range;
 
 use serde::Deserialize;
 
-/// Defines functionality for a type that can hold segment information.
-pub trait CanSegment {
-    /// Returns
-    fn text(&self) -> &str;
-
-    fn segments(&self) -> impl Iterator<Item = ()>;
-}
-
 pub trait TextSegmenter {
-    type Feature;
+    type Feature: IsSegment;
 
     fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature>;
+}
+
+impl<T: TextSegmenter> TextSegmenter for &T {
+    type Feature = T::Feature;
+
+    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
+        T::segment(self, text)
+    }
+}
+
+pub trait IsSegment: PartialEq {
+    fn text(&self) -> &str;
+}
+
+/// Defines functionality for a type that can hold segment information.
+pub trait CanSegment<T: IsSegment + Debug> {
+    type Source: Debug;
+
+    fn segments(
+        &self,
+        segmenter: impl TextSegmenter<Feature = T>,
+    ) -> impl Iterator<Item = Segment<T, Self::Source>>;
+}
+
+impl<T> CanSegment<T> for Transcription
+where
+    T: IsSegment + PartialEq + Debug,
+{
+    type Source = TranscriptionSource;
+
+    fn segments(
+        &self,
+        segmenter: impl TextSegmenter<Feature = T>,
+    ) -> impl Iterator<Item = Segment<T, Self::Source>> {
+        self.lines
+            .iter()
+            .enumerate()
+            .flat_map(|(line_index, line)| {
+                segmenter
+                    .segment(&line.text)
+                    .into_iter()
+                    .map(move |segment| Segment {
+                        data: segment,
+                        source: TranscriptionSource { line: line_index },
+                    })
+            })
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+}
+
+#[derive(Debug, Eq)]
+pub struct Segment<TData, TSource>
+where
+    TData: PartialEq + Debug + IsSegment,
+{
+    pub data: TData,
+    pub source: TSource,
+}
+
+impl<TData: PartialEq + Debug + IsSegment, TSourceA, TSourceB> PartialEq<Segment<TData, TSourceB>>
+    for Segment<TData, TSourceA>
+{
+    fn eq(&self, other: &Segment<TData, TSourceB>) -> bool {
+        self.data == other.data
+    }
+}
+
+#[derive(Debug)]
+pub struct TranscriptionSource {
+    line: usize,
 }
 
 /// The output from the WhisperX transcription process.
@@ -23,13 +87,13 @@ pub trait TextSegmenter {
 /// information.
 #[derive(Debug, Deserialize)]
 #[serde(transparent)]
-pub struct Transcription<T: Default> {
-    pub lines: Vec<Line<T>>,
+pub struct Transcription {
+    pub lines: Vec<Line>,
 }
 
 /// An individual text segment that was transcribed.
 #[derive(Debug, Deserialize)]
-pub struct Line<T> {
+pub struct Line {
     /// The line of text as it was transcribed.
     pub text: String,
     /// The start time in <sec>.<msec> format.
@@ -38,8 +102,6 @@ pub struct Line<T> {
     pub end: f64,
     /// Word level timestamps from WhisperX's forced alignment.
     pub words: Vec<Word>,
-    #[serde(skip, default)]
-    pub segments: Vec<T>,
 }
 
 /// A word that was picked out of the forced alignment model.
