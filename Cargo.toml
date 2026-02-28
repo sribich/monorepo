@@ -320,8 +320,10 @@ zip = "8.1.0"
 ################################################################################
 ## Test Profile
 ################################################################################
-# [profile.test]
+[profile.test]
 # codegen-backend = "llvm"
+debug = true
+strip = "none"
 
 ################################################################################
 ## Dev Profile
@@ -330,6 +332,10 @@ zip = "8.1.0"
 # Enable basic optimizations for _our_ code. This additionally fixes some
 # issues with LeakSanitizer not detecting memory leaks in unoptimized builds.
 opt-level = 1
+
+debug = true
+strip = "none"
+
 # debug = false
 # strip = false
 # codegen-backend = "cranelift"

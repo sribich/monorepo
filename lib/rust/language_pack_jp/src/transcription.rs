@@ -89,18 +89,27 @@ enum MatchKind {
     Begin {},
     Exact {
         timing_pos: usize,
+        timing_length: usize,
         text_pos: usize,
-        length: usize,
+        text_length: usize,
     },
     Unknown {
         timing_pos: usize,
+        timing_length: usize,
         text_pos: usize,
-        length: usize,
+        text_length: usize,
+    },
+    Empty {
+        timing_pos: usize,
+        timing_length: usize,
+        text_pos: usize,
+        text_length: usize,
     },
     Split {
         from_timing_pos: usize,
+        from_timing_length: usize,
         from_text_pos: usize,
-        from_length: usize,
+        from_text_length: usize,
 
         match_timing_pos: usize,
         match_text_pos: usize,
@@ -233,6 +242,25 @@ where
 
 struct SegmentAlignerOptions {}
 
+fn directed_range(a: usize, b: usize) -> impl Iterator<Item = usize> {
+    let mut start = a;
+    let end = b;
+    std::iter::from_fn(move || {
+        use std::cmp::Ordering::*;
+        match start.cmp(&end) {
+            Less => {
+                start += 1;
+                Some(start - 1)
+            }
+            Equal => None,
+            Greater => {
+                start -= 1;
+                Some(start + 1)
+            }
+        }
+    })
+}
+
 impl<T, ASource, BSource> SegmentAligner<T, ASource, BSource>
 where
     T: IsSegment + Send + Sync + Debug,
@@ -245,6 +273,7 @@ where
         options: SegmentAlignerOptions,
     ) -> Self {
         let a_len = a.len();
+        let b_len = b.len();
 
         Self {
             a,
@@ -252,90 +281,260 @@ where
             options,
             matches: vec![MatchKind::Unknown {
                 timing_pos: 0,
+                timing_length: a_len,
                 text_pos: 0,
-                length: a_len,
+                text_length: b_len,
             }],
+        }
+    }
+
+    fn sort(&mut self) {
+        self.matches.sort_by(|a, b| {
+            let (a_timing_pos, a_text_pos) = match a {
+                MatchKind::Exact {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                MatchKind::Unknown {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                MatchKind::Empty {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                _ => unreachable!(),
+            };
+            let (b_timing_pos, b_text_pos) = match b {
+                MatchKind::Exact {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                MatchKind::Unknown {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                MatchKind::Empty {
+                    timing_pos,
+                    text_pos,
+                    ..
+                } => (timing_pos, text_pos),
+                _ => unreachable!(),
+            };
+
+            a_timing_pos
+                .cmp(b_timing_pos)
+                .then(a_text_pos.cmp(b_text_pos))
+        });
+    }
+
+    fn ensure_chunks_are_aligned(&self) {
+        let mut curr_timing = 0;
+        let mut curr_text = 0;
+
+        for (idx, item) in self.matches.iter().enumerate() {
+            let (timing_pos, timing_length, text_pos, text_length) = match item {
+                MatchKind::Exact {
+                    timing_pos,
+                    timing_length,
+                    text_pos,
+                    text_length,
+                } => (timing_pos, timing_length, text_pos, text_length),
+                MatchKind::Unknown {
+                    timing_pos,
+                    timing_length,
+                    text_pos,
+                    text_length,
+                } => (timing_pos, timing_length, text_pos, text_length),
+                MatchKind::Empty {
+                    timing_pos,
+                    timing_length,
+                    text_pos,
+                    text_length,
+                } => (timing_pos, timing_length, text_pos, text_length),
+                _ => unreachable!(),
+            };
+
+            if *timing_pos == curr_timing && *text_pos == curr_text {
+                curr_timing = timing_pos + timing_length;
+                curr_text = text_pos + text_length;
+            } else {
+                println!("ERROR:");
+                println!("PREV:");
+                println!("{:#?}", self.matches[idx - 1]);
+
+                println!("CURR:");
+                println!("{:#?}", self.matches[idx]);
+
+                println!("NEXT:");
+                println!("{:#?}", self.matches[idx + 1]);
+
+                panic!("Mismatch");
+            }
+        }
+    }
+
+    /// DEBUG
+    fn print_empties(&self) {
+        for (idx, item) in self.matches.iter().enumerate() {
+            if let MatchKind::Empty { .. } = item {
+                println!("");
+                println!("{:#?}", item);
+                println!("{:#?}", self.matches[idx - 1]);
+                println!("{:#?}", self.matches[idx + 1]);
+                println!("");
+            }
         }
     }
 
     pub fn align(mut self) {
         let mut splits = AtomicUsize::new(0);
 
-        for i in 0..1000 {
-            println!("{:#?}", i);
+        let end_timing = self.a.len();
+        let end_text = self.b.len();
 
+        for i in 0..1000 {
             self.partial_align(&mut splits);
         }
 
-        /*
-        let misheard_map: HashMap<String, HashMap<String, usize>> = HashMap::new();
+        self.sort();
+        self.ensure_chunks_are_aligned();
+
+        let mut unknowns: HashMap<String, HashMap<String, usize>> = HashMap::new();
 
         for i in self.matches.iter() {
             match i {
-                MatchKind::Unknown { timing_pos, text_pos, length } => {
-                    if length == 1 {
-                        let timing_value = &self.a[*timing_pos];
-                        let text_value = &self.b[*text_pos];
+                MatchKind::Unknown {
+                    timing_pos,
+                    timing_length,
+                    text_pos,
+                    text_length,
+                } => {
+                    if *timing_length == 1 && *text_length == 1 {
+                        // let timing_value = &self.a[*timing_pos];
+                        // let text_value = &self.b[*text_pos];
+                        // misheard_map.entry(&)
 
-                        misheard_map.entry(&)
+                        println!(
+                            "1 -> 1 = {} -> {}",
+                            &self.a[*timing_pos].data.text(),
+                            &self.b[*text_pos].data.text()
+                        );
                     }
-                },
+                    if *timing_length == 1 && *text_length == 2 {
+                        println!(
+                            "1 -> 2 = {} -> {}",
+                            &self.a[*timing_pos].data.text(),
+                            &self.b[*text_pos..=(text_pos + 1)]
+                                .iter()
+                                .map(|it| it.data.text())
+                                .join("")
+                        );
+                        // unknowns.entry(self.a[*timing_pos].data.text().to_owned()).and_modify(||);
+                    }
+                    if *timing_length == 2 && *text_length == 1 {
+                        println!(
+                            "2 -> 1 = {} -> {}",
+                            &self.a[*timing_pos..=(timing_pos + 1)]
+                                .iter()
+                                .map(|it| it.data.text())
+                                .join(""),
+                            &self.b[*text_pos].data.text()
+                        );
+                    }
+                }
                 _ => {}
             }
         }
-        */
 
+        // panic!();
+        // println!("{:#?}", self.matches);
 
-
-
-        println!("{:#?}", self.matches);
-
-        self.matches.sort_by(|a, b| {
-            let a_pos = match a {
-                MatchKind::Exact { timing_pos, .. } => timing_pos,
-                MatchKind::Unknown { timing_pos,  .. } => timing_pos,
-                _ => unreachable!()
-            };
-            let b_pos = match b {
-                MatchKind::Exact { timing_pos, .. } => timing_pos,
-                MatchKind::Unknown { timing_pos, .. } => timing_pos,
-                _ => unreachable!()
-            };
-
-            a_pos.cmp(b_pos)
-        });
-
-        let debug_matches = |m: &MatchKind| {
-            match m {
-                MatchKind::Exact { timing_pos, text_pos, length } => {
-                    println!("    {:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
-                    println!("    {:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
-                },
-                MatchKind::Unknown { timing_pos, text_pos, length } => {
-                    println!("    {:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
-                    println!("    {:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
-                },
-                _ => unreachable!()
+        let debug_matches = |m: &MatchKind| match m {
+            MatchKind::Exact {
+                timing_pos,
+                timing_length,
+                text_pos,
+                text_length,
+            } => {
+                println!(
+                    "    {:#?}",
+                    self.a[*timing_pos..(timing_pos + timing_length)]
+                        .iter()
+                        .map(|x| x.data.text().to_owned())
+                        .join("")
+                );
+                println!(
+                    "    {:#?}",
+                    self.b[*text_pos..(text_pos + text_length)]
+                        .iter()
+                        .map(|x| x.data.text().to_owned())
+                        .join("")
+                );
             }
+            MatchKind::Unknown {
+                timing_pos,
+                timing_length,
+                text_pos,
+                text_length,
+            } => {
+                println!(
+                    "    {:#?}",
+                    self.a[*timing_pos..(timing_pos + timing_length)]
+                        .iter()
+                        .map(|x| x.data.text().to_owned())
+                        .join("")
+                );
+                println!(
+                    "    {:#?}",
+                    self.b[*text_pos..(text_pos + text_length)]
+                        .iter()
+                        .map(|x| x.data.text().to_owned())
+                        .join("")
+                );
+            }
+            _ => unreachable!(),
         };
 
         for (idx, i) in self.matches.iter().enumerate() {
             if idx == 0 {
-                continue
+                continue;
             }
             if idx == self.matches.len() - 1 {
-                continue
+                continue;
             }
 
             match i {
-                MatchKind::Unknown { timing_pos, text_pos, length } => {
-                    if *length < 5_usize {
+                MatchKind::Unknown {
+                    timing_pos,
+                    timing_length,
+                    text_pos,
+                    text_length,
+                } => {
+                    if *timing_length < 5_usize {
                         println!("============================");
                         println!("  BEFORE");
                         debug_matches(&self.matches[idx - 1]);
                         println!("");
-                        println!("{:#?}", self.a[*timing_pos..(timing_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
-                        println!("{:#?}", self.b[*text_pos..(text_pos + length)].iter().map(|x| x.data.text().to_owned()).join(""));
+                        println!(
+                            "{:#?}",
+                            self.a[*timing_pos..(timing_pos + timing_length)]
+                                .iter()
+                                .map(|x| x.data.text().to_owned())
+                                .join("")
+                        );
+                        println!(
+                            "{:#?}",
+                            self.b[*text_pos..(text_pos + text_length)]
+                                .iter()
+                                .map(|x| x.data.text().to_owned())
+                                .join("")
+                        );
                         println!("");
                         println!("  AFTER");
                         debug_matches(&self.matches[idx + 1]);
@@ -343,25 +542,36 @@ where
                         println!("");
                         println!("");
                     }
-                },
+                }
                 _ => {}
             }
         }
 
-        println!("{:#?}",
-        self.matches.iter().fold(BTreeMap::<usize, usize>::new(), |mut prev, curr| {
-            match curr {
-                MatchKind::Unknown { timing_pos, text_pos, length } => {
-                    prev.get_mut(&length).map(|mut it| *it += 1).or_else(|| {
-                        prev.insert(*length, 1);
-                        Some(())
-                    });
-                },
-                _ => {},
-            }
+        println!(
+            "{:#?}",
+            self.matches
+                .iter()
+                .fold(BTreeMap::<usize, usize>::new(), |mut prev, curr| {
+                    match curr {
+                        MatchKind::Unknown {
+                            timing_pos,
+                            timing_length,
+                            text_pos,
+                            text_length,
+                        } => {
+                            prev.get_mut(&timing_length)
+                                .map(|mut it| *it += 1)
+                                .or_else(|| {
+                                    prev.insert(*timing_length, 1);
+                                    Some(())
+                                });
+                        }
+                        _ => {}
+                    }
 
-            prev
-        }));
+                    prev
+                })
+        );
 
         println!("{:#?}", self.matches.len());
 
@@ -371,14 +581,16 @@ where
                 match curr {
                     MatchKind::Exact {
                         timing_pos,
+                        timing_length,
                         text_pos,
-                        length,
-                    } => (prev.0 + length, prev.1),
+                        text_length,
+                    } => (prev.0 + timing_length, prev.1),
                     MatchKind::Unknown {
                         timing_pos,
+                        timing_length,
                         text_pos,
-                        length,
-                    } => (prev.0, prev.1 + length),
+                        text_length,
+                    } => (prev.0, prev.1 + timing_length),
                     _ => prev,
                 }
             })
@@ -389,29 +601,41 @@ where
         self.matches.par_iter_mut().for_each(|item| {
             if let MatchKind::Unknown {
                 timing_pos,
+                timing_length,
                 text_pos,
-                length,
+                text_length,
             } = &item
             {
-                let sample = rand::rng().random_range(*timing_pos..(timing_pos + length));
+                let sample = rand::rng().random_range(*timing_pos..(timing_pos + timing_length));
                 let timing_segment = &self.a[sample];
 
-                let waystones = self.b[*text_pos..(text_pos + length)]
+                let timing_limit = timing_pos + timing_length;
+                let text_limit = text_pos + text_length;
+
+                let waystones = self.b[*text_pos..(text_pos + text_length)]
                     .iter()
                     .positions(|it| it.data == timing_segment.data)
                     .map(|position| {
                         let position = position + text_pos;
 
-                        let mut fwd_matches = 0;
-                        let mut rev_matches = 0;
+                        let mut fwd_matches = 0_usize;
+                        let mut rev_matches = 0_usize;
 
-                        for _ in (sample..(timing_pos + length)) {
+                        for _ in (sample..(timing_pos + timing_length)) {
                             let timing_pos = sample + fwd_matches;
                             let text_pos = position + fwd_matches;
+
+                            if text_pos >= text_limit {
+                                break;
+                            }
 
                             if self.a[timing_pos].data == self.b[text_pos].data {
                                 fwd_matches += 1;
                             } else {
+                                if timing_pos + 1 >= timing_limit {
+                                    break;
+                                }
+
                                 if self.a[timing_pos + 1].data == self.b[text_pos + 1].data {
                                     fwd_matches += 1;
                                     continue;
@@ -421,7 +645,11 @@ where
                             }
                         }
 
-                        for _ in (sample..(*timing_pos)) {
+                        for _ in directed_range(sample, *timing_pos) {
+                            if rev_matches > position || rev_matches > sample {
+                                break;
+                            }
+
                             let timing_pos = sample - rev_matches;
                             let text_pos = position - rev_matches;
 
@@ -444,14 +672,7 @@ where
                             fwd_matches + rev_matches.saturating_sub(1),
                         );
                     })
-                    .filter(|it| {
-                        if *length > 50_usize {
-                            it.2 > 25
-                        } else {
-                            it.2 > length.div_ceil(2)
-                        }
-
-                    })
+                    .filter(|it| it.2 > 25)
                     .collect::<Vec<_>>();
 
                 assert!(
@@ -460,24 +681,15 @@ where
                 );
 
                 if waystones.len() == 1 {
-                    if waystones[0].0 < *timing_pos {
-                        println!("{:#?}", item);
-                        println!("SAMPLE: {:#?}", sample);
-
-                        println!(
-                            "({}, {}, {}) -> {:?}",
-                            timing_pos, text_pos, length, waystones[0]
-                        );
-
-                        assert!(waystones[0].0 > *timing_pos);
-                        assert!(waystones[0].1 > *text_pos);
-                        assert!(waystones[0].2 < *length);
-                    }
+                    assert!(waystones[0].0 >= *timing_pos);
+                    assert!(waystones[0].1 >= *text_pos);
+                    assert!(waystones[0].2 <= *timing_length);
 
                     *item = MatchKind::Split {
                         from_timing_pos: *timing_pos,
+                        from_timing_length: *timing_length,
                         from_text_pos: *text_pos,
-                        from_length: *length,
+                        from_text_length: *text_length,
                         match_timing_pos: waystones[0].0,
                         match_text_pos: waystones[0].1,
                         match_length: waystones[0].2,
@@ -493,52 +705,71 @@ where
             .map(|it| {
                 if let MatchKind::Split {
                     from_timing_pos,
+                    from_timing_length,
                     from_text_pos,
-                    from_length,
+                    from_text_length,
                     match_timing_pos,
                     match_text_pos,
                     match_length,
                 } = it
                 {
                     // First Segment
-                    if from_timing_pos != match_timing_pos && from_text_pos != match_text_pos {
-                        match_timing_pos
-                            .checked_sub(from_timing_pos)
-                            .ok_or_else(|| {
-                                println!(
-                                    "({}, {}, {}) - ({}, {}, {})",
-                                    from_timing_pos,
-                                    from_text_pos,
-                                    from_length,
-                                    match_timing_pos,
-                                    match_text_pos,
-                                    match_length,
-                                );
-
-                                ()
-                            })
-                            .unwrap();
-
-                        splits.push(MatchKind::Unknown {
-                            timing_pos: from_timing_pos,
-                            text_pos: from_text_pos,
-                            length: match_timing_pos - from_timing_pos,
-                        });
+                    if from_timing_pos != match_timing_pos || from_text_pos != match_text_pos {
+                        if (match_timing_pos - from_timing_pos == 0)
+                            || (match_text_pos - from_text_pos == 0)
+                        {
+                            splits.push(MatchKind::Empty {
+                                timing_pos: from_timing_pos,
+                                timing_length: match_timing_pos - from_timing_pos,
+                                text_pos: from_text_pos,
+                                text_length: match_text_pos - from_text_pos,
+                            });
+                        } else {
+                            splits.push(MatchKind::Unknown {
+                                timing_pos: from_timing_pos,
+                                timing_length: match_timing_pos - from_timing_pos,
+                                text_pos: from_text_pos,
+                                text_length: match_text_pos - from_text_pos,
+                            });
+                        }
                     }
 
                     // Second Segment
-                    if match_timing_pos + match_length < from_timing_pos + from_length - 1 {
-                        splits.push(MatchKind::Unknown {
-                            timing_pos: match_timing_pos + match_length,
-                            text_pos: match_text_pos + match_length,
-                            length: from_timing_pos + from_length - match_timing_pos - match_length,
-                        })
+                    if (match_timing_pos + match_length < from_timing_pos + from_timing_length)
+                        || (match_text_pos + match_length < from_text_pos + from_text_length)
+                    {
+                        if match_timing_pos + match_length == from_timing_pos + from_timing_length
+                            || match_text_pos + match_length == from_text_pos + from_text_length
+                        {
+                            splits.push(MatchKind::Empty {
+                                timing_pos: match_timing_pos + match_length,
+                                timing_length: from_timing_pos + from_timing_length
+                                    - match_timing_pos
+                                    - match_length,
+                                text_pos: match_text_pos + match_length,
+                                text_length: from_text_pos + from_text_length
+                                    - match_text_pos
+                                    - match_length,
+                            });
+                        } else {
+                            splits.push(MatchKind::Unknown {
+                                timing_pos: match_timing_pos + match_length,
+                                timing_length: from_timing_pos + from_timing_length
+                                    - match_timing_pos
+                                    - match_length,
+                                text_pos: match_text_pos + match_length,
+                                text_length: from_text_pos + from_text_length
+                                    - match_text_pos
+                                    - match_length,
+                            });
+                        }
                     }
 
                     MatchKind::Exact {
                         timing_pos: match_timing_pos,
+                        timing_length: match_length,
                         text_pos: match_text_pos,
-                        length: match_length,
+                        text_length: match_length,
                     }
                 } else {
                     it

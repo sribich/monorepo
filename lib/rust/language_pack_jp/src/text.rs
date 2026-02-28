@@ -67,6 +67,7 @@ pub fn is_punctuation(c: char) -> bool {
         || c == '…'
         || c == '?'
         || c == '！'
+        || c == '・'
 }
 
 pub fn get_single_char(s: &str) -> Option<char> {
@@ -82,7 +83,7 @@ pub fn get_single_char(s: &str) -> Option<char> {
 /// [Unicode definition of hiragana].
 ///
 /// ```
-/// use language_pack_jp::is_hiragana;
+/// use language_pack_jp::text::is_hiragana;
 ///
 /// assert!(is_hiragana('あ'));
 /// assert!(is_hiragana('ゟ'));
@@ -98,7 +99,7 @@ pub const fn is_hiragana(c: char) -> bool {
 /// [Unicode definition of katakana].
 ///
 /// ```
-/// use language_pack_jp::is_katakana;
+/// use language_pack_jp::text::is_katakana;
 ///
 /// assert!(is_katakana('ン'));
 /// assert!(is_katakana('ヿ'));
@@ -120,7 +121,7 @@ pub const fn is_katakana(c: char) -> bool {
 /// Ideographs][compat] list, so there is an extra check here for those.
 ///
 /// ```
-/// use language_pack_jp::is_kanji;
+/// use language_pack_jp::text::is_kanji;
 ///
 /// assert!(is_kanji('澄')); // Obviously a legal Kanji.
 /// assert!(!is_kanji('a')); // Obviously not.
@@ -155,7 +156,7 @@ pub fn get_reading_from_anki(s: String) -> String {
 ///
 ///
 /// ```
-/// use language_pack_jp::create_reading;
+/// use language_pack_jp::text::create_reading;
 ///
 /// assert_eq!(create_reading("食い込む", "くいこむ"), "食[く]い込[こ]む")
 /// ```
@@ -201,7 +202,7 @@ pub fn create_reading<S: AsRef<str>>(word: S, reading: S) -> String {
 }
 
 /// ```
-/// use language_pack_jp::chunk_word;
+/// use language_pack_jp::text::chunk_word;
 ///
 /// assert_eq!(chunk_word("食い込む"), vec!["食", "い", "込", "む"]);
 /// assert_eq!(chunk_word("文房具"), vec!["文房具"]);

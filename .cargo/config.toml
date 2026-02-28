@@ -5,8 +5,8 @@ feature-unification = true
 [resolver]
 feature-unification = "workspace"
 
-[profile.dev]
-codegen-backend = "cranelift"
+# [profile.dev]
+# codegen-backend = "cranelift"
 
 [target.'cfg(target_os = "linux")']
 rustflags = [

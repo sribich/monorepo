@@ -10,7 +10,7 @@ publish = false
 default = [
     "error",
     "cli",
-    "jemalloc",
+    # "jemalloc",
     "settings",
     "telemetry",
     "typegen"

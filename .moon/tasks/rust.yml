@@ -38,6 +38,9 @@ tasks:
     env:
       UPDATE_EXPECT: "1"
 
+  cargo:
+    command: cargo
+
   geiger:
     command: cargo geiger
 

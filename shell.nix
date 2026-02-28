@@ -87,6 +87,10 @@
         valgrind
         cargo-valgrind
 
+        lldb
+        gdb
+        unstable.bugstalker
+
         mecab
         curl
         wget
