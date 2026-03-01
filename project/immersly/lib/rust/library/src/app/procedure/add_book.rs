@@ -44,7 +44,12 @@ impl Procedure for AddBookProcedure {
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
-        transcriber.test(&EbookSegments::new(text), &timing_data);
+        let mut text = EbookSegments::new(text);
+
+        transcriber.test(&mut text, &timing_data);
+
+        println!("{:#?}", text);
+
 
         // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 

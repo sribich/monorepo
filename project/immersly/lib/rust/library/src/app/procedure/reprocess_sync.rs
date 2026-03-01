@@ -4,7 +4,6 @@ use std::sync::Arc;
 
 use epub::archive::EpubArchive;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
-use language_pack_jp::transcription::SegmentKind;
 use prisma_client::model;
 use railgun::di::Component;
 use serde::Deserialize;
@@ -26,7 +25,7 @@ pub struct ReprocessSyncData {
 pub struct TimestampedSegments {
     pub t0: Option<u64>,
     pub t1: Option<u64>,
-    pub kind: SegmentKind,
+    // pub kind: SegmentKind,
     pub segments: Vec<Segment>,
 }
 

@@ -1,4 +1,8 @@
 #![feature(new_range_api)]
+pub mod align;
+pub mod hirschberg;
+
+use std::f64::INFINITY;
 use std::fmt::Debug;
 use std::range::Range;
 
@@ -30,6 +34,8 @@ pub trait CanSegment<T: IsSegment + Debug> {
         &self,
         segmenter: impl TextSegmenter<Feature = T>,
     ) -> impl Iterator<Item = Segment<T, Self::Source>>;
+
+    fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source;
 }
 
 impl<T> CanSegment<T> for Transcription
@@ -46,16 +52,92 @@ where
             .iter()
             .enumerate()
             .flat_map(|(line_index, line)| {
-                segmenter
-                    .segment(&line.text)
+                let segments = segmenter.segment(&line.text);
+
+                let mut word_idx = 0;
+                let mut char_buf: [u8; 4] = [0; 4];
+
+                let matches = segments
                     .into_iter()
-                    .map(move |segment| Segment {
-                        data: segment,
-                        source: TranscriptionSource { line: line_index },
+                    .map(|it| {
+                        let text = it.text();
+
+                        // TODO: Figure out how to resolve UNKs
+                        if text == "UNK" || line.words.is_empty() {
+                            return (it, (None, None));
+                        }
+
+                        let mut t0 = INFINITY;
+                        let mut t1 = 0_f64;
+
+                        for c in text.chars() {
+                            let char_str: &str = c.encode_utf8(&mut char_buf);
+
+                            while word_idx < line.words.len()
+                                && line.words[word_idx].word != char_str
+                            {
+                                word_idx += 1;
+                            }
+
+                            assert!(
+                                line.words[word_idx].word == char_str,
+                                "Failed to find match"
+                            );
+
+                            t0 = t0.min(line.words[word_idx].start.unwrap_or(t0));
+                            t1 = t1.max(line.words[word_idx].end.unwrap_or(t1));
+                        }
+
+                        return (
+                            it,
+                            (
+                                if t0 == INFINITY { None } else { Some(t0) },
+                                if t1 == 0_f64 { None } else { Some(t1) },
+                            ),
+                        );
                     })
+                    .collect::<Vec<_>>();
+
+                matches.into_iter().map(move |segment| Segment {
+                    data: segment.0,
+                    source: TranscriptionSource {
+                        line: line_index,
+                        timestamp: segment.1,
+                    },
+                })
             })
             .collect::<Vec<_>>()
             .into_iter()
+    }
+
+    fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {
+        todo!()
+    }
+}
+
+pub type Timestamp = (Option<f64>, Option<f64>);
+
+pub trait AcceptsTimestamps<T>
+where
+    T: IsSegment + PartialEq + Debug,
+    Self: CanSegment<T>,
+{
+    fn accept(&mut self, segment: &Segment<T, Self::Source>, timestamp: Timestamp);
+}
+
+pub trait HasTimestamp {
+    fn timestamp(&self) -> Timestamp;
+}
+
+#[derive(Debug)]
+pub struct TranscriptionSource {
+    line: usize,
+    timestamp: (Option<f64>, Option<f64>),
+}
+
+impl HasTimestamp for TranscriptionSource {
+    fn timestamp(&self) -> Timestamp {
+        self.timestamp
     }
 }
 
@@ -74,11 +156,6 @@ impl<TData: PartialEq + Debug + IsSegment, TSourceA, TSourceB> PartialEq<Segment
     fn eq(&self, other: &Segment<TData, TSourceB>) -> bool {
         self.data == other.data
     }
-}
-
-#[derive(Debug)]
-pub struct TranscriptionSource {
-    line: usize,
 }
 
 /// The output from the WhisperX transcription process.
@@ -140,7 +217,7 @@ impl From<String> for Transform {
 
 impl From<&str> for Transform {
     fn from(value: &str) -> Self {
-        value.to_string().into()
+        value.to_owned().into()
     }
 }
 
@@ -157,7 +234,7 @@ pub struct TextProcessors<'a> {
 }
 
 pub trait LanguageTransformer {
-    fn text_processors(&self) -> TextProcessors;
+    fn text_processors(&'_ self) -> TextProcessors<'_>;
 
     fn transform(&self, text: String) -> Transform;
 }

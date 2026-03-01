@@ -1,5 +1,5 @@
+use core::fmt::Debug;
 use std::collections::HashMap;
-use std::fmt::Debug;
 use std::fmt::Display;
 use std::iter::Enumerate;
 use std::pin::Pin;
@@ -117,11 +117,12 @@ impl Debug for TaggedMorpheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TaggedData")
             .field("surface", &self.surface)
-            .field("feature", &self.feature)
+            // .field("feature", &self.feature)
             .finish()
     }
 }
 
+/// https://clrd.ninjal.ac.jp/unidic/faq.html
 #[derive(Debug, Deserialize)]
 pub struct Feature {
     /// 品詞大分類 - Part of speech field 1 -- Most general

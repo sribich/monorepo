@@ -50,6 +50,7 @@ pub struct EpubSegment<T = ()> {
     text: String,
     kind: SemanticIdentifier,
     data: T,
+    pub time: (Option<f64>, Option<f64>),
 }
 
 impl<T> EpubSegment<T> {
@@ -61,6 +62,7 @@ impl<T> EpubSegment<T> {
             text: self.text,
             kind: self.kind,
             data: f(self.data),
+            time: (None, None),
         }
     }
 
@@ -241,6 +243,7 @@ impl EpubArchive {
                                     text: title,
                                     kind: SemanticIdentifier::Chapter,
                                     data: (),
+                                    time: (None, None),
                                 });
                             }
                             local_name!("h2") | local_name!("h3") | local_name!("h4") => {
@@ -251,6 +254,7 @@ impl EpubArchive {
                                     text: title,
                                     kind: SemanticIdentifier::Header,
                                     data: (),
+                                    time: (None, None),
                                 });
                             }
                             local_name!("p") => {
@@ -261,6 +265,7 @@ impl EpubArchive {
                                     text: paragraph,
                                     kind: SemanticIdentifier::Text,
                                     data: (),
+                                    time: (None, None),
                                 });
                             }
                             local_name!("span") => {
@@ -315,6 +320,7 @@ impl EpubArchive {
                         text: result,
                         kind: SemanticIdentifier::Text,
                         data: (),
+                        time: (None, None),
                     });
                 } else {
                     if contents.borrow().trim() == "" {
