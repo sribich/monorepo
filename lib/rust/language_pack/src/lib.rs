@@ -38,6 +38,25 @@ pub trait CanSegment<T: IsSegment + Debug> {
     fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source;
 }
 
+impl<T> ProducesTimestamps<T> for Transcription
+where
+    T: IsSegment + PartialEq + Debug,
+{
+    fn produce(&self, segments: &[Segment<T, Self::Source>]) -> Timestamp {
+        segments
+            .iter()
+            .fold((None, None), |prev, curr| match curr.source.timestamp {
+                (None, None) => prev,
+                (None, Some(t1)) => (prev.0, prev.1.map(|it| it.max(t1)).or(Some(t1))),
+                (Some(t0), None) => (prev.0.map(|it| it.min(t0)).or(Some(t0)), prev.1),
+                (Some(t0), Some(t1)) => (
+                    prev.0.map(|it| it.min(t0)).or(Some(t0)),
+                    prev.1.map(|it| it.max(t1)).or(Some(t1)),
+                ),
+            })
+    }
+}
+
 impl<T> CanSegment<T> for Transcription
 where
     T: IsSegment + PartialEq + Debug,
@@ -123,6 +142,20 @@ where
     Self: CanSegment<T>,
 {
     fn accept(&mut self, segment: &Segment<T, Self::Source>, timestamp: Timestamp);
+
+    fn try_accept_ranged(
+        &mut self,
+        segment: &[Segment<T, Self::Source>],
+        timestamp: Timestamp,
+    ) -> bool;
+}
+
+pub trait ProducesTimestamps<T>
+where
+    T: IsSegment + PartialEq + Debug,
+    Self: CanSegment<T>,
+{
+    fn produce(&self, segments: &[Segment<T, Self::Source>]) -> Timestamp;
 }
 
 pub trait HasTimestamp {

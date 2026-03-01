@@ -48,9 +48,6 @@ impl Procedure for AddBookProcedure {
 
         transcriber.test(&mut text, &timing_data);
 
-        println!("{:#?}", text);
-
-
         // let fit_text = transcriber.fit_new(epub.chapters, timing_data);
 
         // * book_path

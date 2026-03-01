@@ -39,6 +39,7 @@ use language_pack::AcceptsTimestamps;
 use language_pack::CanSegment;
 use language_pack::HasTimestamp;
 use language_pack::IsSegment;
+use language_pack::ProducesTimestamps;
 use language_pack::Segment;
 use language_pack::TextSegmenter;
 use rand::Rng;
@@ -117,6 +118,21 @@ where
 
         segment.time = timestamp;
     }
+
+    fn try_accept_ranged(&mut self, segment: &[Segment<T, Self::Source>], timestamp: language_pack::Timestamp) -> bool {
+        let source = segment[0].source;
+
+        if segment.iter().all(|it| it.source == source) {
+            let segment = &mut self.0[source];
+            segment.time = timestamp;
+
+            true
+        } else {
+            false
+        }
+    }
+
+
 }
 
 impl<T> CanSegment<T> for EbookSegments
@@ -787,6 +803,14 @@ where
                     })
                     .collect::<Vec<_>>();
 
+                if waystones.len() > 1 {
+                    println!("{:#?}", timing_length);
+                    println!("{:#?}", waystones[0].2);
+                    //println!("{:#?}", self.
+                    println!("{:#?}", self.a[*timing_pos..(timing_pos+timing_length)].iter().map(|it| it.data.text()).join(""));
+                    println!("{:#?}", self.b[*text_pos..(text_pos+text_length)].iter().map(|it| it.data.text()).join(""));
+                }
+
                 assert!(
                     waystones.len() <= 1,
                     "Found text matching at more than 1 position"
@@ -813,7 +837,6 @@ where
 
         self.resolve_splits();
     }
-
 
     fn resolve_splits(&mut self) {
         let mut splits = vec![];
@@ -974,7 +997,7 @@ where
 impl JapaneseTranscriptionContext {
     pub fn test<CTiming, CText>(&self, text_data: &mut CText, timing_data: &CTiming)
     where
-        CTiming: CanSegment<Morpheme>,
+        CTiming: CanSegment<Morpheme> + ProducesTimestamps<Morpheme>,
         CTiming::Source: Send + Sync + HasTimestamp,
         CText: CanSegment<Morpheme> + AcceptsTimestamps<Morpheme>,
         CText::Source: Send + Sync,
@@ -1021,7 +1044,13 @@ impl JapaneseTranscriptionContext {
                     text_data.accept(text_segment, timing_segment.source.timestamp());
                 }
             } else {
-                println!("Skipping...");
+                let timing_segments = &timing_segments[timing_pos..(timing_pos + timing_len)];
+                let text_segments = &text_segments[text_pos..(text_pos + text_len)];
+
+                // MAYBE: Look into matching these over boundaries
+                text_data.try_accept_ranged(text_segments, timing_data.produce(timing_segments));
+
+                // println!("Success: {}, Failed: {} -- ({}, {}) -> ({}, {})", s, f, timing_pos, timing_len, text_pos, text_len);
             }
         }
     }
