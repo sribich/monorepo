@@ -1,52 +1,21 @@
 use core::iter::Iterator;
-/// # Mecab Types
-///
-///   - 名詞 - Noun
-///     - 固有名詞 - Proper noun
-///       - 人名 - Name
-///         - 名 - Given Name (First)
-///         - 姓 - Family Name
-///         - 一般 - General (??)
-///       - 地名 - Place Name
-///         - 国 - Region/State
-///         - 一般 - General (??)
-///       - 一般 - General
-///     - 普通名詞 - Common Noun
-///       - 一般 - General
-///       - 副詞可能 - Adverb possible
-///       - 助数詞可能 - Counter possible
-///       - サ変可能 - Irregular
-///       - 形状詞可能 - Adjectival (na-) noun
-///       - サ変形状詞可能 - Iregular adjectival noun
-///     - 数詞 - Numeral
-///     - 助動詞語幹 - ???
-///   - 形容詞 - Adjective
-///     - 非自立可能 - ???
-///     - 一般 - General (??)
-///   - 動詞 - Verb
-///     - 非自立可能 - ???
-///     - 一般 - General (??)
-///   - 副詞 - Adverb
 use std::collections::BTreeMap;
-use std::collections::HashMap;
 use std::fmt::Debug;
-use std::sync::atomic::AtomicBool;
-use std::sync::atomic::Ordering;
 
 use epub::archive::EpubSegment;
 use itertools::Itertools;
 use language_pack::AcceptsTimestamps;
 use language_pack::CanSegment;
 use language_pack::HasTimestamp;
-use language_pack::IsSegment;
 use language_pack::ProducesTimestamps;
 use language_pack::Segment;
-use language_pack::TextSegmenter;
+use language_pack::hirschberg;
+use language_pack::segment::IsSegment;
+use language_pack::segment::TextSegmenter;
 use rand::Rng;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelIterator;
 
-use crate::hirschberg;
 use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
 use crate::text::get_single_char;
@@ -119,7 +88,11 @@ where
         segment.time = timestamp;
     }
 
-    fn try_accept_ranged(&mut self, segment: &[Segment<T, Self::Source>], timestamp: language_pack::Timestamp) -> bool {
+    fn try_accept_ranged(
+        &mut self,
+        segment: &[Segment<T, Self::Source>],
+        timestamp: language_pack::Timestamp,
+    ) -> bool {
         let source = segment[0].source;
 
         if segment.iter().all(|it| it.source == source) {
@@ -131,8 +104,6 @@ where
             false
         }
     }
-
-
 }
 
 impl<T> CanSegment<T> for EbookSegments
@@ -807,8 +778,20 @@ where
                     println!("{:#?}", timing_length);
                     println!("{:#?}", waystones[0].2);
                     //println!("{:#?}", self.
-                    println!("{:#?}", self.a[*timing_pos..(timing_pos+timing_length)].iter().map(|it| it.data.text()).join(""));
-                    println!("{:#?}", self.b[*text_pos..(text_pos+text_length)].iter().map(|it| it.data.text()).join(""));
+                    println!(
+                        "{:#?}",
+                        self.a[*timing_pos..(timing_pos + timing_length)]
+                            .iter()
+                            .map(|it| it.data.text())
+                            .join("")
+                    );
+                    println!(
+                        "{:#?}",
+                        self.b[*text_pos..(text_pos + text_length)]
+                            .iter()
+                            .map(|it| it.data.text())
+                            .join("")
+                    );
                 }
 
                 assert!(

@@ -81,6 +81,7 @@ pub struct AddBookState {
 pub async fn add_book_handler(
     State(state): State<AddBookState>,
     Json(body): Json<AddBookRequest>,
+
 ) -> ApiResult<AddBookResponse, AddBookError> {
     let request = body.try_into()?;
     let response = state.add_book.run(request).await?.try_into()?;

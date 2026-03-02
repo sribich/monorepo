@@ -142,8 +142,8 @@ arbitrary = "1.2.0"
 arboard = "3.4.1"
 async-trait = "0.1.83"
 axum = "0.8.8"
-axum-extra = "0.10.1"
-axum-tracing-opentelemetry = "0.28.0"
+axum-extra = "0.12.5"
+axum-tracing-opentelemetry = "0.33.0"
 barrel = { git = "https://github.com/prisma/barrel.git", branch = "mssql-support" }
 base64 = "0.22"
 bigdecimal = "0.3" # 0.3 is needed for prisma

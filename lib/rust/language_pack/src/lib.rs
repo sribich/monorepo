@@ -3,31 +3,16 @@ pub mod align;
 pub mod hirschberg;
 pub mod pipeline;
 pub mod processor;
+pub mod segment;
 pub mod transform;
 
 use std::f64::INFINITY;
 use std::fmt::Debug;
 use std::range::Range;
 
+use segment::IsSegment;
+use segment::TextSegmenter;
 use serde::Deserialize;
-
-pub trait TextSegmenter {
-    type Feature: IsSegment;
-
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature>;
-}
-
-impl<T: TextSegmenter> TextSegmenter for &T {
-    type Feature = T::Feature;
-
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
-        T::segment(self, text)
-    }
-}
-
-pub trait IsSegment: PartialEq {
-    fn text(&self) -> &str;
-}
 
 /// Defines functionality for a type that can hold segment information.
 pub trait CanSegment<T: IsSegment + Debug> {

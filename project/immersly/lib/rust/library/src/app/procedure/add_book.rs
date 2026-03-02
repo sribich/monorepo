@@ -8,9 +8,10 @@ use std::sync::Arc;
 use blart::TreeMap;
 use epub::archive::EpubArchive;
 use itertools::Itertools;
-use language_pack::TextSegmenter;
+use language_pack::segment::TextSegmenter;
 use language_pack::Transcription;
 use language_pack::transform::TextTransform;
+use language_pack_jp::japanese_language_pipeline;
 use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
@@ -76,16 +77,23 @@ impl Procedure for AddBookProcedure {
         // Extract raw epub data
         let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
         let text = epub.segments().unwrap();
+        let mut text_data = EbookSegments::new(text);
 
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
         let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
 
+        //
+        let pipeline = japanese_language_pipeline();
+
+        pipeline.run(&timing_data, &text_data);
+
+        panic!();
+
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
-        let mut text = EbookSegments::new(text);
 
-        transcriber.test(&mut text, &timing_data);
+        transcriber.test(&mut text_data, &timing_data);
 
         //
         //
@@ -114,7 +122,7 @@ impl Procedure for AddBookProcedure {
             }
         }
 
-        let times = text
+        let times = text_data
             .0
             .par_iter()
             .map(|item| {

@@ -1,6 +1,8 @@
 use std::env::current_dir;
 use std::sync::Arc;
 
+use axum::body::{Body, Bytes};
+use axum::http::Request;
 use axum::serve;
 use features::shared::infra::http::AppState;
 use railgun::di::Module;
@@ -9,8 +11,12 @@ use railgun::rpc::export::clients::typescript::TypescriptClient;
 use railgun::rpc::router::Router;
 use railgun::typegen::export::config::ExportConfig;
 use railgun_di::Injector;
+use reqwest::Method;
 use tokio::net::TcpListener;
+use tower_http::body::Full;
+use tower_http::cors::Any;
 use tracing::debug;
+use tracing_log::log::info;
 
 pub struct HttpServerContext {
     pub port: u16,
@@ -35,21 +41,13 @@ impl HttpServer {
 
         let router = Self::router(&modules, Arc::new(state.clone()));
 
-        let cors = tower_http::cors::CorsLayer::new()
-            .allow_methods([
-                axum::http::Method::GET,
-                axum::http::Method::POST,
-                axum::http::Method::HEAD,
-            ])
-            .allow_origin(tower_http::cors::Any);
-
         let axum_router = router
             .to_axum_router()
             // .layer(OtelInResponseLayer::default())
             // .layer(OtelAxumLayer::default())
             // .route("/ws", get(ws_handler))
             .with_state(state)
-            .layer(tower_http::cors::CorsLayer::very_permissive());
+            .layer(tower_http::cors::CorsLayer::permissive());
 
         // .with_graceful_shutdown(shutdown_signal()) ,_ oneshot?
 
@@ -65,7 +63,7 @@ impl HttpServer {
             .await
             .unwrap();
 
-        debug!("Server starting on 127.0.0.1:{}", context.port);
+        println!("Server starting on 127.0.0.1:{}", context.port);
 
         Self {
             router: axum_router,
@@ -98,8 +96,6 @@ impl HttpServer {
 
         let router = router.child("/rpc", rpc_router);
 
-        // .procedure("card:knownWords", _procedure.query(test)),
-
         Self::generate_type_exports(&router);
 
         router
@@ -109,7 +105,7 @@ impl HttpServer {
         #[cfg(debug_assertions)]
         {
             let mut export_path = current_dir().unwrap();
-            println!("{:#?}", export_path);
+
             // TODO(sr): This needs to be configurable.
             export_path
                 .push("../../../../project/immersly/bin/desktop-ui/src/generated/rpc-client");

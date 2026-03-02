@@ -1,13 +1,11 @@
 use core::fmt::Debug;
 use std::collections::HashMap;
 use std::fmt::Display;
-use std::iter::Enumerate;
 use std::pin::Pin;
 use std::range::Range;
-use std::str::Split;
 
-use language_pack::IsSegment;
-use language_pack::TextSegmenter;
+use language_pack::segment::IsSegment;
+use language_pack::segment::TextSegmenter;
 use lazy_static::lazy_static;
 use memchr::memchr_iter;
 use serde::Deserialize;
@@ -270,7 +268,7 @@ impl TextSegmenter for JapaneseTextSegmenter {
 #[cfg(test)]
 
 mod test {
-    use language_pack::TextSegmenter;
+    use language_pack::segment::TextSegmenter;
 
     use super::JapaneseTextSegmenter;
 

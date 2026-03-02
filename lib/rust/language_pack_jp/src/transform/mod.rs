@@ -105,7 +105,7 @@ mod test {
     use blart::TreeMap;
     use itertools::Itertools;
     use language_pack::IsSegment;
-    use language_pack::TextSegmenter;
+    use language_pack::segment::TextSegmenter;
     use language_pack::transform::TextTransform;
 
     use crate::segment::JapaneseTextSegmenter;
