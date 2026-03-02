@@ -13,14 +13,16 @@ use serde::Deserialize;
 #[derive(Debug)]
 pub enum Morpheme {
     Unk,
+    Untagged(String),
     Tagged(TaggedMorpheme),
 }
 
 impl IsSegment for Morpheme {
     fn text(&self) -> &str {
         match self {
-            Morpheme::Unk => "UNK",
-            Morpheme::Tagged(tag) => &tag.surface,
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(data) => data,
+            Morpheme::Tagged(tag) => tag.surface,
         }
     }
 }
@@ -28,29 +30,33 @@ impl IsSegment for Morpheme {
 impl Morpheme {
     pub fn to_kata(&self) -> &str {
         match self {
-            Morpheme::Unk => "UNK",
-            Morpheme::Tagged(tag) => &tag.feature.l_form,
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(data) => data,
+            Morpheme::Tagged(tag) => tag.feature.l_form,
         }
     }
 
     pub fn to_full(&self) -> String {
         match self {
-            Morpheme::Unk => "UNK".to_owned(),
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(data) => data.clone(),
             Morpheme::Tagged(tag) => format!("{:#?}", tag.feature),
         }
     }
 
     pub fn pos(&self) -> &str {
         match self {
-            Morpheme::Unk => "UNK",
-            Morpheme::Tagged(tag) => &tag.feature.pos1,
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(_) => "",
+            Morpheme::Tagged(tag) => tag.feature.pos1,
         }
     }
 
     pub fn pos2(&self) -> &str {
         match self {
-            Morpheme::Unk => "UNK",
-            Morpheme::Tagged(tag) => &tag.feature.pos2,
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(_) => "",
+            Morpheme::Tagged(tag) => tag.feature.pos2,
         }
     }
 }
@@ -58,7 +64,8 @@ impl Morpheme {
 impl Display for Morpheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Morpheme::Unk => write!(f, "UNK"),
+            Morpheme::Unk => unreachable!(),
+            Morpheme::Untagged(data) => write!(f, "{data}"),
             Morpheme::Tagged(tag) => write!(f, "{}", tag.surface),
         }
     }
@@ -176,21 +183,76 @@ pub struct JapaneseTextSegmenter {
 
 impl JapaneseTextSegmenter {
     pub fn new() -> Self {
-        Self {
-            tagger: JapaneseTextSegmenter::get_tagger(),
-        }
-    }
-
-    // TODO: This needs to be fetchable from somewhere.
-    fn get_tagger() -> mecab::Tagger {
+        // TODO: We need to figure out where to get this from.
         let home = std::env::var("HOME").unwrap();
 
         let tagger = mecab::Tagger::new(format!(
-            "-Ounidic --dicdir={}/Projects/sribich/_/unidic-cwj-202302",
-            home
+            "-Ounidic --dicdir={home}/Projects/sribich/_/unidic-cwj-202302"
         ));
 
-        tagger
+        Self { tagger }
+    }
+
+    fn line_to_pinned_ranges(line: &str) -> (Pin<Box<[u8]>>, [Range<usize>; 11]) {
+        let mut ranges: [Range<usize>; 11] = std::array::repeat((0_usize..0_usize).into());
+
+        let mut start = 0;
+        let mut i = 0;
+
+        for end in memchr_iter(b',', line.as_bytes()) {
+            ranges[i] = Range { start, end };
+            start = end + 1;
+            i += 1;
+        }
+
+        ranges[i] = Range {
+            start,
+            end: line.len(),
+        };
+
+        (
+            Pin::from(line.as_bytes().to_owned().into_boxed_slice()),
+            ranges,
+        )
+    }
+
+    fn resolve_unks(segments: &mut [<Self as TextSegmenter>::Feature], text: &str) {
+        let segments_len = segments.len();
+        let mut text = text;
+
+        for index in 0..segments_len {
+            match &segments[index] {
+                Morpheme::Unk => {
+                    if index + 1 >= segments_len {
+                        segments[index] = Morpheme::Untagged(text.to_owned());
+                        continue;
+                    }
+
+                    let next_segment = &segments[index + 1];
+
+                    if let Some(pos) =
+                        memchr::memmem::find(text.as_bytes(), next_segment.text().as_bytes())
+                    {
+                        segments[index] = Morpheme::Untagged(text[..pos].trim().to_owned());
+
+                        text = &text[pos..];
+                    } else {
+                        unreachable!("Failed to resolve UNK. Unable to find morpheme in text");
+                    }
+                }
+                Morpheme::Tagged(tag) => {
+                    if let Some(pos) = memchr::memmem::find(text.as_bytes(), tag.surface.as_bytes())
+                    {
+                        text = &text[(pos + tag.surface.len())..];
+                    } else {
+                        panic!("Failed to resolve UNK. Morpheme did not match expected text");
+                    }
+                }
+                Morpheme::Untagged(_) => {
+                    unreachable!("Untagged values should not exist before UNK resolution")
+                }
+            }
+        }
     }
 }
 
@@ -199,66 +261,71 @@ impl TextSegmenter for JapaneseTextSegmenter {
 
     fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
         let output = self.tagger.parse_str(text.as_ref());
-        let bytes = output.as_bytes();
 
-        let mut result = Vec::with_capacity(memchr_iter(b'\n', bytes).count());
+        let occurrances = memchr_iter(b'\n', output.as_bytes());
 
         let mut line_start = 0;
+        let mut has_unk = false;
 
-        for line_end in memchr_iter(b'\n', bytes) {
+        let mut result = Vec::with_capacity(occurrances.clone().count());
+
+        for line_end in occurrances {
             let line = &output[line_start..line_end];
-            line_start = line_end + 1;
+
+            line_start = line_end + 1; // +1 to skip newline
 
             if line.is_empty() || line == "BOS" || line == "EOS" {
                 continue;
             }
 
+            // We collapse all consequitive UNKs into a single UNK so that
+            // we can cleanly map them to their source text.
             if line == "UNK" {
-                result.push(Morpheme::Unk);
+                if !matches!(result.last(), Some(Morpheme::Unk)) {
+                    result.push(Morpheme::Unk);
+                }
+
+                has_unk = true;
+
                 continue;
             }
 
-            let mut ranges: [Range<usize>; 11] = std::array::repeat((0_usize..0_usize).into());
+            let (data, ranges) = JapaneseTextSegmenter::line_to_pinned_ranges(line);
 
-            let mut start = 0;
-            let mut i = 0;
-
-            for end in memchr_iter(b',', line.as_bytes()) {
-                ranges[i] = Range { start, end };
-                start = end + 1;
-                i += 1;
-            }
-
-            ranges[i] = Range {
-                start,
-                end: line.as_bytes().len(),
-            };
-
-            let data = Pin::from(line.as_bytes().to_owned().into_boxed_slice());
-
-            // SAFETY: See [`TaggedMorpheme`]. It owns the data.
-            #[allow(unsafe_code)]
+            #[expect(
+                unsafe_code,
+                clippy::multiple_unsafe_ops_per_block,
+                clippy::transmute_bytes_to_str,
+                reason = "See safety comment"
+            )]
+            // SAFETY: TaggedMorpheme owns its own data in the form of a
+            //         `Pin<Box[u8]>`. The box is created from a `String`
+            //         which has already been UTF-8 validated, so we can
+            //         transmute without worry.
             let tagged_data = unsafe {
                 TaggedMorpheme {
-                    surface: std::mem::transmute(&data[ranges[0]]),
+                    surface: std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]),
                     feature: Feature {
-                        pos1: std::mem::transmute(&data[ranges[1]]),
-                        pos2: std::mem::transmute(&data[ranges[2]]),
-                        pos3: std::mem::transmute(&data[ranges[3]]),
-                        pos4: std::mem::transmute(&data[ranges[4]]),
-                        c_type: std::mem::transmute(&data[ranges[5]]),
-                        c_form: std::mem::transmute(&data[ranges[6]]),
-                        l_form: std::mem::transmute(&data[ranges[7]]),
-                        lemma: std::mem::transmute(&data[ranges[8]]),
-                        orth: std::mem::transmute(&data[ranges[9]]),
-                        orth_base: std::mem::transmute(&data[ranges[10]]),
+                        pos1: std::mem::transmute::<&[u8], &'static str>(&data[ranges[1]]),
+                        pos2: std::mem::transmute::<&[u8], &'static str>(&data[ranges[2]]),
+                        pos3: std::mem::transmute::<&[u8], &'static str>(&data[ranges[3]]),
+                        pos4: std::mem::transmute::<&[u8], &'static str>(&data[ranges[4]]),
+                        c_type: std::mem::transmute::<&[u8], &'static str>(&data[ranges[5]]),
+                        c_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[6]]),
+                        l_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[7]]),
+                        lemma: std::mem::transmute::<&[u8], &'static str>(&data[ranges[8]]),
+                        orth: std::mem::transmute::<&[u8], &'static str>(&data[ranges[9]]),
+                        orth_base: std::mem::transmute::<&[u8], &'static str>(&data[ranges[10]]),
                     },
-                    // TODO(sr): We can store the entire `output` instead of cloning each `line`.
                     data,
                 }
             };
 
-            result.push(Morpheme::Tagged(tagged_data))
+            result.push(Morpheme::Tagged(tagged_data));
+        }
+
+        if has_unk {
+            JapaneseTextSegmenter::resolve_unks(&mut result, text.as_ref());
         }
 
         result

@@ -35,6 +35,14 @@ where
     {
         println!("hi!");
 
+        let timing_segments = timing_data.segments(&self.segmenter);
+
+        for segment in timing_segments {
+            if segment.data.text() == "UNK" {
+                println!("{:#?}", segment);
+            }
+        }
+
         /*
         let timing_segments = timing_data.segments(&segmenter);
         let text_segments = text_data.segments(&segmenter);

@@ -84,11 +84,9 @@ impl Procedure for AddBookProcedure {
         let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
 
         //
-        let pipeline = japanese_language_pipeline();
-
-        pipeline.run(&timing_data, &text_data);
-
-        panic!();
+        // let pipeline = japanese_language_pipeline();
+        // pipeline.run(&timing_data, &text_data);
+        // panic!();
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};

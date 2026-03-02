@@ -993,6 +993,12 @@ impl JapaneseTranscriptionContext {
         let timing_segments = timing_segments
             .filter(|it| match &it.data {
                 Morpheme::Unk => true,
+                Morpheme::Untagged(data) => {
+                    match get_single_char(data) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                },
                 Morpheme::Tagged(tag) => {
                     let surface = tag.surface();
                     match get_single_char(surface) {
@@ -1006,6 +1012,12 @@ impl JapaneseTranscriptionContext {
         let text_segments = text_segments
             .filter(|it| match &it.data {
                 Morpheme::Unk => true,
+                Morpheme::Untagged(data) => {
+                    match get_single_char(data) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                },
                 Morpheme::Tagged(tag) => {
                     let surface = tag.surface();
                     match get_single_char(surface) {

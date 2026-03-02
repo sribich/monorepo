@@ -69,8 +69,7 @@ where
                     .map(|it| {
                         let text = it.text();
 
-                        // TODO: Figure out how to resolve UNKs
-                        if text == "UNK" || line.words.is_empty() {
+                        if line.words.is_empty() {
                             return (it, (None, None));
                         }
 
@@ -80,7 +79,7 @@ where
                         for c in text.chars() {
                             let char_str: &str = c.encode_utf8(&mut char_buf);
 
-                            while word_idx < line.words.len()
+                            while word_idx < line.words.len() - 1
                                 && line.words[word_idx].word != char_str
                             {
                                 word_idx += 1;

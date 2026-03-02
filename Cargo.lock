@@ -5399,6 +5399,7 @@ dependencies = [
  "rayon",
  "serde",
  "serde_json",
+ "stringzilla",
  "tracing",
  "typegen",
  "unicode-normalization",
@@ -9539,6 +9540,15 @@ dependencies = [
  "unicode-bidi",
  "unicode-normalization",
  "unicode-properties",
+]
+
+[[package]]
+name = "stringzilla"
+version = "4.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9f17be385749442142f9d38fb9514c90b3eb66abd358b4488aaa3753188d734c"
+dependencies = [
+ "cc",
 ]
 
 [[package]]

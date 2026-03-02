@@ -104,7 +104,6 @@ mod test {
 
     use blart::TreeMap;
     use itertools::Itertools;
-    use language_pack::IsSegment;
     use language_pack::segment::TextSegmenter;
     use language_pack::transform::TextTransform;
 
@@ -119,6 +118,7 @@ mod test {
         // let text = "良く";
         // let text = "ようで";
         let segments = JapaneseTextSegmenter::new().segment(text);
+        panic!();
 
         // println!("{:#?}", segments);
         // panic!();
