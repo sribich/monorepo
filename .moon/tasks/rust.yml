@@ -17,18 +17,24 @@ tasks:
     deps:
       - test_unit
       - test_docs
+    options:
+      cache: false
 
   test_unit:
     command: cargo nextest run
     inputs:
       - "@globs(rust_sources)"
       - "@globs(rust_tests)"
+    options:
+      cache: false
 
   test_docs:
     command: cargo test --doc
     inputs:
       - "@globs(rust_sources)"
       - "@globs(rust_tests)"
+    options:
+      cache: false
 
   update_snapshots:
     command: cargo test

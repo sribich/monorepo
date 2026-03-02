@@ -15,6 +15,10 @@ pub struct Package {
 }
 
 impl Package {
+    pub fn title(&self) -> &str {
+        self.spec.metadata.title.first().map_or("", |it| &it.value)
+    }
+
     pub fn parse(zip: &mut ZipArchive<EpubFile>, path: &str) -> Result<Self, Error> {
         let file = zip.by_name(path).unwrap();
 

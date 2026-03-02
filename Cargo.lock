@@ -5377,6 +5377,8 @@ dependencies = [
 name = "language_pack"
 version = "0.0.0"
 dependencies = [
+ "blart",
+ "indoc",
  "serde",
 ]
 
@@ -5534,11 +5536,14 @@ name = "library"
 version = "0.0.0"
 dependencies = [
  "axum",
+ "blart",
  "epub",
+ "itertools 0.14.0",
  "language_pack",
  "language_pack_jp",
  "prisma-client",
  "railgun",
+ "rayon",
  "serde",
  "serde_json",
  "shared",

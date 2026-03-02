@@ -41,6 +41,20 @@ impl Morpheme {
             Morpheme::Tagged(tag) => format!("{:#?}", tag.feature),
         }
     }
+
+    pub fn pos(&self) -> &str {
+        match self {
+            Morpheme::Unk => "UNK",
+            Morpheme::Tagged(tag) => &tag.feature.pos1,
+        }
+    }
+
+    pub fn pos2(&self) -> &str {
+        match self {
+            Morpheme::Unk => "UNK",
+            Morpheme::Tagged(tag) => &tag.feature.pos2,
+        }
+    }
 }
 
 impl Display for Morpheme {
@@ -117,7 +131,7 @@ impl Debug for TaggedMorpheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("TaggedData")
             .field("surface", &self.surface)
-            // .field("feature", &self.feature)
+            .field("feature", &self.feature)
             .finish()
     }
 }

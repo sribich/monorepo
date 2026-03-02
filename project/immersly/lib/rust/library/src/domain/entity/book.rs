@@ -18,6 +18,24 @@ pub struct Book(BookData);
 entity_data_fns!(Book);
 
 impl Book {
+    pub fn new(
+        title: String,
+        path: ExistingFile,
+        rendered_path: ExistingFile,
+        timing_path: ExistingFile,
+        audio_resource: ResourceId,
+    ) -> Self {
+        Self::from_data(BookData {
+            id: BookId::new_now(),
+            title,
+            path,
+            rendered_path,
+            timing_path,
+            audio_resource,
+            image_resource: None,
+        })
+    }
+
     pub fn id(&self) -> &BookId {
         &self.0.id
     }

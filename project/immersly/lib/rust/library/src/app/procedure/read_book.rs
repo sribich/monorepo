@@ -40,6 +40,8 @@ impl Procedure for ReadBookProcedure {
             .unwrap()
             .unwrap();
 
+        println!("{:#?}", book);
+
         let progress = if let Some(progress) = book.progress.flatten() {
             Some(progress.timestamp)
         } else {

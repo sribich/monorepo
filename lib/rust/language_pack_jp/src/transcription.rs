@@ -100,7 +100,7 @@ enum MatchKind {
 pub struct JapaneseTranscriptionContext {}
 
 #[derive(Debug)]
-pub struct EbookSegments(Vec<EpubSegment>);
+pub struct EbookSegments(pub Vec<EpubSegment>);
 
 impl EbookSegments {
     pub fn new(data: Vec<EpubSegment>) -> Self {

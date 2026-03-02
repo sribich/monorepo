@@ -21,6 +21,7 @@ use html5ever::tendril::StrTendril;
 use html5ever::tendril::TendrilSink;
 use itertools::Itertools;
 use railgun::error::ResultExt;
+use serde::Serialize;
 use unicode_normalization::UnicodeNormalization;
 use url::ParseError;
 use url::Url;
@@ -79,7 +80,7 @@ impl<T> EpubSegment<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub enum SemanticIdentifier {
     Chapter,
     Header,
@@ -129,6 +130,13 @@ impl EpubArchive {
         let navigation = me.navigation()?;
 
         Ok(me)
+    }
+
+    pub fn title(&self) -> &str {
+        match &self.package {
+            Package::V2(package) => package.title(),
+            Package::V3(package) => package.title(),
+        }
     }
 
     pub fn read<P: AsRef<Path>>(&mut self, path: P) -> Result<String, Error> {

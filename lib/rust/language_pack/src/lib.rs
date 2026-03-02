@@ -1,6 +1,9 @@
 #![feature(new_range_api)]
 pub mod align;
 pub mod hirschberg;
+pub mod pipeline;
+pub mod processor;
+pub mod transform;
 
 use std::f64::INFINITY;
 use std::fmt::Debug;
