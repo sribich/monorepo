@@ -31,6 +31,7 @@ phf = { workspace = true }
 stringzilla = { workspace = true }
 rand = { workspace = true }
 rayon = { workspace = true }
+indoc = { workspace = true }
 
 [dev-dependencies]
 expect-test = { workspace = true }

@@ -1,41 +1,43 @@
 use itertools::Itertools;
-use language_pack::TextProcessor;
-use language_pack::Transform;
+use language_pack::processor::TextProcessor;
+use language_pack::processor::Transform;
 
-use crate::text::DAKUTEN_COMB;
-use crate::text::DAKUTEN_FULL;
 use crate::text::DAKUTEN_HALF;
-use crate::text::DAKUTEN_MAP;
-use crate::text::HANDAKUTEN_COMB;
-use crate::text::HANDAKUTEN_FULL;
+use crate::text::HALF_WIDTH_DAKUTEN_MAP;
+use crate::text::HALF_WIDTH_HANDAKUTEN_MAP;
+use crate::text::HALF_WIDTH_MAP;
 use crate::text::HANDAKUTEN_HALF;
-use crate::text::HANDAKUTEN_MAP;
-use crate::text::is_dakuten;
+use crate::text::is_halfwidth;
 
-/// Normalizes text containing UTF-8 combining characters.
+/// Converts half-width katakana into full-width katakana.
+///
+/// Dakuten and handakuten will be merged into a single character
+/// if the mapping is legal. Illegal mappings will remain separate.
 ///
 /// For example:
 ///
-///   - ド -> ド (U+30C8 U+3099 -> U+30C9)
+///   - ﾖﾐﾁｬﾝ -> ヨミチャン
+///   - ﾏﾂｵ ﾊﾞｼｮｳ ｱﾟ -> マツオ バショウ ア゚
 ///
 /// # Examples
 ///
 /// ```rust
 /// use language_pack::TextProcessor;
-/// use language_pack_jp::transform::processor::NormalizeCombiningCharacters;
+/// use language_pack_jp::transform::processor::ConvertHalfWidth;
 ///
-/// let transformer = NormalizeCombiningCharacters {};
+/// let processor = ConvertHalfWidth {};
 ///
+/// assert_eq!("ヨミチャン", processor.process("ﾖﾐﾁｬﾝ".into()).text);
 /// assert_eq!(
-///     "\u{30C9}",
-///     transformer.process("\u{30C8}\u{3099}".into()).text
+///     "マツオ バショウ ア゚",
+///     processor.process("ﾏﾂｵ ﾊﾞｼｮｳ ｱﾟ".into()).text
 /// );
 /// ```
-pub struct NormalizeCombiningCharacters;
+pub struct ConvertHalfWidth;
 
-impl TextProcessor for NormalizeCombiningCharacters {
+impl TextProcessor for ConvertHalfWidth {
     fn matches(&self, text: &str) -> bool {
-        text.chars().any(is_dakuten)
+        text.chars().any(is_halfwidth)
     }
 
     fn process(&self, transform: Transform) -> Transform {
@@ -51,7 +53,7 @@ impl TextProcessor for NormalizeCombiningCharacters {
             .map(Some)
             .chain([None])
             .tuple_windows()
-            .filter_map(|(curr, next)| Some((curr?, next)))
+            .filter_map(|(a, b)| Some((a?, b)))
             .fold(false, |prev, (curr, next)| {
                 // The previous window's `next` was a voiced half and was merged into
                 // a single character.
@@ -63,14 +65,8 @@ impl TextProcessor for NormalizeCombiningCharacters {
 
                 if let Some(next) = next {
                     let merged = match next {
-                        DAKUTEN_HALF | DAKUTEN_FULL | DAKUTEN_COMB
-                            if let Some(v) = DAKUTEN_MAP.get(&curr) =>
-                        {
-                            Some(v)
-                        }
-                        HANDAKUTEN_HALF | HANDAKUTEN_FULL | HANDAKUTEN_COMB
-                            if let Some(v) = HANDAKUTEN_MAP.get(&curr) =>
-                        {
+                        DAKUTEN_HALF if let Some(v) = HALF_WIDTH_DAKUTEN_MAP.get(&curr) => Some(v),
+                        HANDAKUTEN_HALF if let Some(v) = HALF_WIDTH_HANDAKUTEN_MAP.get(&curr) => {
                             Some(v)
                         }
                         _ => None,
@@ -94,7 +90,10 @@ impl TextProcessor for NormalizeCombiningCharacters {
                     }
                 }
 
-                line.push(curr);
+                line.push(match HALF_WIDTH_MAP.get(&curr) {
+                    Some(c) => *c,
+                    None => curr,
+                });
 
                 mappings.push((
                     (src_idx..(src_idx + curr_len)).into(),

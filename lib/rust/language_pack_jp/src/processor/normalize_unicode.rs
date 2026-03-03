@@ -1,5 +1,5 @@
-use language_pack::TextProcessor;
-use language_pack::Transform;
+use language_pack::processor::TextProcessor;
+use language_pack::processor::Transform;
 use unicode_normalization::IsNormalized;
 use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::is_nfkc_quick;

@@ -1,43 +1,41 @@
 use itertools::Itertools;
-use language_pack::TextProcessor;
-use language_pack::Transform;
+use language_pack::processor::TextProcessor;
+use language_pack::processor::Transform;
 
+use crate::text::DAKUTEN_COMB;
+use crate::text::DAKUTEN_FULL;
 use crate::text::DAKUTEN_HALF;
-use crate::text::HALF_WIDTH_DAKUTEN_MAP;
-use crate::text::HALF_WIDTH_HANDAKUTEN_MAP;
-use crate::text::HALF_WIDTH_MAP;
+use crate::text::DAKUTEN_MAP;
+use crate::text::HANDAKUTEN_COMB;
+use crate::text::HANDAKUTEN_FULL;
 use crate::text::HANDAKUTEN_HALF;
-use crate::text::is_halfwidth;
+use crate::text::HANDAKUTEN_MAP;
+use crate::text::is_dakuten;
 
-/// Converts half-width katakana into full-width katakana.
-///
-/// Dakuten and handakuten will be merged into a single character
-/// if the mapping is legal. Illegal mappings will remain separate.
+/// Normalizes text containing UTF-8 combining characters.
 ///
 /// For example:
 ///
-///   - ﾖﾐﾁｬﾝ -> ヨミチャン
-///   - ﾏﾂｵ ﾊﾞｼｮｳ ｱﾟ -> マツオ バショウ ア゚
+///   - ド -> ド (U+30C8 U+3099 -> U+30C9)
 ///
 /// # Examples
 ///
 /// ```rust
 /// use language_pack::TextProcessor;
-/// use language_pack_jp::transform::processor::ConvertHalfWidth;
+/// use language_pack_jp::transform::processor::NormalizeCombiningCharacters;
 ///
-/// let processor = ConvertHalfWidth {};
+/// let transformer = NormalizeCombiningCharacters {};
 ///
-/// assert_eq!("ヨミチャン", processor.process("ﾖﾐﾁｬﾝ".into()).text);
 /// assert_eq!(
-///     "マツオ バショウ ア゚",
-///     processor.process("ﾏﾂｵ ﾊﾞｼｮｳ ｱﾟ".into()).text
+///     "\u{30C9}",
+///     transformer.process("\u{30C8}\u{3099}".into()).text
 /// );
 /// ```
-pub struct ConvertHalfWidth;
+pub struct NormalizeCombiningCharacters;
 
-impl TextProcessor for ConvertHalfWidth {
+impl TextProcessor for NormalizeCombiningCharacters {
     fn matches(&self, text: &str) -> bool {
-        text.chars().any(is_halfwidth)
+        text.chars().any(is_dakuten)
     }
 
     fn process(&self, transform: Transform) -> Transform {
@@ -53,7 +51,7 @@ impl TextProcessor for ConvertHalfWidth {
             .map(Some)
             .chain([None])
             .tuple_windows()
-            .filter_map(|(a, b)| Some((a?, b)))
+            .filter_map(|(curr, next)| Some((curr?, next)))
             .fold(false, |prev, (curr, next)| {
                 // The previous window's `next` was a voiced half and was merged into
                 // a single character.
@@ -65,8 +63,14 @@ impl TextProcessor for ConvertHalfWidth {
 
                 if let Some(next) = next {
                     let merged = match next {
-                        DAKUTEN_HALF if let Some(v) = HALF_WIDTH_DAKUTEN_MAP.get(&curr) => Some(v),
-                        HANDAKUTEN_HALF if let Some(v) = HALF_WIDTH_HANDAKUTEN_MAP.get(&curr) => {
+                        DAKUTEN_HALF | DAKUTEN_FULL | DAKUTEN_COMB
+                            if let Some(v) = DAKUTEN_MAP.get(&curr) =>
+                        {
+                            Some(v)
+                        }
+                        HANDAKUTEN_HALF | HANDAKUTEN_FULL | HANDAKUTEN_COMB
+                            if let Some(v) = HANDAKUTEN_MAP.get(&curr) =>
+                        {
                             Some(v)
                         }
                         _ => None,
@@ -90,10 +94,7 @@ impl TextProcessor for ConvertHalfWidth {
                     }
                 }
 
-                line.push(match HALF_WIDTH_MAP.get(&curr) {
-                    Some(c) => *c,
-                    None => curr,
-                });
+                line.push(curr);
 
                 mappings.push((
                     (src_idx..(src_idx + curr_len)).into(),

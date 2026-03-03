@@ -15,20 +15,23 @@ tasks:
       RUST_LOG: "debug"
       CC_ENABLE_DEBUG_OUTPUT: "1"
     local: true
+
   run:
     command: cargo watch -x run --ignore generated/client.ts # -x test -x run
-    # command: bacon run
-    # deps:
-    #   - prelearning-ui:dev
     env:
-      GTK_IM_MODULE: ""
-      XMODIFIERS: ""
       RUST_LOG: "debug"
       # RUSTFLAGS: "-Zcodegen-backend=cranelift"
       # CARGO_PROFILE_DEV_CODEGEN_BACKEND: "cranelift"
     options:
       envFile: "/.env"
     local: true
+
+  run_release:
+    command: cargo watch -x "run --release" --ignore generated/client.ts
+    extends: run
+    options:
+      mergeArgs: replace
+
   dev:
     command: cargo run
 

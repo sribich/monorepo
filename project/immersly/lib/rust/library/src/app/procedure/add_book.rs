@@ -1,20 +1,26 @@
+use std::collections::HashSet;
+use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
 use std::fs::read_to_string;
 use std::io::BufRead;
 use std::io::BufReader;
+use std::ops::Mul;
+use std::pin::Pin;
 use std::sync::Arc;
 
 use blart::TreeMap;
 use epub::archive::EpubArchive;
 use itertools::Itertools;
-use language_pack::segment::TextSegmenter;
 use language_pack::Transcription;
+use language_pack::segment::TextSegmenter;
+use language_pack::transform::LanguageTransformer;
 use language_pack::transform::TextTransform;
 use language_pack_jp::japanese_language_pipeline;
 use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
+use language_pack_jp::transform::JAPANESE_TRANSFORMS;
 use language_pack_jp::transform::group_inflected;
 use railgun::di::Component;
 use rayon::iter::IntoParallelRefIterator;
@@ -74,15 +80,17 @@ impl Procedure for AddBookProcedure {
 
         assert!(audio_timing_path.exists(), "timing not generated");
 
+        let time = std::time::Instant::now();
+
         // Extract raw epub data
         let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
         let text = epub.segments().unwrap();
         let mut text_data = EbookSegments::new(text);
-
+println!("1: {}", time.elapsed().as_millis());
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
         let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
-
+println!("2: {}", time.elapsed().as_millis());
         //
         // let pipeline = japanese_language_pipeline();
         // pipeline.run(&timing_data, &text_data);
@@ -92,33 +100,82 @@ impl Procedure for AddBookProcedure {
         let transcriber = JapaneseTranscriptionContext {};
 
         transcriber.test(&mut text_data, &timing_data);
-
+println!("3: {}", time.elapsed().as_millis());
         //
         //
         //
-        let mut adaptive = TreeMap::<CString, Option<usize>>::new();
-        let mut adaptive_readings = TreeMap::<CString, Option<usize>>::new();
-
         let lines = BufReader::new(File::open("/home/nulliel/Result_45.csv").unwrap()).lines();
+        let len = std::fs::metadata("/home/nulliel/Result_45.csv")
+            .unwrap()
+            .len();
+println!("4: {}", time.elapsed().as_millis());
+        let mut buf = Pin::new(
+            vec![0; usize::try_from(len.mul(2)).expect("usize should always fit within u64")]
+                .into_boxed_slice(),
+        );
+println!("5: {}", time.elapsed().as_millis());
+        let mut view = &mut buf[..];
+
+        let mut adaptive = TreeMap::<&CStr, Option<usize>>::new();
+        let mut adaptive_readings = TreeMap::<&CStr, Option<usize>>::new();
+
+
+
+        #[expect(clippy::indexing_slicing, unsafe_code, reason = "See safety comment")]
         for line in lines.map_while(Result::ok) {
             if line == r#""""# {
                 continue;
             }
 
-            if let Some((left, right)) = line.split_once(",") {
-                if let Some((middle, right)) = right.split_once(",") {
-                    let freq = usize::from_str_radix(right, 10).ok();
+            if let Some((left, right)) = line.split_once(',')
+                && let Some((middle, right)) = right.split_once(',')
+            {
+                let freq = right.parse::<usize>().ok();
 
-                    if left != r#""""# {
-                        adaptive.insert(CString::new(left).unwrap(), freq);
-                    }
+                if left != r#""""# {
+                    assert!(
+                        memchr::memchr(0, left.as_bytes()).is_none(),
+                        "string with null byte"
+                    );
 
-                    if middle != r#""""# {
-                        adaptive_readings.insert(CString::new(middle).unwrap(), freq);
-                    }
+                    let left_len = left.len();
+
+                    view[..left_len].copy_from_slice(left.as_bytes());
+                    view[left_len] = 0;
+
+                    // SAFETY: The type is coerced into a static str so that
+                    let left: &'static CStr = unsafe {
+                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(&view[..=left_len]))
+                    };
+                    adaptive.try_insert(left, freq).unwrap();
+
+                    view = &mut view[(left_len + 1)..];
+                }
+
+                if middle != r#""""# {
+                    assert!(
+                        memchr::memchr(0, middle.as_bytes()).is_none(),
+                        "string with null byte"
+                    );
+
+                    let middle_len = middle.len();
+
+                    view[..middle_len].copy_from_slice(middle.as_bytes());
+                    view[middle_len] = 0;
+
+                    let middle = unsafe {
+                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(
+                            &view[..=middle_len],
+                        ))
+                    };
+                    adaptive_readings.try_insert(middle, freq).unwrap();
+
+                    view = &mut view[(middle_len + 1)..];
                 }
             }
         }
+
+        println!("{}", time.elapsed().as_millis());
 
         let times = text_data
             .0
@@ -292,8 +349,8 @@ impl AddBookProcedure {
     fn get_segments(
         &self,
         line: &str,
-        adaptive: &TreeMap<CString, Option<usize>>,
-        adaptive_readings: &TreeMap<CString, Option<usize>>,
+        adaptive: &TreeMap<&CStr, Option<usize>>,
+        adaptive_readings: &TreeMap<&CStr, Option<usize>>,
     ) -> Vec<(String, String, Option<usize>)> {
         let segmenter = JapaneseTextSegmenter::new();
         let segments = group_inflected(segmenter.segment(line));
@@ -302,9 +359,9 @@ impl AddBookProcedure {
 
         for (segment, inflects) in &segments {
             if *inflects {
-                let mut transform = TextTransform::new(segment.to_owned());
+                let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, &adaptive);
 
-                let resolve = transform.resolve(&adaptive);
+                let resolve = transformer.resolve(segment);
 
                 if resolve.is_empty() {
                     output.push((segment.clone(), segment.clone()));
@@ -326,7 +383,9 @@ impl AddBookProcedure {
                                     }
 
                                     return [
-                                        &base[..(base.len().saturating_sub(inflection.last_inflection.len()))],
+                                        &base[..(base
+                                            .len()
+                                            .saturating_sub(inflection.last_inflection.len()))],
                                         &inflection.inflection,
                                     ]
                                     .join("");
@@ -340,11 +399,9 @@ impl AddBookProcedure {
                     output.append(&mut out);
                 }
             } else {
-
                 output.push((segment.clone(), segment.clone()));
             }
         }
-
 
         let mut result = vec![];
         let mut i = 0;
@@ -358,7 +415,7 @@ impl AddBookProcedure {
                 continue;
             }
 
-            if !adaptive.contains_key(&CString::new(segment.0.as_bytes()).unwrap()) {
+            if !adaptive.contains_key(CString::new(segment.0.as_bytes()).unwrap().as_c_str()) {
                 result.push(segment.clone());
                 i += 1;
                 continue;
@@ -369,25 +426,27 @@ impl AddBookProcedure {
 
             while curr_check <= output.len()
                 && let Some(prefix) = adaptive.get_prefix(
-                    &CString::new(
+                    CString::new(
                         output[i..curr_check]
                             .iter()
                             .map(|it| &it.0)
                             .join("")
                             .as_bytes(),
                     )
-                    .unwrap(),
+                    .unwrap()
+                    .as_c_str(),
                 )
             {
                 if adaptive.contains_key(
-                    &CString::new(
+                    CString::new(
                         output[i..curr_check]
                             .iter()
                             .map(|it| &it.0)
                             .join("")
                             .as_bytes(),
                     )
-                    .unwrap(),
+                    .unwrap()
+                    .as_c_str(),
                 ) {
                     key_with_boundary = curr_check;
                 }
@@ -419,11 +478,11 @@ impl AddBookProcedure {
             .into_iter()
             .map(|it| {
                 let freq = adaptive
-                    .get(&CString::new(it.0.as_bytes()).unwrap())
+                    .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
                     .map(|it| *it)
                     .or_else(|| {
                         adaptive_readings
-                            .get(&CString::new(it.0.as_bytes()).unwrap())
+                            .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
                             .map(|it| *it)
                             .or(None)
                     })

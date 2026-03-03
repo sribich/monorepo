@@ -11,6 +11,7 @@ feature-unification = "workspace"
 [target.'cfg(target_os = "linux")']
 rustflags = [
     "-Clink-arg=-fuse-ld=mold",
+    "-Clink-arg=-Wl,--no-rosegment",
     "-Zshare-generics",
     # "-Zthreads=32",
     "-Zproc-macro-backtrace",

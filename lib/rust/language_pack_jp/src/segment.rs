@@ -333,7 +333,6 @@ impl TextSegmenter for JapaneseTextSegmenter {
 }
 
 #[cfg(test)]
-
 mod test {
     use language_pack::segment::TextSegmenter;
 

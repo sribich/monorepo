@@ -1,6 +1,6 @@
 use itertools::Itertools;
-use language_pack::TextProcessor;
-use language_pack::Transform;
+use language_pack::processor::TextProcessor;
+use language_pack::processor::Transform;
 use phf::phf_map;
 use unicode_normalization::IsNormalized;
 use unicode_normalization::UnicodeNormalization;

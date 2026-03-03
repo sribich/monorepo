@@ -23,6 +23,7 @@ axum = { workspace = true }
 blart = { workspace = true }
 itertools = { workspace = true }
 rayon = { workspace = true }
+memchr = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

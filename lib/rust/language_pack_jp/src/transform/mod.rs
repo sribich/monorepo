@@ -1,46 +1,10 @@
-pub mod processor;
-
-use language_pack::LanguageTransformer;
-use language_pack::TextProcessors;
-use language_pack::Transform;
-use processor::CollapseEmphaticSequences;
-use processor::ConvertHalfWidth;
-use processor::NormalizeCombiningCharacters;
-use processor::NormalizeKanji;
-use processor::NormalizeUnicode;
+pub use transforms::*;
 
 use crate::segment::Morpheme;
 
-pub struct JapaneseTransformer;
+mod transforms;
 
-impl LanguageTransformer for JapaneseTransformer {
-    fn text_processors(&'_ self) -> TextProcessors<'_> {
-        TextProcessors {
-            pre: &[
-                &ConvertHalfWidth {},
-                &NormalizeCombiningCharacters {},
-                &NormalizeUnicode {},
-                &CollapseEmphaticSequences {},
-                &NormalizeKanji {},
-            ],
-            post: &[],
-        }
-    }
 
-    fn transform(&self, text: String) -> Transform {
-        let mut transform: Transform = text.into();
-
-        for processor in self.text_processors().pre {
-            if !processor.matches(&transform.text) {
-                continue;
-            }
-
-            transform = processor.process(transform);
-        }
-
-        transform
-    }
-}
 
 fn attaches(pos: &str) -> bool {
     ["助詞"].contains(&pos)
@@ -66,6 +30,7 @@ fn is_new_root(pos: &str) -> bool {
 fn is_conjugating(s: &str) -> bool {
     s.ends_with("っ")
 }
+
 
 pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
     list.into_iter()
@@ -113,12 +78,28 @@ mod test {
 
     #[test]
     fn thing() {
+        /*
+でこぼこしていて、気を付けて歩かないと、足を引っ掛けてすぐに転びさそうだ。手を繋いでくれてるトゥーリに周りのことは任せて、わたしは自分の足元だけを見て歩くことにした。
+「あれ？　トゥーリじゃん！　何やってんだ？」
+やや遠いところから響いてた男の子の声にわたしは顔を上げた。
+背負子と弓を持った男の子が三人、駆け寄ってくる。赤、金、ピンクの頭がカラフルで、ついつい髪の色に注目してしまった。三人が着てる服は土や食べ物の染みで斑模様の薄い灰色のような色になっていて、お下がりを着回してるのか、継ぎ接ぎだらけだ。自分達が着てる物と大して違いがない様子から、生活レベルは同じくらいだと思う。
+
+トゥーリ != トゥー + リ == トゥーリ
+駆け寄ってくる != 駆け + 寄 + っ + てくる == 駆け寄って + くる
+響いてた != 響い + てた == 響いてた
+
+*/
+
+        let text = "駆け寄ってくる";
+        println!("{:#?}", JapaneseTextSegmenter::new().segment(text));
+
+        panic!();
+
         let text = "冬の食料がなくなるのだから、わたしが嫌だと言っても許されるわけがない。行かなかったら冬の食料がないので、どんなに嫌でもわたしだって参加するしかない。";
         // let text = "良かった";
         // let text = "良く";
         // let text = "ようで";
         let segments = JapaneseTextSegmenter::new().segment(text);
-        panic!();
 
         // println!("{:#?}", segments);
         // panic!();
@@ -288,212 +269,3 @@ mod test {
         assert_eq!(1, 1);
     }
 }
-
-// 1, 2, 3
-// 1..2  3
-//
-
-/*
-
-const ikuVerbs = ['いく', '行く', '逝く', '往く'];
-const godanUSpecialVerbs = ['こう', 'とう', '請う', '乞う', '恋う', '問う', '訪う', '宣う', '曰う', '給う', '賜う', '揺蕩う'];
-const fuVerbTeConjugations = [
-    ['のたまう', 'のたもう'],
-    ['たまう', 'たもう'],
-    ['たゆたう', 'たゆとう'],
-];
-
-/** @typedef {keyof typeof conditions} Condition */
-/**
- * @param {'て' | 'た' | 'たら' | 'たり'} suffix
- * @param {Condition[]} conditionsIn
- * @param {Condition[]} conditionsOut
- * @returns {import('language-transformer').SuffixRule<Condition>[]}
- */
-function irregularVerbSuffixInflections(suffix, conditionsIn, conditionsOut) {
-    const inflections = [];
-    for (const verb of ikuVerbs) {
-        inflections.push(suffixInflection(`${verb[0]}っ${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    for (const verb of godanUSpecialVerbs) {
-        inflections.push(suffixInflection(`${verb}${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    for (const [verb, teRoot] of fuVerbTeConjugations) {
-        inflections.push(suffixInflection(`${teRoot}${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    return inflections;
-}
-
-const conditions = {
-    'v': {
-        name: 'Verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '動詞',
-            },
-        ],
-        isDictionaryForm: false,
-        subConditions: ['v1', 'v5', 'vk', 'vs', 'vz'],
-    },
-    'v1': {
-        name: 'Ichidan verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞',
-            },
-        ],
-        isDictionaryForm: true,
-        subConditions: ['v1d', 'v1p'],
-    },
-    'v1d': {
-        name: 'Ichidan verb, dictionary form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞、終止形',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v1p': {
-        name: 'Ichidan verb, progressive or perfect form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞、～てる・でる',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5': {
-        name: 'Godan verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞',
-            },
-        ],
-        isDictionaryForm: true,
-        subConditions: ['v5d', 'v5s'],
-    },
-    'v5d': {
-        name: 'Godan verb, dictionary form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、終止形',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5s': {
-        name: 'Godan verb, short causative form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～す・さす',
-            },
-        ],
-        isDictionaryForm: false,
-        subConditions: ['v5ss', 'v5sp'],
-    },
-    'v5ss': {
-        name: 'Godan verb, short causative form having さす ending (cannot conjugate with passive form)',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～さす',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5sp': {
-        name: 'Godan verb, short causative form not having さす ending (can conjugate with passive form)',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～す',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'vk': {
-        name: 'Kuru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '来る動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'vs': {
-        name: 'Suru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: 'する動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'vz': {
-        name: 'Zuru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: 'ずる動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'adj-i': {
-        name: 'Adjective with i ending',
-        i18n: [
-            {
-                language: 'ja',
-                name: '形容詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    '-ます': {
-        name: 'Polite -ます ending',
-        isDictionaryForm: false,
-    },
-    '-ません': {
-        name: 'Polite negative -ません ending',
-        isDictionaryForm: false,
-    },
-    '-て': {
-        name: 'Intermediate -て endings for progressive or perfect tense',
-        isDictionaryForm: false,
-    },
-    '-ば': {
-        name: 'Intermediate -ば endings for conditional contraction',
-        isDictionaryForm: false,
-    },
-    '-く': {
-        name: 'Intermediate -く endings for adverbs',
-        isDictionaryForm: false,
-    },
-    '-た': {
-        name: '-た form ending',
-        isDictionaryForm: false,
-    },
-    '-ん': {
-        name: '-ん negative ending',
-        isDictionaryForm: false,
-    },
-    '-なさい': {
-        name: 'Intermediate -なさい ending (polite imperative)',
-        isDictionaryForm: false,
-    },
-    '-ゃ': {
-        name: 'Intermediate -や ending (conditional contraction)',
-        isDictionaryForm: false,
-    },
-};
-*/
