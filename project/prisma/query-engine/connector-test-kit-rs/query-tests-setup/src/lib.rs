@@ -56,7 +56,7 @@ async fn teardown_project(
     schema_id: Option<usize>,
 ) -> TestResult<()> {
     if let Some(schema_id) = schema_id {
-        let params = serde_json::json!({ "schemaId": schema_id });
+        let _params = serde_json::json!({ "schemaId": schema_id });
         // TODO(sr): Remove this -- used with driver adapters
         // executor_process_request::<serde_json::Value>("teardown", params).await?;
     }

@@ -31,7 +31,7 @@ impl PostgreSql {
 #[async_trait]
 impl FromSource for PostgreSql {
     async fn from_source(
-        source: &psl::Datasource,
+        _source: &psl::Datasource,
         url: &str,
         features: psl::PreviewFeatures,
         tracing_enabled: bool,

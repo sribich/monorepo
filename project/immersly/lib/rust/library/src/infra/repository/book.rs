@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use prisma_client::PrismaClient;
 use prisma_client::QueryError;
 use prisma_client::model;
 use railgun::di::Component;
@@ -21,7 +20,7 @@ pub struct BookRepository {
 // Util
 //==============================================================================
 impl BookRepository {
-    pub fn model(&self) -> model::book::Actions {
+    pub fn model(&self) -> model::book::Actions<'_> {
         self.db.client().book()
     }
 }

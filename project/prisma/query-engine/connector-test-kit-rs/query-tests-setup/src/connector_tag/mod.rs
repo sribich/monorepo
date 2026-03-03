@@ -54,7 +54,7 @@ pub(crate) fn connection_string(
     version: &ConnectorVersion,
     database: &str,
     is_multi_schema: bool,
-    isolation_level: Option<&'static str>,
+    _isolation_level: Option<&'static str>,
 ) -> String {
     match version {
         ConnectorVersion::Postgres(v) => {

@@ -63,7 +63,7 @@ impl TryFrom<ProcedureResponse> for GetWordResponse {
 pub enum GetWordError {}
 
 impl From<core::convert::Infallible> for GetWordError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }

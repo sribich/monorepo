@@ -5,7 +5,7 @@ use clap::Parser;
 #[command(name = "version")]
 pub struct VersionArgs;
 
-pub async fn run(args: VersionArgs) -> Result<()> {
+pub async fn run(_args: VersionArgs) -> Result<()> {
     println!(
         "Prisma v{} ({})",
         env!("CARGO_PKG_VERSION"),

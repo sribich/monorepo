@@ -46,7 +46,7 @@ impl SettingMeta for DataPath {
         Setting::new(Self::NAME.to_owned(), Self::default().value.as_kind())
     }
 
-    fn from_parts(name: String, kind: String, value: String) -> Self {
+    fn from_parts(_name: String, kind: String, value: String) -> Self {
         Self {
             value: ExistingPath::from_parts(kind, value),
         }

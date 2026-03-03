@@ -16,8 +16,6 @@ use crate::sql_migration::AlterExtension;
 use crate::sql_migration::CreateExtension;
 use crate::sql_migration::DropExtension;
 use crate::sql_migration::ExtensionChange;
-use crate::sql_migration::SequenceChange;
-use crate::sql_migration::SequenceChanges;
 use crate::sql_migration::SqlMigrationStep;
 use crate::sql_schema_differ::SqlSchemaDifferFlavour;
 use crate::sql_schema_differ::column::ColumnTypeChange;
@@ -114,10 +112,9 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
 
     fn push_alter_sequence_steps(
         &self,
-        steps: &mut Vec<SqlMigrationStep>,
-        db: &DifferDatabase<'_>,
+        _steps: &mut Vec<SqlMigrationStep>,
+        _db: &DifferDatabase<'_>,
     ) {
-        return;
     }
 
     fn indexes_match(&self, a: IndexWalker<'_>, b: IndexWalker<'_>) -> bool {
@@ -159,8 +156,7 @@ impl SqlSchemaDifferFlavour for PostgresSchemaDifferFlavour {
         previous_name != next_name
     }
 
-    fn set_tables_to_redefine(&self, db: &mut DifferDatabase<'_>) {
-        return;
+    fn set_tables_to_redefine(&self, _db: &mut DifferDatabase<'_>) {
     }
 
     fn string_matches_bytes(&self, string: &str, bytes: &[u8]) -> bool {

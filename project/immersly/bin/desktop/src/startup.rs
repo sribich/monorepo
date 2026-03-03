@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use features::dictionary::DictionaryModule;
 use features::library::LibraryModule;
@@ -11,20 +10,10 @@ use features::shared::infra::database::Sqlite;
 use features::shared::infra::http::AppState;
 use features::statistics::StatisticsModule;
 use features::storage::StorageModule;
-use opentelemetry::global;
-use opentelemetry::global::meter_provider;
-use opentelemetry::metrics::InstrumentBuilder;
 use railgun::core::service_info;
 use railgun::di::Module;
-use railgun::rpc::procedure::Procedure;
-use railgun::rpc::procedure::Unresolved;
-use railgun::rpc::router::Router;
 use railgun::telemetry;
-use railgun_di::InjectionError;
 use railgun_di::Injector;
-use railgun_di::InjectorBuilder;
-use railgun_di::InjectorError;
-use tokio::time::sleep;
 
 use crate::system::configuration::Configuration;
 use crate::system::configuration::get_configuration;

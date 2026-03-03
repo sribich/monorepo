@@ -53,7 +53,7 @@ impl Procedure for CreateCardProcedure {
                 data.reading,
                 data.sentence,
                 data.reading_audio.unwrap(),
-                audio_id.into(),
+                audio_id,
             )
             .await;
 

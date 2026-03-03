@@ -82,7 +82,7 @@ impl Routes<AppState> for LibraryModule {
 pub async fn test(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-    uri: Uri,
+    _uri: Uri,
     request: axum::extract::Request,
 ) -> impl IntoResponse {
     let data_path = state

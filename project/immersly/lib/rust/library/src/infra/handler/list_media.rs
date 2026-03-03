@@ -64,7 +64,7 @@ impl TryFrom<ProcedureResponse> for ListMediaResponse {
 pub enum ApiError {}
 
 impl From<core::convert::Infallible> for ApiError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }
@@ -85,7 +85,7 @@ pub async fn handler(
     State(state): State<ListMediaState>,
     Json(body): Json<ListMediaRequest>,
 ) -> ApiResult<ListMediaResponse, ApiError> {
-    let data: () = body.try_into()?;
+    let _data: () = body.try_into()?;
 
     let result = state.list_media.run(()).await.unwrap();
 

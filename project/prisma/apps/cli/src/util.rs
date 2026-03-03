@@ -46,7 +46,6 @@ export function getEffectiveUrl(ds: DataSource): EnvValue {
 
 use colored::Colorize;
 use psl::Configuration;
-use psl_schema::Schema;
 
 use crate::url::parse_connection_string;
 
@@ -121,6 +120,6 @@ pub trait Pluralize {
 
 impl<T> Pluralize for Vec<T> {
     fn pluralize(&self, singular: &'static str, plural: &'static str) -> &'static str {
-        if self.len() == 0 { singular } else { plural }
+        if self.is_empty() { singular } else { plural }
     }
 }

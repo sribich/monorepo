@@ -14,6 +14,12 @@ pub struct Timer {
     tomorrow: DateTime<Local>,
 }
 
+impl Default for Timer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Timer {
     pub fn new() -> Self {
         let now = chrono::Local::now();

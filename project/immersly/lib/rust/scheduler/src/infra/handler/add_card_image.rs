@@ -3,13 +3,11 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use axum_extra::headers::Mime;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;
 use railgun::api::json::ApiResult;
 use railgun::di::Component;
-use railgun::error::Error;
 use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
@@ -31,7 +29,7 @@ mod base64 {
 
     pub fn deserialize<'de, D: Deserializer<'de>>(d: D) -> Result<Vec<u8>, D::Error> {
         let base64 = String::deserialize(d)?;
-        base64::decode(base64.as_bytes()).map_err(|e| serde::de::Error::custom(e))
+        base64::decode(base64.as_bytes()).map_err(serde::de::Error::custom)
     }
 }
 
@@ -76,7 +74,7 @@ impl TryInto<ProcedureRequest> for HandlerRequest {
 impl TryFrom<ProcedureResponse> for HandlerResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
@@ -88,7 +86,7 @@ impl TryFrom<ProcedureResponse> for HandlerResponse {
 pub enum ApiError {}
 
 impl From<core::convert::Infallible> for ApiError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }
@@ -110,7 +108,7 @@ pub async fn handler(
     Json(body): Json<HandlerRequest>,
 ) -> ApiResult<HandlerResponse, ApiError> {
     let request = body.try_into()?;
-    let response = state.procedure.run(request).await?;
+    state.procedure.run(request).await?;
 
-    ApiResponse::success(StatusCode::OK, response.try_into()?)
+    ApiResponse::success(StatusCode::OK, ().try_into()?)
 }

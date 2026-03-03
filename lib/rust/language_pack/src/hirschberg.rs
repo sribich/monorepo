@@ -106,10 +106,10 @@ impl Config {
                 .unwrap()
                 .0;
 
-            let res = self
+            
+            self
                 .compute(&a[0..a_mid], &b[0..b_mid])
-                .combine(self.compute(&a[a_mid..], &b[b_mid..]));
-            res
+                .combine(self.compute(&a[a_mid..], &b[b_mid..]))
         }
     }
 
@@ -194,16 +194,8 @@ impl Config {
         let score = dp[y][x].score;
         while let Some(prev) = dp[y][x].prev {
             alignment.push((
-                if dp[y][x].col - dp[prev.0][prev.1].col == 1 {
-                    Some(&a[dp[y][x].col - 1])
-                } else {
-                    None
-                },
-                if dp[y][x].row - dp[prev.0][prev.1].row == 1 {
-                    Some(&b[dp[y][x].row - 1])
-                } else {
-                    None
-                },
+                (dp[y][x].col - dp[prev.0][prev.1].col == 1).then(|| &a[dp[y][x].col - 1]),
+                (dp[y][x].row - dp[prev.0][prev.1].row == 1).then(|| &b[dp[y][x].row - 1]),
             ));
 
             y = prev.0;

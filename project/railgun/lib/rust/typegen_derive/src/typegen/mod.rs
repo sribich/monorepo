@@ -45,9 +45,7 @@ fn inner_derive(input: TokenStream) -> syn::Result<proc_macro2::TokenStream> {
     let ident_str = ident.to_string();
     let serialized_container_name = container_attributes
         .rename
-        .as_ref()
-        .map(|name| format_ident!("{}", name))
-        .unwrap_or_else(|| ident.clone())
+        .as_ref().map_or_else(|| ident.clone(), |name| format_ident!("{}", name))
         .to_string();
 
     let (definition, reference) = match &input {

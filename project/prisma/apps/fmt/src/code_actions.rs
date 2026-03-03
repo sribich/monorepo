@@ -79,7 +79,7 @@ pub(crate) fn available_actions(
 
     let config = &validated_schema.configuration;
 
-    let datasource = config.datasources.first();
+    let _datasource = config.datasources.first();
     let file_uri = params.text_document.uri.as_str();
     let Some(initiating_file_id) = validated_schema.db.file_id(file_uri) else {
         warn!("Initiating file name is not found in the schema");

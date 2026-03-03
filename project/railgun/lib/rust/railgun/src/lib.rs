@@ -1,6 +1,4 @@
 #![feature(associated_type_defaults, type_alias_impl_trait)]
-use std::future::Future;
-use std::pin::Pin;
 
 pub mod di;
 pub mod ext;

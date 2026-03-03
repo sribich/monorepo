@@ -16,14 +16,10 @@ pub fn parse_connection_string(url: &str) -> DatabaseConnectionParams {
 
     let connector = scheme_to_connector_type(uri.scheme());
 
-    let query = uri.query_pairs().collect::<HashMap<_, _>>();
+    let _query = uri.query_pairs().collect::<HashMap<_, _>>();
     let user = uri.username();
 
-    let database = if let Some(mut segments) = uri.path_segments() {
-        Some(segments.next().unwrap().to_owned())
-    } else {
-        None
-    };
+    let database = uri.path_segments().map(|mut segments| segments.next().unwrap().to_owned());
 
     DatabaseConnectionParams {
         connector: connector.to_owned(),

@@ -1,8 +1,5 @@
-use std::convert::Infallible;
-use std::sync::Arc;
 
 use axum::Json;
-use axum::extract::State;
 use axum::http::StatusCode;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
@@ -37,7 +34,7 @@ pub enum ApiError {}
 //==============================================================================
 // Handler
 //==============================================================================
-pub async fn handler(Json(body): Json<PickFileRequest>) -> ApiResult<PickFileResponse, ApiError> {
+pub async fn handler(Json(_body): Json<PickFileRequest>) -> ApiResult<PickFileResponse, ApiError> {
     // TODO: We need to not unwrap here and instead handle the Option case for
     //       when the dialog is closed.
     let res = rfd::AsyncFileDialog::new()

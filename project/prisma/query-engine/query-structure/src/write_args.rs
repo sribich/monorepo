@@ -6,7 +6,6 @@ use indexmap::IndexMap;
 use indexmap::map::Keys;
 
 use crate::Field;
-use crate::Filter;
 use crate::Model;
 use crate::ModelProjection;
 use crate::PrismaValue;

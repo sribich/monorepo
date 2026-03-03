@@ -3,7 +3,6 @@ use std::sync::Arc;
 use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use sha256_util::sha256_digest;
 use shared::infra::Procedure;
 
 use crate::domain::entity::resource::Resource;

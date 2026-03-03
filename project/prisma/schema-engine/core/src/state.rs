@@ -646,7 +646,7 @@ impl EngineState {
         .await
     }
 
-    pub async fn reset(&self, input: ResetInput) -> CoreResult<()> {
+    pub async fn reset(&self, _input: ResetInput) -> CoreResult<()> {
         tracing::debug!("Resetting the database.");
         let namespaces = self.namespaces();
         self.with_default_connector(Box::new(move |connector| {

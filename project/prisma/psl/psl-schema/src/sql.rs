@@ -4,13 +4,13 @@ use crate::locator::LocatedFiles;
 pub struct SqlFiles {}
 
 impl From<&LocatedFiles> for SqlFiles {
-    fn from(value: &LocatedFiles) -> SqlFiles {
+    fn from(_value: &LocatedFiles) -> SqlFiles {
         SqlFiles {}
     }
 }
 
 impl From<&LocatedFiles> for Option<SqlFiles> {
-    fn from(value: &LocatedFiles) -> Option<SqlFiles> {
+    fn from(_value: &LocatedFiles) -> Option<SqlFiles> {
         Some(SqlFiles {})
     }
 }

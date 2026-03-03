@@ -1,18 +1,12 @@
-use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 
 use epub::archive::EpubArchive;
-use language_pack_jp::transcription::JapaneseTranscriptionContext;
 use prisma_client::model;
 use railgun::di::Component;
 use serde::Deserialize;
 use serde::Serialize;
 use shared::infra::Procedure;
 use shared::infra::database::Sqlite;
-use tokio::fs::File;
-use tokio::fs::read_to_string;
-use tokio::io::AsyncWriteExt;
 
 use crate::domain::value::book_id::BookId;
 
@@ -58,7 +52,7 @@ impl Procedure for ReprocessSyncProcedure {
             .unwrap()
             .unwrap();
 
-        let result = EpubArchive::open(book.path.as_str()).unwrap();
+        let _result = EpubArchive::open(book.path.as_str()).unwrap();
         // let rendered_data = result.chapters;
 
         // println!("{:#?}", rendered_data);

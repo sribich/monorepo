@@ -181,7 +181,7 @@ macro_rules! impl_as {
 }
 
 const _: () = {
-    use std::path::*;
+    use std::path::{Path, PathBuf};
 
     impl_as!(
         Path as String
@@ -224,7 +224,7 @@ impl_tuples!(T1, T2, T3);
 
 #[cfg(feature = "chrono")]
 const _: () = {
-    use chrono::*;
+    use chrono::{DateTime, TimeZone};
 
     use crate::cache::TypeCache;
 
@@ -241,7 +241,7 @@ const _: () = {
 
 #[cfg(feature = "uuid")]
 const _: () = {
-    use uuid::*;
+    use uuid::Uuid;
 
     impl Type for Uuid {
         fn datatype(cache: &mut TypeCache, generics: &Generics) -> DataType {

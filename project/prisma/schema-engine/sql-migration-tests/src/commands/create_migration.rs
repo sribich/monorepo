@@ -9,7 +9,6 @@ use schema_core::CoreResult;
 use schema_core::commands::create_migration::CreateMigrationInput;
 use schema_core::commands::create_migration::CreateMigrationOutput;
 use schema_core::commands::create_migration::create_migration;
-use schema_core::commands::create_migration::{self};
 use schema_core::json_rpc::types::SchemaContainer;
 use schema_core::json_rpc::types::SchemasContainer;
 use schema_core::schema_connector::SchemaConnector;

@@ -57,9 +57,7 @@ impl ScalarField {
     }
 
     pub fn is_read_only(&self) -> bool {
-        let sfid = match self.id {
-            ScalarFieldId::InModel(id) => id,
-        };
+        let ScalarFieldId::InModel(sfid) = self.id;
         let sf = self.dm.walk(sfid);
         let mut relation_fields = sf.model().relation_fields();
         relation_fields.any(|rf| rf.fields().into_iter().flatten().any(|sf2| sf.id == sf2.id))

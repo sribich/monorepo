@@ -106,15 +106,13 @@ impl YomitanDictionary {
             .map(|file| {
                 let mut content = String::new();
 
-                {
-                    Arc::clone(&zip)
+                Arc::clone(&zip)
                         .lock()
                         .expect("Mutex is poisoned")
                         .by_name(file)
                         .unwrap()
                         .read_to_string(&mut content)
-                        .unwrap()
-                };
+                        .unwrap();
 
                 let file_name_len = file.chars().count();
                 let file_name_idx = file
@@ -172,9 +170,9 @@ impl YomitanDictionary {
 
                     collection.index = Some(item);
                 }
-                YomitanFile::KanjiTerm(item) => {}
-                YomitanFile::KanjiMeta(item) => {}
-                YomitanFile::Tag(item) => {}
+                YomitanFile::KanjiTerm(_item) => {}
+                YomitanFile::KanjiMeta(_item) => {}
+                YomitanFile::Tag(_item) => {}
                 YomitanFile::Term(mut item) => {
                     collection.terms.append(&mut item);
                 }
@@ -219,7 +217,7 @@ impl YomitanDictionary {
         }))
     }
 
-    fn try_from_index(path: &Path) -> Result<Option<Self>> {
+    fn try_from_index(_path: &Path) -> Result<Option<Self>> {
         Ok(None)
     }
 }

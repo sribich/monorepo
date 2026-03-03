@@ -13,9 +13,7 @@ use psl::parser_database::ScalarFieldType;
 use psl::parser_database::ScalarType;
 use query_structure::FieldArity;
 use query_structure::walkers::ScalarFieldWalker;
-use serde_json::Value;
 
-use super::jsonrpc::GenerateRequest;
 
 #[derive(Debug)]
 pub struct Filter {
@@ -122,9 +120,9 @@ impl GeneratorArgs {
             ];
 
             filters.extend(possible_filters.iter().filter_map(|filter| {
-                let filter_type = dmmf.schema.find_input_type(filter)?.clone();
+                let filter_type = dmmf.schema.find_input_type(filter)?;
 
-                let mut s = scalar.as_str().to_string();
+                let mut s = scalar.as_str().to_owned();
 
                 // checking for both is invalid - fields can be list or null but not both
                 // TODO: make this more typesafe to correspond with fields
@@ -143,12 +141,12 @@ impl GeneratorArgs {
 
         for enm in schema.db.walk_enums() {
             let possible_filters = [
-                "Enum".to_string() + &enm.ast_enum().name.name + "Filter",
-                "Enum".to_string() + &enm.ast_enum().name.name + "NullableFilter",
+                "Enum".to_owned() + &enm.ast_enum().name.name + "Filter",
+                "Enum".to_owned() + &enm.ast_enum().name.name + "NullableFilter",
             ];
 
             filters.extend(possible_filters.iter().filter_map(|filter| {
-                let filter_type = dmmf.schema.find_input_type(filter)?.clone();
+                let filter_type = dmmf.schema.find_input_type(filter)?;
 
                 let mut name = enm.ast_enum().name.name.clone();
 
@@ -259,9 +257,9 @@ impl GeneratorArgs {
             ];
 
             possible_inputs.into_iter().filter_map(move |input| {
-                let input_type = dmmf.schema.find_input_type(&input)?.clone();
+                let input_type = dmmf.schema.find_input_type(&input)?;
 
-                let mut name = enm.name().to_string();
+                let mut name = enm.name().to_owned();
 
                 if input_type.name.contains("List") {
                     name += "List";
@@ -300,8 +298,7 @@ impl GeneratorArgs {
                 .filter_map(|field| {
                     let input_type = dmmf
                         .schema
-                        .find_input_type(&format!("{}Update{}Input", model.name(), field.name()))?
-                        .clone();
+                        .find_input_type(&format!("{}Update{}Input", model.name(), field.name()))?;
 
                     let mut fields = vec![];
 

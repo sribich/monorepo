@@ -4,7 +4,6 @@ use std::sync::Arc;
 use railgun::di::Component;
 use railgun::error::Error;
 use railgun::error::Location;
-use railgun::error::OptionExt;
 use shared::infra::Procedure;
 use shared::infra::dirs::get_data_dir;
 
@@ -52,8 +51,8 @@ impl Procedure for PrepareResourceProcedure {
         let (dir1, dir2) = (uuid.as_bytes()[14], uuid.as_bytes()[15]);
 
         let dirname = data_dir
-            .join(hex::encode(&[dir1]))
-            .join(hex::encode(&[dir2]));
+            .join(hex::encode([dir1]))
+            .join(hex::encode([dir2]));
 
         create_dir_all(&dirname).unwrap();
 
@@ -67,7 +66,7 @@ impl Procedure for PrepareResourceProcedure {
 
         Ok(PrepareResourceRes {
             resource: data.id().clone(),
-            path: data.path().to_str().unwrap().to_string(),
+            path: data.path().to_str().unwrap().to_owned(),
         })
     }
 }

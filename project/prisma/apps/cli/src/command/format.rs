@@ -6,8 +6,6 @@ use anyhow::anyhow;
 use clap::Parser;
 use indoc::indoc;
 use psl::Schema;
-use psl::SchemaParser;
-use psl::SourceFile;
 
 #[derive(Parser)]
 #[command(name = "format")]

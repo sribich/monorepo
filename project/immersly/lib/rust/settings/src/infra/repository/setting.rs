@@ -21,7 +21,7 @@ impl SettingRepository {
         self.db.client()
     }
 
-    pub fn model(&self) -> model::setting::Actions {
+    pub fn model(&self) -> model::setting::Actions<'_> {
         self.db.client().setting()
     }
 }

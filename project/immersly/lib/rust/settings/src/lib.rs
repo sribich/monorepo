@@ -35,8 +35,8 @@ impl Routes<AppState> for SettingsModule {
     fn routes(
         &self,
         router: Router<AppState>,
-        procedure: Procedure<Unresolved>,
-        state: Arc<AppState>,
+        _procedure: Procedure<Unresolved>,
+        _state: Arc<AppState>,
     ) -> Router<AppState> {
         router
     }

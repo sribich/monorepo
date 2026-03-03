@@ -9,7 +9,7 @@ use crate::domain::entity::dictionary::Dictionary;
 pub struct DictionaryDto {}
 
 impl From<Dictionary> for DictionaryDto {
-    fn from(value: Dictionary) -> Self {
+    fn from(_value: Dictionary) -> Self {
         Self {}
     }
 }

@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use dictionary_parser::DictionaryWord;
@@ -20,7 +19,7 @@ pub struct WordRepository {
 // Util
 //==============================================================================
 impl WordRepository {
-    pub fn model(&self) -> model::word::Actions {
+    pub fn model(&self) -> model::word::Actions<'_> {
         self.db.client().word()
     }
 }

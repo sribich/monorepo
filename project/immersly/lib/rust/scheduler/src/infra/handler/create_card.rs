@@ -65,8 +65,7 @@ impl TryInto<ProcedureRequest> for HandlerRequest {
             sentence: self.sentence,
             sentence_audio: Some(AudioSegment {
                 resource: ResourceId::try_from_str(self.sentence_audio)
-                    .unwrap()
-                    .into(),
+                    .unwrap(),
                 start_time: self.sentence_timestamp.0 as usize,
                 end_time: self.sentence_timestamp.1 as usize,
             }),
@@ -77,7 +76,7 @@ impl TryInto<ProcedureRequest> for HandlerRequest {
 impl TryFrom<ProcedureResponse> for HandlerResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
@@ -89,7 +88,7 @@ impl TryFrom<ProcedureResponse> for HandlerResponse {
 pub enum ApiError {}
 
 impl From<core::convert::Infallible> for ApiError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }
@@ -111,7 +110,7 @@ pub async fn handler(
     Json(body): Json<HandlerRequest>,
 ) -> ApiResult<HandlerResponse, ApiError> {
     let request = body.try_into()?;
-    let response = state.procedure.run(request).await?;
+    state.procedure.run(request).await?;
 
-    ApiResponse::success(StatusCode::OK, response.try_into()?)
+    ApiResponse::success(StatusCode::OK, ().try_into()?)
 }

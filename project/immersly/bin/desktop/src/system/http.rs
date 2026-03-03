@@ -1,8 +1,6 @@
 use std::env::current_dir;
 use std::sync::Arc;
 
-use axum::body::{Body, Bytes};
-use axum::http::Request;
 use axum::serve;
 use features::shared::infra::http::AppState;
 use railgun::di::Module;
@@ -11,12 +9,7 @@ use railgun::rpc::export::clients::typescript::TypescriptClient;
 use railgun::rpc::router::Router;
 use railgun::typegen::export::config::ExportConfig;
 use railgun_di::Injector;
-use reqwest::Method;
 use tokio::net::TcpListener;
-use tower_http::body::Full;
-use tower_http::cors::Any;
-use tracing::debug;
-use tracing_log::log::info;
 
 pub struct HttpServerContext {
     pub port: u16,

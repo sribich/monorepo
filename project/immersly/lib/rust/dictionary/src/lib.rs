@@ -54,7 +54,7 @@ impl Routes<AppState> for DictionaryModule {
         &self,
         router: Router<AppState>,
         procedure: Procedure<Unresolved>,
-        state: Arc<AppState>,
+        _state: Arc<AppState>,
     ) -> Router<AppState> {
         router
             .procedure(

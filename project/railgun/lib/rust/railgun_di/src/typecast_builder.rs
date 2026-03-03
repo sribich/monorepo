@@ -30,7 +30,7 @@ impl Binding {
 
     pub fn push(&mut self, caster: Arc<dyn Any + Send + Sync>, builder: Arc<dyn Builder>) {
         if let Binding::Collection(inner) = self {
-            inner.push(BindingInner { caster, builder })
+            inner.push(BindingInner { caster, builder });
         } else {
             // TODO: panic
             panic!("Adding a vec to a non-vec type");

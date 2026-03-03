@@ -39,7 +39,7 @@ impl<'de> Deserialize<'de> for PackageVersion {
     {
         struct PackageVersionVisitor;
 
-        impl<'de> Visitor<'de> for PackageVersionVisitor {
+        impl Visitor<'_> for PackageVersionVisitor {
             type Value = PackageVersion;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {

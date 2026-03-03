@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use dictionary_parser::Accent;
-use dictionary_parser::Frequency;
 use shared::entity_data_fns;
 
 use crate::domain::value::dictionary_id::DictionaryId;

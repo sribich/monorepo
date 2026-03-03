@@ -67,7 +67,7 @@ pub enum ListDictionariesError {
 }
 
 impl From<core::convert::Infallible> for ListDictionariesError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }

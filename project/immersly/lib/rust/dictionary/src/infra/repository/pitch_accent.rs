@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use dictionary_parser::Accent;
@@ -20,7 +19,7 @@ pub struct PitchAccentRepository {
 // Util
 //==============================================================================
 impl PitchAccentRepository {
-    pub fn model(&self) -> model::pitch_accent::Actions {
+    pub fn model(&self) -> model::pitch_accent::Actions<'_> {
         self.db.client().pitch_accent()
     }
 }

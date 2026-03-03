@@ -69,7 +69,7 @@ pub mod json {
         T: NamedType + Serialize,
         E: NamedType + Serialize,
     {
-        fn datatype(cache: &mut TypeCache, generics: &Generics) -> typegen::datatype::DataType {
+        fn datatype(cache: &mut TypeCache, _generics: &Generics) -> typegen::datatype::DataType {
             let delegate_dt = T::named_datatype(&mut TypeCache::default(), &Generics::Impl);
             let name = Cow::Owned(format!("{}Aggregate", delegate_dt.name()));
 
@@ -88,7 +88,7 @@ pub mod json {
             ))
         }
 
-        fn reference(cache: &mut TypeCache, generics: &[DataType]) -> Reference {
+        fn reference(cache: &mut TypeCache, _generics: &[DataType]) -> Reference {
             let delegate_dt = T::named_datatype(&mut TypeCache::default(), &Generics::Impl);
             let name = Cow::Owned(format!("{}Aggregate", delegate_dt.name()));
 
@@ -106,7 +106,7 @@ pub mod json {
     {
         const ID: TypeId = ApiBody::<T, E>::ID.delegate(T::ID);
 
-        fn named_datatype(cache: &mut TypeCache, generics: &Generics) -> NamedDataType {
+        fn named_datatype(cache: &mut TypeCache, _generics: &Generics) -> NamedDataType {
             let generics = [
                 T::datatype(cache, &Generics::Impl),
                 E::datatype(cache, &Generics::Impl),

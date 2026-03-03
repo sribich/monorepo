@@ -26,7 +26,7 @@ impl ExportResolver {
         self.types.insert(id, export);
         self.names.insert(name.to_owned());
 
-        self.types.get(&id).unwrap().clone()
+        self.types[&id].clone()
     }
 
     pub fn get(&self, item: &TypeId) -> Option<&Export> {

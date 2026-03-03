@@ -1,8 +1,6 @@
 use std::sync::Arc;
 
 use railgun::di::Component;
-use railgun::typegen::Typegen;
-use serde::Serialize;
 use shared::infra::Procedure;
 
 use crate::app::service::pronunciation::PronunciationService;

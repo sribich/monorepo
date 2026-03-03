@@ -5,7 +5,6 @@ use either::Either;
 use prisma_value::PrismaValue;
 use psl::datamodel_connector::constraint_names::ConstraintNames;
 use psl::parser_database::walkers;
-use sql::postgres::PostgresSchemaExt;
 use sql_schema_describer as sql;
 
 use super::IntrospectionPair;

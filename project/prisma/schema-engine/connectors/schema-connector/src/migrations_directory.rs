@@ -119,7 +119,7 @@ impl MigrationDirectory {
     pub fn read_migration_script(&self) -> Result<String, ReadMigrationScriptError> {
         let migration_file_path = self.0.migration_file.path.clone();
         let filesystem_script: Result<String, String> =
-            self.0.migration_file.content.clone().into();
+            self.0.migration_file.content.clone();
 
         filesystem_script.map_err(|err| {
             ReadMigrationScriptError::new(std::io::Error::other(err), migration_file_path)

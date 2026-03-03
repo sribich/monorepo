@@ -1,4 +1,3 @@
-use storage::domain::entity::resource::Resource;
 use storage::domain::value::ResourceId;
 
 use crate::domain::value::PronunciationId;

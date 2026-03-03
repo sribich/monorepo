@@ -2,12 +2,8 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Parser;
-use dmmf::ValidatedSchemaDmmfExt;
 use dmmf::dmmf_from_validated_schema;
-use generator::GeneratorContext;
-use generator::RustGenerator;
 use generator::run_generators;
-use psl::ConfiguredExt;
 use psl::IntoConfiguredExt;
 use psl::IntoValidatedExt;
 use psl::Schema;
@@ -17,7 +13,7 @@ use psl::SchemaParser;
 #[command(name = "generate")]
 pub struct GenerateArgs {}
 
-pub fn run(args: GenerateArgs) -> Result<()> {
+pub fn run(_args: GenerateArgs) -> Result<()> {
     let schema = Schema::new().parse().into_configured().into_validated();
 
     // Eat the cost of running schema stuff twice for now.

@@ -4,14 +4,13 @@ use anyhow::Result;
 use clap::Parser;
 use prisma_fmt::lint;
 use psl::Schema;
-use tracing::Instrument;
 
 #[derive(Parser)]
 #[command(name = "validate")]
 pub struct ValidateArgs;
 
-pub async fn run(args: ValidateArgs) -> Result<()> {
-    let start_time = Instant::now();
+pub async fn run(_args: ValidateArgs) -> Result<()> {
+    let _start_time = Instant::now();
 
     let schemas = Schema::new()
         .schema_files()

@@ -13,7 +13,7 @@ impl core::fmt::Display for Base36 {
         let mut output = heapless::String::<13>::new();
 
         while value > 0 {
-            #[allow(
+            #[expect(
                 clippy::integer_division_remainder_used,
                 reason = "not timing sensitive"
             )]

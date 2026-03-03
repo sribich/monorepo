@@ -29,7 +29,7 @@ impl SettingService {
         T::from_parts(result.name, result.kind, result.value)
     }
 
-    pub async fn get_setting_by_name(name: String) {}
+    pub async fn get_setting_by_name(_name: String) {}
 
     pub async fn existing_settings(&self) -> Vec<String> {
         self.db

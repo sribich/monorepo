@@ -44,7 +44,7 @@ impl Routes<AppState> for SchedulerModule {
         &self,
         router: Router<AppState>,
         procedure: Procedure<Unresolved>,
-        state: Arc<AppState>,
+        _state: Arc<AppState>,
     ) -> Router<AppState> {
         router
             .procedure(

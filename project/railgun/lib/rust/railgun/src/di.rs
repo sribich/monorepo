@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use async_trait::async_trait;
 pub use railgun_di::*;
 use rpc::procedure::Procedure;
 use rpc::procedure::Unresolved;

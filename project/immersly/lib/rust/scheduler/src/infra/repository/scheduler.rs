@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use prisma_client::QueryError;
@@ -19,7 +18,7 @@ pub struct SchedulerRepository {
 }
 
 impl SchedulerRepository {
-    pub fn model(&self) -> model::card::Actions {
+    pub fn model(&self) -> model::card::Actions<'_> {
         self.db.client().card()
     }
 }

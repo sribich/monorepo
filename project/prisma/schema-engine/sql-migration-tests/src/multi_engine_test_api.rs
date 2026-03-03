@@ -14,7 +14,6 @@ use quaint::single::Quaint;
 use schema_core::schema_connector::ConnectorParams;
 use schema_core::schema_connector::ConnectorResult;
 use schema_core::schema_connector::SchemaConnector;
-use schema_core::schema_connector::{self};
 use sql_schema_connector::SqlSchemaConnector;
 use tempfile::TempDir;
 pub use test_macros::test_connector;

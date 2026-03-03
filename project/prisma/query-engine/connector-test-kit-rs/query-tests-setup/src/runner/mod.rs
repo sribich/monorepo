@@ -2,7 +2,6 @@ mod json_adapter;
 
 use std::fmt::Display;
 use std::sync::Arc;
-use std::sync::atomic::AtomicUsize;
 
 use colored::Colorize;
 pub use json_adapter::*;
@@ -24,8 +23,6 @@ use request_handlers::MultiQuery;
 use request_handlers::RequestBody;
 use request_handlers::RequestHandler;
 use serde::Deserialize;
-use serde::Serialize;
-use serde_json::json;
 use telemetry::TraceParent;
 
 use crate::ConnectorTag;
@@ -33,7 +30,6 @@ use crate::ConnectorVersion;
 use crate::ENGINE_PROTOCOL;
 use crate::QueryResult;
 use crate::RenderedDatamodel;
-use crate::TestError;
 use crate::TestLogCapture;
 use crate::TestResult;
 
@@ -121,7 +117,7 @@ impl Runner {
         let datasource = schema.configuration.datasources.first().unwrap();
 
         let (executor, db_version) = match crate::CONFIG.with_driver_adapter() {
-            Some(with_driver_adapter) => {
+            Some(_with_driver_adapter) => {
                 // TODO(sr): Remove this and driver_adapter
                 panic!("Driver adapter not supported");
             }
@@ -206,9 +202,7 @@ impl Runner {
     {
         let query = query.into();
 
-        let executor = match &self.executor {
-            RunnerExecutor::Builtin(e) => e,
-        };
+        let RunnerExecutor::Builtin(executor) = &self.executor;
 
         tracing::info!("Querying: {}", query);
 
@@ -258,9 +252,7 @@ impl Runner {
         println!("{}", query.bright_green());
         let query: serde_json::Value = serde_json::from_str(&query).unwrap();
 
-        let executor = match &self.executor {
-            RunnerExecutor::Builtin(e) => e,
-        };
+        let RunnerExecutor::Builtin(executor) = &self.executor;
 
         let handler = RequestHandler::new(&**executor, &self.query_schema, EngineProtocol::Json);
 
@@ -301,9 +293,7 @@ impl Runner {
         transaction: bool,
         isolation_level: Option<String>,
     ) -> TestResult<crate::QueryResult> {
-        let executor = match &self.executor {
-            RunnerExecutor::Builtin(e) => e,
-        };
+        let RunnerExecutor::Builtin(executor) = &self.executor;
 
         let handler = RequestHandler::new(&**executor, &self.query_schema, self.protocol);
         let body = RequestBody::Json(JsonBody::Batch(JsonBatchQuery {
@@ -325,9 +315,7 @@ impl Runner {
         transaction: bool,
         isolation_level: Option<String>,
     ) -> TestResult<crate::QueryResult> {
-        let executor = match &self.executor {
-            RunnerExecutor::Builtin(e) => e,
-        };
+        let RunnerExecutor::Builtin(executor) = &self.executor;
 
         let handler = RequestHandler::new(&**executor, &self.query_schema, self.protocol);
         let body = match self.protocol {
@@ -432,7 +420,7 @@ impl Runner {
     }
 
     pub async fn get_logs(&mut self) -> Vec<String> {
-        let mut logs = self.log_capture.get_logs().await;
+        let logs = self.log_capture.get_logs().await;
         match &self.executor {
             RunnerExecutor::Builtin(_) => logs,
         }

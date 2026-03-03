@@ -63,7 +63,7 @@ impl Actor {
             .send(Box::new(move || {
                 Box::pin(async move {
                     tx.send(task.execute().await)
-                        .map_err(|e| "SEND ERROR")
+                        .map_err(|_e| "SEND ERROR")
                         .unwrap();
                 })
             }))

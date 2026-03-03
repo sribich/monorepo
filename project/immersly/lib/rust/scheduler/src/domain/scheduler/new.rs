@@ -10,7 +10,7 @@ use crate::domain::value::next_card_state::NextCardState;
 pub struct NewCardScheduler {}
 
 impl CardScheduler for NewCardScheduler {
-    fn get_next_states(&self, card: &Card) -> NextStates {
+    fn get_next_states(&self, _card: &Card) -> NextStates {
         // let current_step = car
         todo!();
     }

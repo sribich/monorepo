@@ -3,7 +3,6 @@ use schema_core::CoreResult;
 use schema_core::commands::mark_migration_rolled_back::MarkMigrationRolledBackInput;
 use schema_core::commands::mark_migration_rolled_back::MarkMigrationRolledBackOutput;
 use schema_core::commands::mark_migration_rolled_back::mark_migration_rolled_back;
-use schema_core::commands::mark_migration_rolled_back::{self};
 use schema_core::schema_connector::SchemaConnector;
 
 #[must_use = "This struct does nothing on its own. See MarkMigrationRolledBack::send()"]

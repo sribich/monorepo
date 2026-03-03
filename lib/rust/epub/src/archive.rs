@@ -22,9 +22,6 @@ use html5ever::tendril::TendrilSink;
 use itertools::Itertools;
 use railgun::error::ResultExt;
 use serde::Serialize;
-use unicode_normalization::UnicodeNormalization;
-use url::ParseError;
-use url::Url;
 use zip::ZipArchive;
 
 use crate::Error;
@@ -126,8 +123,8 @@ impl EpubArchive {
             package,
         };
 
-        let manifest = me.manifest()?;
-        let navigation = me.navigation()?;
+        let _manifest = me.manifest()?;
+        let _navigation = me.navigation()?;
 
         Ok(me)
     }
@@ -235,10 +232,10 @@ impl EpubArchive {
                 }
             }
             NodeData::Element {
-                name,
-                attrs,
-                template_contents,
-                mathml_annotation_xml_integration_point,
+                name: _,
+                attrs: _,
+                template_contents: _,
+                mathml_annotation_xml_integration_point: _,
             } => {
                 for element_node in node {
                     if let NodeData::Element { name, .. } = &element_node.data {
@@ -314,11 +311,9 @@ impl EpubArchive {
 
                     if let Some(NodeData::Element { name, .. }) =
                         node.next_sibling.get().map(|it| &it.data)
-                    {
-                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
+                        && matches!(name.local, local_name!("span") | local_name!("ruby")) {
                             return;
                         }
-                    }
 
                     if !inline_text {
                         // result.push_str("\n\n");
@@ -335,7 +330,7 @@ impl EpubArchive {
                         return;
                     }
 
-                    println!("{:#?}", contents);
+                    println!("{contents:#?}");
                     println!("{:#?}", contents.borrow().trim());
 
                     panic!("Not text mode");
@@ -343,12 +338,12 @@ impl EpubArchive {
             }
 
             NodeData::Doctype {
-                name,
-                public_id,
-                system_id,
+                name: _,
+                public_id: _,
+                system_id: _,
             } => todo!("a"),
-            NodeData::Comment { contents } => {}
-            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
+            NodeData::Comment { contents: _ } => {}
+            NodeData::ProcessingInstruction { target: _, contents: _ } => todo!("d"),
         }
     }
 
@@ -377,11 +372,9 @@ impl EpubArchive {
 
                     if let Some(NodeData::Element { name, .. }) =
                         node.next_sibling.get().map(|it| &it.data)
-                    {
-                        if matches!(name.local, local_name!("span") | local_name!("ruby")) {
+                        && matches!(name.local, local_name!("span") | local_name!("ruby")) {
                             return;
                         }
-                    }
 
                     if !inline_text {
                         // text.push_str("\n\n");
@@ -389,10 +382,10 @@ impl EpubArchive {
                 }
             }
             NodeData::Element {
-                name,
-                attrs,
-                template_contents,
-                mathml_annotation_xml_integration_point,
+                name: _,
+                attrs: _,
+                template_contents: _,
+                mathml_annotation_xml_integration_point: _,
             } => {
                 for element_node in node {
                     if let NodeData::Element { name, .. } = &element_node.data {
@@ -424,14 +417,14 @@ impl EpubArchive {
                 }
             }
             NodeData::Doctype {
-                name,
-                public_id,
-                system_id,
+                name: _,
+                public_id: _,
+                system_id: _,
             } => todo!("a"),
-            NodeData::Comment { contents } => {
+            NodeData::Comment { contents: _ } => {
                 // noop
             }
-            NodeData::ProcessingInstruction { target, contents } => todo!("d"),
+            NodeData::ProcessingInstruction { target: _, contents: _ } => todo!("d"),
         }
     }
 }
@@ -984,21 +977,21 @@ fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
             }
         }
         NodeData::Doctype {
-            name,
-            public_id,
-            system_id,
+            name: _,
+            public_id: _,
+            system_id: _,
         } => todo!(),
         NodeData::Text { contents } => {
             if text_mode {
-                text.push_str(&contents.borrow().to_string())
+                text.push_str(&contents.borrow().to_string());
             }
         }
-        NodeData::Comment { contents } => todo!(),
+        NodeData::Comment { contents: _ } => todo!(),
         NodeData::Element {
-            name,
-            attrs,
-            template_contents,
-            mathml_annotation_xml_integration_point,
+            name: _,
+            attrs: _,
+            template_contents: _,
+            mathml_annotation_xml_integration_point: _,
         } => {
             for element_node in node {
                 if let NodeData::Element { name, .. } = &element_node.data {
@@ -1021,8 +1014,8 @@ fn html_to_text(text: &mut String, node: &Node, text_mode: bool) {
                 }
             }
         }
-        NodeData::ProcessingInstruction { target, contents } => todo!(),
-    };
+        NodeData::ProcessingInstruction { target: _, contents: _ } => todo!(),
+    }
 }
 
 type Arena<'arena> = &'arena typed_arena::Arena<Node<'arena>>;

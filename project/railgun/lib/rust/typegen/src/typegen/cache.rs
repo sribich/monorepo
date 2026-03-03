@@ -7,18 +7,15 @@ use std::collections::HashSet;
 use crate::datatype::NamedDataType;
 use crate::id::TypeId;
 
-#[allow(clippy::large_enum_variant, reason = "Not a performance bottleneck")]
+#[expect(clippy::large_enum_variant, reason = "Not a performance bottleneck")]
 #[derive(Clone, Debug)]
+#[derive(Default)]
 pub enum CachedType {
+    #[default]
     InProgress,
     Resolved(NamedDataType),
 }
 
-impl Default for CachedType {
-    fn default() -> Self {
-        Self::InProgress
-    }
-}
 
 #[derive(Clone, Debug)]
 pub struct ExportIdentifier {

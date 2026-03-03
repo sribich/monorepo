@@ -10,7 +10,6 @@ use query_core::constants::custom_types;
 use query_core::schema::ObjectType;
 use query_core::schema::OutputField;
 use query_core::schema::QuerySchema;
-use query_structure::Field;
 use query_structure::PrismaValue;
 use query_structure::PrismaValueType;
 use query_structure::decode_bytes;
@@ -329,7 +328,7 @@ impl<'a> JsonProtocolAdapter<'a> {
     fn default_scalar_and_composite_selection(
         selection: &mut Selection,
         schema_object: &ObjectType,
-        container: Option<&ParentContainer>,
+        _container: Option<&ParentContainer>,
     ) -> crate::Result<()> {
         Self::default_scalar_selection(schema_object, selection);
 

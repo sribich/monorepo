@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::ffi::CStr;
 use std::ffi::CString;
 use std::fs::File;
@@ -15,8 +14,6 @@ use itertools::Itertools;
 use language_pack::Transcription;
 use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
-use language_pack::transform::TextTransform;
-use language_pack_jp::japanese_language_pipeline;
 use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
@@ -35,7 +32,6 @@ use storage::app::procedure::prepare_resource::PrepareResourceProcedure;
 use storage::app::procedure::prepare_resource::PrepareResourceReq;
 
 use crate::domain::entity::book::Book;
-use crate::domain::entity::book::BookData;
 use crate::infra::repository::book::BookRepository;
 
 #[derive(Debug)]
@@ -183,7 +179,7 @@ println!("5: {}", time.elapsed().as_millis());
             .map(|item| {
                 let segments = self.get_segments(item.text(), &adaptive, &adaptive_readings);
 
-                return (item.time, item.kind(), segments);
+                (item.time, item.kind(), segments)
             })
             .collect::<Vec<_>>();
 
@@ -359,7 +355,7 @@ impl AddBookProcedure {
 
         for (segment, inflects) in &segments {
             if *inflects {
-                let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, &adaptive);
+                let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, adaptive);
 
                 let resolve = transformer.resolve(segment);
 
@@ -374,7 +370,7 @@ impl AddBookProcedure {
                             let inflected = it.0.map_or_else(
                                 || base.clone(),
                                 |inflection| {
-                                    if inflection.last_inflection == "" {
+                                    if inflection.last_inflection.is_empty() {
                                         return base.clone();
                                     }
 
@@ -382,13 +378,13 @@ impl AddBookProcedure {
                                         return inflection.inflection;
                                     }
 
-                                    return [
+                                    [
                                         &base[..(base
                                             .len()
                                             .saturating_sub(inflection.last_inflection.len()))],
                                         &inflection.inflection,
                                     ]
-                                    .join("");
+                                    .join("")
                                 },
                             );
 
@@ -425,7 +421,7 @@ impl AddBookProcedure {
             let mut curr_check = i + 2;
 
             while curr_check <= output.len()
-                && let Some(prefix) = adaptive.get_prefix(
+                && let Some(_prefix) = adaptive.get_prefix(
                     CString::new(
                         output[i..curr_check]
                             .iter()
@@ -474,24 +470,22 @@ impl AddBookProcedure {
             }
         }
 
-        let result = result
+        
+
+        result
             .into_iter()
             .map(|it| {
                 let freq = adaptive
-                    .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
-                    .map(|it| *it)
+                    .get(CString::new(it.0.as_bytes()).unwrap().as_c_str()).copied()
                     .or_else(|| {
                         adaptive_readings
-                            .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
-                            .map(|it| *it)
+                            .get(CString::new(it.0.as_bytes()).unwrap().as_c_str()).copied()
                             .or(None)
                     })
                     .flatten();
 
                 (it.0, it.1, freq)
             })
-            .collect::<Vec<_>>();
-
-        result
+            .collect::<Vec<_>>()
     }
 }

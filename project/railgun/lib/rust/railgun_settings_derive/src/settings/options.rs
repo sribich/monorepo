@@ -4,7 +4,6 @@ use syn::Path;
 use syn::Token;
 use syn::parse::Parse;
 use syn::parse::ParseStream;
-use syn::parse_quote;
 use syn::punctuated::Punctuated;
 
 fn parse_meta_list(input: ParseStream) -> syn::Result<Vec<NestedMeta>> {

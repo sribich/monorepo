@@ -53,8 +53,7 @@ impl SchedulerState {
             .last_review
             .map(|val| since_the_epoch.abs_diff(Duration::from_secs(val)).as_secs())
             .map(|secs| (secs as f32 / 86400.0).max(1.0))
-            .map(f32::round)
-            .unwrap_or(0.0) as u32;
+            .map_or(0.0, f32::round) as u32;
 
         println!("{days_elapsed:#?}");
 
@@ -102,11 +101,11 @@ impl Scheduler {
     fn get_card_scheduler(&self, card: &Card) -> Box<dyn CardScheduler> {
         match card.state() {
             CardState::New => Box::new(NewCardScheduler {}),
-            CardState::Learning { step } => {
+            CardState::Learning { step: _ } => {
                 Box::new(LearningStateScheduler::new(self.state.clone()))
             }
             CardState::Review => Box::new(ReviewStateScheduler::new(self.state.clone())),
-            CardState::Relearning { step } => {
+            CardState::Relearning { step: _ } => {
                 Box::new(RelearningStateScheduler::new(self.state.clone()))
             }
             CardState::Graduated => todo!(),

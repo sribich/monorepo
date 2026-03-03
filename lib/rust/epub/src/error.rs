@@ -76,7 +76,7 @@ pub enum UnsupportedReason {
 impl From<ZipError> for Error {
     #[track_caller]
     fn from(value: ZipError) -> Self {
-        let caller = core::panic::Location::caller();
+        let _caller = core::panic::Location::caller();
 
         match value {
             ZipError::Io(_) => todo!(),
@@ -92,7 +92,7 @@ impl From<ZipError> for Error {
 }
 
 impl From<std::io::Error> for Error {
-    fn from(value: std::io::Error) -> Self {
+    fn from(_value: std::io::Error) -> Self {
         todo!()
     }
 }

@@ -620,7 +620,7 @@ impl SqlRenderer for PostgresRenderer {
 
 fn render_column_type(
     col: TableColumnWalker<'_>,
-    renderer: &PostgresRenderer,
+    _renderer: &PostgresRenderer,
 ) -> Cow<'static, str> {
     let t = col.column_type();
     if let Some(enm) = col.column_type_family_as_enum() {
@@ -1127,8 +1127,8 @@ fn render_postgres_alter_enum(
 }
 
 fn render_column_identity_str(
-    column: TableColumnWalker<'_>,
-    renderer: &PostgresRenderer,
+    _column: TableColumnWalker<'_>,
+    _renderer: &PostgresRenderer,
 ) -> String {
     String::new()
 }

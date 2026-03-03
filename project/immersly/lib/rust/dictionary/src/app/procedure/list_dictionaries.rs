@@ -4,7 +4,6 @@ use railgun::di::Component;
 use shared::infra::Procedure;
 
 use crate::app::dto::dictionary::DictionaryDto;
-use crate::domain::entity::dictionary::Dictionary;
 use crate::infra::repository::dictionary::DictionaryRepository;
 
 pub struct ListDictionariesReq {}
@@ -23,7 +22,7 @@ impl Procedure for ListDictionariesProcedure {
     type Req = ListDictionariesReq;
     type Res = ListDictionariesRes;
 
-    async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
+    async fn run(&self, _data: Self::Req) -> Result<Self::Res, Self::Err> {
         Ok(ListDictionariesRes {
             dictionaries: self
                 .dictionary_repository

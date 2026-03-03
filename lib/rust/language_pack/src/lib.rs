@@ -8,7 +8,6 @@ pub mod transform;
 
 use std::f64::INFINITY;
 use std::fmt::Debug;
-use std::range::Range;
 
 use segment::IsSegment;
 use segment::TextSegmenter;
@@ -94,13 +93,13 @@ where
                             t1 = t1.max(line.words[word_idx].end.unwrap_or(t1));
                         }
 
-                        return (
+                        (
                             it,
                             (
                                 if t0 == INFINITY { None } else { Some(t0) },
                                 if t1 == 0_f64 { None } else { Some(t1) },
                             ),
-                        );
+                        )
                     })
                     .collect::<Vec<_>>();
 
@@ -116,7 +115,7 @@ where
             .into_iter()
     }
 
-    fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {
+    fn source<'a>(&self, _segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {
         todo!()
     }
 }

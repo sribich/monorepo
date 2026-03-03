@@ -41,14 +41,14 @@ impl SchemaRefiner for Parsed {
     type From = DefaultRefiner;
     type SchemaContext = ();
 
-    fn refine_context(&self, from: &Schema<Self::From>) -> Self::SchemaContext {
-        ()
+    fn refine_context(&self, _from: &Schema<Self::From>) -> Self::SchemaContext {
+        
     }
 
     fn refine_file(
         &self,
         from: &Schema<Self::From>,
-        context: &mut Self::SchemaContext,
+        _context: &mut Self::SchemaContext,
         file: &SchemaFile<<Self::From as SchemaRefiner>::FileContext>,
     ) -> Self::FileContext {
         /*
@@ -61,7 +61,7 @@ impl SchemaRefiner for Parsed {
          */
         let ast = parse_schema(
             file.content(),
-            &mut *from.diagnostics().borrow_mut(),
+            &mut from.diagnostics().borrow_mut(),
             FileId(0),
         );
 

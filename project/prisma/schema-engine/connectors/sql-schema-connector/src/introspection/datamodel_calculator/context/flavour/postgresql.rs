@@ -72,8 +72,8 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
     // TODO(sr): is_cockroach
     fn uses_row_level_ttl(
         &self,
-        ctx: &DatamodelCalculatorContext<'_>,
-        table: TableWalker<'_>,
+        _ctx: &DatamodelCalculatorContext<'_>,
+        _table: TableWalker<'_>,
     ) -> bool {
         false
     }
@@ -118,7 +118,7 @@ impl super::IntrospectionFlavour for PostgresIntrospectionFlavour {
     }
 
     // TODO(sr): is_cockroach
-    fn uses_pk_in_m2m_join_tables(&self, ctx: &DatamodelCalculatorContext<'_>) -> bool {
+    fn uses_pk_in_m2m_join_tables(&self, _ctx: &DatamodelCalculatorContext<'_>) -> bool {
         true
     }
 }

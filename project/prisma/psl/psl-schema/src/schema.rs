@@ -34,13 +34,13 @@ impl SchemaRefiner for DefaultRefiner {
     type From = DefaultRefiner;
     type SchemaContext = ();
 
-    fn refine_context(&self, from: &Schema<Self::From>) -> Self::SchemaContext {}
+    fn refine_context(&self, _from: &Schema<Self::From>) -> Self::SchemaContext {}
 
     fn refine_file(
         &self,
-        from: &Schema<Self::From>,
-        context: &mut Self::SchemaContext,
-        file: &SchemaFile<<Self::From as SchemaRefiner>::FileContext>,
+        _from: &Schema<Self::From>,
+        _context: &mut Self::SchemaContext,
+        _file: &SchemaFile<<Self::From as SchemaRefiner>::FileContext>,
     ) -> Self::FileContext {
     }
 }
@@ -82,7 +82,9 @@ impl Schema<DefaultRefiner> {
     }
 
     pub fn from_content<S: AsRef<str>>(content: S) -> Schema {
-        let schema = Schema {
+        
+
+        Schema {
             is_virtual: true,
             files: None,
             diagnostics: RefCell::new(Diagnostics::new()),
@@ -91,9 +93,7 @@ impl Schema<DefaultRefiner> {
             migrations: None,
             sql_files: None,
             _marker: PhantomData,
-        };
-
-        schema
+        }
     }
 }
 
@@ -133,7 +133,7 @@ where
     {
         let mut context = refiner.refine_context(&self);
 
-        let schema_files = (&mut self.schema_files).take();
+        let schema_files = self.schema_files.take();
         let schema_files = schema_files
             .into_iter()
             .map(|it| {

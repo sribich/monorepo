@@ -1,10 +1,7 @@
 use std::collections::HashSet;
-use std::marker::PhantomData;
 use std::path::Path;
 use std::sync::Arc;
 
-use dictionary_parser::Accent;
-use dictionary_parser::Frequency;
 use prisma_client::PrismaClient;
 use prisma_client::QueryError;
 use prisma_client::model;
@@ -28,7 +25,7 @@ pub struct DictionaryRepository {
 //
 //==============================================================================
 impl DictionaryRepository {
-    pub fn model(&self) -> model::dictionary::Actions {
+    pub fn model(&self) -> model::dictionary::Actions<'_> {
         self.db.client().dictionary()
     }
 }
@@ -83,7 +80,7 @@ impl DictionaryRepository {
             id: dictionary_id.to_vec(),
             title: info.title,
             language_type,
-            kinds: "".to_owned(),
+            kinds: String::new(),
             file_path: file_path.to_str().unwrap().to_owned(),
             data_path: data_path.to_str().unwrap().to_owned(),
             rank: self.ranker.next().await,

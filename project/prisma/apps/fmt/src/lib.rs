@@ -150,7 +150,7 @@ pub fn hover(schema_files: String, params: &str) -> String {
 pub fn format(datamodel: String, params: &str) -> String {
     let schema: SchemaFileInput = match serde_json::from_str(&datamodel) {
         Ok(params) => params,
-        Err(e) => {
+        Err(_e) => {
             return datamodel;
         }
     };

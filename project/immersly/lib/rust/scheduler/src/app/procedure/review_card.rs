@@ -27,7 +27,7 @@ impl Procedure for ReviewCardProcedure {
     type Req = ReviewCardReq;
     type Res = Option<ReviewCardRes>;
 
-    async fn run(&self, data: Self::Req) -> Result<Self::Res, Self::Err> {
+    async fn run(&self, _data: Self::Req) -> Result<Self::Res, Self::Err> {
         let result = self.scheduler_repository.get_next_due().await.unwrap();
 
         if result.is_none() {

@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::convert::TryInto;
 
-use query_structure::DatasourceFieldName;
 use query_structure::Field;
 use query_structure::Model;
 use query_structure::PrismaValue;
@@ -10,7 +9,6 @@ use query_structure::ScalarFieldRef;
 use query_structure::TypeIdentifier;
 use query_structure::WriteArgs;
 use query_structure::WriteOperation;
-use schema::constants::args;
 use schema::constants::json_null;
 use schema::constants::operations;
 

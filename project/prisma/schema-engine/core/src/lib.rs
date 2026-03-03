@@ -257,7 +257,7 @@ fn parse_configuration(
 fn parse_configuration_multi(
     files: &[(String, SourceFile)],
 ) -> CoreResult<(Datasource, String, BitFlags<PreviewFeature>, Option<String>)> {
-    let (files, mut config) =
+    let (files, config) =
         psl::parse_configuration_multi_file(files).map_err(|(files, err)| {
             CoreError::new_schema_parser_error(files.render_diagnostics(&err))
         })?;

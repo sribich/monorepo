@@ -62,11 +62,10 @@ impl FieldExtension for FieldWalker<'_> {
         self.ast_field().arity.is_required()
             && self
                 .refine()
-                .map(|it| match it {
+                .is_some_and(|it| match it {
                     RefinedFieldWalker::Scalar(field) => field.is_required(),
                     RefinedFieldWalker::Relation(_) => true,
                 })
-                .unwrap_or(false)
     }
 
     fn relation_methods(&self) -> &'static [&'static str] {
@@ -248,7 +247,7 @@ impl DmmfInputFieldExt for DmmfInputField {
             .input_types
             .iter()
             .find(|typ| !matches!(typ.location, TypeLocation::Scalar if typ.typ == "Null"))
-            .expect(&format!("No type found for field {}", self.name));
+            .unwrap_or_else(|| panic!("No type found for field {}", self.name));
 
         if input_type.is_list {
             FieldArity::List
@@ -264,7 +263,7 @@ impl DmmfInputFieldExt for DmmfInputField {
             .input_types
             .iter()
             .find(|typ| !matches!(typ.location, TypeLocation::Scalar if typ.typ == "Null"))
-            .expect(&format!("No type found for field {}", self.name));
+            .unwrap_or_else(|| panic!("No type found for field {}", self.name));
 
         let arity = self.arity();
 
@@ -293,7 +292,7 @@ impl DmmfInputFieldExt for DmmfInputField {
             .input_types
             .iter()
             .find(|typ| !matches!(typ.location, TypeLocation::Scalar if typ.typ == "Null"))
-            .expect(&format!("No type found for field {}", self.name));
+            .unwrap_or_else(|| panic!("No type found for field {}", self.name));
 
         let arity = self.arity();
 

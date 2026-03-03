@@ -8,7 +8,6 @@ use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;
 use railgun::api::json::ApiResult;
 use railgun::di::Component;
-use railgun::error::Error;
 use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;

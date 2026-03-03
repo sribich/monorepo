@@ -30,7 +30,7 @@ impl CardScheduler for ReviewStateScheduler {
         }
     }
 
-    fn get_next_state(&self, card: &Card) -> NextCardState {
+    fn get_next_state(&self, _card: &Card) -> NextCardState {
         todo!();
     }
 }
@@ -38,7 +38,7 @@ impl CardScheduler for ReviewStateScheduler {
 impl ReviewStateScheduler {
     fn again(
         &self,
-        card: &Card,
+        _card: &Card,
         state: &SchedulerState,
         fsrs_states: &fsrs::NextStates,
     ) -> NextState {
@@ -60,8 +60,8 @@ impl ReviewStateScheduler {
 
     fn hard(
         &self,
-        card: &Card,
-        state: &SchedulerState,
+        _card: &Card,
+        _state: &SchedulerState,
         fsrs_states: &fsrs::NextStates,
     ) -> NextState {
         let item_state: FsrsItemState = (&fsrs_states.hard).into();
@@ -75,8 +75,8 @@ impl ReviewStateScheduler {
 
     fn good(
         &self,
-        card: &Card,
-        state: &SchedulerState,
+        _card: &Card,
+        _state: &SchedulerState,
         fsrs_states: &fsrs::NextStates,
     ) -> NextState {
         let item_state: FsrsItemState = (&fsrs_states.good).into();
@@ -90,8 +90,8 @@ impl ReviewStateScheduler {
 
     fn easy(
         &self,
-        card: &Card,
-        state: &SchedulerState,
+        _card: &Card,
+        _state: &SchedulerState,
         fsrs_states: &fsrs::NextStates,
     ) -> NextState {
         let item_state: FsrsItemState = (&fsrs_states.easy).into();

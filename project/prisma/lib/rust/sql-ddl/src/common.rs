@@ -42,16 +42,13 @@ where
 }
 
 #[derive(Debug, Clone, Copy)]
+#[derive(Default)]
 pub enum SortOrder {
+    #[default]
     Asc,
     Desc,
 }
 
-impl Default for SortOrder {
-    fn default() -> Self {
-        Self::Asc
-    }
-}
 
 impl Display for SortOrder {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {

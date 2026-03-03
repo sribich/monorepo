@@ -6,7 +6,6 @@ use either::Either;
 pub(super) use flavour::IntrospectionFlavour;
 use psl::Configuration;
 use psl::PreviewFeature;
-use psl::builtin_connectors::*;
 use psl::datamodel_connector::Connector;
 use psl::parser_database::ExtensionTypes;
 use psl::parser_database::walkers;

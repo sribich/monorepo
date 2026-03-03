@@ -4,7 +4,6 @@ use std::sync::Arc;
 use axum::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
-use railgun::error::Error;
 use railgun::typegen::Typegen;
 use railgun::api::ApiError;
 use railgun::api::json::ApiErrorKind;
@@ -56,7 +55,7 @@ impl TryInto<ProcedureRequest> for ReprocessSyncRequest {
 impl TryFrom<ProcedureResponse> for ReprocessSyncResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(ReprocessSyncResponse)
     }
 }
@@ -68,7 +67,7 @@ impl TryFrom<ProcedureResponse> for ReprocessSyncResponse {
 pub enum ApiError {}
 
 impl From<Infallible> for ApiError {
-    fn from(value: Infallible) -> Self {
+    fn from(_value: Infallible) -> Self {
         unreachable!();
     }
 }

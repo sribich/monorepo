@@ -69,7 +69,7 @@ impl TryInto<ProcedureRequest> for SetProgressRequest {
 impl TryFrom<ProcedureResponse> for SetProgressResponse {
     type Error = ParseError;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }

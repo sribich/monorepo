@@ -185,8 +185,8 @@ impl LearningStateScheduler {
 
     fn easy(
         &self,
-        card: &Card,
-        state: &SchedulerState,
+        _card: &Card,
+        _state: &SchedulerState,
         fsrs_states: &fsrs::NextStates,
     ) -> NextState {
         let item_state: FsrsItemState = (&fsrs_states.easy).into();

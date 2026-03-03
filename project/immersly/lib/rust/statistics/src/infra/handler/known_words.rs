@@ -67,7 +67,7 @@ impl TryInto<()> for KnownWordsRequest {
 impl TryFrom<()> for KnownWordsResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(_: ()) -> Result<Self, Self::Error> {
+    fn try_from((): ()) -> Result<Self, Self::Error> {
         unreachable!();
     }
 }
@@ -107,7 +107,7 @@ pub async fn handler(
 ) -> ApiResult<KnownWordsResponse, ApiError> {
     let client = AnkiClient::default();
 
-    let deck_info = client.request(DeckNamesAndIdsRequest {}).await.unwrap();
+    let _deck_info = client.request(DeckNamesAndIdsRequest {}).await.unwrap();
 
     let card_info = client
         .request(FindCardsRequest {
@@ -127,16 +127,14 @@ pub async fn handler(
         .map(|it| {
             (
                 true,
-                it.fields.get("Word").unwrap().value.clone(),
+                it.fields["Word"].value.clone(),
                 it.fields
-                    .get("Word With Reading")
-                    .map(|it| it.value.clone())
-                    .unwrap_or_else(|| {
+                    .get("Word With Reading").map_or_else(|| {
                         it.fields
                             .get("WordReading")
                             .map(|it| it.value.clone())
                             .unwrap_or_default()
-                    }),
+                    }, |it| it.value.clone()),
             )
         })
         .collect::<Vec<_>>();
@@ -179,7 +177,7 @@ pub async fn handler(
             word: word.clone(),
             reading: get_reading_from_anki(reading.clone()),
             anki: is_anki,
-            freq: Some(*freq_map.get(&word).unwrap()),
+            freq: Some(freq_map[&word]),
         });
     }
 

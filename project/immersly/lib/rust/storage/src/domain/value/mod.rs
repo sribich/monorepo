@@ -1,7 +1,6 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use shared::muid_new_newtype;
 use shared::muid_newtype;
 
 muid_newtype!(ResourceId);

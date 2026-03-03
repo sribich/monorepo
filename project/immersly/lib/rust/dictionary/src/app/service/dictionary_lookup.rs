@@ -42,7 +42,7 @@ impl DictionaryLookupService {
         word: String,
         reading: Option<String>,
     ) -> Result<(), QueryError> {
-        let definitions = self
+        let _definitions = self
             .find_many_by(vec![
                 model::word::word::equals(word.clone()),
                 model::word::reading::equals(reading.clone().unwrap_or_default()),
@@ -53,7 +53,7 @@ impl DictionaryLookupService {
             .await
             .unwrap();
 
-        let words = self
+        let _words = self
             .find_many_by(vec![
                 model::word::word::equals(word.clone()),
                 model::word::reading::equals(reading.clone().unwrap_or_default()),

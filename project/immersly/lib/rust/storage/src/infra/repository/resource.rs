@@ -19,7 +19,7 @@ pub struct ResourceRepository {
 }
 
 impl ResourceRepository {
-    fn model(&self) -> model::resource::Actions {
+    fn model(&self) -> model::resource::Actions<'_> {
         self.db.client().resource()
     }
 }

@@ -136,7 +136,7 @@ pub fn stringify_env_values(origin: serde_json::Value) -> crate::Result<HashMap<
         Value::Object(map) => {
             let mut result: HashMap<String, String> = HashMap::new();
 
-            for (key, val) in map.into_iter() {
+            for (key, val) in map {
                 match val {
                     Value::Null => continue,
                     Value::String(val) => {
@@ -157,5 +157,5 @@ pub fn stringify_env_values(origin: serde_json::Value) -> crate::Result<HashMap<
         Value::Array(_) => "Expected an object for the env constructor parameter, got an array.",
     };
 
-    Err(ApiError::Decode(msg.to_string()))
+    Err(ApiError::Decode(msg.to_owned()))
 }

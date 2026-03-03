@@ -106,7 +106,7 @@ pub fn process_type(
         }),
         DataType::Primitive(item) => Ok(TypeDefinition {
             name: match item {
-                PrimitiveMeta::char | PrimitiveMeta::String => "string".to_string(),
+                PrimitiveMeta::char | PrimitiveMeta::String => "string".to_owned(),
                 PrimitiveMeta::i8
                 | PrimitiveMeta::i16
                 | PrimitiveMeta::i32
@@ -120,8 +120,8 @@ pub fn process_type(
                 | PrimitiveMeta::u128
                 | PrimitiveMeta::usize
                 | PrimitiveMeta::f32
-                | PrimitiveMeta::f64 => "number".to_string(),
-                PrimitiveMeta::bool => "boolean".to_string(),
+                | PrimitiveMeta::f64 => "number".to_owned(),
+                PrimitiveMeta::bool => "boolean".to_owned(),
             },
             refs: None,
         }),

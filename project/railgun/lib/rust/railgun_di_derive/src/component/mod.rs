@@ -101,7 +101,7 @@ impl From<syn::Type> for ImplKind {
         {
             let inner_type = syn::parse2(args.to_token_stream()).unwrap();
 
-            if path.segments.last().unwrap().ident.to_string() == "Vec" {
+            if path.segments.last().unwrap().ident == "Vec" {
                 return ImplKind::Collection(inner_type);
             }
         }

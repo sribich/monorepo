@@ -184,11 +184,10 @@ impl PostgresNativeUrl {
             return;
         }
 
-        if let Some(schema) = &self.query_params.schema {
-            if self.flavour().is_postgres() {
+        if let Some(schema) = &self.query_params.schema
+            && self.flavour().is_postgres() {
                 config.search_path(PostgresSearchPath(schema).to_string());
             }
-        }
     }
 
     pub(crate) fn to_config(&self) -> Config {

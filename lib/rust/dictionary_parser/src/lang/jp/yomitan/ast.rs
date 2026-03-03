@@ -215,14 +215,10 @@ impl<'de> serde::de::Deserialize<'de> for TermMeta {
                             let data = data.as_object().unwrap();
 
                             let reading = data
-                                .get("reading")
-                                .map(|it| it.as_str().unwrap().to_owned())
-                                .unwrap_or_else(|| word.clone());
+                                .get("reading").map_or_else(|| word.clone(), |it| it.as_str().unwrap().to_owned());
 
                             let display =
-                                data.get("displayValue")
-                                    .map(|it| Some(it.as_str().map(std::borrow::ToOwned::to_owned)))
-                                    .unwrap_or_else(|| {
+                                data.get("displayValue").map_or_else(|| {
                                         let frequency = data.get("frequency").unwrap();
 
                                         if frequency.is_number() {
@@ -232,13 +228,11 @@ impl<'de> serde::de::Deserialize<'de> for TermMeta {
                                         frequency.as_object().unwrap().get("displayValue").map(
                                             |it| it.as_str().map(std::string::ToString::to_string),
                                         )
-                                    })
+                                    }, |it| Some(it.as_str().map(std::borrow::ToOwned::to_owned)))
                                     .unwrap_or(None);
 
                             let frequency = data
-                                .get("value")
-                                .map(|it| it.as_u64().unwrap() as u32)
-                                .unwrap_or_else(|| {
+                                .get("value").map_or_else(|| {
                                     let frequency = data.get("frequency").unwrap();
 
                                     if frequency.is_number() {
@@ -252,7 +246,7 @@ impl<'de> serde::de::Deserialize<'de> for TermMeta {
                                         .unwrap()
                                         .as_u64()
                                         .unwrap() as u32
-                                });
+                                }, |it| it.as_u64().unwrap() as u32);
 
                             return Ok(TermMeta::Frequency {
                                 word,
@@ -587,7 +581,7 @@ impl ToString for StructuredContent {
             }
             StructuredContent::Styled(styled_content) => styled_content.to_string(),
             StructuredContent::Container(container_content) => container_content.to_string(),
-            StructuredContent::Image(image_content) => {
+            StructuredContent::Image(_image_content) => {
                 // println!("{:#?}", image_content);
                 String::new()
             }
@@ -787,8 +781,10 @@ pub struct ImageContent {
 }
 
 #[derive(Debug, Deserialize)]
+#[derive(Default)]
 pub enum ImageRendering {
     #[serde(rename = "auto")]
+    #[default]
     Auto,
     #[serde(rename = "pixelated")]
     Pixelated,
@@ -796,11 +792,6 @@ pub enum ImageRendering {
     CrispEdges,
 }
 
-impl Default for ImageRendering {
-    fn default() -> Self {
-        Self::Auto
-    }
-}
 
 #[derive(Debug, Deserialize, Default)]
 pub enum Appearance {

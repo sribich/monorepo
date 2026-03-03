@@ -357,9 +357,7 @@ impl<'a> DifferDatabase<'a> {
     fn is_namespace_external(&self, namespace: &NamespaceWalker<'_>) -> bool {
         let all_tables_are_external = self
             .tables
-            .iter()
-            .filter(|(k, _)| k.0.as_deref() == Some(namespace.name()))
-            .next()
+            .iter().find(|(k, _)| k.0.as_deref() == Some(namespace.name()))
             .is_none();
 
         let has_enums = self

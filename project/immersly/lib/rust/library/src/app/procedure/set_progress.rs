@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use prisma_client::model;
 use railgun::di::Component;
 use shared::infra::Procedure;
 

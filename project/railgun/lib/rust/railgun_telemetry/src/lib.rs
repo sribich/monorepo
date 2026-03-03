@@ -14,9 +14,7 @@ use std::sync::atomic::Ordering;
 
 use railgun_core::ServiceInfo;
 use railgun_core::bootstrap::BootstrapError;
-use railgun_core::bootstrap::BootstrapResult;
 use railgun_core::bootstrap::GenericContext;
-use railgun_core::bootstrap::InitializationContext;
 use railgun_error::ensure;
 use settings::TelemetrySettings;
 

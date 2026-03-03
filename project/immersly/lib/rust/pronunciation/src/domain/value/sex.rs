@@ -17,8 +17,8 @@ impl Sex {
 impl ToString for Sex {
     fn to_string(&self) -> String {
         match self {
-            Sex::M => "m".to_string(),
-            Sex::F => "f".to_string(),
+            Sex::M => "m".to_owned(),
+            Sex::F => "f".to_owned(),
         }
     }
 }

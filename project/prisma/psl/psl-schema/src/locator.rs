@@ -147,9 +147,7 @@ fn find_schema_root(cwd: Option<PathBuf>, path: Option<PathBuf>) -> PathBuf {
     if let Some(path) = path {
         let full_path = cwd.join(path);
 
-        if !full_path.try_exists().is_ok_and(identity) {
-            panic!("Path does not exist: {:?}", full_path);
-        }
+        assert!(full_path.try_exists().is_ok_and(identity), "Path does not exist: {full_path:?}");
 
         return if full_path.is_file() {
             full_path.parent().unwrap().to_owned()
@@ -234,24 +232,18 @@ where
 /// );
 /// ```
 pub fn diff_paths(path: &Path, base: &Path) -> Option<PathBuf> {
-    if path.is_absolute() != base.is_absolute() {
-        if path.is_absolute() {
-            Some(PathBuf::from(path))
-        } else {
-            None
-        }
-    } else {
+    if path.is_absolute() == base.is_absolute() {
         let mut ita = path.components();
         let mut itb = base.components();
 
         let mut comps: Vec<Component> = vec![];
 
         // ./foo and foo are the same
-        if let Some(Component::CurDir) = ita.clone().next() {
+        if ita.clone().next() == Some(Component::CurDir) {
             ita.next();
         }
 
-        if let Some(Component::CurDir) = itb.clone().next() {
+        if itb.clone().next() == Some(Component::CurDir) {
             itb.next();
         }
 
@@ -279,5 +271,7 @@ pub fn diff_paths(path: &Path, base: &Path) -> Option<PathBuf> {
             }
         }
         Some(comps.iter().map(|c| c.as_os_str()).collect())
+    } else {
+        path.is_absolute().then(|| PathBuf::from(path))
     }
 }

@@ -32,13 +32,13 @@ pub fn impl_struct(
 
     Ok(match input.fields {
         Fields::Named(_) => {
-            add_default_attrs(&options, &crate_path, &mut input.attrs);
+            add_default_attrs(&options, crate_path, &mut input.attrs);
 
             // Use the default values when the configuration file
             // is missing values.
             input.attrs.push(parse_quote!(#[serde(default)]));
 
-            let impl_settings = impl_settings(&options, &crate_path, &input)?;
+            let impl_settings = impl_settings(&options, crate_path, &input)?;
 
             let impl_default = if options.impl_default {
                 impl_serde_aware_default(&input)
@@ -113,7 +113,7 @@ fn impl_settings(
 }
 
 fn impl_settings_for_field(
-    options: &Options,
+    _options: &Options,
     crate_path: &Path,
     field: &Field,
     name: &Ident,

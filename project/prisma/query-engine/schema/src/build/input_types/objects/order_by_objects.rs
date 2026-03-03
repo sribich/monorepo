@@ -56,9 +56,7 @@ pub(crate) fn order_by_object_type(
         let mut fields: Vec<_> = container
             .fields()
             .iter()
-            .filter_map(|field| match field {
-                _ => orderby_field_mapper(field, ctx, options),
-            })
+            .filter_map(|field| orderby_field_mapper(field, ctx, options))
             .collect();
 
         if options.include_scalar_aggregations {

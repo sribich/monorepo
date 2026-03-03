@@ -73,7 +73,7 @@ impl Task<()> for LoadDictionaryWrapper {
                 let frequencies = dictionary.frequencies();
                 let words = dictionary.words(Some(format!(
                     "/rpc/dictionary_image/{}/",
-                    dictionary_id.to_string()
+                    dictionary_id
                 )));
 
                 self.task

@@ -5,32 +5,17 @@ mod error;
 mod jsonrpc;
 mod rust;
 
-use std::io::BufRead;
-use std::io::BufReader;
-use std::io::Write;
-use std::io::stderr;
-use std::io::stdin;
 use std::sync::Arc;
 
 use args::GeneratorArgs;
 #[rustfmt::skip]
 use ::dmmf::DataModelMetaFormat;
-use error::ExternalErrorContext;
-use error::GenericErrorContext;
 pub use error::PrismaError;
 pub use error::Result;
-use jsonrpc::GenerateRequest;
-use jsonrpc::JsonRpcRequest;
-use jsonrpc::JsonRpcResponseData;
-use jsonrpc::Manifest;
-use jsonrpc::ManifestResponse;
 use psl::Schema;
 use psl::Validated;
-use psl::ValidatedSchema;
-use psl::parser_database::NoExtensionTypes;
 use railgun_error::ResultExt;
 pub use rust::RustGenerator;
-use serde_json::Value;
 
 pub trait Generator {
     fn name(&self) -> &'static str;
@@ -66,7 +51,7 @@ pub fn run_generators(
     dmmf: Arc<DataModelMetaFormat>,
 ) -> Result<()> {
     for generator in &schema.context().configuration.generators {
-        run_generator(&generator, Arc::clone(&schema), Arc::clone(&dmmf))?;
+        run_generator(generator, Arc::clone(&schema), Arc::clone(&dmmf))?;
     }
 
     Ok(())
@@ -81,7 +66,7 @@ fn run_generator(
 
     let boxed_generator: Box<dyn Generator> = match &provider[..] {
         "rust" => Box::new(RustGenerator),
-        _ => panic!("Unknown generator '{}'", provider),
+        _ => panic!("Unknown generator '{provider}'"),
     };
 
     GeneratorContext::new(boxed_generator).run(generator.clone(), schema, dmmf)?;

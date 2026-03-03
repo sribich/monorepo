@@ -158,7 +158,7 @@ impl<Q: Queryable + ?Sized> QueryExt for Q {
             .map(|row| {
                 let tuples = model_id
                     .scalar_fields()
-                    .zip(row.values.into_iter())
+                    .zip(row.values)
                     .collect();
                 SelectionResult::new(tuples)
             })

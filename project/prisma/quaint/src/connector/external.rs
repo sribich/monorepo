@@ -1,8 +1,8 @@
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use super::{SqlFamily, TransactionCapable};
+use super::TransactionCapable;
 
 #[async_trait]
 pub trait ExternalConnector: TransactionCapable {

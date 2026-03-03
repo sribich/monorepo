@@ -72,7 +72,7 @@ pub enum GetExactWordError {
 }
 
 impl From<core::convert::Infallible> for GetExactWordError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }

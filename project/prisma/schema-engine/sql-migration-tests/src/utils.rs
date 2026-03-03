@@ -99,8 +99,7 @@ pub fn list_migrations(
             let migration_file = MigrationFile {
                 path: "migration.sql".to_string(),
                 content: std::fs::read_to_string(entry.join("migration.sql"))
-                    .map_err(|_err| "Could not read migration file.".to_owned())
-                    .into(),
+                    .map_err(|_err| "Could not read migration file.".to_owned()),
             };
 
             let migration_directory = MigrationDirectory {

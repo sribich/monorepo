@@ -71,7 +71,9 @@ impl Default for Sequence {
 }
 
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(Default)]
 pub enum SqlIndexAlgorithm {
+    #[default]
     BTree,
     Hash,
     Gist,
@@ -80,11 +82,6 @@ pub enum SqlIndexAlgorithm {
     Brin,
 }
 
-impl Default for SqlIndexAlgorithm {
-    fn default() -> Self {
-        Self::BTree
-    }
-}
 
 impl AsRef<str> for SqlIndexAlgorithm {
     fn as_ref(&self) -> &str {
@@ -1471,7 +1468,7 @@ fn index_from_row(
     table_ids: &IndexMap<(String, String), TableId>,
     sql_schema: &mut SqlSchema,
     pg_ext: &mut PostgresSchemaExt,
-    circumstances: BitFlags<Circumstances>,
+    _circumstances: BitFlags<Circumstances>,
 ) {
     let mut current_index = None;
 

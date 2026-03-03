@@ -20,7 +20,7 @@ impl<'a> LanguageTransformer<'a> {
     }
 
     pub fn resolve(&mut self, text: &str) -> Vec<(Option<TextIdk>, String)> {
-        let mut work = &text[..];
+        let mut work = text;
         let mut matches = vec![];
 
         while !work.is_empty() {
@@ -44,15 +44,14 @@ impl<'a> LanguageTransformer<'a> {
                     let mut longest_match = None;
 
                     for i in 0..24 {
-                        if let Some((index, _)) = it.text.char_indices().nth_back(i) {
-                            if self.dictionary.contains_key(
+                        if let Some((index, _)) = it.text.char_indices().nth_back(i)
+                            && self.dictionary.contains_key(
                                 CString::new(it.text[index..].as_bytes())
                                     .unwrap()
                                     .as_c_str(),
                             ) {
                                 longest_match = Some(index);
                             }
-                        }
                     }
 
                     longest_match.map(|len| {
@@ -98,11 +97,10 @@ impl<'a> LanguageTransformer<'a> {
                     .rules
                     .iter()
                     .filter_map(|rule| {
-                        if (resolve.conditions.is_empty()/*&& rule.conditions_in.is_empty()*/)
+                        if ((resolve.conditions.is_empty()/*&& rule.conditions_in.is_empty()*/)
                             || (!rule.conditions_in.is_empty()
-                                && resolve.conditions.contains(&rule.conditions_in[0]))
-                        {
-                            if let Some(InflectionResult {
+                                && resolve.conditions.contains(&rule.conditions_in[0])))
+                            && let Some(InflectionResult {
                                 text,
                                 inflection,
                                 deinflection,
@@ -122,7 +120,6 @@ impl<'a> LanguageTransformer<'a> {
                                     i: resolve.i + 1,
                                 }));
                             }
-                        }
 
                         None
                     })

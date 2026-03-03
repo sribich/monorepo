@@ -71,7 +71,7 @@ pub fn generate_module(model: ModelWalker, _args: &GeneratorArgs) -> FieldModule
                 }
             };
 
-            (field.name().to_string(), body)
+            (field.name().to_owned(), body)
         })
         .collect();
 

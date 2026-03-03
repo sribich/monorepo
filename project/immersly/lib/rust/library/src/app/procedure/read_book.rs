@@ -40,13 +40,9 @@ impl Procedure for ReadBookProcedure {
             .unwrap()
             .unwrap();
 
-        println!("{:#?}", book);
+        println!("{book:#?}");
 
-        let progress = if let Some(progress) = book.progress.flatten() {
-            Some(progress.timestamp)
-        } else {
-            None
-        };
+        let progress = book.progress.flatten().map(|progress| progress.timestamp);
 
         let data = read_to_string(book.rendered_audio_path.unwrap()).unwrap();
 

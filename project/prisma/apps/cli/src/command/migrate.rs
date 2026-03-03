@@ -1,14 +1,11 @@
-use std::fs::create_dir;
 use std::fs::create_dir_all;
 use std::path::PathBuf;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Parser;
 use clap::Subcommand;
 use colored::Colorize;
-use indoc::printdoc;
 use psl::IntoConfiguredExt;
 use psl::IntoValidatedExt;
 use psl::SchemaExt;
@@ -26,10 +23,8 @@ use schema_core::commands::dev_diagnostic::DevDiagnosticInput;
 use schema_core::commands::dev_diagnostic::DevDiagnosticOutput;
 use schema_core::commands::diagnose_migration_history::DiagnoseMigrationHistoryInput;
 use schema_core::commands::diagnose_migration_history::HistoryDiagnostic;
-use schema_core::commands::ensure_connection_validity::EnsureConnectionValidityParams;
 use schema_core::commands::evaluate_data_loss::EvaluateDataLossInput;
 use schema_core::commands::evaluate_data_loss::EvaluateDataLossOutput;
-use schema_core::json_rpc::types::DatasourceParam;
 use schema_core::json_rpc::types::MigrationDirectory;
 use schema_core::json_rpc::types::MigrationFile;
 use schema_core::json_rpc::types::MigrationList;
@@ -50,11 +45,9 @@ use schema_core::{
     state::EngineState,
 };
  */
-use tracing::debug;
 
 use crate::command::generate::GenerateArgs;
 use crate::command::generate::{self};
-use crate::path::diff_paths;
 use crate::slug::slugify;
 use crate::util::Pluralize;
 use crate::util::print_datasource;
@@ -169,7 +162,7 @@ async fn can_connect(state: &EngineState, url: String) -> bool {
 }
 */
 
-async fn can_connect_to_database(state: &EngineState) -> bool {
+async fn can_connect_to_database(_state: &EngineState) -> bool {
     // state.ensure_connection_validity(EnsureConnectionValidityParams { datasource: DatasourceParam:: })
 
     false
@@ -374,7 +367,7 @@ async fn migrate_dev() -> Result<()> {
             println!("  • Step {} {}", item.step_index, item.message);
         }
 
-        println!("");
+        println!();
 
         if !create_only {
             println!(
@@ -436,7 +429,7 @@ async fn migrate_dev() -> Result<()> {
 
     applied_migrations.extend(applied_migration_names);
 
-    println!("");
+    println!();
 
     if applied_migrations.is_empty() {
         println!("Your database is in sync... TODO");
@@ -444,8 +437,7 @@ async fn migrate_dev() -> Result<()> {
         // let relative = diff_paths(migrations_dir_path, cwd);
 
         println!(
-            "\nThe following migration(s) have been created and applied:\n\n{}\n\n{}",
-            "",
+            "\nThe following migration(s) have been created and applied:\n\n\n\n{}",
             "Your database is now up to sync.".green()
         );
     }
@@ -575,7 +567,7 @@ async fn migrate_status() -> Result<()> {
         println!("No migrations found in prisma/migrations");
     }
 
-    println!("");
+    println!();
 
     if let Some(history) = result.history {
         match history {
@@ -590,7 +582,7 @@ async fn migrate_status() -> Result<()> {
 To apply migrations in development run {}
 To apply migrations in production run {}
 ",
-                    if unapplied_migration_names.len() > 0 {
+                    if !unapplied_migration_names.is_empty() {
                         "s have"
                     } else {
                         " has"
@@ -603,7 +595,7 @@ To apply migrations in production run {}
                 std::process::exit(1);
             }
             HistoryDiagnostic::MigrationsDirectoryIsBehind {
-                unpersisted_migration_names,
+                unpersisted_migration_names: _,
             } => {
                 todo!();
             }
@@ -623,13 +615,13 @@ The following migration{} not yet been applied:
 The migration{} from the database are not found locally in prisma/migrations:
   {}",
                     last_common_migration_name.unwrap_or("".to_string()),
-                    if unapplied_migration_names.len() > 0 {
+                    if !unapplied_migration_names.is_empty() {
                         "s have"
                     } else {
                         " has"
                     },
                     unapplied_migration_names.join("\n  "),
-                    if unpersisted_migration_names.len() > 0 {
+                    if !unpersisted_migration_names.is_empty() {
                         "s have"
                     } else {
                         " has"

@@ -109,7 +109,7 @@ pub(super) fn get_required_model_fields<'db>(
         .filter(|field| {
             field
                 .refine()
-                .map(|it| match it {
+                .is_some_and(|it| match it {
                     RefinedFieldWalker::Scalar(scalar_field) => {
                         match scalar_field.scalar_field_type() {
                             ScalarFieldType::Enum(_)
@@ -122,7 +122,6 @@ pub(super) fn get_required_model_fields<'db>(
                     }
                     RefinedFieldWalker::Relation(_) => field.is_required(),
                 })
-                .unwrap_or(false)
         })
         .map(|field| {
             Some({
@@ -144,12 +143,10 @@ pub(super) fn get_required_model_fields<'db>(
                 })?;
 
                 let push_wrapper = field
-                    .refine()
-                    .map(|it| match it {
+                    .refine().map_or_else(|| quote! {}, |it| match it {
                         RefinedFieldWalker::Scalar(_) => quote! { set },
                         RefinedFieldWalker::Relation(_) => quote! { connect },
-                    })
-                    .unwrap_or_else(|| quote! {});
+                    });
 
                 RequiredField {
                     inner: field,

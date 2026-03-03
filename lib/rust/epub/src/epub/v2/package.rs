@@ -76,17 +76,15 @@ mod spec {
     /// Reading systems will assume the value auto when EPUB creators omit the
     /// attribute or use an invalid value.
     #[derive(Clone, Deserialize)]
+    #[derive(Default)]
     pub enum BaseDirection {
         Ltr,
         Rtl,
+        #[default]
         Auto,
     }
 
-    impl Default for BaseDirection {
-        fn default() -> Self {
-            Self::Auto
-        }
-    }
+    
 
     /// The package element encapsulates all the information expressed in
     /// the package document.

@@ -28,7 +28,7 @@ where
     TSegmenter: TextSegmenter<Feature = TFeature>,
     TFeature: IsSegment + Debug,
 {
-    pub fn run<CTiming, CText>(&self, timing_data: &CTiming, text_data: &CText)
+    pub fn run<CTiming, CText>(&self, timing_data: &CTiming, _text_data: &CText)
     where
         CTiming: CanSegment<TFeature>,
         CText: CanSegment<TFeature>,
@@ -39,7 +39,7 @@ where
 
         for segment in timing_segments {
             if segment.data.text() == "UNK" {
-                println!("{:#?}", segment);
+                println!("{segment:#?}");
             }
         }
 

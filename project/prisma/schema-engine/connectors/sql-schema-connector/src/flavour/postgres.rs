@@ -289,9 +289,9 @@ impl PostgresConnector {
     }
 
     fn circumstances(&self) -> BitFlags<Circumstances> {
-        let mut circumstances = imp::get_circumstances(&self.state).unwrap_or_default();
+        
 
-        circumstances
+        imp::get_circumstances(&self.state).unwrap_or_default()
     }
 
     fn schema_name(&self) -> &str {
@@ -411,7 +411,7 @@ impl SqlConnector for PostgresConnector {
     fn introspect<'a>(
         &'a mut self,
         namespaces: Option<Namespaces>,
-        ctx: &'a schema_connector::IntrospectionContext,
+        _ctx: &'a schema_connector::IntrospectionContext,
     ) -> BoxFuture<'a, ConnectorResult<SqlSchema>> {
         Box::pin(async {
             let schema = self.schema_name().to_owned();
@@ -419,7 +419,7 @@ impl SqlConnector for PostgresConnector {
             let (conn, params, circumstances) =
                 imp::get_connection_and_params_and_circumstances(&mut self.state, self.provider)
                     .await?;
-            let mut enriched_circumstances = circumstances;
+            let enriched_circumstances = circumstances;
 
             describe_schema_with(
                 conn,
@@ -692,7 +692,7 @@ pub(crate) enum Circumstances {
 async fn setup_connection(
     connection: &imp::Connection,
     params: &imp::Params,
-    provider: PostgresProvider,
+    _provider: PostgresProvider,
     schema_name: &str,
 ) -> ConnectorResult<BitFlags<Circumstances>> {
     let mut circumstances = BitFlags::<Circumstances>::default();
@@ -718,7 +718,7 @@ async fn setup_connection(
         });
 
     match version {
-        Some((version, version_num)) => {
+        Some((_version, version_num)) => {
             if version_num >= 100000 {
                 circumstances |= Circumstances::CanPartitionTables;
             }

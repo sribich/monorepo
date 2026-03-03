@@ -4,15 +4,12 @@ use macro_util::ast::Attributes;
 
 #[derive(Debug, FromMeta)]
 #[darling(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum Format {
+    #[default]
     Json,
 }
 
-impl Default for Format {
-    fn default() -> Self {
-        Format::Json
-    }
-}
 
 #[derive(Debug, FromAttributes)]
 #[darling(attributes(api))]

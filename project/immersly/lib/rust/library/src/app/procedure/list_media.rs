@@ -21,7 +21,7 @@ impl Procedure for ListMediaProcedure {
     type Req = ();
     type Res = MediaListRes;
 
-    async fn run(&self, _: Self::Req) -> Result<Self::Res, Self::Err> {
+    async fn run(&self, (): Self::Req) -> Result<Self::Res, Self::Err> {
         let books = self.book_repository.find_all().await.unwrap().into_vec();
 
         Ok(Self::Res { books })

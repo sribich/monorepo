@@ -1,6 +1,6 @@
 use psl_schema::Schema;
 
-fn load_envs(context: &Schema) -> Result<(), ()> {
+fn load_envs(_context: &Schema) -> Result<(), ()> {
     /*
     let env_path = context.root_dir.join(".env");
 

@@ -138,7 +138,7 @@ impl InjectorBuilder {
 
         if !self.bindings.contains_key(&dyn_id) {
             self.bindings
-                .insert(dyn_id.clone(), Binding::new_collection());
+                .insert(dyn_id, Binding::new_collection());
         }
 
         let bindings = self.bindings.get_mut(&dyn_id).unwrap();

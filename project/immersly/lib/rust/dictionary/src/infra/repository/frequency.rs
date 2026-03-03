@@ -1,7 +1,5 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
-use dictionary_parser::Accent;
 use dictionary_parser::Frequency;
 use prisma_client::PrismaClient;
 use prisma_client::QueryError;
@@ -21,7 +19,7 @@ pub struct FrequencyRepository {
 // Util
 //==============================================================================
 impl FrequencyRepository {
-    pub fn model(&self) -> model::frequency::Actions {
+    pub fn model(&self) -> model::frequency::Actions<'_> {
         self.db.client().frequency()
     }
 }

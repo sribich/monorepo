@@ -36,7 +36,7 @@ impl Routes<AppState> for PronunciationModule {
         &self,
         router: Router<AppState>,
         procedure: Procedure<Unresolved>,
-        state: Arc<AppState>,
+        _state: Arc<AppState>,
     ) -> Router<AppState> {
         router.procedure(
             "pronunciation:GetPronunciation",

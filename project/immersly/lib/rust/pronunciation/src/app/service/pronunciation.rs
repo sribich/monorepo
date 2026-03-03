@@ -4,10 +4,7 @@ use std::process::Command;
 use std::sync::Arc;
 
 use futures_util::future::join_all;
-use prisma_client::model;
 use railgun::di::Component;
-use reqwest::Method;
-use reqwest::Url;
 use shared::infra::Procedure;
 use storage::app::procedure::commit_resource::CommitResourceProcedure;
 use storage::app::procedure::commit_resource::CommitResourceReq;
@@ -49,7 +46,7 @@ impl PronunciationService {
 
     pub async fn fetch_pronunciations<S: AsRef<str>>(&self, word: S) {
         if !self.needs_pronunciations(word.as_ref().to_owned()).await {
-            return ();
+            return ;
         }
 
         let fetcher = ForvoFetcher {};
@@ -73,7 +70,7 @@ impl PronunciationService {
                         .await
                         .unwrap();
 
-                    let data = pronunciation_repository
+                    let _data = pronunciation_repository
                         .create(&pronunciation, &resource.resource)
                         .await;
 

@@ -62,7 +62,7 @@ impl TryInto<ProcedureRequest> for AnswerCardRequest {
 impl TryFrom<ProcedureResponse> for AnswerCardResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(Self {})
     }
 }
@@ -74,7 +74,7 @@ impl TryFrom<ProcedureResponse> for AnswerCardResponse {
 pub enum ApiError {}
 
 impl From<core::convert::Infallible> for ApiError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }
@@ -96,7 +96,7 @@ pub async fn handler(
     Json(body): Json<AnswerCardRequest>,
 ) -> ApiResult<AnswerCardResponse, ApiError> {
     let request = body.try_into()?;
-    let response = state.procedure.run(request).await?;
+    state.procedure.run(request).await?;
 
-    ApiResponse::success(StatusCode::OK, response.try_into()?)
+    ApiResponse::success(StatusCode::OK, ().try_into()?)
 }

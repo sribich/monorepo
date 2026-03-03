@@ -1,4 +1,3 @@
-use std::marker::PhantomData;
 use std::sync::Arc;
 
 use forvo::action::word_pronunciations::WordPronunciation;
@@ -19,7 +18,7 @@ pub struct PronunciationRepository {
 }
 
 impl PronunciationRepository {
-    fn model(&self) -> model::pronunciation::Actions {
+    fn model(&self) -> model::pronunciation::Actions<'_> {
         self.db.client().pronunciation()
     }
 }

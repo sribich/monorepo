@@ -22,7 +22,7 @@ impl<'syn> VariantExt for Variant<'syn, VariantAttributes, VariantMeta<'syn>> {
             .other_fields
             .iter()
             .enumerate()
-            .map(|(idx, field)| {
+            .map(|(idx, _field)| {
                 let generic = format_ident!("__T{}", idx);
 
                 quote!(#generic)

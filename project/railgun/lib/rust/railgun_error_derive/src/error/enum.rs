@@ -323,7 +323,7 @@ fn impl_enum_context(
                 syn::Member::Unnamed(_) => unimplemented!(),
             };
 
-            let ty = field.ty;
+            let _ty = field.ty;
             let generic = format_ident!("__T{}", idx);
 
             quote!(pub #name: #generic)

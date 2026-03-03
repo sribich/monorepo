@@ -31,7 +31,7 @@ pub fn impl_struct(input: Struct) -> syn::Result<proc_macro2::TokenStream> {
                 "Tuple structs are not supported targets for Error derivation.",
             ));
         }
-    };
+    }
 
     match input.kind {
         StructKind::Named => {

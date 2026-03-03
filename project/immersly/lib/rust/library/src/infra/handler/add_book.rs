@@ -8,7 +8,6 @@ use railgun::api::json::ApiErrorKind;
 use railgun::api::json::ApiResponse;
 use railgun::api::json::ApiResult;
 use railgun::di::Component;
-use railgun::error::Error;
 use railgun::typegen::Typegen;
 use serde::Deserialize;
 use serde::Serialize;
@@ -53,7 +52,7 @@ pub struct AddBookResponse;
 impl TryFrom<ProcedureResponse> for AddBookResponse {
     type Error = core::convert::Infallible;
 
-    fn try_from(value: ProcedureResponse) -> Result<Self, Self::Error> {
+    fn try_from(_value: ProcedureResponse) -> Result<Self, Self::Error> {
         Ok(AddBookResponse)
     }
 }
@@ -65,7 +64,7 @@ impl TryFrom<ProcedureResponse> for AddBookResponse {
 pub enum AddBookError {}
 
 impl From<core::convert::Infallible> for AddBookError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }

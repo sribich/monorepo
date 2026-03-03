@@ -1,4 +1,3 @@
-use railgun_settings::Settings;
 use railgun_settings_derive::settings;
 
 #[cfg_attr(feature = "settings", settings)]

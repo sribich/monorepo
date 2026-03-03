@@ -81,7 +81,7 @@ impl TryFrom<Res> for GetPronunciationsResponse {
 pub enum GetPronunciationsError {}
 
 impl From<core::convert::Infallible> for GetPronunciationsError {
-    fn from(value: core::convert::Infallible) -> Self {
+    fn from(_value: core::convert::Infallible) -> Self {
         unreachable!();
     }
 }

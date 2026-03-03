@@ -25,7 +25,7 @@ impl ElapsedTimeCounter {
 }
 
 pub async fn sleep(duration: Duration) {
-    tokio::time::sleep(duration).await
+    tokio::time::sleep(duration).await;
 }
 
 pub async fn timeout<F>(duration: Duration, future: F) -> Result<F::Output, TimeoutError>
