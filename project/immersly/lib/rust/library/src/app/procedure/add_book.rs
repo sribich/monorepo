@@ -14,6 +14,7 @@ use itertools::Itertools;
 use language_pack::Transcription;
 use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
+use language_pack_jp::japanese_language_pipeline;
 use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
 use language_pack_jp::transcription::JapaneseTranscriptionContext;
@@ -76,27 +77,28 @@ impl Procedure for AddBookProcedure {
 
         assert!(audio_timing_path.exists(), "timing not generated");
 
-        let time = std::time::Instant::now();
-
         // Extract raw epub data
         let mut epub = EpubArchive::open(data.book_path.as_str()).unwrap();
         let text = epub.segments().unwrap();
         let mut text_data = EbookSegments::new(text);
-println!("1: {}", time.elapsed().as_millis());
+
         // Load timing data
         let timing_data = read_to_string(&audio_timing_path).unwrap();
         let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
-println!("2: {}", time.elapsed().as_millis());
+
+        let time = std::time::Instant::now();
         //
-        // let pipeline = japanese_language_pipeline();
-        // pipeline.run(&timing_data, &text_data);
-        // panic!();
+        let pipeline = japanese_language_pipeline();
+        println!("{}", time.elapsed().as_millis());
+        pipeline.run(&timing_data, &text_data);
+        println!("{}", time.elapsed().as_millis());
+        panic!();
 
         // Timestamp segments
         let transcriber = JapaneseTranscriptionContext {};
 
         transcriber.test(&mut text_data, &timing_data);
-println!("3: {}", time.elapsed().as_millis());
+
         //
         //
         //
@@ -104,12 +106,12 @@ println!("3: {}", time.elapsed().as_millis());
         let len = std::fs::metadata("/home/nulliel/Result_45.csv")
             .unwrap()
             .len();
-println!("4: {}", time.elapsed().as_millis());
+
         let mut buf = Pin::new(
             vec![0; usize::try_from(len.mul(2)).expect("usize should always fit within u64")]
                 .into_boxed_slice(),
         );
-println!("5: {}", time.elapsed().as_millis());
+
         let mut view = &mut buf[..];
 
         let mut adaptive = TreeMap::<&CStr, Option<usize>>::new();
@@ -170,8 +172,6 @@ println!("5: {}", time.elapsed().as_millis());
                 }
             }
         }
-
-        println!("{}", time.elapsed().as_millis());
 
         let times = text_data
             .0
@@ -470,7 +470,7 @@ impl AddBookProcedure {
             }
         }
 
-        
+
 
         result
             .into_iter()

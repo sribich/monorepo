@@ -79,7 +79,7 @@ impl EbookSegments {
 
 impl<T> AcceptsTimestamps<T> for EbookSegments
 where
-    T: IsSegment + PartialEq + Debug,
+    T: IsSegment + PartialEq + Debug + Send,
 {
     fn accept(&mut self, segment: &Segment<T, Self::Source>, timestamp: language_pack::Timestamp) {
         let source = *self.source(segment);
@@ -108,14 +108,14 @@ where
 
 impl<T> CanSegment<T> for EbookSegments
 where
-    T: IsSegment + PartialEq + Debug,
+    T: IsSegment + PartialEq + Debug + Send,
 {
     type Source = usize;
 
     fn segments(
         &self,
-        segmenter: impl TextSegmenter<Feature = T>,
-    ) -> impl Iterator<Item = Segment<T, Self::Source>> {
+        segmenter: impl TextSegmenter<Feature = T> + Sync,
+    ) -> Vec<Segment<T, Self::Source>> {
         self.0
             .iter()
             .enumerate()
@@ -129,7 +129,6 @@ where
                     })
             })
             .collect::<Vec<_>>()
-            .into_iter()
     }
 
     fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {
@@ -990,11 +989,12 @@ impl JapaneseTranscriptionContext {
         let timing_segments = timing_data.segments(&segmenter);
         let text_segments = text_data.segments(&segmenter);
 
+        /*
         let timing_segments = timing_segments
             .filter(|it| match &it.data {
                 Morpheme::Unk => true,
                 Morpheme::Untagged(data) => {
-                    match get_single_char(data) {
+                    match get_single_char(data.as_str()) {
                         Some(c) => !is_punctuation(c),
                         None => true,
                     }
@@ -1013,7 +1013,7 @@ impl JapaneseTranscriptionContext {
             .filter(|it| match &it.data {
                 Morpheme::Unk => true,
                 Morpheme::Untagged(data) => {
-                    match get_single_char(data) {
+                    match get_single_char(data.as_str()) {
                         Some(c) => !is_punctuation(c),
                         None => true,
                     }
@@ -1027,6 +1027,7 @@ impl JapaneseTranscriptionContext {
                 }
             })
             .collect::<Vec<_>>();
+         */
 
         let alignments = align_segments(&timing_segments, &text_segments, SegmentAlignerOptions {});
 

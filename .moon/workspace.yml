@@ -7,6 +7,7 @@ projects:
   - "project/*/api/*/*"
   - "project/*/bin/*"
   - "project/*/lib/*/*"
+  - "project/mecrab/*"
 
 telemetry: false
 

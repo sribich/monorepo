@@ -9,43 +9,30 @@ pub fn create_pipeline<TSegmenter, TFeature>(
 ) -> LanguagePipeline<TSegmenter, TFeature>
 where
     TSegmenter: TextSegmenter<Feature = TFeature>,
-    TFeature: IsSegment + Debug,
+    TFeature: IsSegment + Debug + Send,
 {
     LanguagePipeline { segmenter }
 }
 
-///
 pub struct LanguagePipeline<TSegmenter, TFeature>
 where
     TSegmenter: TextSegmenter<Feature = TFeature>,
-    TFeature: IsSegment + Debug,
+    TFeature: IsSegment + Debug + Send,
 {
     segmenter: TSegmenter,
 }
 
 impl<TSegmenter, TFeature> LanguagePipeline<TSegmenter, TFeature>
 where
-    TSegmenter: TextSegmenter<Feature = TFeature>,
-    TFeature: IsSegment + Debug,
+    TSegmenter: TextSegmenter<Feature = TFeature> + Sync,
+    TFeature: IsSegment + Debug + Send,
 {
-    pub fn run<CTiming, CText>(&self, timing_data: &CTiming, _text_data: &CText)
+    pub fn run<CTiming, CText>(&self, timing_data: &CTiming, text_data: &CText)
     where
         CTiming: CanSegment<TFeature>,
         CText: CanSegment<TFeature>,
     {
-        println!("hi!");
-
         let timing_segments = timing_data.segments(&self.segmenter);
-
-        for segment in timing_segments {
-            if segment.data.text() == "UNK" {
-                println!("{segment:#?}");
-            }
-        }
-
-        /*
-        let timing_segments = timing_data.segments(&segmenter);
-        let text_segments = text_data.segments(&segmenter);
-         */
+        let text_segments = text_data.segments(&self.segmenter);
     }
 }

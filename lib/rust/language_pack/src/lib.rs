@@ -9,25 +9,35 @@ pub mod transform;
 use std::f64::INFINITY;
 use std::fmt::Debug;
 
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
 use segment::IsSegment;
 use segment::TextSegmenter;
 use serde::Deserialize;
 
 /// Defines functionality for a type that can hold segment information.
+///
+/// A segmenter should do the following:
+///
+///   1. Segment words into a common structure, which can be compared between
+///      different input types.
+///   2. Strip types from the output that are not conducive to text alignment
+///      such as punctuation.
 pub trait CanSegment<T: IsSegment + Debug> {
     type Source: Debug;
 
     fn segments(
         &self,
-        segmenter: impl TextSegmenter<Feature = T>,
-    ) -> impl Iterator<Item = Segment<T, Self::Source>>;
+        segmenter: impl TextSegmenter<Feature = T> + Sync,
+    ) -> Vec<Segment<T, Self::Source>>;
 
     fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source;
 }
 
 impl<T> ProducesTimestamps<T> for Transcription
 where
-    T: IsSegment + PartialEq + Debug,
+    T: IsSegment + PartialEq + Debug + Send,
 {
     fn produce(&self, segments: &[Segment<T, Self::Source>]) -> Timestamp {
         segments
@@ -46,16 +56,16 @@ where
 
 impl<T> CanSegment<T> for Transcription
 where
-    T: IsSegment + PartialEq + Debug,
+    T: IsSegment + PartialEq + Debug + Send,
 {
     type Source = TranscriptionSource;
 
     fn segments(
         &self,
-        segmenter: impl TextSegmenter<Feature = T>,
-    ) -> impl Iterator<Item = Segment<T, Self::Source>> {
+        segmenter: impl TextSegmenter<Feature = T> + Sync,
+    ) -> Vec<Segment<T, Self::Source>> {
         self.lines
-            .iter()
+            .par_iter()
             .enumerate()
             .flat_map(|(line_index, line)| {
                 let segments = segmenter.segment(&line.text);
@@ -63,13 +73,19 @@ where
                 let mut word_idx = 0;
                 let mut char_buf: [u8; 4] = [0; 4];
 
-                let matches = segments
+                segments
                     .into_iter()
-                    .map(|it| {
+                    .map(|it: T| {
                         let text = it.text();
 
                         if line.words.is_empty() {
-                            return (it, (None, None));
+                            return Segment {
+                                data: it,
+                                source: TranscriptionSource {
+                                    line: line_index,
+                                    timestamp: (None, None),
+                                },
+                            };
                         }
 
                         let mut t0 = INFINITY;
@@ -93,26 +109,20 @@ where
                             t1 = t1.max(line.words[word_idx].end.unwrap_or(t1));
                         }
 
-                        (
-                            it,
-                            (
-                                if t0 == INFINITY { None } else { Some(t0) },
-                                if t1 == 0_f64 { None } else { Some(t1) },
-                            ),
-                        )
+                        Segment {
+                            data: it,
+                            source: TranscriptionSource {
+                                line: line_index,
+                                timestamp: (
+                                    if t0 == INFINITY { None } else { Some(t0) },
+                                    if t1 == 0_f64 { None } else { Some(t1) },
+                                ),
+                            },
+                        }
                     })
-                    .collect::<Vec<_>>();
-
-                matches.into_iter().map(move |segment| Segment {
-                    data: segment.0,
-                    source: TranscriptionSource {
-                        line: line_index,
-                        timestamp: segment.1,
-                    },
-                })
+                    .collect::<Vec<_>>()
             })
-            .collect::<Vec<_>>()
-            .into_iter()
+            .collect()
     }
 
     fn source<'a>(&self, _segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {
@@ -138,7 +148,7 @@ where
 
 pub trait ProducesTimestamps<T>
 where
-    T: IsSegment + PartialEq + Debug,
+    T: IsSegment + PartialEq + Debug + Send,
     Self: CanSegment<T>,
 {
     fn produce(&self, segments: &[Segment<T, Self::Source>]) -> Timestamp;

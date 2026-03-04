@@ -1,14 +1,20 @@
 use core::fmt::Debug;
 use std::collections::HashMap;
 use std::fmt::Display;
+use std::path::PathBuf;
 use std::pin::Pin;
 use std::range::Range;
 
 use language_pack::segment::IsSegment;
 use language_pack::segment::TextSegmenter;
 use lazy_static::lazy_static;
+use mecrab::MeCrab;
+use mecrab::OutputFormat;
 use memchr::memchr_iter;
 use serde::Deserialize;
+
+use crate::text::get_single_char;
+use crate::text::is_punctuation;
 
 #[derive(Debug)]
 pub enum Morpheme {
@@ -178,7 +184,7 @@ pub struct Feature {
 }
 
 pub struct JapaneseTextSegmenter {
-    tagger: mecab::Tagger,
+    tagger: MeCrab,
 }
 
 impl JapaneseTextSegmenter {
@@ -186,9 +192,18 @@ impl JapaneseTextSegmenter {
         // TODO: We need to figure out where to get this from.
         let home = std::env::var("HOME").unwrap();
 
+        /*
         let tagger = mecab::Tagger::new(format!(
-            "-Ounidic --dicdir={home}/Projects/sribich/_/unidic-cwj-202302"
-        ));
+            "-Ounidic --dicdir="
+        ));*/
+
+        let tagger = mecrab::MeCrabBuilder::new()
+            .dicdir(Some(PathBuf::from(format!(
+                "{home}/Projects/sribich/_/unidic-cwj-202302"
+            ))))
+            .output_format(OutputFormat::Default)
+            .build()
+            .unwrap();
 
         Self { tagger }
     }
@@ -260,8 +275,23 @@ impl TextSegmenter for JapaneseTextSegmenter {
     type Feature = Morpheme;
 
     fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
-        let output = self.tagger.parse_str(text.as_ref());
+        let output = self.tagger.parse(text.as_ref()).unwrap();
 
+        println!(
+            "{:#?}",
+            self.tagger.parse(
+                // 暑ければ暑いほど
+                // 新鮮館に僕の亜種のセンタ機械豚肉にシャアアをしますこんにちはあGoGoGoこんにちはあ
+                "こんにちは"
+            )
+        );
+        // output.morphemes
+
+        // println!("{:#?}", output);
+        panic!();
+
+        vec![]
+        /*
         let occurrances = memchr_iter(b'\n', output.as_bytes());
 
         let mut line_start = 0;
@@ -294,6 +324,20 @@ impl TextSegmenter for JapaneseTextSegmenter {
 
             #[expect(
                 unsafe_code,
+                clippy::transmute_bytes_to_str,
+                reason = "Too many allocations tanks performance"
+            )]
+            // SAFETY: This type is owned by `data` which is stored in the resulting `tagged_data`
+            //         struct. If the below `matches` is satisfied, then we will return early and
+            //         drop `surface` before dropping `data`.
+            let surface = unsafe { std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]) };
+
+            if matches!(get_single_char(surface), Some(c) if is_punctuation(c)) {
+                continue;
+            }
+
+            #[expect(
+                unsafe_code,
                 clippy::multiple_unsafe_ops_per_block,
                 clippy::transmute_bytes_to_str,
                 reason = "See safety comment"
@@ -304,7 +348,7 @@ impl TextSegmenter for JapaneseTextSegmenter {
             //         transmute without worry.
             let tagged_data = unsafe {
                 TaggedMorpheme {
-                    surface: std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]),
+                    surface,
                     feature: Feature {
                         pos1: std::mem::transmute::<&[u8], &'static str>(&data[ranges[1]]),
                         pos2: std::mem::transmute::<&[u8], &'static str>(&data[ranges[2]]),
@@ -329,6 +373,7 @@ impl TextSegmenter for JapaneseTextSegmenter {
         }
 
         result
+         */
     }
 }
 

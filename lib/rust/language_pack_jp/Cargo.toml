@@ -32,6 +32,7 @@ stringzilla = { workspace = true }
 rand = { workspace = true }
 rayon = { workspace = true }
 indoc = { workspace = true }
+mecrab = { workspace = true }
 
 [dev-dependencies]
 expect-test = { workspace = true }

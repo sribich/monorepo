@@ -12,6 +12,7 @@ default = []
 [dependencies]
 blart = { workspace = true }
 indoc = { workspace = true }
+rayon = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 
 [dev-dependencies]

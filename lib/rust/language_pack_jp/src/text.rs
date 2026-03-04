@@ -61,13 +61,22 @@ pub fn is_punctuation(c: char) -> bool {
         end: 0x303F + 1,
     };
 
-    CJK_PUNCTUATION_RANGE.contains(&(c as usize))
-        || c == '!'
-        || c == '？'
-        || c == '…'
-        || c == '?'
-        || c == '！'
-        || c == '・'
+    let other_punctuation = [
+        '!',  // U+0021 - Exclamation Mark
+        '?',  // U+003F - Question Mark
+        '…',  // U+2026 - Horizontal Ellipsis
+        'ゝ', // U+309D - Hiragana Iteration Mark
+        'ゞ', // U+309E - Hiragana Voiced Iteration Mark
+        '・', // U+30FB - Katakana Middle Dot
+        'ヽ', // U+30FD - Katakana Iteration Mark
+        'ヾ', // U+30FE - Katakana Voiced Iteration Mark
+        '！', // U+FF01 - Fullwidth Exclamation Mark
+        '，', // U+FF0C - Fullwidth Comma
+        '．', // U+FF0E - Fullwidth Full Stop
+        '？', // U+FF1F - Fullwidth Question Mark
+    ];
+
+    CJK_PUNCTUATION_RANGE.contains(&(c as usize)) || other_punctuation.contains(&c)
 }
 
 pub fn get_single_char(s: &str) -> Option<char> {

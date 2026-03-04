@@ -30,10 +30,12 @@ members = [
     "project/prisma/query-engine/query-builders/*",
     "project/prisma/psl/*",
     "project/prisma/quaint",
+    "project/mecrab/*"
 ]
 exclude = [
     "project/fude/bin/fude-storybook",
     "project/immersly/bin/desktop-ui",
+    "project/mecrab/docss",
     "project/obsidian/bin/obsidian-plugin-datatables",
     "project/obsidian/bin/obsidian-plugin-keymaps",
     "project/obsidian/bin/obsidian-plugin-privacy",
@@ -86,6 +88,13 @@ typegen_derive = { path = "./project/railgun/lib/rust/typegen_derive" }
 typegen_typescript = { path = "./project/railgun/lib/rust/typegen_typescript" }
 
 #################################################################################
+## Mecrab
+#################################################################################
+mecrab = { path = "./project/mecrab/mecrab" }
+mecrab-builder = { path = "./project/mecrab/mecrab-builder" }
+mecrab-word2vec = { path = "./project/mecrab/mecrab-word2vec" }
+
+#################################################################################
 ## Prisma
 #################################################################################
 quaint = { path = "./project/prisma/quaint", default-features = false }
@@ -136,6 +145,17 @@ generator-shared = { path = "./project/prisma/lib/rust/generator-shared" }
 #################################################################################
 ## Dependencies
 #################################################################################
+
+bytemuck = "1.24"
+criterion = { version = "0.7", features = ["html_reports"] }
+csv = "1.4"
+encoding_rs = "0.8"
+indicatif = "0.18"
+memmap2 = "0.9"
+yada = "0.5"
+# byteorder = "1.5"
+# thiserror = "2.0"
+
 ahash = "0.8.11"
 anyhow = "1"
 arbitrary = "1.2.0"

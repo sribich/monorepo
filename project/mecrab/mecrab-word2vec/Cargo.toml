@@ -1,0 +1,15 @@
+[package]
+name = "mecrab-word2vec"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+byteorder = { workspace = true }
+memmap2 = { workspace = true }
+rand = { workspace = true }
+rayon = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
