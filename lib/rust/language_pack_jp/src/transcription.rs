@@ -13,6 +13,8 @@ use language_pack::hirschberg;
 use language_pack::segment::IsSegment;
 use language_pack::segment::TextSegmenter;
 use rand::Rng;
+use rayon::iter::IndexedParallelIterator;
+use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::IntoParallelRefMutIterator;
 use rayon::iter::ParallelIterator;
 
@@ -116,8 +118,9 @@ where
         &self,
         segmenter: impl TextSegmenter<Feature = T> + Sync,
     ) -> Vec<Segment<T, Self::Source>> {
+        println!("()");
         self.0
-            .iter()
+            .par_iter()
             .enumerate()
             .flat_map(|(index, item)| {
                 segmenter
@@ -127,8 +130,9 @@ where
                         data: segment,
                         source: index, // (), // TranscriptionSource { line: line_index },
                     })
+                    .collect::<Vec<_>>()
             })
-            .collect::<Vec<_>>()
+            .collect()
     }
 
     fn source<'a>(&self, segment: &'a Segment<T, Self::Source>) -> &'a Self::Source {

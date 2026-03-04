@@ -325,31 +325,27 @@ impl<'a> ViterbiSolver<'a> {
             return Err(Error::ViterbiError("No path to EOS found".to_string()));
         }
 
-        println!("{:#?}", entries);
-        println!("EOS ENTRIES");
-        println!("{:#?}", eos_entries);
-
         let best_eos = eos_entries
             .iter()
             .min_by_key(|e| e.cost)
             .ok_or_else(|| Error::ViterbiError("No EOS entry found".to_string()))?;
 
-        // Trace back
-        /*
-        PathNode {
-                    surface: best_eos.node.surface.to_string(),
-                    word_id: best_eos.node.word_id,
-                    pos_id: best_eos.node.pos_id,
-                    wcost: best_eos.node.wcost,
-                    feature: best_eos.node.feature.clone(),
-                }
-        */
         let mut path = vec![];
         let mut current_idx = best_eos.prev;
         let mut prev_pos = best_eos.pos;
 
+        if !best_eos.node.surface.is_empty() {
+            path.push(PathNode {
+                surface: best_eos.node.surface.to_string(),
+                word_id: best_eos.node.word_id,
+                pos_id: best_eos.node.pos_id,
+                wcost: best_eos.node.wcost,
+                feature: best_eos.node.feature.clone(),
+            });
+        }
+
         while let Some(idx) = current_idx {
-            if prev_pos >= entries.len() || idx >= entries[prev_pos].len() {
+            if prev_pos > entries.len() || idx > entries[prev_pos].len() {
                 break;
             }
 

@@ -139,11 +139,6 @@ let reader = SentenceReader::new(input);
 for sentence in reader {
     let result = mecrab.parse(&sentence)?;
 }
-
-// Phonetic conversion
-use mecrab::phonetic::PhoneticTransducer;
-let transducer = PhoneticTransducer::new();
-let romaji = transducer.to_romaji("こんにちは"); // "konnichiha"
 ```
 
 ## Training Word Embeddings

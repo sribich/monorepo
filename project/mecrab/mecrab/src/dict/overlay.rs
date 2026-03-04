@@ -9,20 +9,22 @@
 //! Architecture:
 //! ```text
 //! ┌─────────────────────────────────────────┐
-//! │           Overlay Dictionary             │ ← API updates (hot path)
+//! │           Overlay Dictionary            │ ← API updates (hot path)
 //! ├─────────────────────────────────────────┤
-//! │           System Dictionary              │ ← IPADIC (mmap, read-only)
+//! │           System Dictionary             │ ← IPADIC (mmap, read-only)
 //! └─────────────────────────────────────────┘
 //! ```
 //!
 //! Implementation uses yada (double-array trie) for fast prefix lookups
 //! when the dictionary is stable, with fallback to HashMap during updates.
 
-use crate::dict::DictionaryEntry;
 use std::collections::HashMap;
 use std::sync::RwLock;
+
 use yada::DoubleArray;
 use yada::builder::DoubleArrayBuilder;
+
+use crate::dict::DictionaryEntry;
 
 /// Surface to index mapping for trie lookup
 type SurfaceIndex = HashMap<String, usize>;

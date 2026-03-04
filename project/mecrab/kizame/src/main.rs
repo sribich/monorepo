@@ -16,10 +16,19 @@
 mod server;
 mod tui;
 
-use clap::{Args, Parser, Subcommand, ValueEnum};
-use mecrab::{MeCrab, OutputFormat};
-use std::io::{self, BufRead, IsTerminal, Write};
-use std::path::{Path, PathBuf};
+use std::io::BufRead;
+use std::io::IsTerminal;
+use std::io::Write;
+use std::io::{self};
+use std::path::Path;
+use std::path::PathBuf;
+
+use clap::Args;
+use clap::Parser;
+use clap::Subcommand;
+use clap::ValueEnum;
+use mecrab::MeCrab;
+use mecrab::OutputFormat;
 
 /// ANSI color codes for terminal output
 mod colors {
@@ -283,10 +292,6 @@ struct ParseArgs {
     #[arg(long)]
     with_semantic: bool,
 
-    /// Include IPA pronunciation in output
-    #[arg(long)]
-    with_ipa: bool,
-
     /// Include word embeddings in output (requires vector pool)
     #[arg(long)]
     with_vector: bool,
@@ -439,7 +444,6 @@ fn run_parse(args: ParseArgs) -> Result<(), Box<dyn std::error::Error>> {
         .semantic_pool(args.semantic_pool)
         .vector_pool(args.vector_pool)
         .with_semantic(args.with_semantic)
-        .with_ipa(args.with_ipa)
         .with_vector(args.with_vector)
         .output_format(format)
         .build()?;
@@ -706,7 +710,8 @@ fn run_dict_compile(
     verbose: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::fs;
-    use std::io::{BufReader, BufWriter};
+    use std::io::BufReader;
+    use std::io::BufWriter;
     use std::time::Instant;
 
     println!("KizaMe Dictionary Compiler");
@@ -992,9 +997,10 @@ fn run_vectors(command: VectorsCommands) -> Result<(), Box<dyn std::error::Error
 }
 
 fn run_vectors_info(vector_pool: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    use mecrab::vectors::VectorStore;
     use std::fs::File;
     use std::sync::Arc;
+
+    use mecrab::vectors::VectorStore;
 
     println!("Vector Pool Information: {:?}", vector_pool);
     println!("================================================================================");
@@ -1022,7 +1028,9 @@ fn run_vectors_convert(
 ) -> Result<(), Box<dyn std::error::Error>> {
     use std::collections::HashMap;
     use std::fs::File;
-    use std::io::{BufRead, BufReader, Write};
+    use std::io::BufRead;
+    use std::io::BufReader;
+    use std::io::Write;
 
     match format {
         "word2vec-text" => {

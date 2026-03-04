@@ -28,7 +28,7 @@ impl IsSegment for Morpheme {
         match self {
             Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(data) => data,
-            Morpheme::Tagged(tag) => tag.surface,
+            Morpheme::Tagged(tag) => &tag.surface,
         }
     }
 }
@@ -116,15 +116,13 @@ impl Default for Morpheme {
 /// This type is self-referential. As it stands, it can not be [`clone`] as
 /// we are not storing any range information. If we stored range data along
 /// with the slices, we could manually implement clone.
-#[derive(Deserialize)]
 pub struct TaggedMorpheme {
-    surface: &'static str,
+    surface: String, /* &'static str, */
     feature: Feature,
     /// # Safety
     ///
     /// This field MUST come last to prevent undefined behavior when the
     /// struct is dropped, as rust drops structs in order.
-    #[serde(skip)]
     data: Pin<Box<[u8]>>,
 }
 
@@ -208,16 +206,21 @@ impl JapaneseTextSegmenter {
         Self { tagger }
     }
 
-    fn line_to_pinned_ranges(line: &str) -> (Pin<Box<[u8]>>, [Range<usize>; 11]) {
+    fn line_to_pinned_ranges(line: &str) -> Option<(Pin<Box<[u8]>>, [Range<usize>; 11])> {
         let mut ranges: [Range<usize>; 11] = std::array::repeat((0_usize..0_usize).into());
 
         let mut start = 0;
         let mut i = 0;
 
-        for end in memchr_iter(b',', line.as_bytes()) {
-            ranges[i] = Range { start, end };
-            start = end + 1;
-            i += 1;
+        let mut iter = memchr_iter(b',', line.as_bytes());
+        for _ in 0..10 {
+            if let Some(end) = iter.next() {
+                ranges[i] = Range { start, end };
+                start = end + 1;
+                i += 1;
+            } else {
+                return None;
+            }
         }
 
         ranges[i] = Range {
@@ -225,10 +228,10 @@ impl JapaneseTextSegmenter {
             end: line.len(),
         };
 
-        (
+        Some((
             Pin::from(line.as_bytes().to_owned().into_boxed_slice()),
             ranges,
-        )
+        ))
     }
 
     fn resolve_unks(segments: &mut [<Self as TextSegmenter>::Feature], text: &str) {
@@ -275,53 +278,20 @@ impl TextSegmenter for JapaneseTextSegmenter {
     type Feature = Morpheme;
 
     fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
-        let output = self.tagger.parse(text.as_ref()).unwrap();
+        let output = self.tagger.parse(text.as_ref()).unwrap().morphemes;
 
-        println!(
-            "{:#?}",
-            self.tagger.parse(
-                // 暑ければ暑いほど
-                // 新鮮館に僕の亜種のセンタ機械豚肉にシャアアをしますこんにちはあGoGoGoこんにちはあ
-                "こんにちは"
-            )
-        );
-        // output.morphemes
+        let mut result = Vec::with_capacity(output.len());
 
-        // println!("{:#?}", output);
-        panic!();
+        for entry in output {
+            let pinned_result = JapaneseTextSegmenter::line_to_pinned_ranges(&entry.feature);
 
-        vec![]
-        /*
-        let occurrances = memchr_iter(b'\n', output.as_bytes());
-
-        let mut line_start = 0;
-        let mut has_unk = false;
-
-        let mut result = Vec::with_capacity(occurrances.clone().count());
-
-        for line_end in occurrances {
-            let line = &output[line_start..line_end];
-
-            line_start = line_end + 1; // +1 to skip newline
-
-            if line.is_empty() || line == "BOS" || line == "EOS" {
+            if pinned_result.is_none() {
                 continue;
             }
 
-            // We collapse all consequitive UNKs into a single UNK so that
-            // we can cleanly map them to their source text.
-            if line == "UNK" {
-                if !matches!(result.last(), Some(Morpheme::Unk)) {
-                    result.push(Morpheme::Unk);
-                }
+            let (data, ranges) = pinned_result.unwrap();
 
-                has_unk = true;
-
-                continue;
-            }
-
-            let (data, ranges) = JapaneseTextSegmenter::line_to_pinned_ranges(line);
-
+            /*
             #[expect(
                 unsafe_code,
                 clippy::transmute_bytes_to_str,
@@ -331,8 +301,10 @@ impl TextSegmenter for JapaneseTextSegmenter {
             //         struct. If the below `matches` is satisfied, then we will return early and
             //         drop `surface` before dropping `data`.
             let surface = unsafe { std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]) };
+            */
+            let surface = entry.surface;
 
-            if matches!(get_single_char(surface), Some(c) if is_punctuation(c)) {
+            if matches!(get_single_char(&surface), Some(c) if is_punctuation(c)) {
                 continue;
             }
 
@@ -350,15 +322,15 @@ impl TextSegmenter for JapaneseTextSegmenter {
                 TaggedMorpheme {
                     surface,
                     feature: Feature {
-                        pos1: std::mem::transmute::<&[u8], &'static str>(&data[ranges[1]]),
-                        pos2: std::mem::transmute::<&[u8], &'static str>(&data[ranges[2]]),
-                        pos3: std::mem::transmute::<&[u8], &'static str>(&data[ranges[3]]),
-                        pos4: std::mem::transmute::<&[u8], &'static str>(&data[ranges[4]]),
-                        c_type: std::mem::transmute::<&[u8], &'static str>(&data[ranges[5]]),
-                        c_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[6]]),
-                        l_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[7]]),
-                        lemma: std::mem::transmute::<&[u8], &'static str>(&data[ranges[8]]),
-                        orth: std::mem::transmute::<&[u8], &'static str>(&data[ranges[9]]),
+                        pos1: std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]),
+                        pos2: std::mem::transmute::<&[u8], &'static str>(&data[ranges[1]]),
+                        pos3: std::mem::transmute::<&[u8], &'static str>(&data[ranges[2]]),
+                        pos4: std::mem::transmute::<&[u8], &'static str>(&data[ranges[3]]),
+                        c_type: std::mem::transmute::<&[u8], &'static str>(&data[ranges[4]]),
+                        c_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[5]]),
+                        l_form: std::mem::transmute::<&[u8], &'static str>(&data[ranges[6]]),
+                        lemma: std::mem::transmute::<&[u8], &'static str>(&data[ranges[7]]),
+                        orth: std::mem::transmute::<&[u8], &'static str>(&data[ranges[8]]),
                         orth_base: std::mem::transmute::<&[u8], &'static str>(&data[ranges[10]]),
                     },
                     data,
@@ -368,12 +340,7 @@ impl TextSegmenter for JapaneseTextSegmenter {
             result.push(Morpheme::Tagged(tagged_data));
         }
 
-        if has_unk {
-            JapaneseTextSegmenter::resolve_unks(&mut result, text.as_ref());
-        }
-
         result
-         */
     }
 }
 

@@ -2,7 +2,9 @@
 //!
 //! Provides multi-candidate semantic URI linking for morphemes.
 
-use super::{OntologySource, SemanticEntry, SemanticPool};
+use super::OntologySource;
+use super::SemanticEntry;
+use super::SemanticPool;
 
 /// Type alias for entity references (same as SemanticEntry)
 pub type EntityReference = SemanticEntry;
@@ -100,13 +102,6 @@ impl ExtendedMorpheme {
     /// Set reading
     pub fn with_reading(mut self, reading: impl Into<String>) -> Self {
         self.reading = Some(reading.into());
-        self
-    }
-
-    /// Set pronunciation
-    #[must_use]
-    pub fn with_pronunciation(mut self, pronunciation: impl Into<String>) -> Self {
-        self.pronunciation = Some(pronunciation.into());
         self
     }
 

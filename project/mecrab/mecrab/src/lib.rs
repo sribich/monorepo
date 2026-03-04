@@ -64,7 +64,6 @@ pub mod dict;
 pub mod error;
 pub mod lattice;
 pub mod normalize;
-pub mod phonetic;
 pub mod semantic;
 pub mod stream;
 pub mod vectors;
@@ -117,8 +116,6 @@ pub struct Morpheme {
     pub feature: String,
     /// Semantic entity references (optional)
     pub entities: Vec<semantic::extension::EntityReference>,
-    /// IPA pronunciation (optional, populated when ipa_enabled=true)
-    pub pronunciation: Option<String>,
     /// Word embedding vector (optional, populated when vector_enabled=true)
     pub embedding: Option<Vec<f32>>,
 }
@@ -127,11 +124,6 @@ impl fmt::Display for Morpheme {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Main line: MeCab-compatible format
         write!(f, "{}\t{}", self.surface, self.feature)?;
-
-        // Optional IPA pronunciation line
-        if let Some(ref ipa) = self.pronunciation {
-            write!(f, "\n  IPA: /{}/", ipa)?;
-        }
 
         // Optional embedding vector (show first 8 dimensions for readability)
         if let Some(ref emb) = self.embedding {
@@ -245,11 +237,6 @@ impl AnalysisResult {
                 if r != "*" {
                     writeln!(f, "      \"reading\": \"{}\",", r)?;
                 }
-            }
-
-            // Add IPA pronunciation if available
-            if let Some(ref ipa) = m.pronunciation {
-                writeln!(f, "      \"pronunciation\": \"/{}/ \",", ipa)?;
             }
 
             // Add embedding vector if available
@@ -415,7 +402,6 @@ pub struct MeCrabBuilder {
     semantic_pool: Option<PathBuf>,
     vector_pool: Option<PathBuf>,
     with_semantic: bool,
-    with_ipa: bool,
     with_vector: bool,
     output_format: OutputFormat,
 }
@@ -452,13 +438,6 @@ impl MeCrabBuilder {
     #[must_use]
     pub fn with_semantic(mut self, enabled: bool) -> Self {
         self.with_semantic = enabled;
-        self
-    }
-
-    /// Enable IPA pronunciation output
-    #[must_use]
-    pub fn with_ipa(mut self, enabled: bool) -> Self {
-        self.with_ipa = enabled;
         self
     }
 
@@ -528,7 +507,6 @@ impl MeCrabBuilder {
             dictionary: Arc::new(dictionary),
             output_format: self.output_format,
             semantic_enabled: self.with_semantic,
-            ipa_enabled: self.with_ipa,
             vector_enabled: self.with_vector,
             vector_store,
         })
@@ -541,7 +519,6 @@ pub struct MeCrab {
     dictionary: Arc<Dictionary>,
     output_format: OutputFormat,
     semantic_enabled: bool,
-    ipa_enabled: bool,
     vector_enabled: bool,
     vector_store: Option<Arc<vectors::VectorStore>>,
 }
@@ -585,12 +562,6 @@ impl MeCrab {
                     Vec::new()
                 };
 
-                let pronunciation = if self.ipa_enabled {
-                    self.get_ipa_pronunciation(&node.feature)
-                } else {
-                    None
-                };
-
                 let embedding = if self.vector_enabled {
                     self.get_embedding(node.word_id)
                 } else {
@@ -604,7 +575,6 @@ impl MeCrab {
                     wcost: node.wcost,
                     feature: node.feature,
                     entities,
-                    pronunciation,
                     embedding,
                 }
             })
@@ -636,42 +606,6 @@ impl MeCrab {
             }
         }
         Vec::new()
-    }
-
-    /// Get IPA pronunciation from feature string
-    fn get_ipa_pronunciation(&self, feature: &str) -> Option<String> {
-        // Feature format: POS,POS1,POS2,POS3,conjugation,conjugation_type,lemma,reading,pronunciation
-        let fields: Vec<&str> = feature.split(',').collect();
-
-        // Get POS for particle detection
-        let pos = fields.first().copied().unwrap_or("");
-
-        // PRIORITY 1: Pronunciation field (index 8) - actual pronunciation
-        // This already contains the correct pronunciation (e.g., "ワ" for particle "は")
-        if let Some(&pron) = fields.get(8) {
-            if pron != "*" && !pron.is_empty() {
-                return Some(phonetic::to_ipa(pron));
-            }
-        }
-
-        // PRIORITY 2: Reading field (index 7) - fallback if pronunciation not available
-        if let Some(&reading) = fields.get(7) {
-            if reading != "*" && !reading.is_empty() {
-                // Special handling for particles with pronunciation changes
-                if pos == "助詞" {
-                    let ipa = match reading {
-                        "ハ" => "wa", // 助詞「は」は /wa/ と発音
-                        "ヘ" => "e",  // 助詞「へ」は /e/ と発音
-                        "ヲ" => "o",  // 助詞「を」は /o/ と発音
-                        _ => return Some(phonetic::to_ipa(reading)),
-                    };
-                    return Some(ipa.to_string());
-                }
-                return Some(phonetic::to_ipa(reading));
-            }
-        }
-
-        None
     }
 
     /// Get word embedding vector for a given word ID
@@ -819,12 +753,6 @@ impl MeCrab {
                             Vec::new()
                         };
 
-                        let pronunciation = if self.ipa_enabled {
-                            self.get_ipa_pronunciation(&node.feature)
-                        } else {
-                            None
-                        };
-
                         let embedding = if self.vector_enabled {
                             self.get_embedding(node.word_id)
                         } else {
@@ -838,7 +766,6 @@ impl MeCrab {
                             wcost: node.wcost,
                             feature: node.feature,
                             entities,
-                            pronunciation,
                             embedding,
                         }
                     })

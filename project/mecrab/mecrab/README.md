@@ -46,11 +46,6 @@ let nbest = NbestSearch::new(&mecrab);
 for path in nbest.search("東京", 5)? {
     println!("Cost: {}", path.total_cost);
 }
-
-// Phonetic conversion
-use mecrab::phonetic::PhoneticTransducer;
-let transducer = PhoneticTransducer::new();
-println!("{}", transducer.to_romaji("こんにちは")); // konnichiha
 ```
 
 ## Module Structure
