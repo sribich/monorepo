@@ -30,7 +30,7 @@ macro_rules! module {
     };
 }
 
-pub trait Module {
+pub trait Module: Sync {
     type State;
     // <T: 'static + Clone + Send + Sync>
     fn as_routes(&self) -> Option<&dyn Routes<Self::State>>;

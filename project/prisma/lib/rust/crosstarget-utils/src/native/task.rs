@@ -10,7 +10,7 @@ pub struct JoinHandle<T> {
 impl<T> JoinHandle<T> {
     pub fn abort(&mut self) {
         if let Some(sx_exit) = self.sx_exit.as_ref() {
-            sx_exit.send(()).ok();
+            let _ = sx_exit.send(()).ok();
         }
 
         self.handle.abort();

@@ -291,24 +291,3 @@ impl TextSegmenter for JapaneseTextSegmenter {
         result
     }
 }
-
-#[cfg(test)]
-mod test {
-    use language_pack::segment::TextSegmenter;
-
-    use super::JapaneseTextSegmenter;
-
-    #[test]
-    fn mecab() {
-        let tagger = JapaneseTextSegmenter::new();
-
-        println!("{:#?}", tagger.segment("買い殺しと"));
-        println!("{:#?}", tagger.segment("飼い殺しとどちら"));
-
-        println!("{:#?}", tagger.segment("裏野の"));
-        println!("{:#?}", tagger.segment("麗乃の"));
-
-        println!("{:#?}", tagger.segment("一日 "));
-        println!("{:#?}", tagger.segment("一日"));
-    }
-}

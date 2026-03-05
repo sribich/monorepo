@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::LazyLock;
+
 use indoc::indoc;
 use language_pack::transform::Transform;
 use language_pack::transform::suffix_inflection;
@@ -12,6 +15,150 @@ const passive_description: &str = indoc! {r#"
     1. Indicates an action received from an action performer.
     2. Expresses respect for the subject of action performer.
 "#};
+
+pub const JAPANESE_CONDITIONS: LazyLock<HashMap<String, Condition>> = LazyLock::new(|| {
+    [
+        ("v".to_owned(), Condition {
+            name: "Verb",
+            description: "動詞",
+            is_dictionary_form: false,
+            sub_conditions: &["v1", "v5", "vk", "vs", "vz"],
+        }),
+        ("v1".to_owned(), Condition {
+            name: "Ichidan verb",
+            description: "一段動詞",
+            is_dictionary_form: true,
+            sub_conditions: &["v1d", "v1p"],
+        }),
+        ("v1d".to_owned(), Condition {
+            name: "Ichidan verb, dictionary form",
+            description: "一段動詞、終止形",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("v1p".to_owned(), Condition {
+            name: "Ichidan verb, progressive or perfect form",
+            description: "一段動詞、～てる・でる",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("v5".to_owned(), Condition {
+            name: "Godan verb",
+            description: "五段動詞",
+            is_dictionary_form: true,
+            sub_conditions: &["v5d", "v5s"],
+        }),
+        ("v5d".to_owned(), Condition {
+            name: "Godan verb, dictionary form",
+            description: "五段動詞、終止形",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("v5s".to_owned(), Condition {
+            name: "Godan verb, short causative form",
+            description: "五段動詞、～す・さす",
+            is_dictionary_form: false,
+            sub_conditions: &["v5ss", "v5sp"],
+        }),
+        ("v5ss".to_owned(), Condition {
+            name: "Godan verb, short causative form having さす ending (cannot conjugate with passive form)",
+            description: "五段動詞、～さす",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("v5sp".to_owned(), Condition {
+            name: "Godan verb, short causative form not having さす ending (can conjugate with passive form)",
+            description: "五段動詞、～す",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("vk".to_owned(), Condition {
+            name: "Kuru verb",
+            description: "来る動詞",
+            is_dictionary_form: true,
+            sub_conditions: &[],
+        }),
+        ("vs".to_owned(), Condition {
+            name: "Suru verb",
+            description: "する動詞",
+            is_dictionary_form: true,
+            sub_conditions: &[],
+        }),
+        ("vz".to_owned(), Condition {
+            name: "Zuru verb",
+            description: "ずる動詞",
+            is_dictionary_form: true,
+            sub_conditions: &[],
+        }),
+        ("adj-i".to_owned(), Condition {
+            name: "Adjective with i ending",
+            description: "形容詞",
+            is_dictionary_form: true,
+            sub_conditions: &[],
+        }),
+        ("-ます".to_owned(), Condition {
+            name: "Polite -ます ending",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-ません".to_owned(), Condition {
+            name: "Polite negative -ません ending",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-て".to_owned(), Condition {
+            name: "Intermediate -て endings for progressive or perfect tense",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-ば".to_owned(), Condition {
+            name: "Intermediate -ば endings for conditional contraction",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-く".to_owned(), Condition {
+            name: "Intermediate -く endings for adverbs",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-た".to_owned(), Condition {
+            name: "-た form ending",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-ん".to_owned(), Condition {
+            name: "-ん negative ending",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-なさい".to_owned(), Condition {
+            name: "Intermediate -なさい ending (polite imperative)",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+        ("-ゃ".to_owned(), Condition {
+            name: "Intermediate -や ending (conditional contraction)",
+            description: "",
+            is_dictionary_form: false,
+            sub_conditions: &[],
+        }),
+    ].into_iter().collect()
+});
+
+struct Condition {
+    name: &'static str,
+    description: &'static str,
+    is_dictionary_form: bool,
+    sub_conditions: &'static [&'static str],
+}
 
 pub const JAPANESE_TRANSFORMS: &[Transform] = &[
     Transform {
@@ -1343,176 +1490,5 @@ function irregularVerbSuffixInflections(suffix, conditionsIn, conditionsOut) {
     return inflections;
 }
 
-const conditions = {
-    'v': {
-        name: 'Verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '動詞',
-            },
-        ],
-        isDictionaryForm: false,
-        subConditions: ['v1', 'v5', 'vk', 'vs', 'vz'],
-    },
-    'v1': {
-        name: 'Ichidan verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞',
-            },
-        ],
-        isDictionaryForm: true,
-        subConditions: ['v1d', 'v1p'],
-    },
-    'v1d': {
-        name: 'Ichidan verb, dictionary form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞、終止形',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v1p': {
-        name: 'Ichidan verb, progressive or perfect form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '一段動詞、～てる・でる',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5': {
-        name: 'Godan verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞',
-            },
-        ],
-        isDictionaryForm: true,
-        subConditions: ['v5d', 'v5s'],
-    },
-    'v5d': {
-        name: 'Godan verb, dictionary form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、終止形',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5s': {
-        name: 'Godan verb, short causative form',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～す・さす',
-            },
-        ],
-        isDictionaryForm: false,
-        subConditions: ['v5ss', 'v5sp'],
-    },
-    'v5ss': {
-        name: 'Godan verb, short causative form having さす ending (cannot conjugate with passive form)',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～さす',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'v5sp': {
-        name: 'Godan verb, short causative form not having さす ending (can conjugate with passive form)',
-        i18n: [
-            {
-                language: 'ja',
-                name: '五段動詞、～す',
-            },
-        ],
-        isDictionaryForm: false,
-    },
-    'vk': {
-        name: 'Kuru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: '来る動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'vs': {
-        name: 'Suru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: 'する動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'vz': {
-        name: 'Zuru verb',
-        i18n: [
-            {
-                language: 'ja',
-                name: 'ずる動詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    'adj-i': {
-        name: 'Adjective with i ending',
-        i18n: [
-            {
-                language: 'ja',
-                name: '形容詞',
-            },
-        ],
-        isDictionaryForm: true,
-    },
-    '-ます': {
-        name: 'Polite -ます ending',
-        isDictionaryForm: false,
-    },
-    '-ません': {
-        name: 'Polite negative -ません ending',
-        isDictionaryForm: false,
-    },
-    '-て': {
-        name: 'Intermediate -て endings for progressive or perfect tense',
-        isDictionaryForm: false,
-    },
-    '-ば': {
-        name: 'Intermediate -ば endings for conditional contraction',
-        isDictionaryForm: false,
-    },
-    '-く': {
-        name: 'Intermediate -く endings for adverbs',
-        isDictionaryForm: false,
-    },
-    '-た': {
-        name: '-た form ending',
-        isDictionaryForm: false,
-    },
-    '-ん': {
-        name: '-ん negative ending',
-        isDictionaryForm: false,
-    },
-    '-なさい': {
-        name: 'Intermediate -なさい ending (polite imperative)',
-        isDictionaryForm: false,
-    },
-    '-ゃ': {
-        name: 'Intermediate -や ending (conditional contraction)',
-        isDictionaryForm: false,
-    },
-};
+
 */

@@ -120,6 +120,8 @@ pub fn transform_japanese_text(
         }
     }
 
+    println!("{:#?}", output);
+
     let mut result = vec![];
     let mut i = 0;
 
@@ -222,8 +224,6 @@ mod test {
     use blart::TreeMap;
     use itertools::Itertools;
     use language_pack::Transcription;
-    use language_pack::segment::TextSegmenter;
-    use language_pack::transform::TextTransform;
 
     use crate::japanese_language_pipeline;
     use crate::segment::JapaneseTextSegmenter;
@@ -237,10 +237,12 @@ mod test {
 
         let pipeline = japanese_language_pipeline();
 
+        /*
         for i in 0..25 {
             println!("{i}");
-            pipeline.run(&timing_data, &timing_data);
+            pipeline.run(&timing_data, &mut timing_data);
         }
+        */
 
         return;
 

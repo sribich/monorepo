@@ -8,12 +8,8 @@
 //!
 //! - `kizame parse` - Morphological analysis (default)
 //! - `kizame explore` - Interactive lattice debugger TUI
-//! - `kizame serve` - HTTP API server (requires --features server)
 //! - `kizame build` - Build semantic dictionary from Wikidata (requires --features full)
 //! - `kizame dict` - Dictionary management
-
-#[cfg(feature = "server")]
-mod server;
 mod tui;
 
 use std::io::BufRead;
@@ -92,10 +88,6 @@ enum Commands {
     /// Interactive lattice debugger TUI ("Matrix" mode)
     Explore(ExploreArgs),
 
-    /// Start HTTP API server
-    #[cfg(feature = "server")]
-    Serve(ServeArgs),
-
     /// Build semantic dictionary from Wikidata/Wikipedia dumps
     #[cfg(feature = "full")]
     Build(BuildArgs),
@@ -126,22 +118,6 @@ struct ExploreArgs {
     /// Path to semantic pool file (semantic.bin)
     #[arg(short = 's', long)]
     semantic_pool: Option<PathBuf>,
-}
-
-#[cfg(feature = "server")]
-#[derive(Args)]
-struct ServeArgs {
-    /// Server bind address
-    #[arg(short = 'H', long, default_value = "127.0.0.1")]
-    host: String,
-
-    /// Server port
-    #[arg(short = 'p', long, default_value = "3000")]
-    port: u16,
-
-    /// Path to the dictionary directory
-    #[arg(short = 'd', long)]
-    dicdir: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -402,8 +378,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Some(Commands::Parse(args)) => run_parse(args),
         Some(Commands::Explore(args)) => run_explore(args),
-        #[cfg(feature = "server")]
-        Some(Commands::Serve(args)) => run_serve(args),
         #[cfg(feature = "full")]
         Some(Commands::Build(args)) => run_build(args),
         Some(Commands::Dict { command }) => run_dict(command),
@@ -417,18 +391,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn run_explore(args: ExploreArgs) -> Result<(), Box<dyn std::error::Error>> {
     tui::run_explore(&args.text, args.dicdir, args.semantic_pool)
-}
-
-#[cfg(feature = "server")]
-fn run_serve(args: ServeArgs) -> Result<(), Box<dyn std::error::Error>> {
-    let mecrab = MeCrab::builder().dicdir(args.dicdir).build()?;
-
-    let addr = format!("{}:{}", args.host, args.port)
-        .parse()
-        .expect("Invalid address");
-
-    let runtime = tokio::runtime::Runtime::new()?;
-    runtime.block_on(server::run_server(mecrab, addr))
 }
 
 fn run_parse(args: ParseArgs) -> Result<(), Box<dyn std::error::Error>> {

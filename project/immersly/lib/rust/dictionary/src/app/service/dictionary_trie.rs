@@ -1,10 +1,18 @@
-use std::cell::{Cell, Ref, RefCell, UnsafeCell};
-use std::ffi::{CStr, CString};
+use std::cell::Cell;
+use std::cell::Ref;
+use std::cell::RefCell;
+use std::cell::UnsafeCell;
+use std::ffi::CStr;
+use std::ffi::CString;
 use std::fs::File;
-use std::io::{BufRead, BufReader};
-use std::ops::{Deref, Mul};
+use std::io::BufRead;
+use std::io::BufReader;
+use std::ops::Deref;
+use std::ops::Mul;
+use std::path::PathBuf;
 use std::pin::Pin;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use std::sync::RwLock;
 
 use async_trait::async_trait;
 use blart::TreeMap;
@@ -12,7 +20,7 @@ use railgun::di::Component;
 use shared::OnStartup;
 use shared::infra::database::Sqlite;
 
-            /*
+/*
             ._query_raw(raw!(
                 r#"
 SELECT
@@ -54,10 +62,11 @@ impl DictionaryTrieService {
 #[async_trait]
 impl OnStartup for DictionaryTrieService {
     async fn run(&mut self) -> Result<(), Box<dyn core::error::Error>> {
-        let lines = BufReader::new(File::open("/home/nulliel/Result_45.csv").unwrap()).lines();
-        let len = std::fs::metadata("/home/nulliel/Result_45.csv")
-            .unwrap()
-            .len();
+        let home = std::env::var("HOME").unwrap();
+        let path = PathBuf::from(format!("{home}/opt/dictionary_entries.csv"));
+
+        let lines = BufReader::new(File::open(&path).unwrap()).lines();
+        let len = std::fs::metadata(path).unwrap().len();
 
         let mut buf = Pin::new(
             vec![0; usize::try_from(len.mul(2)).expect("usize should always fit within u64")]

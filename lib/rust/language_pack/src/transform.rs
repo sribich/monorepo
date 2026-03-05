@@ -1,7 +1,10 @@
 use std::ffi::CStr;
 use std::ffi::CString;
+use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::Ordering;
 
 use blart::TreeMap;
+use tinyvec::ArrayVec;
 
 pub struct LanguageTransformer<'a> {
     transforms: &'static [Transform],
@@ -19,12 +22,12 @@ impl<'a> LanguageTransformer<'a> {
         }
     }
 
-    pub fn resolve(&mut self, text: &str) -> Vec<(Option<TextIdk>, String)> {
+    pub fn resolve(&mut self, text: &str) -> Vec<(Option<TextTransform>, String)> {
         let mut work = text;
         let mut matches = vec![];
 
         while !work.is_empty() {
-            let l = TextIdk {
+            let transform = TextTransform {
                 text: work.to_owned(),
                 inflection: String::new(),
                 last_inflection: String::new(),
@@ -32,7 +35,11 @@ impl<'a> LanguageTransformer<'a> {
                 i: 0,
             };
 
-            let result = self.resolve_from(l);
+            let (result, _) = self.resolve_from(transform);
+
+            panic!();
+            // println!("1");
+            // println!("{result:#?}");
 
             let mut result = result
                 .into_iter()
@@ -49,9 +56,10 @@ impl<'a> LanguageTransformer<'a> {
                                 CString::new(it.text[index..].as_bytes())
                                     .unwrap()
                                     .as_c_str(),
-                            ) {
-                                longest_match = Some(index);
-                            }
+                            )
+                        {
+                            longest_match = Some(index);
+                        }
                     }
 
                     longest_match.map(|len| {
@@ -71,6 +79,9 @@ impl<'a> LanguageTransformer<'a> {
                 continue;
             }
 
+            // println!("2");
+            // println!("{result:#?}");
+
             result.sort_by(|a, b| b.0.i.cmp(&a.0.i).then(b.1.len().cmp(&a.1.len())));
 
             // We got the same result out, that means the output was already set once
@@ -88,47 +99,52 @@ impl<'a> LanguageTransformer<'a> {
         matches
     }
 
-    fn resolve_from(&self, resolve: TextIdk) -> Vec<TextIdk> {
-        let mut result = self
-            .transforms
-            .iter()
-            .flat_map(|transform| {
-                transform
-                    .rules
-                    .iter()
-                    .filter_map(|rule| {
-                        if ((resolve.conditions.is_empty()/*&& rule.conditions_in.is_empty()*/)
-                            || (!rule.conditions_in.is_empty()
-                                && resolve.conditions.contains(&rule.conditions_in[0])))
-                            && let Some(InflectionResult {
-                                text,
-                                inflection,
-                                deinflection,
-                                conditions,
-                            }) = rule.deinflect(&resolve)
-                            {
-                                // Cycle
-                                if text == resolve.text {
-                                    return None;
-                                }
+    fn resolve_from(
+        &self,
+        resolve: TextTransform,
+    ) -> (Vec<TextTransform>, ArrayVec<[(usize, usize); 12]>) {
+        let mut seen = ArrayVec::<[(usize, usize); 12]>::new();
 
-                                return Some(self.resolve_from(TextIdk {
-                                    text,
-                                    inflection: format!("{}{}", inflection, resolve.inflection),
-                                    last_inflection: deinflection,
-                                    conditions,
-                                    i: resolve.i + 1,
-                                }));
-                            }
+        let mut result = vec![];
 
-                        None
-                    })
-                    .flatten()
-            })
-            .collect::<Vec<_>>();
+        println!("{:#?}", resolve);
+
+        for (transform_pos, transform) in self.transforms.iter().enumerate() {
+            for (rule_pos, rule) in transform.rules.iter().enumerate() {
+                if seen.contains(&(transform_pos, rule_pos)) {
+                    println!(".");
+                    continue;
+                }
+
+                if (resolve.conditions.is_empty()
+                    || rule.conditions_in.is_empty()
+                    || resolve.conditions.contains(&rule.conditions_in[0]))
+                    && let Some(InflectionResult {
+                        text,
+                        inflection,
+                        deinflection,
+                        conditions,
+                    }) = rule.deinflect(&resolve)
+                {
+                    seen.push((transform_pos, rule_pos));
+
+                    let (mut data, mut sub_seen) = self.resolve_from(TextTransform {
+                        text,
+                        inflection: format!("{}{}", inflection, resolve.inflection),
+                        last_inflection: deinflection,
+                        conditions,
+                        i: resolve.i + 1,
+                    });
+
+                    result.append(&mut data);
+                    // seen.append(&mut sub_seen);
+                }
+            }
+        }
 
         result.push(resolve);
-        result
+
+        (result, seen)
     }
 }
 
@@ -169,7 +185,7 @@ pub struct InflectionResult {
 }
 
 impl Inflection {
-    pub fn deinflect(&self, text: &TextIdk) -> Option<InflectionResult> {
+    pub fn deinflect(&self, text: &TextTransform) -> Option<InflectionResult> {
         let len = text.text.len();
 
         match self.kind {
@@ -197,30 +213,11 @@ pub struct Transform {
     pub rules: &'static [Inflection],
 }
 
-pub struct TextTransform {
-    text: String,
-    resolved_segments: Vec<String>,
-}
-
-enum TransformResult {
-    Resolved {},
-    Unresolved { text: String },
-}
-
 #[derive(Clone, Debug)]
-pub struct TextIdk {
+pub struct TextTransform {
     pub text: String,
     pub inflection: String,
     pub last_inflection: String,
     pub conditions: &'static [&'static str],
     pub i: usize,
-}
-
-impl TextTransform {
-    pub fn new(text: String) -> Self {
-        Self {
-            text,
-            resolved_segments: vec![],
-        }
-    }
 }

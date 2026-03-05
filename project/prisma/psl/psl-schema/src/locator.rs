@@ -87,9 +87,8 @@ pub struct LocatedFiles {
     pub(crate) schema_files: Vec<PathBuf>,
 
     pub(crate) migrations: Option<MigrationFiles>,
-
-    pub(crate) sql_root: Option<PathBuf>,
-    pub(crate) sql_files: Vec<PathBuf>,
+    // pub(crate) sql_root: Option<PathBuf>,
+    // pub(crate) sql_files: Vec<PathBuf>,
 }
 
 impl LocatedFiles {
@@ -102,15 +101,15 @@ impl LocatedFiles {
 
         let migrations = MigrationFiles::from_path(schema_root.join("migrations"));
 
-        let sql_root_path = schema_root.join("sql");
-        let (sql_root, sql_files) = if sql_root_path.try_exists().is_ok_and(identity) {
-            (
-                Some(sql_root_path.clone()),
-                find_files(&sql_root_path, &|p| p.extension().unwrap() == ".sql"),
-            )
-        } else {
-            (None, vec![])
-        };
+        // let sql_root_path = schema_root.join("sql");
+        // let (sql_root, sql_files) = if sql_root_path.try_exists().is_ok_and(identity) {
+        //     (
+        //         Some(sql_root_path.clone()),
+        //         find_files(&sql_root_path, &|p| p.extension().unwrap() == ".sql"),
+        //     )
+        // } else {
+        //     (None, vec![])
+        // };
 
         LocatedFiles {
             schema_root,
@@ -118,8 +117,8 @@ impl LocatedFiles {
             migrations,
             // migration_root,
             // migration_files,
-            sql_root,
-            sql_files,
+            // sql_root,
+            // sql_files,
         }
     }
 
@@ -131,10 +130,9 @@ impl LocatedFiles {
         self.migrations.as_ref()
     }
 
-    pub fn migrations_root(&self) -> Option<&PathBuf> {
-        None
-        // self.migration_root.as_ref()
-    }
+    // pub fn migrations_root(&self) -> Option<&PathBuf> {
+    //     self.migration_root.as_ref()
+    // }
 
     // pub fn migrations(&self) -> Option<Vec<_>> {
     //     self.migration_files
@@ -147,7 +145,10 @@ fn find_schema_root(cwd: Option<PathBuf>, path: Option<PathBuf>) -> PathBuf {
     if let Some(path) = path {
         let full_path = cwd.join(path);
 
-        assert!(full_path.try_exists().is_ok_and(identity), "Path does not exist: {full_path:?}");
+        assert!(
+            full_path.try_exists().is_ok_and(identity),
+            "Path does not exist: {full_path:?}"
+        );
 
         return if full_path.is_file() {
             full_path.parent().unwrap().to_owned()
@@ -257,8 +258,8 @@ pub fn diff_paths(path: &Path, base: &Path) -> Option<PathBuf> {
                 }
                 (None, _) => comps.push(Component::ParentDir),
                 (Some(a), Some(b)) if comps.is_empty() && a == b => (),
-                (Some(a), Some(b)) if b == Component::CurDir => comps.push(a),
-                (Some(_), Some(b)) if b == Component::ParentDir => return None,
+                (Some(a), Some(Component::CurDir)) => comps.push(a),
+                (Some(_), Some(Component::ParentDir)) => return None,
                 (Some(a), Some(_)) => {
                     comps.push(Component::ParentDir);
                     for _ in itb {

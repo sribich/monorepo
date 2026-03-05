@@ -498,7 +498,6 @@ mod json_filter {
             ConnectorVersion::Sqlite(_)
             | ConnectorVersion::MySql(_)
             | ConnectorVersion::Vitess(_) => r#"path: "$.a.b""#,
-            x => unreachable!("JSON filtering is not supported on {:?}", x),
         }
     }
 }

@@ -10,7 +10,11 @@ publish = false
 default = []
 
 [dependencies]
+hound = { workspace = true }
 rustfft = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
 
 [[bench]]
 name = "utils_benchmark"
