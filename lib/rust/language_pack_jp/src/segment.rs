@@ -18,7 +18,6 @@ use crate::text::is_punctuation;
 
 #[derive(Debug)]
 pub enum Morpheme {
-    Unk,
     Untagged(String),
     Tagged(TaggedMorpheme),
 }
@@ -26,7 +25,6 @@ pub enum Morpheme {
 impl IsSegment for Morpheme {
     fn text(&self) -> &str {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(data) => data,
             Morpheme::Tagged(tag) => &tag.surface,
         }
@@ -36,7 +34,6 @@ impl IsSegment for Morpheme {
 impl Morpheme {
     pub fn to_kata(&self) -> &str {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(data) => data,
             Morpheme::Tagged(tag) => tag.feature.l_form,
         }
@@ -44,7 +41,6 @@ impl Morpheme {
 
     pub fn to_full(&self) -> String {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(data) => data.clone(),
             Morpheme::Tagged(tag) => format!("{:#?}", tag.feature),
         }
@@ -52,7 +48,6 @@ impl Morpheme {
 
     pub fn pos(&self) -> &str {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(_) => "",
             Morpheme::Tagged(tag) => tag.feature.pos1,
         }
@@ -60,7 +55,6 @@ impl Morpheme {
 
     pub fn pos2(&self) -> &str {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(_) => "",
             Morpheme::Tagged(tag) => tag.feature.pos2,
         }
@@ -70,7 +64,6 @@ impl Morpheme {
 impl Display for Morpheme {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Morpheme::Unk => unreachable!(),
             Morpheme::Untagged(data) => write!(f, "{data}"),
             Morpheme::Tagged(tag) => write!(f, "{}", tag.surface),
         }
@@ -102,12 +95,6 @@ impl Deserialize<'static> for Morpheme {
         D: serde::Deserializer<'static>,
     {
         unimplemented!()
-    }
-}
-
-impl Default for Morpheme {
-    fn default() -> Self {
-        Self::Unk
     }
 }
 
@@ -232,45 +219,6 @@ impl JapaneseTextSegmenter {
             Pin::from(line.as_bytes().to_owned().into_boxed_slice()),
             ranges,
         ))
-    }
-
-    fn resolve_unks(segments: &mut [<Self as TextSegmenter>::Feature], text: &str) {
-        let segments_len = segments.len();
-        let mut text = text;
-
-        for index in 0..segments_len {
-            match &segments[index] {
-                Morpheme::Unk => {
-                    if index + 1 >= segments_len {
-                        segments[index] = Morpheme::Untagged(text.to_owned());
-                        continue;
-                    }
-
-                    let next_segment = &segments[index + 1];
-
-                    if let Some(pos) =
-                        memchr::memmem::find(text.as_bytes(), next_segment.text().as_bytes())
-                    {
-                        segments[index] = Morpheme::Untagged(text[..pos].trim().to_owned());
-
-                        text = &text[pos..];
-                    } else {
-                        unreachable!("Failed to resolve UNK. Unable to find morpheme in text");
-                    }
-                }
-                Morpheme::Tagged(tag) => {
-                    if let Some(pos) = memchr::memmem::find(text.as_bytes(), tag.surface.as_bytes())
-                    {
-                        text = &text[(pos + tag.surface.len())..];
-                    } else {
-                        panic!("Failed to resolve UNK. Morpheme did not match expected text");
-                    }
-                }
-                Morpheme::Untagged(_) => {
-                    unreachable!("Untagged values should not exist before UNK resolution")
-                }
-            }
-        }
     }
 }
 

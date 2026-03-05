@@ -12,6 +12,8 @@ default = []
 [dependencies]
 blart = { workspace = true }
 indoc = { workspace = true }
+itertools = { workspace = true }
+rand = { workspace = true }
 rayon = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 

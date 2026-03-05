@@ -17,3 +17,45 @@ impl<T: TextSegmenter> TextSegmenter for &T {
         T::segment(self, text)
     }
 }
+
+/*
+let segmenter = JapaneseTextSegmenter::new();
+
+        let timing_segments = timing_data.segments(&segmenter);
+        let text_segments = text_data.segments(&segmenter);
+
+        let timing_segments = timing_segments
+            .filter(|it| match &it.data {
+                Morpheme::Untagged(data) => {
+                    match get_single_char(data.as_str()) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                },
+                Morpheme::Tagged(tag) => {
+                    let surface = tag.surface();
+                    match get_single_char(surface) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+                    let text_segments = text_segments
+            .filter(|it| match &it.data {
+                Morpheme::Untagged(data) => {
+                    match get_single_char(data.as_str()) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                },
+                Morpheme::Tagged(tag) => {
+                    let surface = tag.surface();
+                    match get_single_char(surface) {
+                        Some(c) => !is_punctuation(c),
+                        None => true,
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+*/

@@ -17,7 +17,6 @@ use language_pack::transform::LanguageTransformer;
 use language_pack_jp::japanese_language_pipeline;
 use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
-use language_pack_jp::transcription::JapaneseTranscriptionContext;
 use language_pack_jp::transform::JAPANESE_TRANSFORMS;
 use language_pack_jp::transform::group_inflected;
 use railgun::di::Component;
@@ -89,15 +88,13 @@ impl Procedure for AddBookProcedure {
         let time = std::time::Instant::now();
         //
         let pipeline = japanese_language_pipeline();
-        println!("{}", time.elapsed().as_millis());
-        pipeline.run(&timing_data, &text_data);
-        println!("{}", time.elapsed().as_millis());
+        pipeline.run(&timing_data, &mut text_data);
+
         panic!();
 
         // Timestamp segments
-        let transcriber = JapaneseTranscriptionContext {};
-
-        transcriber.test(&mut text_data, &timing_data);
+        // let transcriber = JapaneseTranscriptionContext {};
+        // transcriber.test(&mut text_data, &timing_data);
 
         //
         //
