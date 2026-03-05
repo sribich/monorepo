@@ -55,21 +55,6 @@ impl Procedure for AddBookProcedure {
     type Req = AddBookReq;
     type Res = ();
 
-    // * book_path
-    // * audio_path
-    //
-    // Derived from `audio_path`:
-    //
-    //   * audio_timing.json
-    //
-    // Outputs:
-    //
-    //  * rendered.json
-    //    * text
-    //    * freq
-    //    * timestamp
-    //    * segments
-    //      * joined / broken down segments for narrowing. (word / base)
     async fn run(&self, data: Self::Req) -> core::result::Result<Self::Res, Self::Err> {
         let mut audio_timing_path = data.audio_path.as_path().to_owned();
         audio_timing_path.set_extension("json");
@@ -90,15 +75,6 @@ impl Procedure for AddBookProcedure {
         let pipeline = japanese_language_pipeline();
         pipeline.run(&timing_data, &mut text_data);
 
-        panic!();
-
-        // Timestamp segments
-        // let transcriber = JapaneseTranscriptionContext {};
-        // transcriber.test(&mut text_data, &timing_data);
-
-        //
-        //
-        //
         let lines = BufReader::new(File::open("/home/nulliel/Result_45.csv").unwrap()).lines();
         let len = std::fs::metadata("/home/nulliel/Result_45.csv")
             .unwrap()
@@ -240,103 +216,9 @@ impl Procedure for AddBookProcedure {
 
         self.book_repository.create(&book).await;
 
-        /*
-
-        let title = result.package.metadata.title.first().unwrap().value.clone();
-        let rendered = result.rendered;
-
-        // Load audio path and timing information
-        let timing_data = read_to_string(data.audio_path.as_path().with_extension("json")).unwrap();
-
-        let existing_file = ExistingFile::from_path(data.audio_path.as_path().to_owned());
-
-
-
-
-
-
-
-
-         */
-
         Ok(())
     }
 }
-
-/*
-let data_path = self.setting_service.get_setting::<DataPath>().await;
-        let mut data_path = PathBuf::from(data_path.to_string());
-
-        data_path.push(data.media_id.to_string());
-
-        let rendered_data = read_to_string(data_path.join("rendered.txt"))
-            .await
-            .unwrap();
-
-        let timing_data = read_to_string(data_path.join("audio_timing.json"))
-            .await
-            .unwrap();
-
-        let transcriber = JapaneseTranscriptionContext {};
-
-        let fit_data = transcriber.fit(rendered_data, timing_data);
-        let fit_path = data_path.join("rendered_timing.txt");
-
-        let mut file = File::create(fit_path).await.unwrap();
-
-        file.write_all(fit_data.as_bytes()).await.unwrap();
-*/
-
-/*
-OLD ADD_AUDIO
-
-
-        let data_path = self.setting_service.get_setting::<DataPath>().await;
-        let mut data_path = PathBuf::from(data_path.to_string());
-
-        data_path.push(data.media_id.to_string());
-
-        let rendered_data = read_to_string(data_path.join("rendered.txt"))
-            .await
-            .unwrap();
-
-        let timing_data = read_to_string(data_path.join("audio_timing.json"))
-            .await
-            .unwrap();
-
-        let transcriber = JapaneseTranscriptionContext {};
-
-        let fit_data = transcriber.fit(rendered_data, timing_data);
-        let fit_path = data_path.join("rendered_timing.txt");
-
-        let mut file = File::create(fit_path).await.unwrap();
-
-        file.write_all(fit_data.as_bytes()).await.unwrap();
-
-        /*
-        let result = EpubArchive::open(data.path.as_str()).unwrap();
-
-        let title = result.package.metadata.title.first().unwrap().value.clone();
-        let rendered = result.rendered;
-
-        let mut media = Media::new(title, data.series_id);
-
-        let base_data_path = self.setting_service.get_setting::<DataPath>().await;
-        let fs = Fs::new(base_data_path.path());
-
-        let rendered_path = fs
-            .write(format!("{}/rendered.txt", media.id().to_string()), rendered)
-            .await;
-
-        let book = Book::new(data.path, ExistingPath::from_path(rendered_path));
-
-        media.set_book(book);
-
-        self.library_repository.writer().save_media(media).await;
-         */
-        println!("here");
-        Ok(())
-*/
 
 impl AddBookProcedure {
     fn get_segments(
@@ -383,6 +265,7 @@ impl AddBookProcedure {
                                     ]
                                     .join("")
                                 },
+
                             );
 
                             (inflected, base)

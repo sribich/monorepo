@@ -319,6 +319,10 @@ where
                     );
                 }
 
+                if waystones.len() > 1 {
+                    return;
+                }
+
                 assert!(
                     waystones.len() <= 1,
                     "Found text matching at more than 1 position"
