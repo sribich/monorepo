@@ -3,6 +3,7 @@ use std::ffi::CString;
 
 use blart::TreeMap;
 use itertools::Itertools;
+use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
 pub use transforms::*;
 
