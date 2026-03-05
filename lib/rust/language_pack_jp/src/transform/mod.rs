@@ -1,5 +1,12 @@
+use std::ffi::CStr;
+use std::ffi::CString;
+
+use blart::TreeMap;
+use itertools::Itertools;
+use language_pack::transform::LanguageTransformer;
 pub use transforms::*;
 
+use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
 
 mod transforms;
@@ -53,6 +60,152 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
         })
         .into_iter()
         .filter(|it| !it.0.is_empty())
+        .collect::<Vec<_>>()
+}
+
+pub fn transform_japanese_text(
+    line: &str,
+    adaptive: &TreeMap<&CStr, Option<usize>>,
+    adaptive_readings: &TreeMap<&CStr, Option<usize>>,
+) -> Vec<(String, String, Option<usize>)> {
+    let segmenter = JapaneseTextSegmenter::new();
+    let segments = group_inflected(segmenter.segment(line));
+
+    let mut output = vec![];
+
+    for (segment, inflects) in &segments {
+        if *inflects {
+            let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, adaptive);
+
+            let resolve = transformer.resolve(segment);
+
+            if resolve.is_empty() {
+                output.push((segment.clone(), segment.clone()));
+            } else {
+                let mut out = resolve
+                    .into_iter()
+                    .map(|it| {
+                        let base = it.1;
+
+                        let inflected = it.0.map_or_else(
+                            || base.clone(),
+                            |inflection| {
+                                if inflection.last_inflection.is_empty() {
+                                    return base.clone();
+                                }
+
+                                if inflection.last_inflection.len() == base.len() {
+                                    return inflection.inflection;
+                                }
+
+                                [
+                                    &base[..(base
+                                        .len()
+                                        .saturating_sub(inflection.last_inflection.len()))],
+                                    &inflection.inflection,
+                                ]
+                                .join("")
+                            },
+                        );
+
+                        (inflected, base)
+                    })
+                    .collect::<Vec<_>>();
+
+                output.append(&mut out);
+            }
+        } else {
+            output.push((segment.clone(), segment.clone()));
+        }
+    }
+
+    let mut result = vec![];
+    let mut i = 0;
+
+    while i < output.len() {
+        let segment = &output[i];
+
+        if i == output.len() - 1 {
+            result.push(segment.clone());
+            i += 1;
+            continue;
+        }
+
+        if !adaptive.contains_key(CString::new(segment.0.as_bytes()).unwrap().as_c_str()) {
+            result.push(segment.clone());
+            i += 1;
+            continue;
+        }
+
+        let mut key_with_boundary = i + 1;
+        let mut curr_check = i + 2;
+
+        while curr_check <= output.len()
+            && let Some(_prefix) = adaptive.get_prefix(
+                CString::new(
+                    output[i..curr_check]
+                        .iter()
+                        .map(|it| &it.0)
+                        .join("")
+                        .as_bytes(),
+                )
+                .unwrap()
+                .as_c_str(),
+            )
+        {
+            if adaptive.contains_key(
+                CString::new(
+                    output[i..curr_check]
+                        .iter()
+                        .map(|it| &it.0)
+                        .join("")
+                        .as_bytes(),
+                )
+                .unwrap()
+                .as_c_str(),
+            ) {
+                key_with_boundary = curr_check;
+            }
+
+            curr_check += 1;
+        }
+
+        let entry = &output[i..key_with_boundary];
+        i = key_with_boundary;
+
+        // println!("{i} {key_with_boundary} {curr_check} {entry:#?}");
+
+        if entry.len() == 1 {
+            result.push(segment.clone());
+        } else {
+            result.push(
+                entry
+                    .iter()
+                    .fold((String::new(), String::new()), |prev, curr| {
+                        let a = format!("{}{}", prev.0, curr.0);
+
+                        (a.clone(), a)
+                    }),
+            );
+        }
+    }
+
+    result
+        .into_iter()
+        .map(|it| {
+            let freq = adaptive
+                .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
+                .copied()
+                .or_else(|| {
+                    adaptive_readings
+                        .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
+                        .copied()
+                        .or(None)
+                })
+                .flatten();
+
+            (it.0, it.1, freq)
+        })
         .collect::<Vec<_>>()
 }
 

@@ -2,6 +2,7 @@
 #![feature(result_option_map_or_default)]
 #![feature(associated_type_defaults)]
 #![feature(more_qualified_paths)]
+#![feature(get_mut_unchecked)]
 pub use features::shared::infra::http::AppState;
 
 pub mod system;

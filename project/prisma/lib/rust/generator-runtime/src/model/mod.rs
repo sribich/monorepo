@@ -26,6 +26,7 @@ mod delete_many;
 mod find_first;
 mod find_many;
 mod find_unique;
+pub mod query_raw;
 mod update;
 mod update_many;
 mod update_unchecked;

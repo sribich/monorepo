@@ -65,7 +65,7 @@ pub enum QueryError {
 
     // #[error("Error deserializing value")]
     // Deserialize(color_eyre::eyre::Error),
-    #[error("Error deserializing value")]
+    #[error("Error deserializing value {}", .0)]
     Deserialize(String),
 }
 

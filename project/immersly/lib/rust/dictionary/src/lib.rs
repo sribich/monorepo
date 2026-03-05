@@ -7,6 +7,7 @@ use app::procedure::import_dictionary::ImportDictionaryProcedure;
 use app::procedure::list_dictionaries::ListDictionariesProcedure;
 use app::service::dictionary::DictionaryService;
 use app::service::dictionary_lookup::DictionaryLookupService;
+use app::service::dictionary_trie::DictionaryTrieService;
 use app::task::load_dictionary::LoadDictionaryTask;
 use infra::ranker::dictionary::DictionaryRanker;
 use infra::repository::dictionary::DictionaryRepository;
@@ -36,6 +37,7 @@ impl Container for DictionaryModule {
             .add::<DictionaryLookupService>()?
             .add::<DictionaryRanker>()?
             .add::<DictionaryRepository>()?
+            .add::<DictionaryTrieService>()?
             .add::<FrequencyRepository>()?
             .add::<GetExactWordProcedure>()?
             .add::<GetWordProcedure>()?

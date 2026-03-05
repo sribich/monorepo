@@ -19,7 +19,10 @@ language_pack_jp = { workspace = true }
 lexorank = { workspace = true }
 railgun = { workspace = true }
 
+async-trait = { workspace = true }
 axum = { workspace = true }
+blart = { workspace = true }
+memchr = { workspace = true }
 tokio = { workspace = true }
 serde = { workspace = true }
 

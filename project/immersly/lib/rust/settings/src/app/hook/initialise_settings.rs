@@ -16,7 +16,7 @@ pub struct InitialiseSettings {
 
 #[async_trait]
 impl OnStartup for InitialiseSettings {
-    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>> {
+    async fn run(&mut self) -> core::result::Result<(), Box<dyn core::error::Error>> {
         let stored_settings = self.setting_service.existing_settings().await;
         let available_settings = self.setting_service.default_settings();
 

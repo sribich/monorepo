@@ -114,6 +114,7 @@ impl RustGenerator {
             quote! {
                 pub use prisma::PrismaClient;
 
+                pub use ::generator_runtime::raw;
                 pub use ::generator_runtime::query::QueryError;
                 pub use ::generator_runtime::prisma_value::BigDecimal;
 

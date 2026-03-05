@@ -1,4 +1,7 @@
+pub use model::Data;
+pub use model::query_raw::*;
 use query_core::Selection;
+pub use raw::*;
 use thiserror::Error;
 
 pub mod client;
@@ -6,6 +9,7 @@ pub mod migrations;
 pub mod model;
 pub mod operator;
 pub mod query;
+pub mod raw;
 pub mod transaction;
 
 pub mod scalar {

@@ -200,7 +200,7 @@ macro_rules! entity_data_fns {
 //==============================================================================
 #[async_trait]
 pub trait OnStartup: Send + Sync {
-    async fn run(&self) -> core::result::Result<(), Box<dyn core::error::Error>>;
+    async fn run(&mut self) -> core::result::Result<(), Box<dyn core::error::Error>>;
 }
 
 #[async_trait]

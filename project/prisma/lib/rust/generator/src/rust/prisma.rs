@@ -105,6 +105,14 @@ fn generate_client(args: &GeneratorArgs) -> TokenStream {
                 ::generator_runtime::transaction::TransactionBuilder::new(self, &self.0)
             }
 
+            pub fn _query_raw<T: ::generator_runtime::Data>(&self, query: ::generator_runtime::Raw) -> ::generator_runtime::QueryRaw<T> {
+                ::generator_runtime::QueryRaw::new(
+                    &self.0,
+                    query,
+                    super::DATABASE_PROVIDER,
+                )
+            }
+
             pub fn into_migrator(&self) -> ::generator_runtime::client::Migrator {
                 self.into()
             }

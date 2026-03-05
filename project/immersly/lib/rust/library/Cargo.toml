@@ -13,6 +13,7 @@ default = []
 prisma-client = { path = "../prisma-client" }
 shared = { path = "../shared" }
 storage = { path = "../storage" }
+dictionary = { path = "../dictionary" }
 
 epub = { workspace = true }
 language_pack = { workspace = true }

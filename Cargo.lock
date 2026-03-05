@@ -2383,10 +2383,13 @@ dependencies = [
 name = "dictionary"
 version = "0.0.0"
 dependencies = [
+ "async-trait",
  "axum",
+ "blart",
  "dictionary_parser",
  "language_pack_jp",
  "lexorank",
+ "memchr",
  "prisma-client",
  "railgun",
  "serde",
@@ -3559,6 +3562,7 @@ dependencies = [
 name = "generator-runtime"
 version = "0.0.0"
 dependencies = [
+ "base64 0.22.1",
  "bigdecimal",
  "chrono",
  "convert_case 0.8.0",
@@ -5820,6 +5824,7 @@ version = "0.0.0"
 dependencies = [
  "axum",
  "blart",
+ "dictionary",
  "epub",
  "itertools 0.14.0",
  "language_pack",

@@ -50,3 +50,4 @@ tokio = { workspace = true, features = ["full"] }
 # dotenvy = { workspace = true }
 prettyplease = { workspace = true }
 uuid = { workspace = true, features = ["v7"] }
+base64 = { workspace = true }

@@ -9,6 +9,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 
 use blart::TreeMap;
+use dictionary::app::service::dictionary_trie::DictionaryTrieService;
 use epub::archive::EpubArchive;
 use itertools::Itertools;
 use language_pack::Transcription;
@@ -19,6 +20,7 @@ use language_pack_jp::segment::JapaneseTextSegmenter;
 use language_pack_jp::transcription::EbookSegments;
 use language_pack_jp::transform::JAPANESE_TRANSFORMS;
 use language_pack_jp::transform::group_inflected;
+use language_pack_jp::transform::transform_japanese_text;
 use railgun::di::Component;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::iter::ParallelIterator;
@@ -48,6 +50,7 @@ pub struct AddBookProcedure {
     add_resource: Arc<AddResourceProcedure>,
     prepare_resource: Arc<PrepareResourceProcedure>,
     commit_resource: Arc<CommitResourceProcedure>,
+    dictionary_tries: Arc<DictionaryTrieService>,
 }
 
 impl Procedure for AddBookProcedure {
@@ -75,82 +78,14 @@ impl Procedure for AddBookProcedure {
         let pipeline = japanese_language_pipeline();
         pipeline.run(&timing_data, &mut text_data);
 
-        let lines = BufReader::new(File::open("/home/nulliel/Result_45.csv").unwrap()).lines();
-        let len = std::fs::metadata("/home/nulliel/Result_45.csv")
-            .unwrap()
-            .len();
-
-        let mut buf = Pin::new(
-            vec![0; usize::try_from(len.mul(2)).expect("usize should always fit within u64")]
-                .into_boxed_slice(),
-        );
-
-        let mut view = &mut buf[..];
-
-        let mut adaptive = TreeMap::<&CStr, Option<usize>>::new();
-        let mut adaptive_readings = TreeMap::<&CStr, Option<usize>>::new();
-
-
-
-        #[expect(clippy::indexing_slicing, unsafe_code, reason = "See safety comment")]
-        for line in lines.map_while(Result::ok) {
-            if line == r#""""# {
-                continue;
-            }
-
-            if let Some((left, right)) = line.split_once(',')
-                && let Some((middle, right)) = right.split_once(',')
-            {
-                let freq = right.parse::<usize>().ok();
-
-                if left != r#""""# {
-                    assert!(
-                        memchr::memchr(0, left.as_bytes()).is_none(),
-                        "string with null byte"
-                    );
-
-                    let left_len = left.len();
-
-                    view[..left_len].copy_from_slice(left.as_bytes());
-                    view[left_len] = 0;
-
-                    // SAFETY: The type is coerced into a static str so that
-                    let left: &'static CStr = unsafe {
-                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(&view[..=left_len]))
-                    };
-                    adaptive.try_insert(left, freq).unwrap();
-
-                    view = &mut view[(left_len + 1)..];
-                }
-
-                if middle != r#""""# {
-                    assert!(
-                        memchr::memchr(0, middle.as_bytes()).is_none(),
-                        "string with null byte"
-                    );
-
-                    let middle_len = middle.len();
-
-                    view[..middle_len].copy_from_slice(middle.as_bytes());
-                    view[middle_len] = 0;
-
-                    let middle = unsafe {
-                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(
-                            &view[..=middle_len],
-                        ))
-                    };
-                    adaptive_readings.try_insert(middle, freq).unwrap();
-
-                    view = &mut view[(middle_len + 1)..];
-                }
-            }
-        }
+        let adaptive = self.dictionary_tries.get();
+        let adaptive_readings = self.dictionary_tries.get_readings();
 
         let times = text_data
             .0
             .par_iter()
             .map(|item| {
-                let segments = self.get_segments(item.text(), &adaptive, &adaptive_readings);
+                let segments = transform_japanese_text(item.text(), &adaptive, &adaptive_readings);
 
                 (item.time, item.kind(), segments)
             })
@@ -217,155 +152,5 @@ impl Procedure for AddBookProcedure {
         self.book_repository.create(&book).await;
 
         Ok(())
-    }
-}
-
-impl AddBookProcedure {
-    fn get_segments(
-        &self,
-        line: &str,
-        adaptive: &TreeMap<&CStr, Option<usize>>,
-        adaptive_readings: &TreeMap<&CStr, Option<usize>>,
-    ) -> Vec<(String, String, Option<usize>)> {
-        let segmenter = JapaneseTextSegmenter::new();
-        let segments = group_inflected(segmenter.segment(line));
-
-        let mut output = vec![];
-
-        for (segment, inflects) in &segments {
-            if *inflects {
-                let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, adaptive);
-
-                let resolve = transformer.resolve(segment);
-
-                if resolve.is_empty() {
-                    output.push((segment.clone(), segment.clone()));
-                } else {
-                    let mut out = resolve
-                        .into_iter()
-                        .map(|it| {
-                            let base = it.1;
-
-                            let inflected = it.0.map_or_else(
-                                || base.clone(),
-                                |inflection| {
-                                    if inflection.last_inflection.is_empty() {
-                                        return base.clone();
-                                    }
-
-                                    if inflection.last_inflection.len() == base.len() {
-                                        return inflection.inflection;
-                                    }
-
-                                    [
-                                        &base[..(base
-                                            .len()
-                                            .saturating_sub(inflection.last_inflection.len()))],
-                                        &inflection.inflection,
-                                    ]
-                                    .join("")
-                                },
-
-                            );
-
-                            (inflected, base)
-                        })
-                        .collect::<Vec<_>>();
-
-                    output.append(&mut out);
-                }
-            } else {
-                output.push((segment.clone(), segment.clone()));
-            }
-        }
-
-        let mut result = vec![];
-        let mut i = 0;
-
-        while i < output.len() {
-            let segment = &output[i];
-
-            if i == output.len() - 1 {
-                result.push(segment.clone());
-                i += 1;
-                continue;
-            }
-
-            if !adaptive.contains_key(CString::new(segment.0.as_bytes()).unwrap().as_c_str()) {
-                result.push(segment.clone());
-                i += 1;
-                continue;
-            }
-
-            let mut key_with_boundary = i + 1;
-            let mut curr_check = i + 2;
-
-            while curr_check <= output.len()
-                && let Some(_prefix) = adaptive.get_prefix(
-                    CString::new(
-                        output[i..curr_check]
-                            .iter()
-                            .map(|it| &it.0)
-                            .join("")
-                            .as_bytes(),
-                    )
-                    .unwrap()
-                    .as_c_str(),
-                )
-            {
-                if adaptive.contains_key(
-                    CString::new(
-                        output[i..curr_check]
-                            .iter()
-                            .map(|it| &it.0)
-                            .join("")
-                            .as_bytes(),
-                    )
-                    .unwrap()
-                    .as_c_str(),
-                ) {
-                    key_with_boundary = curr_check;
-                }
-
-                curr_check += 1;
-            }
-
-            let entry = &output[i..key_with_boundary];
-            i = key_with_boundary;
-
-            // println!("{i} {key_with_boundary} {curr_check} {entry:#?}");
-
-            if entry.len() == 1 {
-                result.push(segment.clone());
-            } else {
-                result.push(
-                    entry
-                        .iter()
-                        .fold((String::new(), String::new()), |prev, curr| {
-                            let a = format!("{}{}", prev.0, curr.0);
-
-                            (a.clone(), a)
-                        }),
-                );
-            }
-        }
-
-
-
-        result
-            .into_iter()
-            .map(|it| {
-                let freq = adaptive
-                    .get(CString::new(it.0.as_bytes()).unwrap().as_c_str()).copied()
-                    .or_else(|| {
-                        adaptive_readings
-                            .get(CString::new(it.0.as_bytes()).unwrap().as_c_str()).copied()
-                            .or(None)
-                    })
-                    .flatten();
-
-                (it.0, it.1, freq)
-            })
-            .collect::<Vec<_>>()
     }
 }
