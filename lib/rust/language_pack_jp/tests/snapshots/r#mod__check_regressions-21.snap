@@ -1,0 +1,10 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 預けられて
+  - 預く
+  - ~
+- - いた
+  - く
+  - 281

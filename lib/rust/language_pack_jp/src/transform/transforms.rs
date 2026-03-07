@@ -2,8 +2,10 @@ use std::collections::HashMap;
 use std::sync::LazyLock;
 
 use indoc::indoc;
+use language_pack::transform::Condition;
 use language_pack::transform::Transform;
 use language_pack::transform::suffix_inflection;
+use language_pack::transform::suffix_inflection_with_replacements;
 
 const shimau_description: &str = indoc! {r#"
     1. Shows a sense of regret/surprise when you did have volition in doing something, but it turned out to be bad to do.
@@ -16,135 +18,135 @@ const passive_description: &str = indoc! {r#"
     2. Expresses respect for the subject of action performer.
 "#};
 
-pub const JAPANESE_CONDITIONS: LazyLock<HashMap<String, Condition>> = LazyLock::new(|| {
+pub const JAPANESE_CONDITIONS: LazyLock<HashMap<&'static str, Condition>> = LazyLock::new(|| {
     [
-        ("v".to_owned(), Condition {
+        ("v", Condition {
             name: "Verb",
             description: "動詞",
             is_dictionary_form: false,
             sub_conditions: &["v1", "v5", "vk", "vs", "vz"],
         }),
-        ("v1".to_owned(), Condition {
+        ("v1", Condition {
             name: "Ichidan verb",
             description: "一段動詞",
             is_dictionary_form: true,
             sub_conditions: &["v1d", "v1p"],
         }),
-        ("v1d".to_owned(), Condition {
+        ("v1d", Condition {
             name: "Ichidan verb, dictionary form",
             description: "一段動詞、終止形",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("v1p".to_owned(), Condition {
+        ("v1p", Condition {
             name: "Ichidan verb, progressive or perfect form",
             description: "一段動詞、～てる・でる",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("v5".to_owned(), Condition {
+        ("v5", Condition {
             name: "Godan verb",
             description: "五段動詞",
             is_dictionary_form: true,
             sub_conditions: &["v5d", "v5s"],
         }),
-        ("v5d".to_owned(), Condition {
+        ("v5d", Condition {
             name: "Godan verb, dictionary form",
             description: "五段動詞、終止形",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("v5s".to_owned(), Condition {
+        ("v5s", Condition {
             name: "Godan verb, short causative form",
             description: "五段動詞、～す・さす",
             is_dictionary_form: false,
             sub_conditions: &["v5ss", "v5sp"],
         }),
-        ("v5ss".to_owned(), Condition {
+        ("v5ss", Condition {
             name: "Godan verb, short causative form having さす ending (cannot conjugate with passive form)",
             description: "五段動詞、～さす",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("v5sp".to_owned(), Condition {
+        ("v5sp", Condition {
             name: "Godan verb, short causative form not having さす ending (can conjugate with passive form)",
             description: "五段動詞、～す",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("vk".to_owned(), Condition {
+        ("vk", Condition {
             name: "Kuru verb",
             description: "来る動詞",
             is_dictionary_form: true,
             sub_conditions: &[],
         }),
-        ("vs".to_owned(), Condition {
+        ("vs", Condition {
             name: "Suru verb",
             description: "する動詞",
             is_dictionary_form: true,
             sub_conditions: &[],
         }),
-        ("vz".to_owned(), Condition {
+        ("vz", Condition {
             name: "Zuru verb",
             description: "ずる動詞",
             is_dictionary_form: true,
             sub_conditions: &[],
         }),
-        ("adj-i".to_owned(), Condition {
+        ("adj-i", Condition {
             name: "Adjective with i ending",
             description: "形容詞",
             is_dictionary_form: true,
             sub_conditions: &[],
         }),
-        ("-ます".to_owned(), Condition {
+        ("-ます", Condition {
             name: "Polite -ます ending",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-ません".to_owned(), Condition {
+        ("-ません", Condition {
             name: "Polite negative -ません ending",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-て".to_owned(), Condition {
+        ("-て", Condition {
             name: "Intermediate -て endings for progressive or perfect tense",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-ば".to_owned(), Condition {
+        ("-ば", Condition {
             name: "Intermediate -ば endings for conditional contraction",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-く".to_owned(), Condition {
+        ("-く", Condition {
             name: "Intermediate -く endings for adverbs",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-た".to_owned(), Condition {
+        ("-た", Condition {
             name: "-た form ending",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-ん".to_owned(), Condition {
+        ("-ん", Condition {
             name: "-ん negative ending",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-なさい".to_owned(), Condition {
+        ("-なさい", Condition {
             name: "Intermediate -なさい ending (polite imperative)",
             description: "",
             is_dictionary_form: false,
             sub_conditions: &[],
         }),
-        ("-ゃ".to_owned(), Condition {
+        ("-ゃ", Condition {
             name: "Intermediate -や ending (conditional contraction)",
             description: "",
             is_dictionary_form: false,
@@ -153,13 +155,28 @@ pub const JAPANESE_CONDITIONS: LazyLock<HashMap<String, Condition>> = LazyLock::
     ].into_iter().collect()
 });
 
-struct Condition {
-    name: &'static str,
-    description: &'static str,
-    is_dictionary_form: bool,
-    sub_conditions: &'static [&'static str],
-}
-
+/// // Irregular (iku verbs)
+/// suffix_inflection("いっ", "いく", &[], &[]),
+/// suffix_inflection("行っ", "行く", &[], &[]),
+/// suffix_inflection("逝っ", "逝く", &[], &[]),
+/// suffix_inflection("往っ", "往く", &[], &[]),
+/// // Irregular (godan u special)
+/// suffix_inflection("こう", "こう", &[], &[]),
+/// suffix_inflection("とう", "とう", &[], &[]),
+/// suffix_inflection("請う", "請う", &[], &[]),
+/// suffix_inflection("乞う", "乞う", &[], &[]),
+/// suffix_inflection("恋う", "恋う", &[], &[]),
+/// suffix_inflection("問う", "問う", &[], &[]),
+/// suffix_inflection("訪う", "訪う", &[], &[]),
+/// suffix_inflection("宣う", "宣う", &[], &[]),
+/// suffix_inflection("曰う", "曰う", &[], &[]),
+/// suffix_inflection("給う", "給う", &[], &[]),
+/// suffix_inflection("賜う", "賜う", &[], &[]),
+/// suffix_inflection("揺蕩う", "揺蕩う", &[], &[]),
+/// // Irregular (fu verb te conjugations)
+/// suffix_inflection("のたもう", "のたまう", &[], &[]),
+/// suffix_inflection("たもう", "たまう", &[], &[]),
+/// suffix_inflection("たゆとう", "たゆたう", &[], &[]),
 pub const JAPANESE_TRANSFORMS: &[Transform] = &[
     Transform {
         name: "-ば",
@@ -464,8 +481,29 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
             suffix_inflection("きたら", "くる", &[], &["vk"]),
             suffix_inflection("来たら", "来る", &[], &["vk"]),
             suffix_inflection("來たら", "來る", &[], &["vk"]),
-            // ...irregularVerbSuffixInflections("たら", &[], &["v5"]),
             suffix_inflection("ましたら", "ます", &[], &["-ます"]),
+            // Irregular (iku verbs)
+            suffix_inflection("いったら", "いく", &[], &["v5"]),
+            suffix_inflection("行ったら", "行く", &[], &["v5"]),
+            suffix_inflection("逝ったら", "逝く", &[], &["v5"]),
+            suffix_inflection("往ったら", "往く", &[], &["v5"]),
+            // Irregular (godan u special)
+            suffix_inflection("こうたら", "こう", &[], &["v5"]),
+            suffix_inflection("とうたら", "とう", &[], &["v5"]),
+            suffix_inflection("請うたら", "請う", &[], &["v5"]),
+            suffix_inflection("乞うたら", "乞う", &[], &["v5"]),
+            suffix_inflection("恋うたら", "恋う", &[], &["v5"]),
+            suffix_inflection("問うたら", "問う", &[], &["v5"]),
+            suffix_inflection("訪うたら", "訪う", &[], &["v5"]),
+            suffix_inflection("宣うたら", "宣う", &[], &["v5"]),
+            suffix_inflection("曰うたら", "曰う", &[], &["v5"]),
+            suffix_inflection("給うたら", "給う", &[], &["v5"]),
+            suffix_inflection("賜うたら", "賜う", &[], &["v5"]),
+            suffix_inflection("揺蕩うたら", "揺蕩う", &[], &["v5"]),
+            // Irregular (fu verb te conjugations)
+            suffix_inflection("のたもうたら", "のたまう", &[], &["v5"]),
+            suffix_inflection("たもうたら", "たまう", &[], &["v5"]),
+            suffix_inflection("たゆとうたら", "たゆたう", &[], &["v5"]),
         ],
     },
     Transform {
@@ -494,7 +532,28 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
             suffix_inflection("きたり", "くる", &[], &["vk"]),
             suffix_inflection("来たり", "来る", &[], &["vk"]),
             suffix_inflection("來たり", "來る", &[], &["vk"]),
-            // ...irregularVerbSuffixInflections("たり", &[], &["v5"]),
+            // Irregular (iku verbs)
+            suffix_inflection("いったり", "いく", &[], &["v5"]),
+            suffix_inflection("行ったり", "行く", &[], &["v5"]),
+            suffix_inflection("逝ったり", "逝く", &[], &["v5"]),
+            suffix_inflection("往ったり", "往く", &[], &["v5"]),
+            // Irregular (godan u special)
+            suffix_inflection("こうたり", "こう", &[], &["v5"]),
+            suffix_inflection("とうたり", "とう", &[], &["v5"]),
+            suffix_inflection("請うたり", "請う", &[], &["v5"]),
+            suffix_inflection("乞うたり", "乞う", &[], &["v5"]),
+            suffix_inflection("恋うたり", "恋う", &[], &["v5"]),
+            suffix_inflection("問うたり", "問う", &[], &["v5"]),
+            suffix_inflection("訪うたり", "訪う", &[], &["v5"]),
+            suffix_inflection("宣うたり", "宣う", &[], &["v5"]),
+            suffix_inflection("曰うたり", "曰う", &[], &["v5"]),
+            suffix_inflection("給うたり", "給う", &[], &["v5"]),
+            suffix_inflection("賜うたり", "賜う", &[], &["v5"]),
+            suffix_inflection("揺蕩うたり", "揺蕩う", &[], &["v5"]),
+            // Irregular (fu verb te conjugations)
+            suffix_inflection("のたもうたり", "のたまう", &[], &["v5"]),
+            suffix_inflection("たもうたり", "たまう", &[], &["v5"]),
+            suffix_inflection("たゆとうたり", "たゆたう", &[], &["v5"]),
         ],
     },
     Transform {
@@ -515,17 +574,56 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
             suffix_inflection("って", "う", &["-て"], &["v5"]),
             suffix_inflection("って", "つ", &["-て"], &["v5"]),
             suffix_inflection("って", "る", &["-て"], &["v5"]),
-            suffix_inflection("んで", "ぬ", &["-て"], &["v5"]),
-            suffix_inflection("んで", "ぶ", &["-て"], &["v5"]),
-            suffix_inflection("んで", "む", &["-て"], &["v5"]),
+            suffix_inflection_with_replacements(
+                "んで",
+                "ぬ",
+                &["-て"],
+                &["v5"],
+                &[("こんで", "込んで")],
+            ),
+            suffix_inflection_with_replacements(
+                "んで",
+                "ぶ",
+                &["-て"],
+                &["v5"],
+                &[("こんで", "込んで")],
+            ),
+            suffix_inflection_with_replacements(
+                "んで",
+                "む",
+                &["-て"],
+                &["v5"],
+                &[("こんで", "込んで")],
+            ),
             suffix_inflection("じて", "ずる", &["-て"], &["vz"]),
             suffix_inflection("して", "する", &["-て"], &["vs"]),
             suffix_inflection("為て", "為る", &["-て"], &["vs"]),
             suffix_inflection("きて", "くる", &["-て"], &["vk"]),
             suffix_inflection("来て", "来る", &["-て"], &["vk"]),
             suffix_inflection("來て", "來る", &["-て"], &["vk"]),
-            // ...irregularVerbSuffixInflections("て", &["-て"], &["v5"]),
             suffix_inflection("まして", "ます", &[], &["-ます"]),
+            // Irregular (iku verbs)
+            suffix_inflection("いって", "いく", &["-て"], &["v5"]),
+            suffix_inflection("行って", "行く", &["-て"], &["v5"]),
+            suffix_inflection("逝って", "逝く", &["-て"], &["v5"]),
+            suffix_inflection("往って", "往く", &["-て"], &["v5"]),
+            // Irregular (godan u special)
+            suffix_inflection("こうて", "こう", &["-て"], &["v5"]),
+            suffix_inflection("とうて", "とう", &["-て"], &["v5"]),
+            suffix_inflection("請うて", "請う", &["-て"], &["v5"]),
+            suffix_inflection("乞うて", "乞う", &["-て"], &["v5"]),
+            suffix_inflection("恋うて", "恋う", &["-て"], &["v5"]),
+            suffix_inflection("問うて", "問う", &["-て"], &["v5"]),
+            suffix_inflection("訪うて", "訪う", &["-て"], &["v5"]),
+            suffix_inflection("宣うて", "宣う", &["-て"], &["v5"]),
+            suffix_inflection("曰うて", "曰う", &["-て"], &["v5"]),
+            suffix_inflection("給うて", "給う", &["-て"], &["v5"]),
+            suffix_inflection("賜うて", "賜う", &["-て"], &["v5"]),
+            suffix_inflection("揺蕩うて", "揺蕩う", &["-て"], &["v5"]),
+            // Irregular (fu verb te conjugations)
+            suffix_inflection("のたもうて", "のたまう", &["-て"], &["v5"]),
+            suffix_inflection("たもうて", "たまう", &["-て"], &["v5"]),
+            suffix_inflection("たゆとうて", "たゆたう", &["-て"], &["v5"]),
         ],
     },
     Transform {
@@ -989,10 +1087,31 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
             suffix_inflection("きた", "くる", &["-た"], &["vk"]),
             suffix_inflection("来た", "来る", &["-た"], &["vk"]),
             suffix_inflection("來た", "來る", &["-た"], &["vk"]),
-            // ...irregularVerbSuffixInflections("た", &["-た"], &["v5"]),
             suffix_inflection("ました", "ます", &["-た"], &["-ます"]),
             suffix_inflection("でした", "", &["-た"], &["-ません"]),
             suffix_inflection("かった", "", &["-た"], &["-ません", "-ん"]),
+            // Irregular (iku verbs)
+            suffix_inflection("いった", "いく", &["-た"], &["v5"]),
+            suffix_inflection("行った", "行く", &["-た"], &["v5"]),
+            suffix_inflection("逝った", "逝く", &["-た"], &["v5"]),
+            suffix_inflection("往った", "往く", &["-た"], &["v5"]),
+            // Irregular (godan u special)
+            suffix_inflection("こうた", "こう", &["-た"], &["v5"]),
+            suffix_inflection("とうた", "とう", &["-た"], &["v5"]),
+            suffix_inflection("請うた", "請う", &["-た"], &["v5"]),
+            suffix_inflection("乞うた", "乞う", &["-た"], &["v5"]),
+            suffix_inflection("恋うた", "恋う", &["-た"], &["v5"]),
+            suffix_inflection("問うた", "問う", &["-た"], &["v5"]),
+            suffix_inflection("訪うた", "訪う", &["-た"], &["v5"]),
+            suffix_inflection("宣うた", "宣う", &["-た"], &["v5"]),
+            suffix_inflection("曰うた", "曰う", &["-た"], &["v5"]),
+            suffix_inflection("給うた", "給う", &["-た"], &["v5"]),
+            suffix_inflection("賜うた", "賜う", &["-た"], &["v5"]),
+            suffix_inflection("揺蕩うた", "揺蕩う", &["-た"], &["v5"]),
+            // Irregular (fu verb te conjugations)
+            suffix_inflection("のたもうた", "のたまう", &["-た"], &["v5"]),
+            suffix_inflection("たもうた", "たまう", &["-た"], &["v5"]),
+            suffix_inflection("たゆとうた", "たゆたう", &["-た"], &["v5"]),
         ],
     },
     Transform {

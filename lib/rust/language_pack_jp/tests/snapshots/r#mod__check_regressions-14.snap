@@ -1,0 +1,7 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - なった
+  - なう
+  - 43653

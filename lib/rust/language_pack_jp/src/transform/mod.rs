@@ -6,14 +6,15 @@ use itertools::Itertools;
 use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
 pub use transforms::*;
+use trie_rs::map::Trie;
 
 use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
 
 mod transforms;
 
-fn attaches(pos: &str) -> bool {
-    ["助詞"].contains(&pos)
+fn attaches(pos: &str, pos2: &str) -> bool {
+    ["助詞", "助動詞"].contains(&pos) && !["係助詞", "格助詞", "準体助詞"].contains(&pos2)
 }
 
 fn inflects(pos: &str) -> bool {
@@ -30,7 +31,7 @@ fn inflects(pos: &str) -> bool {
 }
 
 fn is_new_root(pos: &str) -> bool {
-    ["形状詞"].contains(&pos)
+    ["形状詞", "動詞"].contains(&pos)
 }
 
 fn is_conjugating(s: &str) -> bool {
@@ -38,11 +39,16 @@ fn is_conjugating(s: &str) -> bool {
 }
 
 pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
-    list.into_iter()
-        .fold(vec![(String::new(), true)], |mut prev, curr| {
+    // TODO: This can be a static
+    let morpheme = Morpheme::Untagged("".to_owned());
+
+    list.iter()
+        .chain([&morpheme])
+        .tuple_windows()
+        .fold(vec![(String::new(), true)], |mut prev, (curr, next)| {
             let conjugating = prev.last().map(|it| is_conjugating(&it.0)).unwrap_or(false);
 
-            if inflects(curr.pos()) || conjugating {
+            if inflects(curr.pos()) || conjugating || attaches(curr.pos(), curr.pos2()) {
                 if !is_new_root(curr.pos()) || conjugating {
                     let prev_mut = prev.last_mut().unwrap();
                     let next = format!("{}{}", prev_mut.0, curr);
@@ -54,8 +60,12 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
                 return prev;
             }
 
-            prev.push((curr.to_string(), false));
-            prev.push((String::new(), true));
+            if attaches(next.pos(), next.pos2()) {
+                prev.push((curr.to_string(), true));
+            } else {
+                prev.push((curr.to_string(), false));
+                prev.push((String::new(), true));
+            }
 
             prev
         })
@@ -64,10 +74,29 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
         .collect::<Vec<_>>()
 }
 
+fn either_dict_has_prefix(
+    data: &str,
+    adaptive: &Trie<u8, Option<usize>>,
+    adaptive_readings: &Trie<u8, Option<usize>>,
+) -> bool {
+    adaptive.is_prefix(data)
+        || adaptive_readings.is_prefix(data)
+        || adaptive.exact_match(data).is_some()
+        || adaptive_readings.exact_match(data).is_some()
+}
+
+fn either_dict_has_exact(
+    data: &str,
+    adaptive: &Trie<u8, Option<usize>>,
+    adaptive_readings: &Trie<u8, Option<usize>>,
+) -> bool {
+    adaptive.exact_match(data).is_some() || adaptive_readings.exact_match(data).is_some()
+}
+
 pub fn transform_japanese_text(
     line: &str,
-    adaptive: &TreeMap<&CStr, Option<usize>>,
-    adaptive_readings: &TreeMap<&CStr, Option<usize>>,
+    adaptive: &Trie<u8, Option<usize>>,
+    adaptive_readings: &Trie<u8, Option<usize>>,
 ) -> Vec<(String, String, Option<usize>)> {
     let segmenter = JapaneseTextSegmenter::new();
     let segments = group_inflected(segmenter.segment(line));
@@ -75,52 +104,94 @@ pub fn transform_japanese_text(
     let mut output = vec![];
 
     for (segment, inflects) in &segments {
+        let dict_entry: Option<(String, String, Option<String>)> =
+            if adaptive.exact_match(segment).is_some() {
+                Some((segment.clone(), segment.clone(), None))
+            } else if adaptive_readings.exact_match(segment).is_some() {
+                Some((segment.clone(), segment.clone(), None))
+            } else {
+                None
+            };
+
         if *inflects {
-            let mut transformer = LanguageTransformer::new(JAPANESE_TRANSFORMS, adaptive);
+            let conditions = &*JAPANESE_CONDITIONS;
+
+            let mut transformer = LanguageTransformer::new(
+                JAPANESE_TRANSFORMS,
+                conditions,
+                adaptive,
+                adaptive_readings,
+            );
 
             let resolve = transformer.resolve(segment);
 
+            for item in &resolve {
+                if let Some(it) = &item.0 {
+                    for link in it.chain {
+                        // print!(
+                        //     "{} ({}) -> ",
+                        //     JAPANESE_TRANSFORMS[link.0].name,
+                        //     JAPANESE_TRANSFORMS[link.0].rules[link.1].conditions_out[0]
+                        // );
+                    }
+                    // println!("");
+                }
+            }
+
             if resolve.is_empty() {
-                output.push((segment.clone(), segment.clone()));
-            } else {
+                output.push((segment.clone(), segment.clone(), None));
+            }
+
+            // If resolution created too many segments, but a single segment
+            // exists in the dictionary, it's almost certainly the correct
+            // choice.
+            if (resolve.len() > 1 || resolve[0].1.len() > segment.len())
+                && let Some(entry) = dict_entry
+            {
+                output.push(entry);
+                continue;
+            }
+
+            {
                 let mut out = resolve
                     .into_iter()
                     .map(|it| {
                         let base = it.1;
 
                         let inflected = it.0.map_or_else(
-                            || base.clone(),
+                            || (base.clone(), None),
                             |inflection| {
                                 if inflection.last_inflection.is_empty() {
-                                    return base.clone();
+                                    return (base.clone(), None);
                                 }
 
                                 if inflection.last_inflection.len() == base.len() {
-                                    return inflection.inflection;
+                                    return (inflection.inflection, None);
                                 }
 
-                                [
-                                    &base[..(base
-                                        .len()
-                                        .saturating_sub(inflection.last_inflection.len()))],
-                                    &inflection.inflection,
-                                ]
-                                .join("")
+                                (
+                                    [
+                                        &base[..(base
+                                            .len()
+                                            .saturating_sub(inflection.last_inflection.len()))],
+                                        &inflection.inflection,
+                                    ]
+                                    .join(""),
+                                    inflection.replacement,
+                                )
                             },
                         );
 
-                        (inflected, base)
+                        (inflected.0, base, inflected.1)
                     })
                     .collect::<Vec<_>>();
 
                 output.append(&mut out);
             }
         } else {
-            output.push((segment.clone(), segment.clone()));
+            output.push((segment.clone(), segment.clone(), None));
         }
     }
-
-    println!("{:#?}", output);
 
     let mut result = vec![];
     let mut i = 0;
@@ -134,49 +205,32 @@ pub fn transform_japanese_text(
             continue;
         }
 
-        if !adaptive.contains_key(CString::new(segment.0.as_bytes()).unwrap().as_c_str()) {
+        if !adaptive.is_prefix(&segment.0) && !adaptive_readings.is_prefix(&segment.0) {
             result.push(segment.clone());
             i += 1;
             continue;
         }
 
         let mut key_with_boundary = i + 1;
-        let mut curr_check = i + 2;
+        let mut curr_check = i + 1;
 
-        while curr_check <= output.len()
-            && let Some(_prefix) = adaptive.get_prefix(
-                CString::new(
-                    output[i..curr_check]
-                        .iter()
-                        .map(|it| &it.0)
-                        .join("")
-                        .as_bytes(),
-                )
-                .unwrap()
-                .as_c_str(),
-            )
-        {
-            if adaptive.contains_key(
-                CString::new(
-                    output[i..curr_check]
-                        .iter()
-                        .map(|it| &it.0)
-                        .join("")
-                        .as_bytes(),
-                )
-                .unwrap()
-                .as_c_str(),
-            ) {
-                key_with_boundary = curr_check;
+        while curr_check < output.len() {
+            let data = output[i..=curr_check].iter().map(|it| &it.0).join("");
+
+            if either_dict_has_prefix(&data, adaptive, adaptive_readings) {
+                if either_dict_has_exact(&data, adaptive, adaptive_readings) {
+                    key_with_boundary = curr_check + 1;
+                }
+
+                curr_check += 1;
+                continue;
             }
 
-            curr_check += 1;
+            break;
         }
 
         let entry = &output[i..key_with_boundary];
         i = key_with_boundary;
-
-        // println!("{i} {key_with_boundary} {curr_check} {entry:#?}");
 
         if entry.len() == 1 {
             result.push(segment.clone());
@@ -184,10 +238,10 @@ pub fn transform_japanese_text(
             result.push(
                 entry
                     .iter()
-                    .fold((String::new(), String::new()), |prev, curr| {
+                    .fold((String::new(), String::new(), None), |prev, curr| {
                         let a = format!("{}{}", prev.0, curr.0);
 
-                        (a.clone(), a)
+                        (a.clone(), a, None)
                     }),
             );
         }
@@ -196,16 +250,21 @@ pub fn transform_japanese_text(
     result
         .into_iter()
         .map(|it| {
-            let freq = adaptive
-                .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
-                .copied()
-                .or_else(|| {
-                    adaptive_readings
-                        .get(CString::new(it.0.as_bytes()).unwrap().as_c_str())
-                        .copied()
-                        .or(None)
-                })
-                .flatten();
+            let text = if let Some(it) = it.2 {
+                it
+            } else {
+                it.1.clone()
+            };
+
+            let freq_a = adaptive_readings.exact_match(&text).flatten_ref();
+            let freq_b = adaptive.exact_match(&text).flatten_ref();
+
+            let freq = match (freq_a, freq_b) {
+                (None, None) => None,
+                (None, Some(b)) => Some(*b),
+                (Some(a), None) => Some(*a),
+                (Some(a), Some(b)) => Some(*a.min(b)),
+            };
 
             (it.0, it.1, freq)
         })

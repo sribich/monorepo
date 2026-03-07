@@ -1,0 +1,10 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 泣き
+  - 泣き
+  - 12074
+- - そうになった
+  - そうになった
+  - 39838

@@ -1,0 +1,10 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 漬けこんで
+  - 漬けこむ
+  - 24349
+- - やろう
+  - やる
+  - 46

@@ -19,6 +19,7 @@ use blart::TreeMap;
 use railgun::di::Component;
 use shared::OnStartup;
 use shared::infra::database::Sqlite;
+use trie_rs::map::Trie;
 
 /*
             ._query_raw(raw!(
@@ -41,100 +42,31 @@ GROUP BY
 #[component(implements(Vec<dyn OnStartup>))]
 pub struct DictionaryTrieService {
     #[inject(default)]
-    trie: TreeMap<&'static CStr, Option<usize>>,
+    words: Option<Trie<u8, Option<usize>>>,
     #[inject(default)]
-    trie_readings: TreeMap<&'static CStr, Option<usize>>,
-    // MUST COME LAST -- HOLDS TREEMAP DATA
+    readings: Option<Trie<u8, Option<usize>>>,
     #[inject(default)]
-    buf: Pin<Box<[u8]>>,
+    buf: (Pin<Box<[u8]>>, Pin<Box<[u8]>>),
 }
 
 impl DictionaryTrieService {
-    pub fn get(&self) -> &TreeMap<&'static CStr, Option<usize>> {
-        &self.trie
+    pub fn get(&self) -> &Trie<u8, Option<usize>> {
+        self.words.as_ref().unwrap()
     }
 
-    pub fn get_readings(&self) -> &TreeMap<&'static CStr, Option<usize>> {
-        &self.trie_readings
+    pub fn get_readings(&self) -> &Trie<u8, Option<usize>> {
+        self.readings.as_ref().unwrap()
     }
 }
 
 #[async_trait]
 impl OnStartup for DictionaryTrieService {
     async fn run(&mut self) -> Result<(), Box<dyn core::error::Error>> {
-        let home = std::env::var("HOME").unwrap();
-        let path = PathBuf::from(format!("{home}/opt/dictionary_entries.csv"));
-
-        let lines = BufReader::new(File::open(&path).unwrap()).lines();
-        let len = std::fs::metadata(path).unwrap().len();
-
-        let mut buf = Pin::new(
-            vec![0; usize::try_from(len.mul(2)).expect("usize should always fit within u64")]
-                .into_boxed_slice(),
-        );
-
-        let mut view = &mut buf[..];
-
-        let mut adaptive = TreeMap::<&CStr, Option<usize>>::new();
-        let mut adaptive_readings = TreeMap::<&CStr, Option<usize>>::new();
-
-        #[expect(clippy::indexing_slicing, unsafe_code, reason = "See safety comment")]
-        for line in lines.map_while(Result::ok) {
-            if line == r#""""# {
-                continue;
-            }
-
-            if let Some((left, right)) = line.split_once(',')
-                && let Some((middle, right)) = right.split_once(',')
-            {
-                let freq = right.parse::<usize>().ok();
-
-                if left != r#""""# {
-                    assert!(
-                        memchr::memchr(0, left.as_bytes()).is_none(),
-                        "string with null byte"
-                    );
-
-                    let left_len = left.len();
-
-                    view[..left_len].copy_from_slice(left.as_bytes());
-                    view[left_len] = 0;
-
-                    // SAFETY: The type is coerced into a static str so that
-                    let left: &'static CStr = unsafe {
-                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(&view[..=left_len]))
-                    };
-                    adaptive.try_insert(left, freq).unwrap();
-
-                    view = &mut view[(left_len + 1)..];
-                }
-
-                if middle != r#""""# {
-                    assert!(
-                        memchr::memchr(0, middle.as_bytes()).is_none(),
-                        "string with null byte"
-                    );
-
-                    let middle_len = middle.len();
-
-                    view[..middle_len].copy_from_slice(middle.as_bytes());
-                    view[middle_len] = 0;
-
-                    let middle = unsafe {
-                        std::mem::transmute(CStr::from_bytes_with_nul_unchecked(
-                            &view[..=middle_len],
-                        ))
-                    };
-                    adaptive_readings.try_insert(middle, freq).unwrap();
-
-                    view = &mut view[(middle_len + 1)..];
-                }
-            }
-        }
+        let (buf, words, readings) = load_dictionaries();
 
         self.buf = buf;
-        self.trie = adaptive;
-        self.trie_readings = adaptive_readings;
+        self.words = Some(words);
+        self.readings = Some(readings);
 
         Ok(())
     }
@@ -152,3 +84,114 @@ ON
 GROUP BY Word.word
 
 */
+
+fn load_words() -> (Pin<Box<[u8]>>, Trie<u8, Option<usize>>) {
+    let time = std::time::Instant::now();
+
+    let home = std::env::var("HOME").unwrap();
+    let path = PathBuf::from(format!("{home}/opt/dictionary_words.csv"));
+
+    let lines = BufReader::new(File::open(&path).unwrap()).lines();
+    let len = std::fs::metadata(path).unwrap().len();
+
+    let mut buf = Pin::new(
+        vec![0; usize::try_from(len).expect("usize should always fit within u64")]
+            .into_boxed_slice(),
+    );
+
+    let mut words = trie_rs::map::TrieBuilder::<u8, Option<usize>>::new();
+
+    let mut view = &mut buf[..];
+
+    for line in lines.map_while(Result::ok) {
+        if line == r#""""# {
+            continue;
+        }
+
+        if let Some((word, freq)) = line.split_once(',') {
+            let freq = freq.parse::<usize>().ok();
+
+            if word != r#""""# {
+                assert!(
+                    memchr::memchr(0, word.as_bytes()).is_none(),
+                    "string with null byte"
+                );
+
+                let len = word.len();
+
+                view[..len].copy_from_slice(word.as_bytes());
+
+                // SAFETY: The type is coerced into a static str so that
+                let word: &'static str = unsafe { std::mem::transmute(&view[..len]) };
+
+                words.push(word, freq);
+
+                view = &mut view[len..];
+            }
+        }
+    }
+
+    let words = words.build();
+
+    (buf, words)
+}
+
+fn load_readings() -> (Pin<Box<[u8]>>, Trie<u8, Option<usize>>) {
+    let home = std::env::var("HOME").unwrap();
+    let path = PathBuf::from(format!("{home}/opt/dictionary_readings.csv"));
+
+    let lines = BufReader::new(File::open(&path).unwrap()).lines();
+    let len = std::fs::metadata(path).unwrap().len();
+
+    let mut buf = Pin::new(
+        vec![0; usize::try_from(len).expect("usize should always fit within u64")]
+            .into_boxed_slice(),
+    );
+
+    let mut readings = trie_rs::map::TrieBuilder::<u8, Option<usize>>::new();
+
+    let mut view = &mut buf[..];
+
+    for line in lines.map_while(Result::ok) {
+        if line == r#""""# {
+            continue;
+        }
+
+        if let Some((word, freq)) = line.split_once(',') {
+            let freq = freq.parse::<usize>().ok();
+
+            if word != r#""""# {
+                assert!(
+                    memchr::memchr(0, word.as_bytes()).is_none(),
+                    "string with null byte"
+                );
+
+                let len = word.len();
+
+                view[..len].copy_from_slice(word.as_bytes());
+
+                // SAFETY: The type is coerced into a static str so that
+                let word: &'static str = unsafe { std::mem::transmute(&view[..len]) };
+
+                readings.push(word, freq);
+
+                view = &mut view[len..];
+            }
+        }
+    }
+
+    let readings = readings.build();
+
+    (buf, readings)
+}
+
+fn load_dictionaries() -> (
+    (Pin<Box<[u8]>>, Pin<Box<[u8]>>),
+    Trie<u8, Option<usize>>,
+    Trie<u8, Option<usize>>,
+) {
+    let (words_buf, words) = load_words();
+    let (readings_buf, readings) = load_readings();
+
+    ((words_buf, readings_buf), words, readings)
+}

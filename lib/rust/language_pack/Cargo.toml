@@ -17,6 +17,7 @@ rand = { workspace = true }
 rayon = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 tinyvec = { workspace = true }
+trie-rs = { workspace = true }
 
 [dev-dependencies]
 

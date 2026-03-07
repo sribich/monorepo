@@ -24,6 +24,7 @@ axum = { workspace = true }
 blart = { workspace = true }
 memchr = { workspace = true }
 tokio = { workspace = true }
+trie-rs = { workspace = true }
 serde = { workspace = true }
 
 [dev-dependencies]

@@ -1,0 +1,7 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 駆け寄って
+  - 駆け寄る
+  - 2422

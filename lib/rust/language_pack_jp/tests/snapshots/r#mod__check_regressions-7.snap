@@ -1,0 +1,22 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 雨
+  - 雨
+  - 956
+- - が
+  - が
+  - 4
+- - 降った
+  - 降る
+  - 1659
+- - けれど
+  - けれど
+  - 100
+- - 外に
+  - 外に
+  - ~
+- - 出た
+  - 出る
+  - 81

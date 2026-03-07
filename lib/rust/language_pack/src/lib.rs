@@ -1,4 +1,5 @@
 #![feature(new_range_api)]
+#![feature(string_replace_in_place)]
 pub mod align;
 pub mod hirschberg;
 pub mod pipeline;
