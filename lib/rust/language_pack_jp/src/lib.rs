@@ -5,7 +5,9 @@
     const_trait_impl,
     if_let_guard,
     option_reference_flattening,
-    impl_trait_in_bindings
+    impl_trait_in_bindings,
+    const_ops,
+    const_convert
 )]
 use language_pack::pipeline::LanguagePipeline;
 use language_pack::pipeline::create_pipeline;

@@ -6,7 +6,6 @@ use std::ops::Mul;
 use std::path::PathBuf;
 use std::pin::Pin;
 
-use blart::TreeMap;
 use insta::assert_snapshot;
 use insta::assert_yaml_snapshot;
 use language_pack_jp::transform::transform_japanese_text;
@@ -154,6 +153,14 @@ fn check_regressions() {
                           // マインは蜘蛛の巣が怖いのか仕方がないな父さんが取ってやろう
                           // CURR: [父][さんが][取って][やろう]
                           // GOOD: [父さん][が][取って][やろう]
+                          //
+                          // TO FIX THIS, WE SHOULD MAKE SURE THAT PARTICLES ARE NOT EVALUATED
+                          //
+                          // Checks should be histeruics based. If a word was not inflicted and is all kana
+                          // then we should prefer a kana lookup if one exists, only falling back to reading
+                          // based lookups if one does not exist.
+                          //
+                          // If it was inflicted, :shrug:
 
                           // のところにはわたしと同じような子供が
                           // 溶かした鍋に[入れたり][出したり]する何度も

@@ -169,7 +169,7 @@ barrel = { git = "https://github.com/prisma/barrel.git", branch = "mssql-support
 base64 = "0.22"
 bigdecimal = "0.3" # 0.3 is needed for prisma
 bincode = "2.0.0-rc.3"
-bitflags = "2"
+bitflags = "2.11.0"
 bit-vec = "0.6"
 blart = "0.4.0"
 bon = "3"

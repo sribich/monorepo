@@ -1,7 +1,6 @@
 use std::ffi::CStr;
 use std::ffi::CString;
 
-use blart::TreeMap;
 use itertools::Itertools;
 use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
@@ -273,28 +272,12 @@ pub fn transform_japanese_text(
 
 #[cfg(test)]
 mod test {
-    use std::ffi::CStr;
-    use std::ffi::CString;
-    use std::fs::File;
-    use std::fs::read_to_string;
-    use std::io::BufRead;
-    use std::io::BufReader;
-
-    use blart::TreeMap;
-    use itertools::Itertools;
-    use language_pack::Transcription;
-
-    use crate::japanese_language_pipeline;
-    use crate::segment::JapaneseTextSegmenter;
-    use crate::segment::Morpheme;
-    use crate::transform::group_inflected;
-
     #[test]
     fn thing() {
-        let timing_data = read_to_string("/home/nulliel/Japanese/bookworm.json").unwrap();
-        let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
+        // let timing_data = read_to_string("/home/nulliel/Japanese/bookworm.json").unwrap();
+        // let timing_data: Transcription = serde_json::from_str(&timing_data).unwrap();
 
-        let pipeline = japanese_language_pipeline();
+        // let pipeline = japanese_language_pipeline();
 
         /*
         for i in 0..25 {
@@ -302,8 +285,6 @@ mod test {
             pipeline.run(&timing_data, &mut timing_data);
         }
         */
-
-        return;
 
         /*
         でこぼこしていて、気を付けて歩かないと、足を引っ掛けてすぐに転びさそうだ。手を繋いでくれてるトゥーリに周りのことは任せて、わたしは自分の足元だけを見て歩くことにした。

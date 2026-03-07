@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::BitOr;
 use std::sync::LazyLock;
 
 use indoc::indoc;
@@ -7,153 +8,321 @@ use language_pack::transform::Transform;
 use language_pack::transform::suffix_inflection;
 use language_pack::transform::suffix_inflection_with_replacements;
 
-const shimau_description: &str = indoc! {r#"
-    1. Shows a sense of regret/surprise when you did have volition in doing something, but it turned out to be bad to do.
-    2. Shows perfective/punctual achievement. This shows that an action has been completed.
-    3. Shows unintentional action–"accidentally".
-"#};
+const passive_description: &str = indoc! {"
 
-const passive_description: &str = indoc! {r#"
-    1. Indicates an action received from an action performer.
-    2. Expresses respect for the subject of action performer.
-"#};
+"};
 
-pub const JAPANESE_CONDITIONS: LazyLock<HashMap<&'static str, Condition>> = LazyLock::new(|| {
-    [
-        ("v", Condition {
+struct Conditions(u32);
+
+impl Conditions {
+    const adj_i: Self = Self(1 << 12);
+    const ba: Self = Self(1 << 16);
+    const ku: Self = Self(1 << 17);
+    const masen: Self = Self(1 << 14);
+    const masu: Self = Self(1 << 13);
+    const n: Self = Self(1 << 19);
+    const nasai: Self = Self(1 << 20);
+    const ta: Self = Self(1 << 18);
+    const te: Self = Self(1 << 15);
+    const v: Self = Self(1);
+    const v1: Self = Self(1 << 1);
+    const v1d: Self = Self(1 << 2);
+    const v1p: Self = Self(1 << 3);
+    const v5: Self = Self(1 << 4);
+    const v5d: Self = Self(1 << 5);
+    const v5s: Self = Self(1 << 6);
+    const v5sp: Self = Self(1 << 8);
+    const v5ss: Self = Self(1 << 7);
+    const vk: Self = Self(1 << 9);
+    const vs: Self = Self(1 << 10);
+    const vz: Self = Self(1 << 11);
+    const ya: Self = Self(1 << 21);
+}
+
+impl Conditions {
+    pub const fn with_subconditions(&self) -> u32 {
+        const fn subcondition_fold(prev: u32, curr: u32) -> u32 {
+            let mut i = 0;
+            let num_conditions = JAPANESE_CONDITIONS.len();
+
+            while i < num_conditions {
+                let condition = &JAPANESE_CONDITIONS[i];
+
+                if condition.0 == curr {
+                    return prev | condition.1.subconditions;
+                }
+
+                i += 1;
+            }
+
+            prev
+        }
+
+        self.fold(self.0, &subcondition_fold)
+    }
+
+    pub const fn fold<F>(&self, initial: u32, f: &F) -> u32
+    where
+        F: const Fn(u32, u32) -> u32,
+    {
+        let mut curr = initial;
+
+        let mut i = 0;
+        let end = 21;
+
+        while i <= end {
+            if (1 << i) & initial == (i << i) {
+                curr = f(curr, 1 << i)
+            }
+
+            i += 1;
+        }
+
+        curr
+    }
+}
+
+impl const From<Conditions> for u32 {
+    fn from(value: Conditions) -> Self {
+        value.0
+    }
+}
+
+impl const BitOr for Conditions {
+    type Output = Conditions;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
+    }
+}
+
+pub const JAPANESE_CONDITIONS: &'static [(u32, Condition)] = &[
+    (
+        Conditions::v.into(),
+        Condition {
             name: "Verb",
+            short: "v",
             description: "動詞",
             is_dictionary_form: false,
-            sub_conditions: &["v1", "v5", "vk", "vs", "vz"],
-        }),
-        ("v1", Condition {
+            subconditions: (Conditions::v1
+                | Conditions::v5
+                | Conditions::vk
+                | Conditions::vs
+                | Conditions::vz)
+                .into(),
+        },
+    ),
+    (
+        Conditions::v1.into(),
+        Condition {
             name: "Ichidan verb",
+            short: "v1",
             description: "一段動詞",
             is_dictionary_form: true,
-            sub_conditions: &["v1d", "v1p"],
-        }),
-        ("v1d", Condition {
+            subconditions: (Conditions::v1d | Conditions::v1p).into(),
+        },
+    ),
+    (
+        Conditions::v1d.into(),
+        Condition {
             name: "Ichidan verb, dictionary form",
+            short: "v1d",
             description: "一段動詞、終止形",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("v1p", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::v1p.into(),
+        Condition {
             name: "Ichidan verb, progressive or perfect form",
+            short: "v1p",
             description: "一段動詞、～てる・でる",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("v5", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::v5.into(),
+        Condition {
             name: "Godan verb",
+            short: "v5",
             description: "五段動詞",
             is_dictionary_form: true,
-            sub_conditions: &["v5d", "v5s"],
-        }),
-        ("v5d", Condition {
+            subconditions: (Conditions::v5d | Conditions::v5s).into(),
+        },
+    ),
+    (
+        Conditions::v5d.into(),
+        Condition {
             name: "Godan verb, dictionary form",
+            short: "v5d",
             description: "五段動詞、終止形",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("v5s", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::v5s.into(),
+        Condition {
             name: "Godan verb, short causative form",
+            short: "v5s",
             description: "五段動詞、～す・さす",
             is_dictionary_form: false,
-            sub_conditions: &["v5ss", "v5sp"],
-        }),
-        ("v5ss", Condition {
+            subconditions: (Conditions::v5ss | Conditions::v5sp).into(),
+        },
+    ),
+    (
+        Conditions::v5ss.into(),
+        Condition {
             name: "Godan verb, short causative form having さす ending (cannot conjugate with passive form)",
+            short: "v5ss",
             description: "五段動詞、～さす",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("v5sp", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::v5sp.into(),
+        Condition {
             name: "Godan verb, short causative form not having さす ending (can conjugate with passive form)",
+            short: "v5sp",
             description: "五段動詞、～す",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("vk", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::vk.into(),
+        Condition {
             name: "Kuru verb",
+            short: "vk",
             description: "来る動詞",
             is_dictionary_form: true,
-            sub_conditions: &[],
-        }),
-        ("vs", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::vs.into(),
+        Condition {
             name: "Suru verb",
+            short: "vs",
             description: "する動詞",
             is_dictionary_form: true,
-            sub_conditions: &[],
-        }),
-        ("vz", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::vz.into(),
+        Condition {
             name: "Zuru verb",
+            short: "vz",
             description: "ずる動詞",
             is_dictionary_form: true,
-            sub_conditions: &[],
-        }),
-        ("adj-i", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::adj_i.into(),
+        Condition {
             name: "Adjective with i ending",
+            short: "adj-i",
             description: "形容詞",
             is_dictionary_form: true,
-            sub_conditions: &[],
-        }),
-        ("-ます", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::masu.into(),
+        Condition {
             name: "Polite -ます ending",
+            short: "-ます",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-ません", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::masen.into(),
+        Condition {
             name: "Polite negative -ません ending",
+            short: "-ません",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-て", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::te.into(),
+        Condition {
             name: "Intermediate -て endings for progressive or perfect tense",
+            short: "-て",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-ば", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::ba.into(),
+        Condition {
             name: "Intermediate -ば endings for conditional contraction",
+            short: "-ば",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-く", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::ku.into(),
+        Condition {
             name: "Intermediate -く endings for adverbs",
+            short: "-く",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-た", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::ta.into(),
+        Condition {
             name: "-た form ending",
+            short: "-た",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-ん", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::n.into(),
+        Condition {
             name: "-ん negative ending",
+            short: "-ん",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-なさい", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::nasai.into(),
+        Condition {
             name: "Intermediate -なさい ending (polite imperative)",
+            short: "-なさい",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-        ("-ゃ", Condition {
+            subconditions: 0,
+        },
+    ),
+    (
+        Conditions::ya.into(),
+        Condition {
             name: "Intermediate -や ending (conditional contraction)",
+            short: "-ゃ",
             description: "",
             is_dictionary_form: false,
-            sub_conditions: &[],
-        }),
-    ].into_iter().collect()
-});
+            subconditions: 0,
+        },
+    ),
+];
 
 /// // Irregular (iku verbs)
 /// suffix_inflection("いっ", "いく", &[], &[]),
@@ -187,1427 +356,2928 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
             Usage: Attach ば to the hypothetical form (仮定形) of verbs and i-adjectives.
         "},
         rules: &[
-            suffix_inflection("ければ", "い", &["-ば"], &["adj-i"]),
-            suffix_inflection("えば", "う", &["-ば"], &["v5"]),
-            suffix_inflection("けば", "く", &["-ば"], &["v5"]),
-            suffix_inflection("げば", "ぐ", &["-ば"], &["v5"]),
-            suffix_inflection("せば", "す", &["-ば"], &["v5"]),
-            suffix_inflection("てば", "つ", &["-ば"], &["v5"]),
-            suffix_inflection("ねば", "ぬ", &["-ば"], &["v5"]),
-            suffix_inflection("べば", "ぶ", &["-ば"], &["v5"]),
-            suffix_inflection("めば", "む", &["-ば"], &["v5"]),
-            suffix_inflection("れば", "る", &["-ば"], &["v1", "v5", "vk", "vs", "vz"]),
-            suffix_inflection("れば", "", &["-ば"], &["-ます"]),
+            suffix_inflection(
+                "ければ",
+                "い",
+                Conditions::ba.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("えば", "う", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("けば", "く", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("げば", "ぐ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("せば", "す", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("てば", "つ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ねば", "ぬ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("べば", "ぶ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("めば", "む", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "れば",
+                "る",
+                Conditions::ba.with_subconditions(),
+                (Conditions::v1
+                    | Conditions::v5
+                    | Conditions::vk
+                    | Conditions::vs
+                    | Conditions::vz)
+                    .with_subconditions(),
+            ),
+            suffix_inflection("れば", "", Conditions::ba.with_subconditions(), Conditions::masu.with_subconditions()),
         ],
     },
     Transform {
         name: "-ゃ",
-        description: indoc! {r#"
+        description: indoc! {"
             Contraction of -ば.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("けりゃ", "ければ", &["-ゃ"], &["-ば"]),
-            suffix_inflection("きゃ", "ければ", &["-ゃ"], &["-ば"]),
-            suffix_inflection("や", "えば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("きゃ", "けば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("ぎゃ", "げば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("しゃ", "せば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("ちゃ", "てば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("にゃ", "ねば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("びゃ", "べば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("みゃ", "めば", &["-ゃ"], &["-ば"]),
-            suffix_inflection("りゃ", "れば", &["-ゃ"], &["-ば"]),
+            suffix_inflection(
+                "けりゃ",
+                "ければ",
+                Conditions::ya.with_subconditions(),
+                Conditions::ba.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きゃ",
+                "ければ",
+                Conditions::ya.with_subconditions(),
+                Conditions::ba.with_subconditions(),
+            ),
+            suffix_inflection("や", "えば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("きゃ", "けば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("ぎゃ", "げば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("しゃ", "せば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("ちゃ", "てば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("にゃ", "ねば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("びゃ", "べば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("みゃ", "めば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
+            suffix_inflection("りゃ", "れば", Conditions::ya.with_subconditions(), Conditions::ba.with_subconditions()),
         ],
     },
     Transform {
         name: "-ちゃ",
-        description: indoc! {r#"
+        description: indoc! {"
             Contraction of ～ては.
 
             1. Explains how something always happens under the condition that it marks.
             2. Expresses the repetition (of a series of) actions.
-            3. Indicates a hypothetical situation in which the speaker gives a (negative) evaluation about the other party\'s intentions.
-            4. Used in "Must Not" patterns like ～てはいけない.
+            3. Indicates a hypothetical situation in which the speaker gives a (negative) evaluation about the other party's intentions.
+            4. Used in \"Must Not\" patterns like ～てはいけない.
 
             Usage: Attach は after the て-form of verbs, contract ては into ちゃ.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("ちゃ", "る", &["v5"], &["v1"]),
-            suffix_inflection("いじゃ", "ぐ", &["v5"], &["v5"]),
-            suffix_inflection("いちゃ", "く", &["v5"], &["v5"]),
-            suffix_inflection("しちゃ", "す", &["v5"], &["v5"]),
-            suffix_inflection("っちゃ", "う", &["v5"], &["v5"]),
-            suffix_inflection("っちゃ", "く", &["v5"], &["v5"]),
-            suffix_inflection("っちゃ", "つ", &["v5"], &["v5"]),
-            suffix_inflection("っちゃ", "る", &["v5"], &["v5"]),
-            suffix_inflection("んじゃ", "ぬ", &["v5"], &["v5"]),
-            suffix_inflection("んじゃ", "ぶ", &["v5"], &["v5"]),
-            suffix_inflection("んじゃ", "む", &["v5"], &["v5"]),
-            suffix_inflection("じちゃ", "ずる", &["v5"], &["vz"]),
-            suffix_inflection("しちゃ", "する", &["v5"], &["vs"]),
-            suffix_inflection("為ちゃ", "為る", &["v5"], &["vs"]),
-            suffix_inflection("きちゃ", "くる", &["v5"], &["vk"]),
-            suffix_inflection("来ちゃ", "来る", &["v5"], &["vk"]),
-            suffix_inflection("來ちゃ", "來る", &["v5"], &["vk"]),
+            suffix_inflection("ちゃ", "る", Conditions::v5.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("いじゃ", "ぐ", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("いちゃ", "く", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("しちゃ", "す", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("っちゃ", "う", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("っちゃ", "く", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("っちゃ", "つ", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("っちゃ", "る", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んじゃ", "ぬ", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んじゃ", "ぶ", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んじゃ", "む", Conditions::v5.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "じちゃ",
+                "ずる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しちゃ",
+                "する",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ちゃ",
+                "為る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きちゃ",
+                "くる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ちゃ",
+                "来る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ちゃ",
+                "來る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-ちゃう",
-        description: indoc! {r#"
+        description: indoc! {"
             Contraction of -しまう.
 
-            {shimau_description}
+            1. Shows a sense of regret/surprise when you did have volition in doing something, but it turned out to be bad to do.
+            2. Shows perfective/punctual achievement. This shows that an action has been completed.
+            3. Shows unintentional action–\"accidentally\".
 
             Usage: Attach しまう after the て-form of verbs, contract てしまう into ちゃう.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("ちゃう", "る", &["v5"], &["v1"]),
-            suffix_inflection("いじゃう", "ぐ", &["v5"], &["v5"]),
-            suffix_inflection("いちゃう", "く", &["v5"], &["v5"]),
-            suffix_inflection("しちゃう", "す", &["v5"], &["v5"]),
-            suffix_inflection("っちゃう", "う", &["v5"], &["v5"]),
-            suffix_inflection("っちゃう", "く", &["v5"], &["v5"]),
-            suffix_inflection("っちゃう", "つ", &["v5"], &["v5"]),
-            suffix_inflection("っちゃう", "る", &["v5"], &["v5"]),
-            suffix_inflection("んじゃう", "ぬ", &["v5"], &["v5"]),
-            suffix_inflection("んじゃう", "ぶ", &["v5"], &["v5"]),
-            suffix_inflection("んじゃう", "む", &["v5"], &["v5"]),
-            suffix_inflection("じちゃう", "ずる", &["v5"], &["vz"]),
-            suffix_inflection("しちゃう", "する", &["v5"], &["vs"]),
-            suffix_inflection("為ちゃう", "為る", &["v5"], &["vs"]),
-            suffix_inflection("きちゃう", "くる", &["v5"], &["vk"]),
-            suffix_inflection("来ちゃう", "来る", &["v5"], &["vk"]),
-            suffix_inflection("來ちゃう", "來る", &["v5"], &["vk"]),
+            suffix_inflection("ちゃう", "る", Conditions::v5.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "いじゃう",
+                "ぐ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "いちゃう",
+                "く",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しちゃう",
+                "す",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちゃう",
+                "う",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちゃう",
+                "く",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちゃう",
+                "つ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちゃう",
+                "る",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじゃう",
+                "ぬ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじゃう",
+                "ぶ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじゃう",
+                "む",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じちゃう",
+                "ずる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しちゃう",
+                "する",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ちゃう",
+                "為る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きちゃう",
+                "くる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ちゃう",
+                "来る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ちゃう",
+                "來る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-ちまう",
-        description: indoc! {r#"
+        description: indoc! {"
             Contraction of -しまう.
 
-            {shimau_description}
+            1. Shows a sense of regret/surprise when you did have volition in doing something, but it turned out to be bad to do.
+            2. Shows perfective/punctual achievement. This shows that an action has been completed.
+            3. Shows unintentional action–\"accidentally\".
 
             Usage: Attach しまう after the て-form of verbs, contract てしまう into ちまう.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("ちまう", "る", &["v5"], &["v1"]),
-            suffix_inflection("いじまう", "ぐ", &["v5"], &["v5"]),
-            suffix_inflection("いちまう", "く", &["v5"], &["v5"]),
-            suffix_inflection("しちまう", "す", &["v5"], &["v5"]),
-            suffix_inflection("っちまう", "う", &["v5"], &["v5"]),
-            suffix_inflection("っちまう", "く", &["v5"], &["v5"]),
-            suffix_inflection("っちまう", "つ", &["v5"], &["v5"]),
-            suffix_inflection("っちまう", "る", &["v5"], &["v5"]),
-            suffix_inflection("んじまう", "ぬ", &["v5"], &["v5"]),
-            suffix_inflection("んじまう", "ぶ", &["v5"], &["v5"]),
-            suffix_inflection("んじまう", "む", &["v5"], &["v5"]),
-            suffix_inflection("じちまう", "ずる", &["v5"], &["vz"]),
-            suffix_inflection("しちまう", "する", &["v5"], &["vs"]),
-            suffix_inflection("為ちまう", "為る", &["v5"], &["vs"]),
-            suffix_inflection("きちまう", "くる", &["v5"], &["vk"]),
-            suffix_inflection("来ちまう", "来る", &["v5"], &["vk"]),
-            suffix_inflection("來ちまう", "來る", &["v5"], &["vk"]),
+            suffix_inflection("ちまう", "る", Conditions::v5.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "いじまう",
+                "ぐ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "いちまう",
+                "く",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しちまう",
+                "す",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちまう",
+                "う",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちまう",
+                "く",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちまう",
+                "つ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "っちまう",
+                "る",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじまう",
+                "ぬ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじまう",
+                "ぶ",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んじまう",
+                "む",
+                Conditions::v5.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じちまう",
+                "ずる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しちまう",
+                "する",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ちまう",
+                "為る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きちまう",
+                "くる",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ちまう",
+                "来る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ちまう",
+                "來る",
+                Conditions::v5.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-しまう",
-        description: indoc! {r#"
-            {shimau_description}
+        description: indoc! {"
+            1. Shows a sense of regret/surprise when you did have volition in doing something, but it turned out to be bad to do.
+            2. Shows perfective/punctual achievement. This shows that an action has been completed.
+            3. Shows unintentional action–\"accidentally\".
 
             Usage: Attach しまう after the て-form of verbs.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("てしまう", "て", &["v5"], &["-て"]),
-            suffix_inflection("でしまう", "で", &["v5"], &["-て"]),
+            suffix_inflection(
+                "てしまう",
+                "て",
+                Conditions::v5.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "でしまう",
+                "で",
+                Conditions::v5.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-なさい",
-        description: indoc! {r#"
+        description: indoc! {"
             Polite imperative suffix.
 
             Usage: Attach なさい after the continuative form (連用形) of verbs.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("なさい", "る", &["-なさい"], &["v1"]),
-            suffix_inflection("いなさい", "う", &["-なさい"], &["v5"]),
-            suffix_inflection("きなさい", "く", &["-なさい"], &["v5"]),
-            suffix_inflection("ぎなさい", "ぐ", &["-なさい"], &["v5"]),
-            suffix_inflection("しなさい", "す", &["-なさい"], &["v5"]),
-            suffix_inflection("ちなさい", "つ", &["-なさい"], &["v5"]),
-            suffix_inflection("になさい", "ぬ", &["-なさい"], &["v5"]),
-            suffix_inflection("びなさい", "ぶ", &["-なさい"], &["v5"]),
-            suffix_inflection("みなさい", "む", &["-なさい"], &["v5"]),
-            suffix_inflection("りなさい", "る", &["-なさい"], &["v5"]),
-            suffix_inflection("じなさい", "ずる", &["-なさい"], &["vz"]),
-            suffix_inflection("しなさい", "する", &["-なさい"], &["vs"]),
-            suffix_inflection("為なさい", "為る", &["-なさい"], &["vs"]),
-            suffix_inflection("きなさい", "くる", &["-なさい"], &["vk"]),
-            suffix_inflection("来なさい", "来る", &["-なさい"], &["vk"]),
-            suffix_inflection("來なさい", "來る", &["-なさい"], &["vk"]),
+            suffix_inflection(
+                "なさい",
+                "る",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v1.with_subconditions(),
+            ),
+            suffix_inflection(
+                "いなさい",
+                "う",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きなさい",
+                "く",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぎなさい",
+                "ぐ",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しなさい",
+                "す",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ちなさい",
+                "つ",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "になさい",
+                "ぬ",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "びなさい",
+                "ぶ",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "みなさい",
+                "む",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "りなさい",
+                "る",
+                Conditions::nasai.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じなさい",
+                "ずる",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しなさい",
+                "する",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為なさい",
+                "為る",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きなさい",
+                "くる",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来なさい",
+                "来る",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來なさい",
+                "來る",
+                Conditions::nasai.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-そう",
-        description: indoc! {r#"
+        description: indoc! {"
             Appearing that; looking like.
 
             Usage: Attach そう to the continuative form (連用形) of verbs, or to the stem of adjectives.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("そう", "い", &[], &["adj-i"]),
-            suffix_inflection("そう", "る", &[], &["v1"]),
-            suffix_inflection("いそう", "う", &[], &["v5"]),
-            suffix_inflection("きそう", "く", &[], &["v5"]),
-            suffix_inflection("ぎそう", "ぐ", &[], &["v5"]),
-            suffix_inflection("しそう", "す", &[], &["v5"]),
-            suffix_inflection("ちそう", "つ", &[], &["v5"]),
-            suffix_inflection("にそう", "ぬ", &[], &["v5"]),
-            suffix_inflection("びそう", "ぶ", &[], &["v5"]),
-            suffix_inflection("みそう", "む", &[], &["v5"]),
-            suffix_inflection("りそう", "る", &[], &["v5"]),
-            suffix_inflection("じそう", "ずる", &[], &["vz"]),
-            suffix_inflection("しそう", "する", &[], &["vs"]),
-            suffix_inflection("為そう", "為る", &[], &["vs"]),
-            suffix_inflection("きそう", "くる", &[], &["vk"]),
-            suffix_inflection("来そう", "来る", &[], &["vk"]),
-            suffix_inflection("來そう", "來る", &[], &["vk"]),
+            suffix_inflection("そう", "い", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("そう", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("いそう", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("きそう", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぎそう", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("しそう", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ちそう", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("にそう", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("びそう", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("みそう", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("りそう", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じそう", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("しそう", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為そう", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("きそう", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来そう", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來そう", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-すぎる",
-        description: indoc! {r#"
-            Shows something "is too..." or someone is doing something "too much".
+        description: indoc! {"
+            Shows something \"is too...\" or someone is doing something \"too much\".
 
             Usage: Attach すぎる to the continuative form (連用形) of verbs, or to the stem of adjectives.'
-        "#},
+        "},
         rules: &[
-            suffix_inflection("すぎる", "い", &["v1"], &["adj-i"]),
-            suffix_inflection("すぎる", "る", &["v1"], &["v1"]),
-            suffix_inflection("いすぎる", "う", &["v1"], &["v5"]),
-            suffix_inflection("きすぎる", "く", &["v1"], &["v5"]),
-            suffix_inflection("ぎすぎる", "ぐ", &["v1"], &["v5"]),
-            suffix_inflection("しすぎる", "す", &["v1"], &["v5"]),
-            suffix_inflection("ちすぎる", "つ", &["v1"], &["v5"]),
-            suffix_inflection("にすぎる", "ぬ", &["v1"], &["v5"]),
-            suffix_inflection("びすぎる", "ぶ", &["v1"], &["v5"]),
-            suffix_inflection("みすぎる", "む", &["v1"], &["v5"]),
-            suffix_inflection("りすぎる", "る", &["v1"], &["v5"]),
-            suffix_inflection("じすぎる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("しすぎる", "する", &["v1"], &["vs"]),
-            suffix_inflection("為すぎる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("きすぎる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来すぎる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來すぎる", "來る", &["v1"], &["vk"]),
+            suffix_inflection(
+                "すぎる",
+                "い",
+                Conditions::v1.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("すぎる", "る", Conditions::v1.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "いすぎる",
+                "う",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きすぎる",
+                "く",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぎすぎる",
+                "ぐ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しすぎる",
+                "す",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ちすぎる",
+                "つ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "にすぎる",
+                "ぬ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "びすぎる",
+                "ぶ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "みすぎる",
+                "む",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "りすぎる",
+                "る",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じすぎる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しすぎる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為すぎる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きすぎる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来すぎる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來すぎる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-過ぎる",
-        description: indoc! {r#"
-            Shows something "is too..." or someone is doing something "too much".
+        description: indoc! {"
+            Shows something \"is too...\" or someone is doing something \"too much\".
 
             Usage: Attach 過ぎる to the continuative form (連用形) of verbs, or to the stem of adjectives.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("過ぎる", "い", &["v1"], &["adj-i"]),
-            suffix_inflection("過ぎる", "る", &["v1"], &["v1"]),
-            suffix_inflection("い過ぎる", "う", &["v1"], &["v5"]),
-            suffix_inflection("き過ぎる", "く", &["v1"], &["v5"]),
-            suffix_inflection("ぎ過ぎる", "ぐ", &["v1"], &["v5"]),
-            suffix_inflection("し過ぎる", "す", &["v1"], &["v5"]),
-            suffix_inflection("ち過ぎる", "つ", &["v1"], &["v5"]),
-            suffix_inflection("に過ぎる", "ぬ", &["v1"], &["v5"]),
-            suffix_inflection("び過ぎる", "ぶ", &["v1"], &["v5"]),
-            suffix_inflection("み過ぎる", "む", &["v1"], &["v5"]),
-            suffix_inflection("り過ぎる", "る", &["v1"], &["v5"]),
-            suffix_inflection("じ過ぎる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("し過ぎる", "する", &["v1"], &["vs"]),
-            suffix_inflection("為過ぎる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("き過ぎる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来過ぎる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來過ぎる", "來る", &["v1"], &["vk"]),
+            suffix_inflection(
+                "過ぎる",
+                "い",
+                Conditions::v1.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("過ぎる", "る", Conditions::v1.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "い過ぎる",
+                "う",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "き過ぎる",
+                "く",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぎ過ぎる",
+                "ぐ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "し過ぎる",
+                "す",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ち過ぎる",
+                "つ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "に過ぎる",
+                "ぬ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "び過ぎる",
+                "ぶ",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "み過ぎる",
+                "む",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "り過ぎる",
+                "る",
+                Conditions::v1.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じ過ぎる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "し過ぎる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為過ぎる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "き過ぎる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来過ぎる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來過ぎる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-たい",
-        description: indoc! {r#"
+        description: indoc! {"
             1. Expresses the feeling of desire or hope.
             2. Used in ...たいと思います, an indirect way of saying what the speaker intends to do.
 
             Usage: Attach たい to the continuative form (連用形) of verbs. たい itself conjugates as i-adjective.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("たい", "る", &["adj-i"], &["v1"]),
-            suffix_inflection("いたい", "う", &["adj-i"], &["v5"]),
-            suffix_inflection("きたい", "く", &["adj-i"], &["v5"]),
-            suffix_inflection("ぎたい", "ぐ", &["adj-i"], &["v5"]),
-            suffix_inflection("したい", "す", &["adj-i"], &["v5"]),
-            suffix_inflection("ちたい", "つ", &["adj-i"], &["v5"]),
-            suffix_inflection("にたい", "ぬ", &["adj-i"], &["v5"]),
-            suffix_inflection("びたい", "ぶ", &["adj-i"], &["v5"]),
-            suffix_inflection("みたい", "む", &["adj-i"], &["v5"]),
-            suffix_inflection("りたい", "る", &["adj-i"], &["v5"]),
-            suffix_inflection("じたい", "ずる", &["adj-i"], &["vz"]),
-            suffix_inflection("したい", "する", &["adj-i"], &["vs"]),
-            suffix_inflection("為たい", "為る", &["adj-i"], &["vs"]),
-            suffix_inflection("きたい", "くる", &["adj-i"], &["vk"]),
-            suffix_inflection("来たい", "来る", &["adj-i"], &["vk"]),
-            suffix_inflection("來たい", "來る", &["adj-i"], &["vk"]),
+            suffix_inflection(
+                "たい",
+                "る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v1.with_subconditions(),
+            ),
+            suffix_inflection(
+                "いたい",
+                "う",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きたい",
+                "く",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぎたい",
+                "ぐ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "したい",
+                "す",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ちたい",
+                "つ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "にたい",
+                "ぬ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "びたい",
+                "ぶ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "みたい",
+                "む",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "りたい",
+                "る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じたい",
+                "ずる",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "したい",
+                "する",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為たい",
+                "為る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きたい",
+                "くる",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来たい",
+                "来る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來たい",
+                "來る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-たら",
-        description: indoc! {r#"
+        description: indoc! {"
             1. Denotes the latter stated event is a continuation of the previous stated event.
             2. Assumes that a matter has been completed or concluded.
 
             Usage: Attach たら to the continuative form (連用形) of verbs after euphonic change form, かったら to the stem of i-adjectives.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("かったら", "い", &[], &["adj-i"]),
-            suffix_inflection("たら", "る", &[], &["v1"]),
-            suffix_inflection("いたら", "く", &[], &["v5"]),
-            suffix_inflection("いだら", "ぐ", &[], &["v5"]),
-            suffix_inflection("したら", "す", &[], &["v5"]),
-            suffix_inflection("ったら", "う", &[], &["v5"]),
-            suffix_inflection("ったら", "つ", &[], &["v5"]),
-            suffix_inflection("ったら", "る", &[], &["v5"]),
-            suffix_inflection("んだら", "ぬ", &[], &["v5"]),
-            suffix_inflection("んだら", "ぶ", &[], &["v5"]),
-            suffix_inflection("んだら", "む", &[], &["v5"]),
-            suffix_inflection("じたら", "ずる", &[], &["vz"]),
-            suffix_inflection("したら", "する", &[], &["vs"]),
-            suffix_inflection("為たら", "為る", &[], &["vs"]),
-            suffix_inflection("きたら", "くる", &[], &["vk"]),
-            suffix_inflection("来たら", "来る", &[], &["vk"]),
-            suffix_inflection("來たら", "來る", &[], &["vk"]),
-            suffix_inflection("ましたら", "ます", &[], &["-ます"]),
+            suffix_inflection("かったら", "い", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("たら", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("いたら", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("いだら", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("したら", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったら", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったら", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったら", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだら", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだら", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだら", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じたら", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("したら", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為たら", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("きたら", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来たら", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來たら", "來る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("ましたら", "ます", 0, Conditions::masu.with_subconditions()),
             // Irregular (iku verbs)
-            suffix_inflection("いったら", "いく", &[], &["v5"]),
-            suffix_inflection("行ったら", "行く", &[], &["v5"]),
-            suffix_inflection("逝ったら", "逝く", &[], &["v5"]),
-            suffix_inflection("往ったら", "往く", &[], &["v5"]),
+            suffix_inflection("いったら", "いく", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("行ったら", "行く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("逝ったら", "逝く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("往ったら", "往く", 0, Conditions::v5.with_subconditions()),
             // Irregular (godan u special)
-            suffix_inflection("こうたら", "こう", &[], &["v5"]),
-            suffix_inflection("とうたら", "とう", &[], &["v5"]),
-            suffix_inflection("請うたら", "請う", &[], &["v5"]),
-            suffix_inflection("乞うたら", "乞う", &[], &["v5"]),
-            suffix_inflection("恋うたら", "恋う", &[], &["v5"]),
-            suffix_inflection("問うたら", "問う", &[], &["v5"]),
-            suffix_inflection("訪うたら", "訪う", &[], &["v5"]),
-            suffix_inflection("宣うたら", "宣う", &[], &["v5"]),
-            suffix_inflection("曰うたら", "曰う", &[], &["v5"]),
-            suffix_inflection("給うたら", "給う", &[], &["v5"]),
-            suffix_inflection("賜うたら", "賜う", &[], &["v5"]),
-            suffix_inflection("揺蕩うたら", "揺蕩う", &[], &["v5"]),
+            suffix_inflection("こうたら", "こう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("とうたら", "とう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("請うたら", "請う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("乞うたら", "乞う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("恋うたら", "恋う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("問うたら", "問う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("訪うたら", "訪う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("宣うたら", "宣う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("曰うたら", "曰う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("給うたら", "給う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("賜うたら", "賜う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("揺蕩うたら", "揺蕩う", 0, Conditions::v5.with_subconditions()),
             // Irregular (fu verb te conjugations)
-            suffix_inflection("のたもうたら", "のたまう", &[], &["v5"]),
-            suffix_inflection("たもうたら", "たまう", &[], &["v5"]),
-            suffix_inflection("たゆとうたら", "たゆたう", &[], &["v5"]),
+            suffix_inflection("のたもうたら", "のたまう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たもうたら", "たまう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たゆとうたら", "たゆたう", 0, Conditions::v5.with_subconditions()),
         ],
     },
     Transform {
         name: "-たり",
-        description: indoc! {r#"
+        description: indoc! {"
             1. Shows two actions occurring back and forth (when used with two verbs).
             2. Shows examples of actions and states (when used with multiple verbs and adjectives).
 
             Usage: Attach たり to the continuative form (連用形) of verbs after euphonic change form, かったり to the stem of i-adjectives
-        "#},
+        "},
         rules: &[
-            suffix_inflection("かったり", "い", &[], &["adj-i"]),
-            suffix_inflection("たり", "る", &[], &["v1"]),
-            suffix_inflection("いたり", "く", &[], &["v5"]),
-            suffix_inflection("いだり", "ぐ", &[], &["v5"]),
-            suffix_inflection("したり", "す", &[], &["v5"]),
-            suffix_inflection("ったり", "う", &[], &["v5"]),
-            suffix_inflection("ったり", "つ", &[], &["v5"]),
-            suffix_inflection("ったり", "る", &[], &["v5"]),
-            suffix_inflection("んだり", "ぬ", &[], &["v5"]),
-            suffix_inflection("んだり", "ぶ", &[], &["v5"]),
-            suffix_inflection("んだり", "む", &[], &["v5"]),
-            suffix_inflection("じたり", "ずる", &[], &["vz"]),
-            suffix_inflection("したり", "する", &[], &["vs"]),
-            suffix_inflection("為たり", "為る", &[], &["vs"]),
-            suffix_inflection("きたり", "くる", &[], &["vk"]),
-            suffix_inflection("来たり", "来る", &[], &["vk"]),
-            suffix_inflection("來たり", "來る", &[], &["vk"]),
+            suffix_inflection("かったり", "い", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("たり", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("いたり", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("いだり", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("したり", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったり", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったり", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ったり", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだり", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだり", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("んだり", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じたり", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("したり", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為たり", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("きたり", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来たり", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來たり", "來る", 0, Conditions::vk.with_subconditions()),
             // Irregular (iku verbs)
-            suffix_inflection("いったり", "いく", &[], &["v5"]),
-            suffix_inflection("行ったり", "行く", &[], &["v5"]),
-            suffix_inflection("逝ったり", "逝く", &[], &["v5"]),
-            suffix_inflection("往ったり", "往く", &[], &["v5"]),
+            suffix_inflection("いったり", "いく", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("行ったり", "行く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("逝ったり", "逝く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("往ったり", "往く", 0, Conditions::v5.with_subconditions()),
             // Irregular (godan u special)
-            suffix_inflection("こうたり", "こう", &[], &["v5"]),
-            suffix_inflection("とうたり", "とう", &[], &["v5"]),
-            suffix_inflection("請うたり", "請う", &[], &["v5"]),
-            suffix_inflection("乞うたり", "乞う", &[], &["v5"]),
-            suffix_inflection("恋うたり", "恋う", &[], &["v5"]),
-            suffix_inflection("問うたり", "問う", &[], &["v5"]),
-            suffix_inflection("訪うたり", "訪う", &[], &["v5"]),
-            suffix_inflection("宣うたり", "宣う", &[], &["v5"]),
-            suffix_inflection("曰うたり", "曰う", &[], &["v5"]),
-            suffix_inflection("給うたり", "給う", &[], &["v5"]),
-            suffix_inflection("賜うたり", "賜う", &[], &["v5"]),
-            suffix_inflection("揺蕩うたり", "揺蕩う", &[], &["v5"]),
+            suffix_inflection("こうたり", "こう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("とうたり", "とう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("請うたり", "請う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("乞うたり", "乞う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("恋うたり", "恋う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("問うたり", "問う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("訪うたり", "訪う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("宣うたり", "宣う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("曰うたり", "曰う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("給うたり", "給う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("賜うたり", "賜う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("揺蕩うたり", "揺蕩う", 0, Conditions::v5.with_subconditions()),
             // Irregular (fu verb te conjugations)
-            suffix_inflection("のたもうたり", "のたまう", &[], &["v5"]),
-            suffix_inflection("たもうたり", "たまう", &[], &["v5"]),
-            suffix_inflection("たゆとうたり", "たゆたう", &[], &["v5"]),
+            suffix_inflection("のたもうたり", "のたまう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たもうたり", "たまう", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たゆとうたり", "たゆたう", 0, Conditions::v5.with_subconditions()),
         ],
     },
     Transform {
         name: "-て",
-        description: indoc! {r#"
+        description: indoc! {"
             て-form.
 
             It has a myriad of meanings. Primarily, it is a conjunctive particle that connects two clauses together.
 
             Usage: Attach て to the continuative form (連用形) of verbs after euphonic change form, くて to the stem of i-adjectives.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("くて", "い", &["-て"], &["adj-i"]),
-            suffix_inflection("て", "る", &["-て"], &["v1"]),
-            suffix_inflection("いて", "く", &["-て"], &["v5"]),
-            suffix_inflection("いで", "ぐ", &["-て"], &["v5"]),
-            suffix_inflection("して", "す", &["-て"], &["v5"]),
-            suffix_inflection("って", "う", &["-て"], &["v5"]),
-            suffix_inflection("って", "つ", &["-て"], &["v5"]),
-            suffix_inflection("って", "る", &["-て"], &["v5"]),
+            suffix_inflection(
+                "くて",
+                "い",
+                Conditions::te.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("て", "る", Conditions::te.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("いて", "く", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("いで", "ぐ", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("して", "す", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("って", "う", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("って", "つ", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("って", "る", Conditions::te.with_subconditions(), Conditions::v5.with_subconditions()),
             suffix_inflection_with_replacements(
                 "んで",
                 "ぬ",
-                &["-て"],
-                &["v5"],
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
                 &[("こんで", "込んで")],
             ),
             suffix_inflection_with_replacements(
                 "んで",
                 "ぶ",
-                &["-て"],
-                &["v5"],
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
                 &[("こんで", "込んで")],
             ),
             suffix_inflection_with_replacements(
                 "んで",
                 "む",
-                &["-て"],
-                &["v5"],
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
                 &[("こんで", "込んで")],
             ),
-            suffix_inflection("じて", "ずる", &["-て"], &["vz"]),
-            suffix_inflection("して", "する", &["-て"], &["vs"]),
-            suffix_inflection("為て", "為る", &["-て"], &["vs"]),
-            suffix_inflection("きて", "くる", &["-て"], &["vk"]),
-            suffix_inflection("来て", "来る", &["-て"], &["vk"]),
-            suffix_inflection("來て", "來る", &["-て"], &["vk"]),
-            suffix_inflection("まして", "ます", &[], &["-ます"]),
+            suffix_inflection("じて", "ずる", Conditions::te.with_subconditions(), Conditions::vz.with_subconditions()),
+            suffix_inflection("して", "する", Conditions::te.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("為て", "為る", Conditions::te.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("きて", "くる", Conditions::te.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("来て", "来る", Conditions::te.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("來て", "來る", Conditions::te.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("まして", "ます", 0, Conditions::masu.with_subconditions()),
             // Irregular (iku verbs)
-            suffix_inflection("いって", "いく", &["-て"], &["v5"]),
-            suffix_inflection("行って", "行く", &["-て"], &["v5"]),
-            suffix_inflection("逝って", "逝く", &["-て"], &["v5"]),
-            suffix_inflection("往って", "往く", &["-て"], &["v5"]),
+            suffix_inflection(
+                "いって",
+                "いく",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "行って",
+                "行く",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "逝って",
+                "逝く",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "往って",
+                "往く",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
             // Irregular (godan u special)
-            suffix_inflection("こうて", "こう", &["-て"], &["v5"]),
-            suffix_inflection("とうて", "とう", &["-て"], &["v5"]),
-            suffix_inflection("請うて", "請う", &["-て"], &["v5"]),
-            suffix_inflection("乞うて", "乞う", &["-て"], &["v5"]),
-            suffix_inflection("恋うて", "恋う", &["-て"], &["v5"]),
-            suffix_inflection("問うて", "問う", &["-て"], &["v5"]),
-            suffix_inflection("訪うて", "訪う", &["-て"], &["v5"]),
-            suffix_inflection("宣うて", "宣う", &["-て"], &["v5"]),
-            suffix_inflection("曰うて", "曰う", &["-て"], &["v5"]),
-            suffix_inflection("給うて", "給う", &["-て"], &["v5"]),
-            suffix_inflection("賜うて", "賜う", &["-て"], &["v5"]),
-            suffix_inflection("揺蕩うて", "揺蕩う", &["-て"], &["v5"]),
+            suffix_inflection(
+                "こうて",
+                "こう",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうて",
+                "とう",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "請うて",
+                "請う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "乞うて",
+                "乞う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "恋うて",
+                "恋う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "問うて",
+                "問う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "訪うて",
+                "訪う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "宣うて",
+                "宣う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "曰うて",
+                "曰う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "給うて",
+                "給う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "賜うて",
+                "賜う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "揺蕩うて",
+                "揺蕩う",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
             // Irregular (fu verb te conjugations)
-            suffix_inflection("のたもうて", "のたまう", &["-て"], &["v5"]),
-            suffix_inflection("たもうて", "たまう", &["-て"], &["v5"]),
-            suffix_inflection("たゆとうて", "たゆたう", &["-て"], &["v5"]),
+            suffix_inflection(
+                "のたもうて",
+                "のたまう",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たもうて",
+                "たまう",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たゆとうて",
+                "たゆたう",
+                Conditions::te.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-ず",
-        description: indoc! {r#"
+        description: indoc! {"
             1. Negative form of verbs.
             2. Continuative form (連用形) of the particle ぬ (nu).
 
             Usage: Attach ず to the irrealis form (未然形) of verbs.
-        "#},
+        "},
         rules: &[
-            suffix_inflection("ず", "る", &[], &["v1"]),
-            suffix_inflection("かず", "く", &[], &["v5"]),
-            suffix_inflection("がず", "ぐ", &[], &["v5"]),
-            suffix_inflection("さず", "す", &[], &["v5"]),
-            suffix_inflection("たず", "つ", &[], &["v5"]),
-            suffix_inflection("なず", "ぬ", &[], &["v5"]),
-            suffix_inflection("ばず", "ぶ", &[], &["v5"]),
-            suffix_inflection("まず", "む", &[], &["v5"]),
-            suffix_inflection("らず", "る", &[], &["v5"]),
-            suffix_inflection("わず", "う", &[], &["v5"]),
-            suffix_inflection("ぜず", "ずる", &[], &["vz"]),
-            suffix_inflection("せず", "する", &[], &["vs"]),
-            suffix_inflection("為ず", "為る", &[], &["vs"]),
-            suffix_inflection("こず", "くる", &[], &["vk"]),
-            suffix_inflection("来ず", "来る", &[], &["vk"]),
-            suffix_inflection("來ず", "來る", &[], &["vk"]),
+            suffix_inflection("ず", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("かず", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("がず", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("さず", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たず", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("なず", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ばず", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("まず", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("らず", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("わず", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜず", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("せず", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為ず", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こず", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来ず", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來ず", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-ぬ",
-        description: indoc! {r#"
+        description: indoc! {"
             Negative form of verbs.
 
-            する becomes せぬ.
-
             Usage: Attach ぬ to the irrealis form (未然形) of verbs.
-        "#},
+
+            Irregularities: する becomes せぬ.
+        "},
         rules: &[
-            suffix_inflection("ぬ", "る", &[], &["v1"]),
-            suffix_inflection("かぬ", "く", &[], &["v5"]),
-            suffix_inflection("がぬ", "ぐ", &[], &["v5"]),
-            suffix_inflection("さぬ", "す", &[], &["v5"]),
-            suffix_inflection("たぬ", "つ", &[], &["v5"]),
-            suffix_inflection("なぬ", "ぬ", &[], &["v5"]),
-            suffix_inflection("ばぬ", "ぶ", &[], &["v5"]),
-            suffix_inflection("まぬ", "む", &[], &["v5"]),
-            suffix_inflection("らぬ", "る", &[], &["v5"]),
-            suffix_inflection("わぬ", "う", &[], &["v5"]),
-            suffix_inflection("ぜぬ", "ずる", &[], &["vz"]),
-            suffix_inflection("せぬ", "する", &[], &["vs"]),
-            suffix_inflection("為ぬ", "為る", &[], &["vs"]),
-            suffix_inflection("こぬ", "くる", &[], &["vk"]),
-            suffix_inflection("来ぬ", "来る", &[], &["vk"]),
-            suffix_inflection("來ぬ", "來る", &[], &["vk"]),
+            suffix_inflection("ぬ", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("かぬ", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("がぬ", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("さぬ", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たぬ", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("なぬ", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ばぬ", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("まぬ", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("らぬ", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("わぬ", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜぬ", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("せぬ", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為ぬ", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こぬ", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来ぬ", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來ぬ", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-ん",
-        description: indoc! {r#"
+        description: indoc! {"
             Negative form of verbs; a sound change of ぬ.
 
-            する becomes せん.
-
             Usage: Attach ん to the irrealis form (未然形) of verbs.
-        "#},
+
+            Irregularities: する becomes せん.
+        "},
         rules: &[
-            suffix_inflection("ん", "る", &["-ん"], &["v1"]),
-            suffix_inflection("かん", "く", &["-ん"], &["v5"]),
-            suffix_inflection("がん", "ぐ", &["-ん"], &["v5"]),
-            suffix_inflection("さん", "す", &["-ん"], &["v5"]),
-            suffix_inflection("たん", "つ", &["-ん"], &["v5"]),
-            suffix_inflection("なん", "ぬ", &["-ん"], &["v5"]),
-            suffix_inflection("ばん", "ぶ", &["-ん"], &["v5"]),
-            suffix_inflection("まん", "む", &["-ん"], &["v5"]),
-            suffix_inflection("らん", "る", &["-ん"], &["v5"]),
-            suffix_inflection("わん", "う", &["-ん"], &["v5"]),
-            suffix_inflection("ぜん", "ずる", &["-ん"], &["vz"]),
-            suffix_inflection("せん", "する", &["-ん"], &["vs"]),
-            suffix_inflection("為ん", "為る", &["-ん"], &["vs"]),
-            suffix_inflection("こん", "くる", &["-ん"], &["vk"]),
-            suffix_inflection("来ん", "来る", &["-ん"], &["vk"]),
-            suffix_inflection("來ん", "來る", &["-ん"], &["vk"]),
+            suffix_inflection("ん", "る", Conditions::n.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("かん", "く", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("がん", "ぐ", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("さん", "す", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("たん", "つ", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("なん", "ぬ", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ばん", "ぶ", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("まん", "む", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("らん", "る", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("わん", "う", Conditions::n.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜん", "ずる", Conditions::n.with_subconditions(), Conditions::vz.with_subconditions()),
+            suffix_inflection("せん", "する", Conditions::n.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("為ん", "為る", Conditions::n.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("こん", "くる", Conditions::n.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("来ん", "来る", Conditions::n.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("來ん", "來る", Conditions::n.with_subconditions(), Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-んばかり",
-        description: indoc! {r#"
+        description: indoc! {"
             Shows an action or condition is on the verge of occurring, or an excessive/extreme degree.
 
-            する becomes せんばかり
-
             Usage: Attach んばかり to the irrealis form (未然形) of verbs.
-        "#},
+
+            Irregularities: する becomes せんばかり
+        "},
         rules: &[
-            suffix_inflection("んばかり", "る", &[], &["v1"]),
-            suffix_inflection("かんばかり", "く", &[], &["v5"]),
-            suffix_inflection("がんばかり", "ぐ", &[], &["v5"]),
-            suffix_inflection("さんばかり", "す", &[], &["v5"]),
-            suffix_inflection("たんばかり", "つ", &[], &["v5"]),
-            suffix_inflection("なんばかり", "ぬ", &[], &["v5"]),
-            suffix_inflection("ばんばかり", "ぶ", &[], &["v5"]),
-            suffix_inflection("まんばかり", "む", &[], &["v5"]),
-            suffix_inflection("らんばかり", "る", &[], &["v5"]),
-            suffix_inflection("わんばかり", "う", &[], &["v5"]),
-            suffix_inflection("ぜんばかり", "ずる", &[], &["vz"]),
-            suffix_inflection("せんばかり", "する", &[], &["vs"]),
-            suffix_inflection("為んばかり", "為る", &[], &["vs"]),
-            suffix_inflection("こんばかり", "くる", &[], &["vk"]),
-            suffix_inflection("来んばかり", "来る", &[], &["vk"]),
-            suffix_inflection("來んばかり", "來る", &[], &["vk"]),
+            suffix_inflection("んばかり", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("かんばかり", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("がんばかり", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("さんばかり", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たんばかり", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("なんばかり", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ばんばかり", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("まんばかり", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("らんばかり", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("わんばかり", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜんばかり", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("せんばかり", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為んばかり", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こんばかり", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来んばかり", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來んばかり", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-んとする",
-        description: indoc! {r#"
-            '1. Shows the speaker\'s will or intention.\n' +
-            '2. Shows an action or condition is on the verge of occurring.\n' +
-            'Usage: Attach んとする to the irrealis form (未然形) of verbs.\n' +
-            'する becomes せんとする',
+        description: indoc! {"
+            1. Shows the speaker\'s will or intention.
+            2. Shows an action or condition is on the verge of occurring.
 
-        "#},
+            Usage: Attach んとする to the irrealis form (未然形) of verbs.
+
+            Irregularities: する becomes せんとする
+        "},
         rules: &[
-            suffix_inflection("んとする", "る", &["vs"], &["v1"]),
-            suffix_inflection("かんとする", "く", &["vs"], &["v5"]),
-            suffix_inflection("がんとする", "ぐ", &["vs"], &["v5"]),
-            suffix_inflection("さんとする", "す", &["vs"], &["v5"]),
-            suffix_inflection("たんとする", "つ", &["vs"], &["v5"]),
-            suffix_inflection("なんとする", "ぬ", &["vs"], &["v5"]),
-            suffix_inflection("ばんとする", "ぶ", &["vs"], &["v5"]),
-            suffix_inflection("まんとする", "む", &["vs"], &["v5"]),
-            suffix_inflection("らんとする", "る", &["vs"], &["v5"]),
-            suffix_inflection("わんとする", "う", &["vs"], &["v5"]),
-            suffix_inflection("ぜんとする", "ずる", &["vs"], &["vz"]),
-            suffix_inflection("せんとする", "する", &["vs"], &["vs"]),
-            suffix_inflection("為んとする", "為る", &["vs"], &["vs"]),
-            suffix_inflection("こんとする", "くる", &["vs"], &["vk"]),
-            suffix_inflection("来んとする", "来る", &["vs"], &["vk"]),
-            suffix_inflection("來んとする", "來る", &["vs"], &["vk"]),
+            suffix_inflection(
+                "んとする",
+                "る",
+                Conditions::vs.with_subconditions(),
+                Conditions::v1.with_subconditions(),
+            ),
+            suffix_inflection(
+                "かんとする",
+                "く",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "がんとする",
+                "ぐ",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "さんとする",
+                "す",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たんとする",
+                "つ",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "なんとする",
+                "ぬ",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ばんとする",
+                "ぶ",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "まんとする",
+                "む",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "らんとする",
+                "る",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "わんとする",
+                "う",
+                Conditions::vs.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぜんとする",
+                "ずる",
+                Conditions::vs.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "せんとする",
+                "する",
+                Conditions::vs.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為んとする",
+                "為る",
+                Conditions::vs.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こんとする",
+                "くる",
+                Conditions::vs.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来んとする",
+                "来る",
+                Conditions::vs.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來んとする",
+                "來る",
+                Conditions::vs.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-む",
-        description: indoc! {r#"
-            'Archaic.\n' +
-            '1. Shows an inference of a certain matter.\n' +
-            '2. Shows speaker\'s intention.\n' +
-            'Usage: Attach む to the irrealis form (未然形) of verbs.\n' +
-            'する becomes せむ',
+        description: indoc! {"
+            Archaic.
+            1. Shows an inference of a certain matter.
+            2. Shows speaker's intention.
 
-        "#},
+            Usage: Attach む to the irrealis form (未然形) of verbs.
+
+            Irregularities: する becomes せむ
+        "},
         rules: &[
-            suffix_inflection("む", "る", &[], &["v1"]),
-            suffix_inflection("かむ", "く", &[], &["v5"]),
-            suffix_inflection("がむ", "ぐ", &[], &["v5"]),
-            suffix_inflection("さむ", "す", &[], &["v5"]),
-            suffix_inflection("たむ", "つ", &[], &["v5"]),
-            suffix_inflection("なむ", "ぬ", &[], &["v5"]),
-            suffix_inflection("ばむ", "ぶ", &[], &["v5"]),
-            suffix_inflection("まむ", "む", &[], &["v5"]),
-            suffix_inflection("らむ", "る", &[], &["v5"]),
-            suffix_inflection("わむ", "う", &[], &["v5"]),
-            suffix_inflection("ぜむ", "ずる", &[], &["vz"]),
-            suffix_inflection("せむ", "する", &[], &["vs"]),
-            suffix_inflection("為む", "為る", &[], &["vs"]),
-            suffix_inflection("こむ", "くる", &[], &["vk"]),
-            suffix_inflection("来む", "来る", &[], &["vk"]),
-            suffix_inflection("來む", "來る", &[], &["vk"]),
+            suffix_inflection("む", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("かむ", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("がむ", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("さむ", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たむ", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("なむ", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ばむ", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("まむ", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("らむ", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("わむ", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜむ", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("せむ", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為む", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こむ", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来む", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來む", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-ざる",
-        description: indoc! {r#"
-            'Negative form of verbs.\n' +
-            'Usage: Attach ざる to the irrealis form (未然形) of verbs.\n' +
-            'する becomes せざる',
+        description: indoc! {"
+            Negative form of verbs.
 
-        "#},
+            Usage: Attach ざる to the irrealis form (未然形) of verbs.
+
+            Irregularities: する becomes せざる
+        "},
         rules: &[
-            suffix_inflection("ざる", "る", &[], &["v1"]),
-            suffix_inflection("かざる", "く", &[], &["v5"]),
-            suffix_inflection("がざる", "ぐ", &[], &["v5"]),
-            suffix_inflection("さざる", "す", &[], &["v5"]),
-            suffix_inflection("たざる", "つ", &[], &["v5"]),
-            suffix_inflection("なざる", "ぬ", &[], &["v5"]),
-            suffix_inflection("ばざる", "ぶ", &[], &["v5"]),
-            suffix_inflection("まざる", "む", &[], &["v5"]),
-            suffix_inflection("らざる", "る", &[], &["v5"]),
-            suffix_inflection("わざる", "う", &[], &["v5"]),
-            suffix_inflection("ぜざる", "ずる", &[], &["vz"]),
-            suffix_inflection("せざる", "する", &[], &["vs"]),
-            suffix_inflection("為ざる", "為る", &[], &["vs"]),
-            suffix_inflection("こざる", "くる", &[], &["vk"]),
-            suffix_inflection("来ざる", "来る", &[], &["vk"]),
-            suffix_inflection("來ざる", "來る", &[], &["vk"]),
+            suffix_inflection("ざる", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("かざる", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("がざる", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("さざる", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("たざる", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("なざる", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ばざる", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("まざる", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("らざる", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("わざる", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぜざる", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("せざる", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為ざる", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こざる", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来ざる", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來ざる", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "-ねば",
-        description: indoc! {r#"
-            '1. Shows a hypothetical negation; if not ...\n' +
-            '2. Shows a must. Used with or without ならぬ.\n' +
-            'Usage: Attach ねば to the irrealis form (未然形) of verbs.\n' +
-            'する becomes せねば',
+        description: indoc! {"
+            1. Shows a hypothetical negation; if not...
+            2. Shows a must. Used with or without ならぬ.
 
-        "#},
+            Usage: Attach ねば to the irrealis form (未然形) of verbs.
+
+            Irregularities: する becomes せねば
+        "},
         rules: &[
-            suffix_inflection("ねば", "る", &["-ば"], &["v1"]),
-            suffix_inflection("かねば", "く", &["-ば"], &["v5"]),
-            suffix_inflection("がねば", "ぐ", &["-ば"], &["v5"]),
-            suffix_inflection("さねば", "す", &["-ば"], &["v5"]),
-            suffix_inflection("たねば", "つ", &["-ば"], &["v5"]),
-            suffix_inflection("なねば", "ぬ", &["-ば"], &["v5"]),
-            suffix_inflection("ばねば", "ぶ", &["-ば"], &["v5"]),
-            suffix_inflection("まねば", "む", &["-ば"], &["v5"]),
-            suffix_inflection("らねば", "る", &["-ば"], &["v5"]),
-            suffix_inflection("わねば", "う", &["-ば"], &["v5"]),
-            suffix_inflection("ぜねば", "ずる", &["-ば"], &["vz"]),
-            suffix_inflection("せねば", "する", &["-ば"], &["vs"]),
-            suffix_inflection("為ねば", "為る", &["-ば"], &["vs"]),
-            suffix_inflection("こねば", "くる", &["-ば"], &["vk"]),
-            suffix_inflection("来ねば", "来る", &["-ば"], &["vk"]),
-            suffix_inflection("來ねば", "來る", &["-ば"], &["vk"]),
+            suffix_inflection("ねば", "る", Conditions::ba.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("かねば", "く", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("がねば", "ぐ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("さねば", "す", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("たねば", "つ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("なねば", "ぬ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ばねば", "ぶ", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("まねば", "む", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("らねば", "る", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("わねば", "う", Conditions::ba.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "ぜねば",
+                "ずる",
+                Conditions::ba.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "せねば",
+                "する",
+                Conditions::ba.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ねば",
+                "為る",
+                Conditions::ba.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こねば",
+                "くる",
+                Conditions::ba.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ねば",
+                "来る",
+                Conditions::ba.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ねば",
+                "來る",
+                Conditions::ba.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-く",
-        description: indoc! {r#"
-            'Adverbial form of i-adjectives.\n',
+        description: indoc! {"
+            Adverbial form of i-adjectives.\n
 
-        "#},
-        rules: &[suffix_inflection("く", "い", &["-く"], &["adj-i"])],
+        "},
+        rules: &[suffix_inflection(
+            "く",
+            "い",
+            Conditions::ku.with_subconditions(),
+            Conditions::adj_i.with_subconditions(),
+        )],
     },
     Transform {
         name: "causative",
-        description: indoc! {r#"
-            'Describes the intention to make someone do something.\n' +
-            'Usage: Attach させる to the irrealis form (未然形) of ichidan verbs and くる.\n' +
-            'Attach せる to the irrealis form (未然形) of godan verbs and する.\n' +
-            'It itself conjugates as an ichidan verb.',
+        description: indoc! {"
+            Describes the intention to make someone do something.
 
-        "#},
+            Usage: Attach させる to the irrealis form (未然形) of ichidan verbs and くる.
+                   Attach せる to the irrealis form (未然形) of godan verbs and する.
+
+            It itself conjugates as an ichidan verb.
+        "},
         rules: &[
-            suffix_inflection("させる", "る", &["v1"], &["v1"]),
-            suffix_inflection("かせる", "く", &["v1"], &["v5"]),
-            suffix_inflection("がせる", "ぐ", &["v1"], &["v5"]),
-            suffix_inflection("させる", "す", &["v1"], &["v5"]),
-            suffix_inflection("たせる", "つ", &["v1"], &["v5"]),
-            suffix_inflection("なせる", "ぬ", &["v1"], &["v5"]),
-            suffix_inflection("ばせる", "ぶ", &["v1"], &["v5"]),
-            suffix_inflection("ませる", "む", &["v1"], &["v5"]),
-            suffix_inflection("らせる", "る", &["v1"], &["v5"]),
-            suffix_inflection("わせる", "う", &["v1"], &["v5"]),
-            suffix_inflection("じさせる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("ぜさせる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("させる", "する", &["v1"], &["vs"]),
-            suffix_inflection("為せる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("せさせる", "する", &["v1"], &["vs"]),
-            suffix_inflection("為させる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("こさせる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来させる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來させる", "來る", &["v1"], &["vk"]),
+            suffix_inflection("させる", "る", Conditions::v1.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("かせる", "く", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("がせる", "ぐ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("させる", "す", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("たせる", "つ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("なせる", "ぬ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ばせる", "ぶ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ませる", "む", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("らせる", "る", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("わせる", "う", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "じさせる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぜさせる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "させる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為せる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "せさせる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為させる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こさせる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来させる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來させる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "short causative",
-        description: indoc! {r#"
-            'Contraction of the causative form.\n' +
-            'Describes the intention to make someone do something.\n' +
-            'Usage: Attach す to the irrealis form (未然形) of godan verbs.\n' +
-            'Attach さす to the dictionary form (終止形) of ichidan verbs.\n' +
-            'する becomes さす, くる becomes こさす.\n' +
-            'It itself conjugates as an godan verb.',
+        description: indoc! {"
+            Contraction of the causative form.
+            Describes the intention to make someone do something.
 
-        "#},
+            Usage: Attach す to the irrealis form (未然形) of godan verbs.
+                   Attach さす to the dictionary form (終止形) of ichidan verbs.
+
+            Irregularities: する becomes さす, くる becomes こさす.
+            It itself conjugates as an godan verb.
+        "},
         rules: &[
-            suffix_inflection("さす", "る", &["v5ss"], &["v1"]),
-            suffix_inflection("かす", "く", &["v5sp"], &["v5"]),
-            suffix_inflection("がす", "ぐ", &["v5sp"], &["v5"]),
-            suffix_inflection("さす", "す", &["v5ss"], &["v5"]),
-            suffix_inflection("たす", "つ", &["v5sp"], &["v5"]),
-            suffix_inflection("なす", "ぬ", &["v5sp"], &["v5"]),
-            suffix_inflection("ばす", "ぶ", &["v5sp"], &["v5"]),
-            suffix_inflection("ます", "む", &["v5sp"], &["v5"]),
-            suffix_inflection("らす", "る", &["v5sp"], &["v5"]),
-            suffix_inflection("わす", "う", &["v5sp"], &["v5"]),
-            suffix_inflection("じさす", "ずる", &["v5ss"], &["vz"]),
-            suffix_inflection("ぜさす", "ずる", &["v5ss"], &["vz"]),
-            suffix_inflection("さす", "する", &["v5ss"], &["vs"]),
-            suffix_inflection("為す", "為る", &["v5ss"], &["vs"]),
-            suffix_inflection("こさす", "くる", &["v5ss"], &["vk"]),
-            suffix_inflection("来さす", "来る", &["v5ss"], &["vk"]),
-            suffix_inflection("來さす", "來る", &["v5ss"], &["vk"]),
+            suffix_inflection("さす", "る", Conditions::v5ss.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("かす", "く", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("がす", "ぐ", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("さす", "す", Conditions::v5ss.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("たす", "つ", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("なす", "ぬ", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ばす", "ぶ", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ます", "む", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("らす", "る", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("わす", "う", Conditions::v5sp.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "じさす",
+                "ずる",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぜさす",
+                "ずる",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "さす",
+                "する",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為す",
+                "為る",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こさす",
+                "くる",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来さす",
+                "来る",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來さす",
+                "來る",
+                Conditions::v5ss.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "imperative",
-        description: indoc! {r#"
-            '1. To give orders.\n' +
-            '2. (As あれ) Represents the fact that it will never change no matter the circumstances.\n' +
-            '3. Express a feeling of hope.',
-
-        "#},
+        description: indoc! {"
+            1. To give orders.
+            2. (As あれ) Represents the fact that it will never change no matter the circumstances.
+            3. Express a feeling of hope.
+        "},
         rules: &[
-            suffix_inflection("ろ", "る", &[], &["v1"]),
-            suffix_inflection("よ", "る", &[], &["v1"]),
-            suffix_inflection("え", "う", &[], &["v5"]),
-            suffix_inflection("け", "く", &[], &["v5"]),
-            suffix_inflection("げ", "ぐ", &[], &["v5"]),
-            suffix_inflection("せ", "す", &[], &["v5"]),
-            suffix_inflection("て", "つ", &[], &["v5"]),
-            suffix_inflection("ね", "ぬ", &[], &["v5"]),
-            suffix_inflection("べ", "ぶ", &[], &["v5"]),
-            suffix_inflection("め", "む", &[], &["v5"]),
-            suffix_inflection("れ", "る", &[], &["v5"]),
-            suffix_inflection("じろ", "ずる", &[], &["vz"]),
-            suffix_inflection("ぜよ", "ずる", &[], &["vz"]),
-            suffix_inflection("しろ", "する", &[], &["vs"]),
-            suffix_inflection("せよ", "する", &[], &["vs"]),
-            suffix_inflection("為ろ", "為る", &[], &["vs"]),
-            suffix_inflection("為よ", "為る", &[], &["vs"]),
-            suffix_inflection("こい", "くる", &[], &["vk"]),
-            suffix_inflection("来い", "来る", &[], &["vk"]),
-            suffix_inflection("來い", "來る", &[], &["vk"]),
+            suffix_inflection("ろ", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("よ", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("え", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("け", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("げ", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("せ", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("て", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ね", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("べ", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("め", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("れ", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じろ", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("ぜよ", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("しろ", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("せよ", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為ろ", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為よ", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こい", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来い", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來い", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "continuative",
-        description: indoc! {r#"
-            'Used to indicate actions that are (being) carried out.\n' +
-            'Refers to 連用形, the part of the verb after conjugating with -ます and dropping ます.',
-
-        "#},
+        description: indoc! {"
+            Used to indicate actions that are (being) carried out.
+            Refers to 連用形, the part of the verb after conjugating with -ます and dropping ます.
+        "},
         rules: &[
-            suffix_inflection("い", "いる", &[], &["v1d"]),
-            suffix_inflection("え", "える", &[], &["v1d"]),
-            suffix_inflection("き", "きる", &[], &["v1d"]),
-            suffix_inflection("ぎ", "ぎる", &[], &["v1d"]),
-            suffix_inflection("け", "ける", &[], &["v1d"]),
-            suffix_inflection("げ", "げる", &[], &["v1d"]),
-            suffix_inflection("じ", "じる", &[], &["v1d"]),
-            suffix_inflection("せ", "せる", &[], &["v1d"]),
-            suffix_inflection("ぜ", "ぜる", &[], &["v1d"]),
-            suffix_inflection("ち", "ちる", &[], &["v1d"]),
-            suffix_inflection("て", "てる", &[], &["v1d"]),
-            suffix_inflection("で", "でる", &[], &["v1d"]),
-            suffix_inflection("に", "にる", &[], &["v1d"]),
-            suffix_inflection("ね", "ねる", &[], &["v1d"]),
-            suffix_inflection("ひ", "ひる", &[], &["v1d"]),
-            suffix_inflection("び", "びる", &[], &["v1d"]),
-            suffix_inflection("へ", "へる", &[], &["v1d"]),
-            suffix_inflection("べ", "べる", &[], &["v1d"]),
-            suffix_inflection("み", "みる", &[], &["v1d"]),
-            suffix_inflection("め", "める", &[], &["v1d"]),
-            suffix_inflection("り", "りる", &[], &["v1d"]),
-            suffix_inflection("れ", "れる", &[], &["v1d"]),
-            suffix_inflection("い", "う", &[], &["v5"]),
-            suffix_inflection("き", "く", &[], &["v5"]),
-            suffix_inflection("ぎ", "ぐ", &[], &["v5"]),
-            suffix_inflection("し", "す", &[], &["v5"]),
-            suffix_inflection("ち", "つ", &[], &["v5"]),
-            suffix_inflection("に", "ぬ", &[], &["v5"]),
-            suffix_inflection("び", "ぶ", &[], &["v5"]),
-            suffix_inflection("み", "む", &[], &["v5"]),
-            suffix_inflection("り", "る", &[], &["v5"]),
-            suffix_inflection("き", "くる", &[], &["vk"]),
-            suffix_inflection("し", "する", &[], &["vs"]),
-            suffix_inflection("来", "来る", &[], &["vk"]),
-            suffix_inflection("來", "來る", &[], &["vk"]),
+            suffix_inflection("い", "いる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("え", "える", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("き", "きる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("ぎ", "ぎる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("け", "ける", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("げ", "げる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("じ", "じる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("せ", "せる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("ぜ", "ぜる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("ち", "ちる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("て", "てる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("で", "でる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("に", "にる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("ね", "ねる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("ひ", "ひる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("び", "びる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("へ", "へる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("べ", "べる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("み", "みる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("め", "める", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("り", "りる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("れ", "れる", 0, Conditions::v1d.with_subconditions()),
+            suffix_inflection("い", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("き", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぎ", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("し", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ち", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("に", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("び", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("み", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("り", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("き", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("し", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("来", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來", "來る", 0, Conditions::vk.with_subconditions()),
         ],
     },
     Transform {
         name: "negative",
-        description: indoc! {r#"
-            '1. Negative form of verbs.\n' +
-            '2. Expresses a feeling of solicitation to the other party.\n' +
-            'Usage: Attach ない to the irrealis form (未然形) of verbs, くない to the stem of i-adjectives. ない itself conjugates as i-adjective. ます becomes ません.',
+        description: indoc! {"
+            1. Negative form of verbs.
+            2. Expresses a feeling of solicitation to the other party.
 
-        "#},
+            Usage: Attach ない to the irrealis form (未然形) of verbs, くない to the stem of i-adjectives. ない itself conjugates as i-adjective. ます becomes ません.
+        "},
         rules: &[
-            suffix_inflection("くない", "い", &["adj-i"], &["adj-i"]),
-            suffix_inflection("ない", "る", &["adj-i"], &["v1"]),
-            suffix_inflection("かない", "く", &["adj-i"], &["v5"]),
-            suffix_inflection("がない", "ぐ", &["adj-i"], &["v5"]),
-            suffix_inflection("さない", "す", &["adj-i"], &["v5"]),
-            suffix_inflection("たない", "つ", &["adj-i"], &["v5"]),
-            suffix_inflection("なない", "ぬ", &["adj-i"], &["v5"]),
-            suffix_inflection("ばない", "ぶ", &["adj-i"], &["v5"]),
-            suffix_inflection("まない", "む", &["adj-i"], &["v5"]),
-            suffix_inflection("らない", "る", &["adj-i"], &["v5"]),
-            suffix_inflection("わない", "う", &["adj-i"], &["v5"]),
-            suffix_inflection("じない", "ずる", &["adj-i"], &["vz"]),
-            suffix_inflection("しない", "する", &["adj-i"], &["vs"]),
-            suffix_inflection("為ない", "為る", &["adj-i"], &["vs"]),
-            suffix_inflection("こない", "くる", &["adj-i"], &["vk"]),
-            suffix_inflection("来ない", "来る", &["adj-i"], &["vk"]),
-            suffix_inflection("來ない", "來る", &["adj-i"], &["vk"]),
-            suffix_inflection("ません", "ます", &["-ません"], &["-ます"]),
+            suffix_inflection(
+                "くない",
+                "い",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ない",
+                "る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v1.with_subconditions(),
+            ),
+            suffix_inflection(
+                "かない",
+                "く",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "がない",
+                "ぐ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "さない",
+                "す",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たない",
+                "つ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "なない",
+                "ぬ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ばない",
+                "ぶ",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "まない",
+                "む",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "らない",
+                "る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "わない",
+                "う",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じない",
+                "ずる",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しない",
+                "する",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ない",
+                "為る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こない",
+                "くる",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ない",
+                "来る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ない",
+                "來る",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ません",
+                "ます",
+                Conditions::masen.with_subconditions(),
+                Conditions::masu.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-さ",
-        description: indoc! {r#"
-            'Nominalizing suffix of i-adjectives indicating nature, state, mind or degree.\n' +
-            'Usage: Attach さ to the stem of i-adjectives.',
+        description: indoc! {"
+            Nominalizing suffix of i-adjectives indicating nature, state, mind or degree.
 
-        "#},
-        rules: &[suffix_inflection("さ", "い", &[], &["adj-i"])],
+            Usage: Attach さ to the stem of i-adjectives.
+        "},
+        rules: &[suffix_inflection("さ", "い", 0, Conditions::adj_i.with_subconditions())],
     },
     Transform {
         name: "passive",
-        description: indoc! {r#"
-            passiveEnglishDescription +
-            'Usage: Attach れる to the irrealis form (未然形) of godan verbs.',
-        "#},
+        description: indoc! {"
+            1. Indicates an action received from an action performer.
+            2. Expresses respect for the subject of action performer.
+        "},
         rules: &[
-            suffix_inflection("かれる", "く", &["v1"], &["v5"]),
-            suffix_inflection("がれる", "ぐ", &["v1"], &["v5"]),
-            suffix_inflection("される", "す", &["v1"], &["v5d", "v5sp"]),
-            suffix_inflection("たれる", "つ", &["v1"], &["v5"]),
-            suffix_inflection("なれる", "ぬ", &["v1"], &["v5"]),
-            suffix_inflection("ばれる", "ぶ", &["v1"], &["v5"]),
-            suffix_inflection("まれる", "む", &["v1"], &["v5"]),
-            suffix_inflection("われる", "う", &["v1"], &["v5"]),
-            suffix_inflection("られる", "る", &["v1"], &["v5"]),
-            suffix_inflection("じされる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("ぜされる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("される", "する", &["v1"], &["vs"]),
-            suffix_inflection("為れる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("こられる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来られる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來られる", "來る", &["v1"], &["vk"]),
+            suffix_inflection("かれる", "く", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("がれる", "ぐ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "される",
+                "す",
+                Conditions::v1.with_subconditions(),
+                (Conditions::v5d | Conditions::v5sp).with_subconditions(),
+            ),
+            suffix_inflection("たれる", "つ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("なれる", "ぬ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("ばれる", "ぶ", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("まれる", "む", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("われる", "う", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("られる", "る", Conditions::v1.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection(
+                "じされる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぜされる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "される",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為れる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こられる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来られる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來られる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-た",
-        description: indoc! {r#"
-            '1. Indicates a reality that has happened in the past.\n' +
-            '2. Indicates the completion of an action.\n' +
-            '3. Indicates the confirmation of a matter.\n' +
-            '4. Indicates the speaker\'s confidence that the action will definitely be fulfilled.\n' +
-            '5. Indicates the events that occur before the main clause are represented as relative past.\n' +
-            '6. Indicates a mild imperative/command.\n' +
-            'Usage: Attach た to the continuative form (連用形) of verbs after euphonic change form, かった to the stem of i-adjectives.',
-        "#},
+        description: indoc! {"
+            1. Indicates a reality that has happened in the past.
+            2. Indicates the completion of an action.
+            3. Indicates the confirmation of a matter.
+            4. Indicates the speaker\'s confidence that the action will definitely be fulfilled.
+            5. Indicates the events that occur before the main clause are represented as relative past.
+            6. Indicates a mild imperative/command.
+
+            Usage: Attach た to the continuative form (連用形) of verbs after euphonic change form, かった to the stem of i-adjectives.
+        "},
         rules: &[
-            suffix_inflection("かった", "い", &["-た"], &["adj-i"]),
-            suffix_inflection("た", "る", &["-た"], &["v1"]),
-            suffix_inflection("いた", "く", &["-た"], &["v5"]),
-            suffix_inflection("いだ", "ぐ", &["-た"], &["v5"]),
-            suffix_inflection("した", "す", &["-た"], &["v5"]),
-            suffix_inflection("った", "う", &["-た"], &["v5"]),
-            suffix_inflection("った", "つ", &["-た"], &["v5"]),
-            suffix_inflection("った", "る", &["-た"], &["v5"]),
-            suffix_inflection("んだ", "ぬ", &["-た"], &["v5"]),
-            suffix_inflection("んだ", "ぶ", &["-た"], &["v5"]),
-            suffix_inflection("んだ", "む", &["-た"], &["v5"]),
-            suffix_inflection("じた", "ずる", &["-た"], &["vz"]),
-            suffix_inflection("した", "する", &["-た"], &["vs"]),
-            suffix_inflection("為た", "為る", &["-た"], &["vs"]),
-            suffix_inflection("きた", "くる", &["-た"], &["vk"]),
-            suffix_inflection("来た", "来る", &["-た"], &["vk"]),
-            suffix_inflection("來た", "來る", &["-た"], &["vk"]),
-            suffix_inflection("ました", "ます", &["-た"], &["-ます"]),
-            suffix_inflection("でした", "", &["-た"], &["-ません"]),
-            suffix_inflection("かった", "", &["-た"], &["-ません", "-ん"]),
+            suffix_inflection(
+                "かった",
+                "い",
+                Conditions::ta.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("た", "る", Conditions::ta.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection("いた", "く", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("いだ", "ぐ", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("した", "す", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("った", "う", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("った", "つ", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("った", "る", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んだ", "ぬ", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んだ", "ぶ", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("んだ", "む", Conditions::ta.with_subconditions(), Conditions::v5.with_subconditions()),
+            suffix_inflection("じた", "ずる", Conditions::ta.with_subconditions(), Conditions::vz.with_subconditions()),
+            suffix_inflection("した", "する", Conditions::ta.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("為た", "為る", Conditions::ta.with_subconditions(), Conditions::vs.with_subconditions()),
+            suffix_inflection("きた", "くる", Conditions::ta.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("来た", "来る", Conditions::ta.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection("來た", "來る", Conditions::ta.with_subconditions(), Conditions::vk.with_subconditions()),
+            suffix_inflection(
+                "ました",
+                "ます",
+                Conditions::ta.with_subconditions(),
+                Conditions::masu.with_subconditions(),
+            ),
+            suffix_inflection(
+                "でした",
+                "",
+                Conditions::ta.with_subconditions(),
+                Conditions::masen.with_subconditions(),
+            ),
+            suffix_inflection(
+                "かった",
+                "",
+                Conditions::ta.with_subconditions(),
+                (Conditions::masen | Conditions::n).with_subconditions(),
+            ),
             // Irregular (iku verbs)
-            suffix_inflection("いった", "いく", &["-た"], &["v5"]),
-            suffix_inflection("行った", "行く", &["-た"], &["v5"]),
-            suffix_inflection("逝った", "逝く", &["-た"], &["v5"]),
-            suffix_inflection("往った", "往く", &["-た"], &["v5"]),
+            suffix_inflection(
+                "いった",
+                "いく",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "行った",
+                "行く",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "逝った",
+                "逝く",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "往った",
+                "往く",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
             // Irregular (godan u special)
-            suffix_inflection("こうた", "こう", &["-た"], &["v5"]),
-            suffix_inflection("とうた", "とう", &["-た"], &["v5"]),
-            suffix_inflection("請うた", "請う", &["-た"], &["v5"]),
-            suffix_inflection("乞うた", "乞う", &["-た"], &["v5"]),
-            suffix_inflection("恋うた", "恋う", &["-た"], &["v5"]),
-            suffix_inflection("問うた", "問う", &["-た"], &["v5"]),
-            suffix_inflection("訪うた", "訪う", &["-た"], &["v5"]),
-            suffix_inflection("宣うた", "宣う", &["-た"], &["v5"]),
-            suffix_inflection("曰うた", "曰う", &["-た"], &["v5"]),
-            suffix_inflection("給うた", "給う", &["-た"], &["v5"]),
-            suffix_inflection("賜うた", "賜う", &["-た"], &["v5"]),
-            suffix_inflection("揺蕩うた", "揺蕩う", &["-た"], &["v5"]),
+            suffix_inflection(
+                "こうた",
+                "こう",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうた",
+                "とう",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "請うた",
+                "請う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "乞うた",
+                "乞う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "恋うた",
+                "恋う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "問うた",
+                "問う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "訪うた",
+                "訪う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "宣うた",
+                "宣う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "曰うた",
+                "曰う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "給うた",
+                "給う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "賜うた",
+                "賜う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "揺蕩うた",
+                "揺蕩う",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
             // Irregular (fu verb te conjugations)
-            suffix_inflection("のたもうた", "のたまう", &["-た"], &["v5"]),
-            suffix_inflection("たもうた", "たまう", &["-た"], &["v5"]),
-            suffix_inflection("たゆとうた", "たゆたう", &["-た"], &["v5"]),
+            suffix_inflection(
+                "のたもうた",
+                "のたまう",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たもうた",
+                "たまう",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
+            suffix_inflection(
+                "たゆとうた",
+                "たゆたう",
+                Conditions::ta.with_subconditions(),
+                Conditions::v5.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-ます",
-        description: indoc! {r#"
-            'Polite conjugation of verbs and adjectives.\n' +
-            'Usage: Attach ます to the continuative form (連用形) of verbs.',
-        "#},
+        description: indoc! {"
+            Polite conjugation of verbs and adjectives.
+
+            Usage: Attach ます to the continuative form (連用形) of verbs.
+        "},
         rules: &[
-            suffix_inflection("ます", "る", &["-ます"], &["v1"]),
-            suffix_inflection("います", "う", &["-ます"], &["v5d"]),
-            suffix_inflection("きます", "く", &["-ます"], &["v5d"]),
-            suffix_inflection("ぎます", "ぐ", &["-ます"], &["v5d"]),
-            suffix_inflection("します", "す", &["-ます"], &["v5d", "v5s"]),
-            suffix_inflection("ちます", "つ", &["-ます"], &["v5d"]),
-            suffix_inflection("にます", "ぬ", &["-ます"], &["v5d"]),
-            suffix_inflection("びます", "ぶ", &["-ます"], &["v5d"]),
-            suffix_inflection("みます", "む", &["-ます"], &["v5d"]),
-            suffix_inflection("ります", "る", &["-ます"], &["v5d"]),
-            suffix_inflection("じます", "ずる", &["-ます"], &["vz"]),
-            suffix_inflection("します", "する", &["-ます"], &["vs"]),
-            suffix_inflection("為ます", "為る", &["-ます"], &["vs"]),
-            suffix_inflection("きます", "くる", &["-ます"], &["vk"]),
-            suffix_inflection("来ます", "来る", &["-ます"], &["vk"]),
-            suffix_inflection("來ます", "來る", &["-ます"], &["vk"]),
-            suffix_inflection("くあります", "い", &["-ます"], &["adj-i"]),
+            suffix_inflection("ます", "る", Conditions::masu.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "います",
+                "う",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きます",
+                "く",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぎます",
+                "ぐ",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "します",
+                "す",
+                Conditions::masu.with_subconditions(),
+                (Conditions::v5d | Conditions::v5s).with_subconditions(),
+            ),
+            suffix_inflection(
+                "ちます",
+                "つ",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "にます",
+                "ぬ",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "びます",
+                "ぶ",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "みます",
+                "む",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ります",
+                "る",
+                Conditions::masu.with_subconditions(),
+                Conditions::v5d.with_subconditions(),
+            ),
+            suffix_inflection(
+                "じます",
+                "ずる",
+                Conditions::masu.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "します",
+                "する",
+                Conditions::masu.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為ます",
+                "為る",
+                Conditions::masu.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "きます",
+                "くる",
+                Conditions::masu.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来ます",
+                "来る",
+                Conditions::masu.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來ます",
+                "來る",
+                Conditions::masu.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "くあります",
+                "い",
+                Conditions::masu.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "potential",
-        description: indoc! {r#"
-            'Indicates a state of being (naturally) capable of doing an action.\n' +
-            'Usage: Attach (ら)れる to the irrealis form (未然形) of ichidan verbs.\n' +
-            'Attach る to the imperative form (命令形) of godan verbs.\n' +
-            'する becomes できる, くる becomes こ(ら)れる',
-        "#},
+        description: indoc! {"
+            Indicates a state of being (naturally) capable of doing an action.
+
+            Usage: Attach (ら)れる to the irrealis form (未然形) of ichidan verbs.
+                   Attach る to the imperative form (命令形) of godan verbs.
+
+            Irregularities: する becomes できる, くる becomes こ(ら)れる
+        "},
         rules: &[
-            suffix_inflection("れる", "る", &["v1"], &["v1", "v5d"]),
-            suffix_inflection("える", "う", &["v1"], &["v5d"]),
-            suffix_inflection("ける", "く", &["v1"], &["v5d"]),
-            suffix_inflection("げる", "ぐ", &["v1"], &["v5d"]),
-            suffix_inflection("せる", "す", &["v1"], &["v5d"]),
-            suffix_inflection("てる", "つ", &["v1"], &["v5d"]),
-            suffix_inflection("ねる", "ぬ", &["v1"], &["v5d"]),
-            suffix_inflection("べる", "ぶ", &["v1"], &["v5d"]),
-            suffix_inflection("める", "む", &["v1"], &["v5d"]),
-            suffix_inflection("できる", "する", &["v1"], &["vs"]),
-            suffix_inflection("出来る", "する", &["v1"], &["vs"]),
-            suffix_inflection("これる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来れる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來れる", "來る", &["v1"], &["vk"]),
+            suffix_inflection(
+                "れる",
+                "る",
+                Conditions::v1.with_subconditions(),
+                (Conditions::v1 | Conditions::v5d).with_subconditions(),
+            ),
+            suffix_inflection("える", "う", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("ける", "く", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("げる", "ぐ", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("せる", "す", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("てる", "つ", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("ねる", "ぬ", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("べる", "ぶ", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection("める", "む", Conditions::v1.with_subconditions(), Conditions::v5d.with_subconditions()),
+            suffix_inflection(
+                "できる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "出来る",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "これる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来れる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來れる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "potential or passive",
-        description: indoc! {r#"
-            passiveEnglishDescription +
-            '3. Indicates a state of being (naturally) capable of doing an action.\n' +
-            'Usage: Attach られる to the irrealis form (未然形) of ichidan verbs.\n' +
-            'する becomes せられる, くる becomes こられる',
-        "#},
+        description: indoc! {"
+            1. Indicates an action received from an action performer.
+            2. Expresses respect for the subject of action performer.
+            3. Indicates a state of being (naturally) capable of doing an action.
+
+            Usage: Attach られる to the irrealis form (未然形) of ichidan verbs.
+
+            Irregularities: する becomes せられる, くる becomes こられる
+        "},
         rules: &[
-            suffix_inflection("られる", "る", &["v1"], &["v1"]),
-            suffix_inflection("ざれる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("ぜられる", "ずる", &["v1"], &["vz"]),
-            suffix_inflection("せられる", "する", &["v1"], &["vs"]),
-            suffix_inflection("為られる", "為る", &["v1"], &["vs"]),
-            suffix_inflection("こられる", "くる", &["v1"], &["vk"]),
-            suffix_inflection("来られる", "来る", &["v1"], &["vk"]),
-            suffix_inflection("來られる", "來る", &["v1"], &["vk"]),
+            suffix_inflection("られる", "る", Conditions::v1.with_subconditions(), Conditions::v1.with_subconditions()),
+            suffix_inflection(
+                "ざれる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぜられる",
+                "ずる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vz.with_subconditions(),
+            ),
+            suffix_inflection(
+                "せられる",
+                "する",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "為られる",
+                "為る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vs.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こられる",
+                "くる",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "来られる",
+                "来る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
+            suffix_inflection(
+                "來られる",
+                "來る",
+                Conditions::v1.with_subconditions(),
+                Conditions::vk.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "volitional",
-        description: indoc! {r#"
-            '1. Expresses speaker\'s will or intention.\n' +
-            '2. Expresses an invitation to the other party.\n' +
-            '3. (Used in …ようとする) Indicates being on the verge of initiating an action or transforming a state.\n' +
-            '4. Indicates an inference of a matter.\n' +
-            'Usage: Attach よう to the irrealis form (未然形) of ichidan verbs.\n' +
-            'Attach う to the irrealis form (未然形) of godan verbs after -o euphonic change form.\n' +
-            'Attach かろう to the stem of i-adjectives (4th meaning only).',
+        description: indoc! {"
+            1. Expresses speaker's will or intention.
+            2. Expresses an invitation to the other party.
+            3. (Used in …ようとする) Indicates being on the verge of initiating an action or transforming a state.
+            4. Indicates an inference of a matter.
 
-        "#},
+            Usage: Attach よう to the irrealis form (未然形) of ichidan verbs.
+                   Attach う to the irrealis form (未然形) of godan verbs after -o euphonic change form.
+                   Attach かろう to the stem of i-adjectives (4th meaning only).
+
+        "},
         rules: &[
-            suffix_inflection("よう", "る", &[], &["v1"]),
-            suffix_inflection("おう", "う", &[], &["v5"]),
-            suffix_inflection("こう", "く", &[], &["v5"]),
-            suffix_inflection("ごう", "ぐ", &[], &["v5"]),
-            suffix_inflection("そう", "す", &[], &["v5"]),
-            suffix_inflection("とう", "つ", &[], &["v5"]),
-            suffix_inflection("のう", "ぬ", &[], &["v5"]),
-            suffix_inflection("ぼう", "ぶ", &[], &["v5"]),
-            suffix_inflection("もう", "む", &[], &["v5"]),
-            suffix_inflection("ろう", "る", &[], &["v5"]),
-            suffix_inflection("じよう", "ずる", &[], &["vz"]),
-            suffix_inflection("しよう", "する", &[], &["vs"]),
-            suffix_inflection("為よう", "為る", &[], &["vs"]),
-            suffix_inflection("こよう", "くる", &[], &["vk"]),
-            suffix_inflection("来よう", "来る", &[], &["vk"]),
-            suffix_inflection("來よう", "來る", &[], &["vk"]),
-            suffix_inflection("ましょう", "ます", &[], &["-ます"]),
-            suffix_inflection("かろう", "い", &[], &["adj-i"]),
+            suffix_inflection("よう", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("おう", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("こう", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ごう", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("そう", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("とう", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("のう", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぼう", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("もう", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ろう", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じよう", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("しよう", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為よう", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こよう", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来よう", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來よう", "來る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("ましょう", "ます", 0, Conditions::masu.with_subconditions()),
+            suffix_inflection("かろう", "い", 0, Conditions::adj_i.with_subconditions()),
         ],
     },
     Transform {
         name: "volitional slang",
-        description: indoc! {r#"
-            'Contraction of volitional form + か\n' +
-            '1. Expresses speaker\'s will or intention.\n' +
-            '2. Expresses an invitation to the other party.\n' +
-            'Usage: Replace final う with っ of volitional form then add か.\n' +
-            'For example: 行こうか -> 行こっか.',
+        description: indoc! {"
+            Contraction of volitional form + か
 
-        "#},
+            1. Expresses speaker's will or intention.
+            2. Expresses an invitation to the other party.
+
+            Usage: Replace final う with っ of volitional form then add か.
+
+            For example: 行こうか -> 行こっか.
+        "},
         rules: &[
-            suffix_inflection("よっか", "る", &[], &["v1"]),
-            suffix_inflection("おっか", "う", &[], &["v5"]),
-            suffix_inflection("こっか", "く", &[], &["v5"]),
-            suffix_inflection("ごっか", "ぐ", &[], &["v5"]),
-            suffix_inflection("そっか", "す", &[], &["v5"]),
-            suffix_inflection("とっか", "つ", &[], &["v5"]),
-            suffix_inflection("のっか", "ぬ", &[], &["v5"]),
-            suffix_inflection("ぼっか", "ぶ", &[], &["v5"]),
-            suffix_inflection("もっか", "む", &[], &["v5"]),
-            suffix_inflection("ろっか", "る", &[], &["v5"]),
-            suffix_inflection("じよっか", "ずる", &[], &["vz"]),
-            suffix_inflection("しよっか", "する", &[], &["vs"]),
-            suffix_inflection("為よっか", "為る", &[], &["vs"]),
-            suffix_inflection("こよっか", "くる", &[], &["vk"]),
-            suffix_inflection("来よっか", "来る", &[], &["vk"]),
-            suffix_inflection("來よっか", "來る", &[], &["vk"]),
-            suffix_inflection("ましょっか", "ます", &[], &["-ます"]),
+            suffix_inflection("よっか", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("おっか", "う", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("こっか", "く", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ごっか", "ぐ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("そっか", "す", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("とっか", "つ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("のっか", "ぬ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ぼっか", "ぶ", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("もっか", "む", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("ろっか", "る", 0, Conditions::v5.with_subconditions()),
+            suffix_inflection("じよっか", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("しよっか", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為よっか", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こよっか", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来よっか", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來よっか", "來る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("ましょっか", "ます", 0, Conditions::masu.with_subconditions()),
         ],
     },
     Transform {
         name: "-まい",
-        description: indoc! {r#"
-            'Negative volitional form of verbs.\n' +
-            '1. Expresses speaker\'s assumption that something is likely not true.\n' +
-            '2. Expresses speaker\'s will or intention not to do something.\n' +
-            'Usage: Attach まい to the dictionary form (終止形) of verbs.\n' +
-            'Attach まい to the irrealis form (未然形) of ichidan verbs.\n' +
-            'する becomes しまい, くる becomes こまい',
-        "#},
+        description: indoc! {"
+            Negative volitional form of verbs.
+            1. Expresses speaker's assumption that something is likely not true.
+            2. Expresses speaker's will or intention not to do something.
+
+            Usage: Attach まい to the dictionary form (終止形) of verbs.
+                   Attach まい to the irrealis form (未然形) of ichidan verbs.
+
+            Irregularities: する becomes しまい, くる becomes こまい
+        "},
         rules: &[
-            suffix_inflection("まい", "", &[], &["v"]),
-            suffix_inflection("まい", "る", &[], &["v1"]),
-            suffix_inflection("じまい", "ずる", &[], &["vz"]),
-            suffix_inflection("しまい", "する", &[], &["vs"]),
-            suffix_inflection("為まい", "為る", &[], &["vs"]),
-            suffix_inflection("こまい", "くる", &[], &["vk"]),
-            suffix_inflection("来まい", "来る", &[], &["vk"]),
-            suffix_inflection("來まい", "來る", &[], &["vk"]),
-            suffix_inflection("まい", "", &[], &["-ます"]),
+            suffix_inflection("まい", "", 0, Conditions::v.with_subconditions()),
+            suffix_inflection("まい", "る", 0, Conditions::v1.with_subconditions()),
+            suffix_inflection("じまい", "ずる", 0, Conditions::vz.with_subconditions()),
+            suffix_inflection("しまい", "する", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("為まい", "為る", 0, Conditions::vs.with_subconditions()),
+            suffix_inflection("こまい", "くる", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("来まい", "来る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("來まい", "來る", 0, Conditions::vk.with_subconditions()),
+            suffix_inflection("まい", "", 0, Conditions::masu.with_subconditions()),
         ],
     },
     Transform {
         name: "-おく",
-        description: indoc! {r#"
-            'To do certain things in advance in preparation (or in anticipation) of latter needs.\n' +
-            'Usage: Attach おく to the て-form of verbs.\n' +
-            'Attach でおく after ない negative form of verbs.\n' +
-            'Contracts to とく・どく in speech.',
-        "#},
+        description: indoc! {"
+            To do certain things in advance in preparation (or in anticipation) of latter needs.
+
+            Usage: Attach おく to the て-form of verbs.
+                   Attach でおく after ない negative form of verbs.
+
+            Contracts to とく・どく in speech.
+        "},
         rules: &[
-            suffix_inflection("ておく", "て", &["v5"], &["-て"]),
-            suffix_inflection("でおく", "で", &["v5"], &["-て"]),
-            suffix_inflection("とく", "て", &["v5"], &["-て"]),
-            suffix_inflection("どく", "で", &["v5"], &["-て"]),
-            suffix_inflection("ないでおく", "ない", &["v5"], &["adj-i"]),
-            suffix_inflection("ないどく", "ない", &["v5"], &["adj-i"]),
+            suffix_inflection("ておく", "て", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("でおく", "で", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("とく", "て", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("どく", "で", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection(
+                "ないでおく",
+                "ない",
+                Conditions::v5.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ないどく",
+                "ない",
+                Conditions::v5.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-いる",
         description: indoc! {r#"
-            '1. Indicates an action continues or progresses to a point in time.\n' +
-            '2. Indicates an action is completed and remains as is.\n' +
-            '3. Indicates a state or condition that can be taken to be the result of undergoing some change.\n' +
-            'Usage: Attach いる to the て-form of verbs. い can be dropped in speech.\n' +
-            'Attach でいる after ない negative form of verbs.\n' +
-            '(Slang) Attach おる to the て-form of verbs. Contracts to とる・でる in speech.',
+            1. Indicates an action continues or progresses to a point in time.
+            2. Indicates an action is completed and remains as is.
+            3. Indicates a state or condition that can be taken to be the result of undergoing some change.
+
+            Usage: Attach いる to the て-form of verbs. い can be dropped in speech.
+                   Attach でいる after ない negative form of verbs.
+                   (Slang) Attach おる to the て-form of verbs. Contracts to とる・でる in speech.
         "#},
         rules: &[
-            suffix_inflection("ている", "て", &["v1"], &["-て"]),
-            suffix_inflection("ておる", "て", &["v5"], &["-て"]),
-            suffix_inflection("てる", "て", &["v1p"], &["-て"]),
-            suffix_inflection("でいる", "で", &["v1"], &["-て"]),
-            suffix_inflection("でおる", "で", &["v5"], &["-て"]),
-            suffix_inflection("でる", "で", &["v1p"], &["-て"]),
-            suffix_inflection("とる", "て", &["v5"], &["-て"]),
-            suffix_inflection("ないでいる", "ない", &["v1"], &["adj-i"]),
+            suffix_inflection("ている", "て", Conditions::v1.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("ておる", "て", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("てる", "て", Conditions::v1p.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("でいる", "で", Conditions::v1.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("でおる", "で", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("でる", "で", Conditions::v1p.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection("とる", "て", Conditions::v5.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection(
+                "ないでいる",
+                "ない",
+                Conditions::v1.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "-き",
-        description: indoc! {r#"
-            'Attributive form (連体形) of i-adjectives. An archaic form that remains in modern Japanese.',
-
-        "#},
-        rules: &[suffix_inflection("き", "い", &[], &["adj-i"])],
+        description: indoc! {"
+            Attributive form (連体形) of i-adjectives. An archaic form that remains in modern Japanese.
+        "},
+        rules: &[suffix_inflection("き", "い", 0, Conditions::adj_i.with_subconditions())],
     },
     Transform {
         name: "-げ",
-        description: indoc! {r#"
-            'Describes a person\'s appearance. Shows feelings of the person.\n' +
-            'Usage: Attach げ or 気 to the stem of i-adjectives',
+        description: indoc! {"
+            Describes a person's appearance. Shows feelings of the person.
 
-        "#},
+            Usage: Attach げ or 気 to the stem of i-adjectives
+        "},
         rules: &[
-            suffix_inflection("げ", "い", &[], &["adj-i"]),
-            suffix_inflection("気", "い", &[], &["adj-i"]),
+            suffix_inflection("げ", "い", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("気", "い", 0, Conditions::adj_i.with_subconditions()),
         ],
     },
     Transform {
         name: "-がる",
-        description: indoc! {r#"
-            '1. Shows subject’s feelings contrast with what is thought/known about them.\n' +
-            '2. Indicates subject\'s behavior (stands out).\n' +
-            'Usage: Attach がる to the stem of i-adjectives. It itself conjugates as a godan verb.',
+        description: indoc! {"
+            1. Shows subject’s feelings contrast with what is thought/known about them.
+            2. Indicates subject's behavior (stands out).
 
-        "#},
-        rules: &[suffix_inflection("がる", "い", &["v5"], &["adj-i"])],
+            Usage: Attach がる to the stem of i-adjectives. It itself conjugates as a godan verb.
+        "},
+        rules: &[suffix_inflection(
+            "がる",
+            "い",
+            Conditions::v5.with_subconditions(),
+            Conditions::adj_i.with_subconditions(),
+        )],
     },
     Transform {
         name: "-え",
-        description: indoc! {r#"
-            'Slang. A sound change of i-adjectives.\n' +
-            'ai：やばい → やべぇ\n' +
-            'ui：さむい → さみぃ/さめぇ\n' +
-            'oi：すごい → すげぇ',
-        "#},
+        description: indoc! {"
+            Slang. A sound change of i-adjectives.
+
+            ai: やばい → やべぇ
+            ui: さむい → さみぃ/さめぇ
+            oi: すごい → すげぇ
+        "},
         rules: &[
-            suffix_inflection("ねえ", "ない", &[], &["adj-i"]),
-            suffix_inflection("めえ", "むい", &[], &["adj-i"]),
-            suffix_inflection("みい", "むい", &[], &["adj-i"]),
-            suffix_inflection("ちぇえ", "つい", &[], &["adj-i"]),
-            suffix_inflection("ちい", "つい", &[], &["adj-i"]),
-            suffix_inflection("せえ", "すい", &[], &["adj-i"]),
-            suffix_inflection("ええ", "いい", &[], &["adj-i"]),
-            suffix_inflection("ええ", "わい", &[], &["adj-i"]),
-            suffix_inflection("ええ", "よい", &[], &["adj-i"]),
-            suffix_inflection("いぇえ", "よい", &[], &["adj-i"]),
-            suffix_inflection("うぇえ", "わい", &[], &["adj-i"]),
-            suffix_inflection("けえ", "かい", &[], &["adj-i"]),
-            suffix_inflection("げえ", "がい", &[], &["adj-i"]),
-            suffix_inflection("げえ", "ごい", &[], &["adj-i"]),
-            suffix_inflection("せえ", "さい", &[], &["adj-i"]),
-            suffix_inflection("めえ", "まい", &[], &["adj-i"]),
-            suffix_inflection("ぜえ", "ずい", &[], &["adj-i"]),
-            suffix_inflection("っぜえ", "ずい", &[], &["adj-i"]),
-            suffix_inflection("れえ", "らい", &[], &["adj-i"]),
-            suffix_inflection("れえ", "らい", &[], &["adj-i"]),
-            suffix_inflection("ちぇえ", "ちゃい", &[], &["adj-i"]),
-            suffix_inflection("でえ", "どい", &[], &["adj-i"]),
-            suffix_inflection("れえ", "れい", &[], &["adj-i"]),
-            suffix_inflection("べえ", "ばい", &[], &["adj-i"]),
-            suffix_inflection("てえ", "たい", &[], &["adj-i"]),
-            suffix_inflection("ねぇ", "ない", &[], &["adj-i"]),
-            suffix_inflection("めぇ", "むい", &[], &["adj-i"]),
-            suffix_inflection("みぃ", "むい", &[], &["adj-i"]),
-            suffix_inflection("ちぃ", "つい", &[], &["adj-i"]),
-            suffix_inflection("せぇ", "すい", &[], &["adj-i"]),
-            suffix_inflection("けぇ", "かい", &[], &["adj-i"]),
-            suffix_inflection("げぇ", "がい", &[], &["adj-i"]),
-            suffix_inflection("げぇ", "ごい", &[], &["adj-i"]),
-            suffix_inflection("せぇ", "さい", &[], &["adj-i"]),
-            suffix_inflection("めぇ", "まい", &[], &["adj-i"]),
-            suffix_inflection("ぜぇ", "ずい", &[], &["adj-i"]),
-            suffix_inflection("っぜぇ", "ずい", &[], &["adj-i"]),
-            suffix_inflection("れぇ", "らい", &[], &["adj-i"]),
-            suffix_inflection("でぇ", "どい", &[], &["adj-i"]),
-            suffix_inflection("れぇ", "れい", &[], &["adj-i"]),
-            suffix_inflection("べぇ", "ばい", &[], &["adj-i"]),
-            suffix_inflection("てぇ", "たい", &[], &["adj-i"]),
+            suffix_inflection("ねえ", "ない", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("めえ", "むい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("みい", "むい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ちぇえ", "つい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ちい", "つい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("せえ", "すい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ええ", "いい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ええ", "わい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ええ", "よい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("いぇえ", "よい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("うぇえ", "わい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("けえ", "かい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("げえ", "がい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("げえ", "ごい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("せえ", "さい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("めえ", "まい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ぜえ", "ずい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("っぜえ", "ずい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("れえ", "らい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("れえ", "らい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ちぇえ", "ちゃい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("でえ", "どい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("れえ", "れい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("べえ", "ばい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("てえ", "たい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ねぇ", "ない", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("めぇ", "むい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("みぃ", "むい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ちぃ", "つい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("せぇ", "すい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("けぇ", "かい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("げぇ", "がい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("げぇ", "ごい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("せぇ", "さい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("めぇ", "まい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ぜぇ", "ずい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("っぜぇ", "ずい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("れぇ", "らい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("でぇ", "どい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("れぇ", "れい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("べぇ", "ばい", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("てぇ", "たい", 0, Conditions::adj_i.with_subconditions()),
         ],
     },
     Transform {
         name: "n-slang",
-        description: indoc! {r#"
-            'Slang sound change of r-column syllables to n (when before an n-sound, usually の or な)',
-        "#},
+        description: indoc! {"
+            Slang sound change of r-column syllables to n (when before an n-sound, usually の or な)
+        "},
         rules: &[
-            suffix_inflection("んなさい", "りなさい", &[], &["-なさい"]),
-            suffix_inflection("らんない", "られない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("んない", "らない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("んなきゃ", "らなきゃ", &[], &["-ゃ"]),
-            suffix_inflection("んなきゃ", "れなきゃ", &[], &["-ゃ"]),
+            suffix_inflection("んなさい", "りなさい", 0, Conditions::nasai.with_subconditions()),
+            suffix_inflection(
+                "らんない",
+                "られない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "んない",
+                "らない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection("んなきゃ", "らなきゃ", 0, Conditions::ya.with_subconditions()),
+            suffix_inflection("んなきゃ", "れなきゃ", 0, Conditions::ya.with_subconditions()),
         ],
     },
     Transform {
         name: "imperative negative slang",
         description: "",
-        rules: &[suffix_inflection("んな", "る", &[], &["v"])],
+        rules: &[suffix_inflection("んな", "る", 0, Conditions::v.with_subconditions())],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            'Negative form of kansai-ben verbs',
-        "#},
+        description: indoc! {"
+            Negative form of kansai-ben verbs
+        "},
         rules: &[
-            suffix_inflection("へん", "ない", &[], &["adj-i"]),
-            suffix_inflection("ひん", "ない", &[], &["adj-i"]),
-            suffix_inflection("せえへん", "しない", &[], &["adj-i"]),
-            suffix_inflection("へんかった", "なかった", &["-た"], &["-た"]),
-            suffix_inflection("ひんかった", "なかった", &["-た"], &["-た"]),
-            suffix_inflection("うてへん", "ってない", &[], &["adj-i"]),
+            suffix_inflection("へん", "ない", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("ひん", "ない", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection("せえへん", "しない", 0, Conditions::adj_i.with_subconditions()),
+            suffix_inflection(
+                "へんかった",
+                "なかった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ひんかった",
+                "なかった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection("うてへん", "ってない", 0, Conditions::adj_i.with_subconditions()),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-て form of kansai-ben verbs',
-
-        "#},
+        description: indoc! {"
+            -て form of kansai-ben verbs
+        "},
         rules: &[
-            suffix_inflection("うて", "って", &["-て"], &["-て"]),
-            suffix_inflection("おうて", "あって", &["-て"], &["-て"]),
-            suffix_inflection("こうて", "かって", &["-て"], &["-て"]),
-            suffix_inflection("ごうて", "がって", &["-て"], &["-て"]),
-            suffix_inflection("そうて", "さって", &["-て"], &["-て"]),
-            suffix_inflection("ぞうて", "ざって", &["-て"], &["-て"]),
-            suffix_inflection("とうて", "たって", &["-て"], &["-て"]),
-            suffix_inflection("どうて", "だって", &["-て"], &["-て"]),
-            suffix_inflection("のうて", "なって", &["-て"], &["-て"]),
-            suffix_inflection("ほうて", "はって", &["-て"], &["-て"]),
-            suffix_inflection("ぼうて", "ばって", &["-て"], &["-て"]),
-            suffix_inflection("もうて", "まって", &["-て"], &["-て"]),
-            suffix_inflection("ろうて", "らって", &["-て"], &["-て"]),
-            suffix_inflection("ようて", "やって", &["-て"], &["-て"]),
-            suffix_inflection("ゆうて", "いって", &["-て"], &["-て"]),
+            suffix_inflection("うて", "って", Conditions::te.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection(
+                "おうて",
+                "あって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こうて",
+                "かって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ごうて",
+                "がって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "そうて",
+                "さって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぞうて",
+                "ざって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうて",
+                "たって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "どうて",
+                "だって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "のうて",
+                "なって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ほうて",
+                "はって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぼうて",
+                "ばって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "もうて",
+                "まって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ろうて",
+                "らって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ようて",
+                "やって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ゆうて",
+                "いって",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-た form of kansai-ben terms',
-
-        "#},
+        description: indoc! {"
+            -た form of kansai-ben terms
+        "},
         rules: &[
-            suffix_inflection("うた", "った", &["-た"], &["-た"]),
-            suffix_inflection("おうた", "あった", &["-た"], &["-た"]),
-            suffix_inflection("こうた", "かった", &["-た"], &["-た"]),
-            suffix_inflection("ごうた", "がった", &["-た"], &["-た"]),
-            suffix_inflection("そうた", "さった", &["-た"], &["-た"]),
-            suffix_inflection("ぞうた", "ざった", &["-た"], &["-た"]),
-            suffix_inflection("とうた", "たった", &["-た"], &["-た"]),
-            suffix_inflection("どうた", "だった", &["-た"], &["-た"]),
-            suffix_inflection("のうた", "なった", &["-た"], &["-た"]),
-            suffix_inflection("ほうた", "はった", &["-た"], &["-た"]),
-            suffix_inflection("ぼうた", "ばった", &["-た"], &["-た"]),
-            suffix_inflection("もうた", "まった", &["-た"], &["-た"]),
-            suffix_inflection("ろうた", "らった", &["-た"], &["-た"]),
-            suffix_inflection("ようた", "やった", &["-た"], &["-た"]),
-            suffix_inflection("ゆうた", "いった", &["-た"], &["-た"]),
+            suffix_inflection("うた", "った", Conditions::ta.with_subconditions(), Conditions::ta.with_subconditions()),
+            suffix_inflection(
+                "おうた",
+                "あった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こうた",
+                "かった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ごうた",
+                "がった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "そうた",
+                "さった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぞうた",
+                "ざった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうた",
+                "たった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "どうた",
+                "だった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "のうた",
+                "なった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ほうた",
+                "はった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぼうた",
+                "ばった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "もうた",
+                "まった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ろうた",
+                "らった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ようた",
+                "やった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ゆうた",
+                "いった",
+                Conditions::ta.with_subconditions(),
+                Conditions::ta.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-たら form of kansai-ben terms',
-
-        "#},
+        description: indoc! {"
+            -たら form of kansai-ben terms
+        "},
         rules: &[
-            suffix_inflection("うたら", "ったら", &[], &[]),
-            suffix_inflection("おうたら", "あったら", &[], &[]),
-            suffix_inflection("こうたら", "かったら", &[], &[]),
-            suffix_inflection("ごうたら", "がったら", &[], &[]),
-            suffix_inflection("そうたら", "さったら", &[], &[]),
-            suffix_inflection("ぞうたら", "ざったら", &[], &[]),
-            suffix_inflection("とうたら", "たったら", &[], &[]),
-            suffix_inflection("どうたら", "だったら", &[], &[]),
-            suffix_inflection("のうたら", "なったら", &[], &[]),
-            suffix_inflection("ほうたら", "はったら", &[], &[]),
-            suffix_inflection("ぼうたら", "ばったら", &[], &[]),
-            suffix_inflection("もうたら", "まったら", &[], &[]),
-            suffix_inflection("ろうたら", "らったら", &[], &[]),
-            suffix_inflection("ようたら", "やったら", &[], &[]),
-            suffix_inflection("ゆうたら", "いったら", &[], &[]),
+            suffix_inflection("うたら", "ったら", 0, 0),
+            suffix_inflection("おうたら", "あったら", 0, 0),
+            suffix_inflection("こうたら", "かったら", 0, 0),
+            suffix_inflection("ごうたら", "がったら", 0, 0),
+            suffix_inflection("そうたら", "さったら", 0, 0),
+            suffix_inflection("ぞうたら", "ざったら", 0, 0),
+            suffix_inflection("とうたら", "たったら", 0, 0),
+            suffix_inflection("どうたら", "だったら", 0, 0),
+            suffix_inflection("のうたら", "なったら", 0, 0),
+            suffix_inflection("ほうたら", "はったら", 0, 0),
+            suffix_inflection("ぼうたら", "ばったら", 0, 0),
+            suffix_inflection("もうたら", "まったら", 0, 0),
+            suffix_inflection("ろうたら", "らったら", 0, 0),
+            suffix_inflection("ようたら", "やったら", 0, 0),
+            suffix_inflection("ゆうたら", "いったら", 0, 0),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-たり form of kansai-ben terms',
-
-        "#},
+        description: indoc! {"
+            -たり form of kansai-ben terms
+        "},
         rules: &[
-            suffix_inflection("うたり", "ったり", &[], &[]),
-            suffix_inflection("おうたり", "あったり", &[], &[]),
-            suffix_inflection("こうたり", "かったり", &[], &[]),
-            suffix_inflection("ごうたり", "がったり", &[], &[]),
-            suffix_inflection("そうたり", "さったり", &[], &[]),
-            suffix_inflection("ぞうたり", "ざったり", &[], &[]),
-            suffix_inflection("とうたり", "たったり", &[], &[]),
-            suffix_inflection("どうたり", "だったり", &[], &[]),
-            suffix_inflection("のうたり", "なったり", &[], &[]),
-            suffix_inflection("ほうたり", "はったり", &[], &[]),
-            suffix_inflection("ぼうたり", "ばったり", &[], &[]),
-            suffix_inflection("もうたり", "まったり", &[], &[]),
-            suffix_inflection("ろうたり", "らったり", &[], &[]),
-            suffix_inflection("ようたり", "やったり", &[], &[]),
-            suffix_inflection("ゆうたり", "いったり", &[], &[]),
+            suffix_inflection("うたり", "ったり", 0, 0),
+            suffix_inflection("おうたり", "あったり", 0, 0),
+            suffix_inflection("こうたり", "かったり", 0, 0),
+            suffix_inflection("ごうたり", "がったり", 0, 0),
+            suffix_inflection("そうたり", "さったり", 0, 0),
+            suffix_inflection("ぞうたり", "ざったり", 0, 0),
+            suffix_inflection("とうたり", "たったり", 0, 0),
+            suffix_inflection("どうたり", "だったり", 0, 0),
+            suffix_inflection("のうたり", "なったり", 0, 0),
+            suffix_inflection("ほうたり", "はったり", 0, 0),
+            suffix_inflection("ぼうたり", "ばったり", 0, 0),
+            suffix_inflection("もうたり", "まったり", 0, 0),
+            suffix_inflection("ろうたり", "らったり", 0, 0),
+            suffix_inflection("ようたり", "やったり", 0, 0),
+            suffix_inflection("ゆうたり", "いったり", 0, 0),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-く stem of kansai-ben adjectives',
-
-        "#},
+        description: indoc! {"
+            -く stem of kansai-ben adjectives
+        "},
         rules: &[
-            suffix_inflection("う", "く", &[], &["-く"]),
-            suffix_inflection("こう", "かく", &[], &["-く"]),
-            suffix_inflection("ごう", "がく", &[], &["-く"]),
-            suffix_inflection("そう", "さく", &[], &["-く"]),
-            suffix_inflection("とう", "たく", &[], &["-く"]),
-            suffix_inflection("のう", "なく", &[], &["-く"]),
-            suffix_inflection("ぼう", "ばく", &[], &["-く"]),
-            suffix_inflection("もう", "まく", &[], &["-く"]),
-            suffix_inflection("ろう", "らく", &[], &["-く"]),
-            suffix_inflection("よう", "よく", &[], &["-く"]),
-            suffix_inflection("しゅう", "しく", &[], &["-く"]),
+            suffix_inflection("う", "く", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("こう", "かく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("ごう", "がく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("そう", "さく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("とう", "たく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("のう", "なく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("ぼう", "ばく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("もう", "まく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("ろう", "らく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("よう", "よく", 0, Conditions::ku.with_subconditions()),
+            suffix_inflection("しゅう", "しく", 0, Conditions::ku.with_subconditions()),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            '-て form of kansai-ben adjectives',
-
-        "#},
+        description: indoc! {"
+            -て form of kansai-ben adjectives
+        "},
         rules: &[
-            suffix_inflection("うて", "くて", &["-て"], &["-て"]),
-            suffix_inflection("こうて", "かくて", &["-て"], &["-て"]),
-            suffix_inflection("ごうて", "がくて", &["-て"], &["-て"]),
-            suffix_inflection("そうて", "さくて", &["-て"], &["-て"]),
-            suffix_inflection("とうて", "たくて", &["-て"], &["-て"]),
-            suffix_inflection("のうて", "なくて", &["-て"], &["-て"]),
-            suffix_inflection("ぼうて", "ばくて", &["-て"], &["-て"]),
-            suffix_inflection("もうて", "まくて", &["-て"], &["-て"]),
-            suffix_inflection("ろうて", "らくて", &["-て"], &["-て"]),
-            suffix_inflection("ようて", "よくて", &["-て"], &["-て"]),
-            suffix_inflection("しゅうて", "しくて", &["-て"], &["-て"]),
+            suffix_inflection("うて", "くて", Conditions::te.with_subconditions(), Conditions::te.with_subconditions()),
+            suffix_inflection(
+                "こうて",
+                "かくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ごうて",
+                "がくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "そうて",
+                "さくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうて",
+                "たくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "のうて",
+                "なくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぼうて",
+                "ばくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "もうて",
+                "まくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ろうて",
+                "らくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ようて",
+                "よくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しゅうて",
+                "しくて",
+                Conditions::te.with_subconditions(),
+                Conditions::te.with_subconditions(),
+            ),
         ],
     },
     Transform {
         name: "kansai-ben",
-        description: indoc! {r#"
-            'Negative form of kansai-ben adjectives',
-        "#},
+        description: indoc! {"
+            Negative form of kansai-ben adjectives
+        "},
         rules: &[
-            suffix_inflection("うない", "くない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("こうない", "かくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("ごうない", "がくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("そうない", "さくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("とうない", "たくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("のうない", "なくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("ぼうない", "ばくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("もうない", "まくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("ろうない", "らくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("ようない", "よくない", &["adj-i"], &["adj-i"]),
-            suffix_inflection("しゅうない", "しくない", &["adj-i"], &["adj-i"]),
+            suffix_inflection(
+                "うない",
+                "くない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "こうない",
+                "かくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ごうない",
+                "がくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "そうない",
+                "さくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "とうない",
+                "たくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "のうない",
+                "なくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ぼうない",
+                "ばくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "もうない",
+                "まくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ろうない",
+                "らくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "ようない",
+                "よくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
+            suffix_inflection(
+                "しゅうない",
+                "しくない",
+                Conditions::adj_i.with_subconditions(),
+                Conditions::adj_i.with_subconditions(),
+            ),
         ],
     },
 ];
-/*
-
-const ikuVerbs = ['いく', '行く', '逝く', '往く'];
-const godanUSpecialVerbs = ['こう', 'とう', '請う', '乞う', '恋う', '問う', '訪う', '宣う', '曰う', '給う', '賜う', '揺蕩う'];
-const fuVerbTeConjugations = [
-    ['のたまう', 'のたもう'],
-    ['たまう', 'たもう'],
-    ['たゆたう', 'たゆとう'],
-];
-
-/** @typedef {keyof typeof conditions} Condition */
-/**
- * @param {'て' | 'た' | 'たら' | 'たり'} suffix
- * @param {Condition[]} conditionsIn
- * @param {Condition[]} conditionsOut
- * @returns {import('language-transformer').SuffixRule<Condition>[]}
- */
-function irregularVerbSuffixInflections(suffix, conditionsIn, conditionsOut) {
-    const inflections = [];
-    for (const verb of ikuVerbs) {
-        inflections.push(suffixInflection(`${verb[0]}っ${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    for (const verb of godanUSpecialVerbs) {
-        inflections.push(suffixInflection(`${verb}${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    for (const [verb, teRoot] of fuVerbTeConjugations) {
-        inflections.push(suffixInflection(`${teRoot}${suffix}`, verb, conditionsIn, conditionsOut));
-    }
-    return inflections;
-}
-
-
-*/

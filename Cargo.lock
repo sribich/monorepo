@@ -5666,7 +5666,6 @@ dependencies = [
 name = "language_pack_jp"
 version = "0.0.0"
 dependencies = [
- "blart",
  "epub",
  "expect-test",
  "indoc",

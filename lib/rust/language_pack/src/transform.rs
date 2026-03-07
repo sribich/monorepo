@@ -1,12 +1,11 @@
 use std::collections::HashMap;
-use std::ffi::CString;
 
 use tinyvec::ArrayVec;
 use trie_rs::map::Trie;
 
 pub struct LanguageTransformer<'a> {
     transforms: &'static [Transform],
-    conditions: &'a HashMap<&'static str, Condition>,
+    conditions: &'static [(u32, Condition)],
     dictionary: &'a Trie<u8, Option<usize>>,
     dictionary_readings: &'a Trie<u8, Option<usize>>,
 }
@@ -14,7 +13,7 @@ pub struct LanguageTransformer<'a> {
 impl<'a> LanguageTransformer<'a> {
     pub fn new(
         transforms: &'static [Transform],
-        conditions: &'a HashMap<&'static str, Condition>,
+        conditions: &'static [(u32, Condition)],
         dictionary: &'a Trie<u8, Option<usize>>,
         dictionary_readings: &'a Trie<u8, Option<usize>>,
     ) -> Self {
@@ -26,20 +25,13 @@ impl<'a> LanguageTransformer<'a> {
         }
     }
 
+    // TODO: Filter our results which collapse down to a single mora.
     pub fn resolve(&mut self, text: &str) -> Vec<(Option<TextTransform>, String)> {
         let mut work = text;
         let mut matches = vec![];
 
         while !work.is_empty() {
-            let transform = TextTransform {
-                text: work.to_owned(),
-                replacement: None,
-                inflection: String::new(),
-                last_inflection: String::new(),
-                conditions: &[],
-                chain: ArrayVec::<[(usize, usize); 20]>::new(),
-                i: 0,
-            };
+            let transform = TextTransform::new(work.to_owned());
 
             let result = self.resolve_from(transform, ArrayVec::<[(usize, usize); 20]>::new());
 
@@ -141,22 +133,21 @@ impl<'a> LanguageTransformer<'a> {
     ) -> Vec<TextTransform> {
         let mut result = vec![];
 
-        let subconditions = if resolve.conditions.is_empty() {
-            &[]
-        } else {
-            self.conditions
-                .get(resolve.conditions.first().unwrap())
-                .unwrap()
-                .sub_conditions
-        };
+        // let subconditions = if resolve.conditions.is_empty() {
+        //     &[]
+        // } else {
+        //     self.conditions
+        //         .get(resolve.conditions.first().unwrap())
+        //         .unwrap()
+        //         .sub_conditions
+        // };
 
         for (transform_pos, transform) in self.transforms.iter().enumerate() {
             for (rule_pos, rule) in transform.rules.iter().enumerate() {
-                if (resolve.conditions.is_empty()
-                    // || rule.conditions_in.is_empty()
-                    || (!rule.conditions_in.is_empty() && (
-                        resolve.conditions.contains(&rule.conditions_in[0])
-                        || subconditions.contains(&rule.conditions_in[0]))))
+                let condition_matches =
+                    resolve.conditions == 0 || ((resolve.conditions & rule.conditions_in) != 0);
+
+                if condition_matches
                     && let Some(InflectionResult {
                         text,
                         inflection,
@@ -201,8 +192,8 @@ pub struct Inflection {
     pub kind: InflectionKind,
     pub test: &'static str,
     pub deinflection: &'static str,
-    pub conditions_in: &'static [&'static str],
-    pub conditions_out: &'static [&'static str],
+    pub conditions_in: u32,  // &'static [&'static str],
+    pub conditions_out: u32, // &'static [&'static str],
     pub replacements: &'static [(&'static str, &'static str)],
 }
 
@@ -214,8 +205,8 @@ pub enum InflectionKind {
 pub const fn suffix_inflection(
     test: &'static str,
     deinflection: &'static str,
-    conditions_in: &'static [&'static str],
-    conditions_out: &'static [&'static str],
+    conditions_in: u32,
+    conditions_out: u32,
 ) -> Inflection {
     Inflection {
         kind: InflectionKind::Suffix,
@@ -230,8 +221,8 @@ pub const fn suffix_inflection(
 pub const fn suffix_inflection_with_replacements(
     test: &'static str,
     deinflection: &'static str,
-    conditions_in: &'static [&'static str],
-    conditions_out: &'static [&'static str],
+    conditions_in: u32,
+    conditions_out: u32,
     replacements: &'static [(&'static str, &'static str)],
 ) -> Inflection {
     Inflection {
@@ -250,7 +241,7 @@ pub struct InflectionResult {
     replacement: Option<String>,
     inflection: String,
     deinflection: String,
-    conditions: &'static [&'static str],
+    conditions: u32,
 }
 
 impl Inflection {
@@ -290,9 +281,10 @@ impl Inflection {
 
 pub struct Condition {
     pub name: &'static str,
+    pub short: &'static str,
     pub description: &'static str,
     pub is_dictionary_form: bool,
-    pub sub_conditions: &'static [&'static str],
+    pub subconditions: u32,
 }
 
 pub struct Transform {
@@ -301,13 +293,29 @@ pub struct Transform {
     pub rules: &'static [Inflection],
 }
 
+// TODO: Since we know exactly what the inflection/last_inflection values
+//       are, we should be able to make them &'static str
 #[derive(Clone, Debug)]
 pub struct TextTransform {
     pub text: String,
     pub replacement: Option<String>,
     pub inflection: String,
     pub last_inflection: String,
-    pub conditions: &'static [&'static str],
+    pub conditions: u32,
     pub chain: ArrayVec<[(usize, usize); 20]>,
     pub i: usize,
+}
+
+impl TextTransform {
+    pub fn new(text: String) -> Self {
+        Self {
+            text,
+            replacement: None,
+            inflection: String::new(),
+            last_inflection: String::new(),
+            conditions: 0,
+            chain: ArrayVec::<[(usize, usize); 20]>::new(),
+            i: 0,
+        }
+    }
 }
