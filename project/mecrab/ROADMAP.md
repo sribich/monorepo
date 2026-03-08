@@ -171,10 +171,6 @@ impl NeuralReranker {
 ```rust
 pub enum OutputFormat {
     MeCab,           // Traditional format
-    Wakati,          // Space-separated
-    Json,            // Structured JSON
-    LatticeProb,     // Lattice with probabilities (for Subword Regularization)
-    BpeCompatible,   // Compatible with BPE tokenizers
 }
 ```
 

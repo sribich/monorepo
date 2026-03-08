@@ -5,8 +5,6 @@ edition.workspace = true
 
 [dependencies]
 mecrab = { workspace = true }
-mecrab-builder = { workspace = true, optional = true }
-mecrab-word2vec = { workspace = true }
 
 clap = { workspace = true }
 dirs = { workspace = true }
@@ -17,8 +15,6 @@ crossterm = "0.29"
 
 [features]
 default = []
-# Enable `kizame build` command with Wikidata pipeline
-full = ["mecrab-builder"]
 
 [[bin]]
 name = "kizame"

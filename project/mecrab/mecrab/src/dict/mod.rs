@@ -64,8 +64,6 @@ pub struct Dictionary {
     pub char_def: CharDef,
     /// Overlay dictionary for runtime word additions
     pub overlay: OverlayDictionary,
-    /// Semantic pool for entity URIs (optional)
-    pub semantic_pool: Option<Arc<crate::semantic::pool::SemanticPool>>,
     /// Surface form → URIs mapping (optional)
     pub surface_map: Option<Arc<SurfaceMap>>,
     /// Memory maps (kept alive to maintain the mapped regions)
@@ -130,43 +128,9 @@ impl Dictionary {
             matrix,
             char_def,
             overlay: OverlayDictionary::new(),
-            semantic_pool: None,
             surface_map: None,
             _mmaps: mmaps,
         })
-    }
-
-    /// Load a dictionary with semantic pool from the specified directory
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the dictionary directory
-    /// * `semantic_path` - Path to the semantic pool file (semantic.bin)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any dictionary file is missing or corrupted.
-    pub fn load_with_semantics(path: &Path, semantic_path: &Path) -> Result<Self> {
-        let mut dict = Self::load(path)?;
-
-        // Load semantic pool
-        if semantic_path.exists() {
-            let pool_file = File::open(semantic_path)?;
-            let pool_data = unsafe { Mmap::map(&pool_file)? };
-            let pool = crate::semantic::pool::SemanticPool::from_bytes(&pool_data)?;
-            dict.semantic_pool = Some(Arc::new(pool));
-
-            // Try to load surface map from the same directory
-            let semantic_dir = semantic_path.parent().unwrap_or(Path::new("."));
-            let map_path = semantic_dir.join("surface_map.json");
-            if map_path.exists() {
-                let map_data = std::fs::read_to_string(&map_path)?;
-                let map: SurfaceMap = serde_json::from_str(&map_data)?;
-                dict.surface_map = Some(Arc::new(map));
-            }
-        }
-
-        Ok(dict)
     }
 
     /// Open a file and create a memory map

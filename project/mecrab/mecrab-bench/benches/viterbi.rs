@@ -54,20 +54,6 @@ fn parse_benchmark(c: &mut Criterion) {
     group.finish();
 }
 
-fn wakati_benchmark(c: &mut Criterion) {
-    let mecrab = MeCrab::new().expect("Failed to load dictionary");
-
-    let mut group = c.benchmark_group("wakati");
-
-    group.bench_function("medium", |b| {
-        b.iter(|| mecrab.wakati(black_box(MEDIUM_TEXT)))
-    });
-
-    group.bench_function("long", |b| b.iter(|| mecrab.wakati(black_box(LONG_TEXT))));
-
-    group.finish();
-}
-
 fn batch_benchmark(c: &mut Criterion) {
     let mecrab = MeCrab::new().expect("Failed to load dictionary");
 
@@ -121,7 +107,6 @@ fn large_batch_benchmark(c: &mut Criterion) {
 criterion_group!(
     benches,
     parse_benchmark,
-    wakati_benchmark,
     batch_benchmark,
     large_batch_benchmark,
 );

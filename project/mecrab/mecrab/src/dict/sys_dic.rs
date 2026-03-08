@@ -7,13 +7,17 @@
 //!
 //! Reference: ../ref/mecab-0.996/src/dictionary.cpp
 
-use crate::{Error, Result};
-use byteorder::{ByteOrder, LittleEndian};
-use memmap2::Mmap;
 use std::sync::Arc;
 
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
+use memmap2::Mmap;
+
 use super::DictionaryEntry;
-use super::double_array_trie::{DartsResult, DoubleArrayTrie};
+use super::double_array_trie::DartsResult;
+use super::double_array_trie::DoubleArrayTrie;
+use crate::Error;
+use crate::Result;
 
 /// Magic number for system dictionary validation
 /// From MeCab: const unsigned int DictionaryMagicID = 0xef718f77u;

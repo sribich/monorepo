@@ -19,7 +19,8 @@
 
 use std::fmt::Write;
 
-use super::{Lattice, LatticeNode};
+use super::Lattice;
+use super::LatticeNode;
 use crate::Result;
 use crate::dict::Dictionary;
 
@@ -221,11 +222,11 @@ impl<'a> DotBuilder<'a> {
         // Node definitions
         writeln!(output, "\n  // Nodes")?;
 
-        for (pos, nodes) in self.lattice.nodes_at.iter().enumerate() {
+        for (pos, nodes) in self.lattice.nodes.iter().enumerate() {
             for (idx, node) in nodes.iter().enumerate() {
                 let node_id = format!("n{}_{}", pos, idx);
                 let label = self.format_node_label(node);
-                let style = self.format_node_style(node, pos, self.lattice.nodes_at.len());
+                let style = self.format_node_style(node, pos, self.lattice.nodes.len());
 
                 writeln!(
                     output,
@@ -241,7 +242,7 @@ impl<'a> DotBuilder<'a> {
         writeln!(output, "\n  // Edges")?;
 
         // For each node (except BOS), find possible predecessors
-        for (end_pos, nodes) in self.lattice.nodes_at.iter().enumerate() {
+        for (end_pos, nodes) in self.lattice.nodes.iter().enumerate() {
             for (end_idx, node) in nodes.iter().enumerate() {
                 let to_id = format!("n{}_{}", end_pos, end_idx);
 
@@ -249,24 +250,24 @@ impl<'a> DotBuilder<'a> {
                 // BOS is at position 0, so nodes starting at byte 0 connect to BOS
                 let start_pos = node.start;
 
-                // Position in nodes_at for predecessors
-                // nodes_at[i+1] contains nodes ending at byte position i
+                // Position in nodes for predecessors
+                // nodes[i+1] contains nodes ending at byte position i
                 let pred_pos = if end_pos == 0 {
                     continue; // BOS has no predecessors
-                } else if node.surface.is_empty() && end_pos == self.lattice.nodes_at.len() - 1 {
+                } else if node.surface.is_empty() && end_pos == self.lattice.nodes.len() - 1 {
                     // EOS - connects from all nodes that end at text.len()
                     end_pos // same position, EOS shares with last real nodes
                 } else {
-                    start_pos + 1 // nodes_at[start+1] contains nodes ending at start
+                    start_pos + 1 // nodes[start+1] contains nodes ending at start
                 };
 
                 // Handle EOS specially
-                if node.feature == "BOS/EOS" && end_pos == self.lattice.nodes_at.len() - 1 {
+                if node.feature == "BOS/EOS" && end_pos == self.lattice.nodes.len() - 1 {
                     // EOS: find all nodes ending at text.len()
                     let text_len = self.lattice.text.len();
-                    if text_len + 1 < self.lattice.nodes_at.len() {
+                    if text_len + 1 < self.lattice.nodes.len() {
                         for (pred_idx, _pred_node) in
-                            self.lattice.nodes_at[text_len + 1].iter().enumerate()
+                            self.lattice.nodes[text_len + 1].iter().enumerate()
                         {
                             let from_id = format!("n{}_{}", text_len + 1, pred_idx);
                             Self::write_edge(&mut output, &from_id, &to_id, None)?;
@@ -280,9 +281,8 @@ impl<'a> DotBuilder<'a> {
                 }
 
                 // Regular nodes
-                if pred_pos < self.lattice.nodes_at.len() {
-                    for (pred_idx, pred_node) in self.lattice.nodes_at[pred_pos].iter().enumerate()
-                    {
+                if pred_pos < self.lattice.nodes.len() {
+                    for (pred_idx, pred_node) in self.lattice.nodes[pred_pos].iter().enumerate() {
                         // Check if predecessor actually ends at our start
                         if pred_node.end == start_pos {
                             let from_id = format!("n{}_{}", pred_pos, pred_idx);
@@ -491,8 +491,8 @@ mod tests {
     fn test_dot_builder_new() {
         // Create a simple lattice manually
         let text = "";
-        let nodes_at = vec![vec![LatticeNode::bos()], vec![LatticeNode::eos(0)]];
-        let lattice = Lattice { text, nodes_at };
+        let nodes = vec![vec![LatticeNode::bos()], vec![LatticeNode::eos(0)]];
+        let lattice = Lattice { text, nodes };
 
         let builder = DotBuilder::new(&lattice);
         let result = builder.build();
@@ -506,8 +506,8 @@ mod tests {
     #[test]
     fn test_lattice_to_dot() {
         let text = "";
-        let nodes_at = vec![vec![LatticeNode::bos()], vec![LatticeNode::eos(0)]];
-        let lattice = Lattice { text, nodes_at };
+        let nodes = vec![vec![LatticeNode::bos()], vec![LatticeNode::eos(0)]];
+        let lattice = Lattice { text, nodes };
 
         let result = lattice.to_dot();
         assert!(result.is_ok());

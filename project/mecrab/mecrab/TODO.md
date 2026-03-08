@@ -53,3 +53,30 @@
 
 ### Features
 - [ ] ARM NEON SIMD support
+
+Optimization: Eliminated feature String clone in lattice building (12% improvement)
+
+    SIMD-accelerated DAT traversal
+    Character info lookup caching
+    Connection matrix cache-line optimization
+    AVX-512 Viterbi optimization
+    Dictionary preloading/caching
+    Batch parsing API improvements
+    SoA (Struct of Arrays) layout for Viterbi
+
+Features
+
+    Online entity resolution (Wikidata API fallback)
+    Confidence calibration for disambiguation
+
+Builder
+
+    SemanticPool binary output (MCV1 format)
+    Wikipedia abstract integration
+    Incremental index updates
+    Delta processing
+
+Infrastructure
+
+    Benchmark regression tracking
+    Code coverage reporting

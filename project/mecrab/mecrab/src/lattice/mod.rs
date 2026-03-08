@@ -44,31 +44,26 @@ pub struct LatticeNode<'a> {
 }
 
 impl<'a> LatticeNode<'a> {
-    /// Create a new lattice node from a dictionary entry (borrowing feature)
-    pub fn from_entry(
-        text: &'a str,
-        start: usize,
-        entry: &DictionaryEntry,
-        feature: String,
-    ) -> Self {
+    /// Create a BOS (Beginning of Sentence) node
+    pub fn bos() -> Self {
         Self {
-            surface: &text[start..start + entry.length],
-            start,
-            end: start + entry.length,
-            word_id: entry.word_id,
-            left_id: entry.left_id,
-            right_id: entry.right_id,
-            pos_id: entry.pos_id,
-            wcost: entry.wcost,
-            feature,
+            surface: "BOS",
+            start: 0,
+            end: 0,
+            word_id: u32::MAX, // BOS/EOS don't have word_id
+            left_id: 0,
+            right_id: 0,
+            pos_id: 0,
+            wcost: 0,
+            feature: "BOS/EOS".to_string(),
             is_unknown: false,
         }
     }
 
     /// Create a new lattice node from an owned dictionary entry (moves feature)
-    #[inline]
-    pub fn from_entry_owned(text: &'a str, start: usize, entry: DictionaryEntry) -> Self {
+    pub fn from_entry(text: &'a str, start: usize, entry: DictionaryEntry) -> Self {
         let end = start + entry.length;
+
         Self {
             surface: &text[start..end],
             start,
@@ -78,23 +73,7 @@ impl<'a> LatticeNode<'a> {
             right_id: entry.right_id,
             pos_id: entry.pos_id,
             wcost: entry.wcost,
-            feature: entry.feature, // Move, don't clone
-            is_unknown: false,
-        }
-    }
-
-    /// Create a BOS (Beginning of Sentence) node
-    pub fn bos() -> Self {
-        Self {
-            surface: "",
-            start: 0,
-            end: 0,
-            word_id: u32::MAX, // BOS/EOS don't have word_id
-            left_id: 0,
-            right_id: 0,
-            pos_id: 0,
-            wcost: 0,
-            feature: "BOS/EOS".to_string(),
+            feature: entry.feature,
             is_unknown: false,
         }
     }
@@ -145,7 +124,9 @@ pub struct Lattice<'a> {
     pub text: &'a str,
     /// Nodes at each byte position
     /// Index 0 contains BOS, last index contains EOS
-    pub nodes_at: Vec<Vec<LatticeNode<'a>>>,
+
+    /// The list of notes, ordered by byte position.
+    pub nodes: Vec<Vec<LatticeNode<'a>>>,
 }
 
 impl<'a> Lattice<'a> {
@@ -162,65 +143,48 @@ impl<'a> Lattice<'a> {
     pub fn build(text: &'a str, dict: &Dictionary) -> Result<Self> {
         let text_len = text.len();
 
-        // Initialize nodes_at with one extra slot for BOS at position 0
-        // and one for EOS at position text_len + 1
-        let mut nodes_at: Vec<Vec<LatticeNode<'a>>> = vec![Vec::new(); text_len + 2];
+        let mut nodes: Vec<Vec<LatticeNode<'a>>> = vec![Vec::new(); text_len + 2];
 
-        // Add BOS node at position 0
-        nodes_at[0].push(LatticeNode::bos());
+        nodes[0].push(LatticeNode::bos());
 
         // Build lattice by scanning through text
-        for (char_idx, c) in text.char_indices() {
-            let pos = char_idx;
-            let remaining = &text[pos..];
+        for (char_byte_pos, c) in text.char_indices() {
+            let subtext = &text[char_byte_pos..];
 
-            /*
-            val lattice = Lattice.create()
-            for i in 0..text.length {
-                val terms = findAllTermStartingAt(text, i)
-                for term in terms {
-                    lattice.add(term, startIndex=i, endIndex=i+term.length)
-                }
-                ...
-            }
-            ...
-            return lattice.findTheBestPath()
-            */
+            let entries = dict.lookup(subtext);
 
-            // Look up all words starting at this position
-            let entries = dict.lookup(remaining);
-
-            // Handle unknown words if no dictionary entries found
             if entries.is_empty() {
-                Self::add_unknown_nodes(text, pos, c, dict, &mut nodes_at);
+                Self::push_unknown_nodes(text, char_byte_pos, c, dict, &mut nodes);
             } else {
                 for entry in entries {
-                    let node = LatticeNode::from_entry_owned(text, pos, entry);
+                    let node = LatticeNode::from_entry(text, char_byte_pos, entry);
                     let end_pos = node.end;
 
                     // Add node to the end position + 1 (shifted for BOS)
                     if end_pos <= text_len {
-                        nodes_at[end_pos + 1].push(node);
+                        nodes[end_pos].push(node);
                     }
                 }
             }
         }
 
+        // Add EOS node at the final position
+        nodes[text_len + 1].push(LatticeNode::eos(text_len));
+
         // Handle case where no nodes reach the end
         // This can happen with unknown characters at the end
         let final_pos = text.len();
-        if nodes_at[final_pos + 1].is_empty() && !nodes_at[final_pos].is_empty() {
+        if nodes[final_pos + 1].is_empty() && !nodes[final_pos].is_empty() {
+            println!("{:#?}", nodes);
+            panic!("trailing");
             // Check if we need to handle trailing characters
         }
 
-        // Add EOS node at the final position
-        nodes_at[text_len + 1].push(LatticeNode::eos(text_len));
-
-        Ok(Self { text, nodes_at })
+        Ok(Self { text, nodes })
     }
 
     /// Add unknown word nodes for a character
-    fn add_unknown_nodes(
+    fn push_unknown_nodes(
         text: &'a str,
         pos: usize,
         c: char,
@@ -238,9 +202,9 @@ impl<'a> Lattice<'a> {
             let end_pos = pos + char_len;
 
             if end_pos <= text.len() {
-                nodes_at[end_pos + 1].push(LatticeNode {
+                nodes_at[end_pos].push(LatticeNode {
                     surface: &text[pos..end_pos],
-                    start: pos,
+                    start: pos + 1,
                     end: end_pos,
                     word_id: u32::MAX, // Unknown words don't have dictionary word_id
                     left_id: 0,
@@ -259,7 +223,7 @@ impl<'a> Lattice<'a> {
                 let end_pos = node.end;
 
                 if end_pos <= text.len() {
-                    nodes_at[end_pos + 1].push(node);
+                    nodes_at[end_pos].push(node);
                 }
             }
         }
@@ -313,21 +277,50 @@ impl<'a> Lattice<'a> {
 
     /// Get the number of byte positions in the lattice
     pub fn len(&self) -> usize {
-        self.nodes_at.len()
+        self.nodes.len()
     }
 
     /// Check if the lattice is empty
     pub fn is_empty(&self) -> bool {
-        self.nodes_at.is_empty()
+        self.nodes.is_empty()
+    }
+
+    /// Returns the nodes that begin at the given position.
+    pub fn get(&self, pos: usize) -> &[LatticeNode<'a>] {
+        debug_assert!(
+            pos < self.nodes.len(),
+            "Attempted to fetch node at position outside bounds."
+        );
+
+        &self.nodes[pos]
     }
 
     /// Get nodes ending at a specific position
     pub fn nodes_ending_at(&self, pos: usize) -> &[LatticeNode<'a>] {
-        if pos < self.nodes_at.len() {
-            &self.nodes_at[pos]
+        if pos < self.nodes.len() {
+            &self.nodes[pos]
         } else {
             &[]
         }
+    }
+
+    pub fn get_bos_node(&self) -> &[LatticeNode<'a>] {
+        let nodes = self.get(0);
+        let num_nodes = nodes.len();
+
+        assert!(
+            num_nodes == 1,
+            "Only 1 BOS segment should exist, but found {num_nodes}",
+        );
+
+        for node in nodes {
+            assert!(
+                node.start == node.end,
+                "BOS nodes should have the same start/end position.",
+            );
+        }
+
+        nodes
     }
 }
 

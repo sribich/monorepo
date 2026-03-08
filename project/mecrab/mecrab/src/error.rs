@@ -71,10 +71,6 @@ pub enum Error {
     /// Format error (for DOT output, etc.)
     #[error("Format error: {0}")]
     FormatError(String),
-
-    /// Vector store error
-    #[error("Vector store error: {0}")]
-    VectorError(String),
 }
 
 impl From<std::fmt::Error> for Error {

@@ -64,9 +64,6 @@ pub mod dict;
 pub mod error;
 pub mod lattice;
 pub mod normalize;
-pub mod semantic;
-pub mod stream;
-pub mod vectors;
 pub mod viterbi;
 
 use std::fmt;
@@ -85,20 +82,8 @@ pub enum OutputFormat {
     /// Default MeCab format: surface\tfeatures
     #[default]
     Default,
-    /// Wakati format: space-separated surface forms
-    Wakati,
     /// Dump all lattice information for debugging
     Dump,
-    /// JSON output format
-    Json,
-    /// JSON-LD output format with semantic URIs
-    Jsonld,
-    /// Turtle (TTL) RDF format
-    Turtle,
-    /// N-Triples RDF format
-    Ntriples,
-    /// N-Quads RDF format
-    Nquads,
 }
 
 /// A single morpheme (token) in the analysis result
@@ -114,32 +99,12 @@ pub struct Morpheme {
     pub wcost: i16,
     /// Feature string (comma-separated POS info, reading, etc.)
     pub feature: String,
-    /// Semantic entity references (optional)
-    pub entities: Vec<semantic::extension::EntityReference>,
-    /// Word embedding vector (optional, populated when vector_enabled=true)
-    pub embedding: Option<Vec<f32>>,
 }
 
 impl fmt::Display for Morpheme {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // Main line: MeCab-compatible format
         write!(f, "{}\t{}", self.surface, self.feature)?;
-
-        // Optional embedding vector (show first 8 dimensions for readability)
-        if let Some(ref emb) = self.embedding {
-            write!(f, "\n  Vector: [")?;
-            let show_dims = emb.len().min(8);
-            for (i, val) in emb.iter().take(show_dims).enumerate() {
-                if i > 0 {
-                    write!(f, ", ")?;
-                }
-                write!(f, "{:.3}", val)?;
-            }
-            if emb.len() > show_dims {
-                write!(f, ", ...")?;
-            }
-            write!(f, "] (dim={})", emb.len())?;
-        }
 
         Ok(())
     }
@@ -163,11 +128,6 @@ impl fmt::Display for AnalysisResult {
                 }
                 writeln!(f, "EOS")
             }
-            OutputFormat::Wakati => {
-                let surfaces: Vec<&str> =
-                    self.morphemes.iter().map(|m| m.surface.as_str()).collect();
-                writeln!(f, "{}", surfaces.join(" "))
-            }
             OutputFormat::Dump => {
                 for (i, morpheme) in self.morphemes.iter().enumerate() {
                     writeln!(
@@ -178,231 +138,14 @@ impl fmt::Display for AnalysisResult {
                 }
                 writeln!(f, "EOS")
             }
-            OutputFormat::Json => self.format_json(f),
-            OutputFormat::Jsonld => self.format_jsonld(f),
-            OutputFormat::Turtle => self.format_turtle(f),
-            OutputFormat::Ntriples => self.format_ntriples(f),
-            OutputFormat::Nquads => self.format_nquads(f),
         }
     }
 }
-
-impl AnalysisResult {
-    /// Format as JSON
-    fn format_json(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[")?;
-        for (i, m) in self.morphemes.iter().enumerate() {
-            if i > 0 {
-                write!(f, ",")?;
-            }
-            write!(
-                f,
-                "{{\"surface\":\"{}\",\"feature\":\"{}\"}}",
-                semantic::jsonld::escape_json(&m.surface),
-                semantic::jsonld::escape_json(&m.feature)
-            )?;
-        }
-        write!(f, "]")
-    }
-
-    /// Format as JSON-LD with semantic URIs
-    fn format_jsonld(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        writeln!(f, "{{")?;
-        writeln!(f, "  \"@context\": {{")?;
-        writeln!(f, "    \"wd\": \"http://www.wikidata.org/entity/\",")?;
-        writeln!(f, "    \"dbr\": \"http://dbpedia.org/resource/\",")?;
-        writeln!(f, "    \"schema\": \"http://schema.org/\",")?;
-        writeln!(f, "    \"mecrab\": \"http://mecrab.io/ns#\"")?;
-        writeln!(f, "  }},")?;
-        writeln!(f, "  \"@type\": \"mecrab:Analysis\",")?;
-        writeln!(f, "  \"tokens\": [")?;
-
-        for (i, m) in self.morphemes.iter().enumerate() {
-            // Parse feature string to extract reading if available
-            let features: Vec<&str> = m.feature.split(',').collect();
-            let reading = features.get(7).copied(); // IPADIC format: reading is at index 7
-
-            writeln!(f, "    {{")?;
-            writeln!(
-                f,
-                "      \"surface\": \"{}\",",
-                semantic::jsonld::escape_json(&m.surface)
-            )?;
-            writeln!(
-                f,
-                "      \"pos\": \"{}\",",
-                features.first().copied().unwrap_or("*")
-            )?;
-            if let Some(r) = reading {
-                if r != "*" {
-                    writeln!(f, "      \"reading\": \"{}\",", r)?;
-                }
-            }
-
-            // Add embedding vector if available
-            if let Some(ref embedding) = m.embedding {
-                write!(f, "      \"embedding\": [")?;
-                for (j, val) in embedding.iter().enumerate() {
-                    if j > 0 {
-                        write!(f, ", ")?;
-                    }
-                    write!(f, "{:.3}", val)?;
-                }
-                writeln!(f, "],")?;
-            }
-
-            // Determine if we need trailing comma after wcost
-            let has_entities = !m.entities.is_empty();
-
-            if has_entities {
-                writeln!(f, "      \"wcost\": {},", m.wcost)?;
-                writeln!(f, "      \"entities\": [")?;
-                for (j, entity) in m.entities.iter().enumerate() {
-                    let compact = semantic::compact_uri(&entity.uri);
-                    write!(
-                        f,
-                        "        {{\"@id\": \"{}\", \"confidence\": {:.2}}}",
-                        compact, entity.confidence
-                    )?;
-                    if j < m.entities.len() - 1 {
-                        writeln!(f, ",")?;
-                    } else {
-                        writeln!(f)?;
-                    }
-                }
-                write!(f, "      ]")?;
-            } else {
-                write!(f, "      \"wcost\": {}", m.wcost)?;
-            }
-
-            if i < self.morphemes.len() - 1 {
-                writeln!(f, "\n    }},")?;
-            } else {
-                writeln!(f, "\n    }}")?;
-            }
-        }
-
-        writeln!(f, "  ]")?;
-        write!(f, "}}")
-    }
-
-    /// Format as Turtle (TTL) RDF
-    fn format_turtle(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Prepare token data for export
-        let tokens: Vec<(String, String, Option<String>, Vec<semantic::SemanticEntry>)> = self
-            .morphemes
-            .iter()
-            .map(|m| {
-                let features: Vec<&str> = m.feature.split(',').collect();
-                let pos = features.first().copied().unwrap_or("*").to_string();
-                let reading = features
-                    .get(7)
-                    .filter(|&&r| r != "*")
-                    .map(|&r| r.to_string());
-
-                // Convert EntityReference to SemanticEntry
-                let entities: Vec<semantic::SemanticEntry> = m
-                    .entities
-                    .iter()
-                    .map(|e| {
-                        semantic::SemanticEntry::new(
-                            &e.uri,
-                            e.confidence,
-                            semantic::OntologySource::Wikidata,
-                        )
-                    })
-                    .collect();
-
-                (m.surface.clone(), pos, reading, entities)
-            })
-            .collect();
-
-        let turtle = semantic::rdf::export_turtle(&tokens, "http://example.org/analysis");
-        write!(f, "{}", turtle)
-    }
-
-    /// Format as N-Triples RDF
-    fn format_ntriples(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Prepare token data for export
-        let tokens: Vec<(String, String, Option<String>, Vec<semantic::SemanticEntry>)> = self
-            .morphemes
-            .iter()
-            .map(|m| {
-                let features: Vec<&str> = m.feature.split(',').collect();
-                let pos = features.first().copied().unwrap_or("*").to_string();
-                let reading = features
-                    .get(7)
-                    .filter(|&&r| r != "*")
-                    .map(|&r| r.to_string());
-
-                let entities: Vec<semantic::SemanticEntry> = m
-                    .entities
-                    .iter()
-                    .map(|e| {
-                        semantic::SemanticEntry::new(
-                            &e.uri,
-                            e.confidence,
-                            semantic::OntologySource::Wikidata,
-                        )
-                    })
-                    .collect();
-
-                (m.surface.clone(), pos, reading, entities)
-            })
-            .collect();
-
-        let ntriples = semantic::rdf::export_ntriples(&tokens, "http://example.org/analysis");
-        write!(f, "{}", ntriples)
-    }
-
-    /// Format as N-Quads RDF
-    fn format_nquads(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // Prepare token data for export
-        let tokens: Vec<(String, String, Option<String>, Vec<semantic::SemanticEntry>)> = self
-            .morphemes
-            .iter()
-            .map(|m| {
-                let features: Vec<&str> = m.feature.split(',').collect();
-                let pos = features.first().copied().unwrap_or("*").to_string();
-                let reading = features
-                    .get(7)
-                    .filter(|&&r| r != "*")
-                    .map(|&r| r.to_string());
-
-                let entities: Vec<semantic::SemanticEntry> = m
-                    .entities
-                    .iter()
-                    .map(|e| {
-                        semantic::SemanticEntry::new(
-                            &e.uri,
-                            e.confidence,
-                            semantic::OntologySource::Wikidata,
-                        )
-                    })
-                    .collect();
-
-                (m.surface.clone(), pos, reading, entities)
-            })
-            .collect();
-
-        let nquads = semantic::rdf::export_nquads(
-            &tokens,
-            "http://example.org/analysis",
-            "http://example.org/graph",
-        );
-        write!(f, "{}", nquads)
-    }
-}
-
 /// Builder for configuring MeCrab instance
 #[derive(Debug, Default)]
 pub struct MeCrabBuilder {
     dicdir: Option<PathBuf>,
     userdic: Option<PathBuf>,
-    semantic_pool: Option<PathBuf>,
-    vector_pool: Option<PathBuf>,
-    with_semantic: bool,
-    with_vector: bool,
     output_format: OutputFormat,
 }
 
@@ -427,34 +170,6 @@ impl MeCrabBuilder {
         self
     }
 
-    /// Set the semantic pool path
-    #[must_use]
-    pub fn semantic_pool(mut self, path: Option<PathBuf>) -> Self {
-        self.semantic_pool = path;
-        self
-    }
-
-    /// Enable semantic URI output (requires semantic pool to be loaded)
-    #[must_use]
-    pub fn with_semantic(mut self, enabled: bool) -> Self {
-        self.with_semantic = enabled;
-        self
-    }
-
-    /// Set the vector pool file path (vectors.bin)
-    #[must_use]
-    pub fn vector_pool(mut self, path: Option<PathBuf>) -> Self {
-        self.vector_pool = path;
-        self
-    }
-
-    /// Enable vector embedding output
-    #[must_use]
-    pub fn with_vector(mut self, enabled: bool) -> Self {
-        self.with_vector = enabled;
-        self
-    }
-
     /// Set the output format
     #[must_use]
     pub fn output_format(mut self, format: OutputFormat) -> Self {
@@ -468,47 +183,17 @@ impl MeCrabBuilder {
     ///
     /// Returns an error if the dictionary cannot be loaded.
     pub fn build(self) -> Result<MeCrab> {
-        let dictionary = match (self.dicdir, self.semantic_pool) {
-            (Some(dicdir), Some(semantic_path)) => {
-                Dictionary::load_with_semantics(&dicdir, &semantic_path)?
-            }
-            (Some(dicdir), None) => {
-                // Try to auto-load semantic.bin from dicdir if it exists
-                let semantic_path = dicdir.join("semantic.bin");
-                if semantic_path.exists() {
-                    Dictionary::load_with_semantics(&dicdir, &semantic_path)?
-                } else {
-                    Dictionary::load(&dicdir)?
-                }
-            }
-            (None, Some(semantic_path)) => {
-                let dict = Dictionary::default_dictionary()?;
-                let pool_file = std::fs::File::open(&semantic_path)?;
-                let pool_data = unsafe { memmap2::Mmap::map(&pool_file)? };
-                let pool = crate::semantic::pool::SemanticPool::from_bytes(&pool_data)?;
-                let mut dict_mut = dict;
-                dict_mut.semantic_pool = Some(Arc::new(pool));
-                dict_mut
-            }
-            (None, None) => {
+        let dictionary = match self.dicdir {
+            Some(dicdir) => Dictionary::load(&dicdir)?,
+            None => {
                 // Try to auto-load from default directory
                 Dictionary::default_dictionary()?
             }
         };
 
-        // Load vector store if path provided
-        let vector_store = if let Some(vector_path) = self.vector_pool {
-            Some(Arc::new(vectors::VectorStore::from_file(&vector_path)?))
-        } else {
-            None
-        };
-
         Ok(MeCrab {
             dictionary: Arc::new(dictionary),
             output_format: self.output_format,
-            semantic_enabled: self.with_semantic,
-            vector_enabled: self.with_vector,
-            vector_store,
         })
     }
 }
@@ -518,9 +203,6 @@ impl MeCrabBuilder {
 pub struct MeCrab {
     dictionary: Arc<Dictionary>,
     output_format: OutputFormat,
-    semantic_enabled: bool,
-    vector_enabled: bool,
-    vector_store: Option<Arc<vectors::VectorStore>>,
 }
 
 impl MeCrab {
@@ -552,93 +234,31 @@ impl MeCrab {
         let solver = ViterbiSolver::new(&self.dictionary);
         let path = solver.solve(&lattice)?;
 
-        // Convert path to morphemes with optional semantic and IPA enrichment
+        panic!();
+        // println!("{:#?}", path);
+
         let morphemes = path
             .into_iter()
-            .map(|node| {
-                let entities = if self.semantic_enabled {
-                    self.get_entities_for_surface(&node.surface)
-                } else {
-                    Vec::new()
-                };
-
-                let embedding = if self.vector_enabled {
-                    self.get_embedding(node.word_id)
-                } else {
-                    None
-                };
-
-                Morpheme {
-                    surface: node.surface,
-                    word_id: node.word_id,
-                    pos_id: node.pos_id,
-                    wcost: node.wcost,
-                    feature: node.feature,
-                    entities,
-                    embedding,
-                }
+            .map(|node| Morpheme {
+                surface: node.surface,
+                word_id: node.word_id,
+                pos_id: node.pos_id,
+                wcost: node.wcost,
+                feature: node.feature,
             })
             .collect();
 
-        Ok(AnalysisResult {
+        // let x = morphemes.clone();
+
+        println!("{:#?}", morphemes);
+
+        let x = AnalysisResult {
             morphemes,
             format: self.output_format,
-        })
-    }
+        };
 
-    /// Get semantic entities for a surface form
-    fn get_entities_for_surface(&self, surface: &str) -> Vec<semantic::EntityReference> {
-        if let Some(ref surface_map) = self.dictionary.surface_map {
-            if let Some(uris) = surface_map.get(surface) {
-                return uris
-                    .iter()
-                    .map(|(uri, confidence)| {
-                        let source = if uri.contains("wikidata.org") {
-                            semantic::OntologySource::Wikidata
-                        } else if uri.contains("dbpedia.org") {
-                            semantic::OntologySource::DBpedia
-                        } else {
-                            semantic::OntologySource::Custom
-                        };
-                        semantic::EntityReference::new(uri.clone(), *confidence, source)
-                    })
-                    .collect();
-            }
-        }
-        Vec::new()
-    }
-
-    /// Get word embedding vector for a given word ID
-    ///
-    /// Returns None if:
-    /// - No vector store is loaded
-    /// - word_id is u32::MAX (overlay/unknown words)
-    /// - word_id is out of bounds in the vector store
-    fn get_embedding(&self, word_id: u32) -> Option<Vec<f32>> {
-        // Skip overlay/unknown words (marked with u32::MAX)
-        if word_id == u32::MAX {
-            return None;
-        }
-
-        self.vector_store
-            .as_ref()
-            .and_then(|store| store.get(word_id))
-            .map(|slice| slice.to_vec())
-    }
-
-    /// Parse the input text and return wakati (space-separated) output
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if parsing fails.
-    pub fn wakati(&self, text: &str) -> Result<String> {
-        let result = self.parse(text)?;
-        let surfaces: Vec<&str> = result
-            .morphemes
-            .iter()
-            .map(|m| m.surface.as_str())
-            .collect();
-        Ok(surfaces.join(" "))
+        println!("{:#?}", x);
+        Ok(x)
     }
 
     /// Parse multiple texts in parallel using Rayon
@@ -659,23 +279,6 @@ impl MeCrab {
     #[cfg(not(feature = "parallel"))]
     pub fn parse_batch(&self, texts: &[&str]) -> Vec<Result<AnalysisResult>> {
         texts.iter().map(|text| self.parse(text)).collect()
-    }
-
-    /// Parse multiple texts and return wakati outputs in parallel
-    ///
-    /// # Errors
-    ///
-    /// Returns a vector of results.
-    #[cfg(feature = "parallel")]
-    pub fn wakati_batch(&self, texts: &[&str]) -> Vec<Result<String>> {
-        use rayon::prelude::*;
-        texts.par_iter().map(|text| self.wakati(text)).collect()
-    }
-
-    /// Parse multiple texts and return wakati outputs sequentially
-    #[cfg(not(feature = "parallel"))]
-    pub fn wakati_batch(&self, texts: &[&str]) -> Vec<Result<String>> {
-        texts.iter().map(|text| self.wakati(text)).collect()
     }
 
     /// Add a word to the dictionary at runtime
@@ -746,28 +349,12 @@ impl MeCrab {
             .map(|(path, cost)| {
                 let morphemes = path
                     .into_iter()
-                    .map(|node| {
-                        let entities = if self.semantic_enabled {
-                            self.get_entities_for_surface(&node.surface)
-                        } else {
-                            Vec::new()
-                        };
-
-                        let embedding = if self.vector_enabled {
-                            self.get_embedding(node.word_id)
-                        } else {
-                            None
-                        };
-
-                        Morpheme {
-                            surface: node.surface,
-                            word_id: node.word_id,
-                            pos_id: node.pos_id,
-                            wcost: node.wcost,
-                            feature: node.feature,
-                            entities,
-                            embedding,
-                        }
+                    .map(|node| Morpheme {
+                        surface: node.surface,
+                        word_id: node.word_id,
+                        pos_id: node.pos_id,
+                        wcost: node.wcost,
+                        feature: node.feature,
                     })
                     .collect();
 

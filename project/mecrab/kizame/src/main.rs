@@ -8,7 +8,6 @@
 //!
 //! - `kizame parse` - Morphological analysis (default)
 //! - `kizame explore` - Interactive lattice debugger TUI
-//! - `kizame build` - Build semantic dictionary from Wikidata (requires --features full)
 //! - `kizame dict` - Dictionary management
 mod tui;
 
@@ -88,20 +87,10 @@ enum Commands {
     /// Interactive lattice debugger TUI ("Matrix" mode)
     Explore(ExploreArgs),
 
-    /// Build semantic dictionary from Wikidata/Wikipedia dumps
-    #[cfg(feature = "full")]
-    Build(BuildArgs),
-
     /// Dictionary management
     Dict {
         #[command(subcommand)]
         command: DictCommands,
-    },
-
-    /// Vector embeddings management
-    Vectors {
-        #[command(subcommand)]
-        command: VectorsCommands,
     },
 }
 
@@ -114,10 +103,6 @@ struct ExploreArgs {
     /// Path to the dictionary directory
     #[arg(short = 'd', long)]
     dicdir: Option<PathBuf>,
-
-    /// Path to semantic pool file (semantic.bin)
-    #[arg(short = 's', long)]
-    semantic_pool: Option<PathBuf>,
 }
 
 #[derive(Subcommand)]
@@ -164,88 +149,6 @@ enum DictCommands {
     },
 }
 
-#[derive(Subcommand)]
-enum VectorsCommands {
-    /// Train Word2Vec embeddings from corpus
-    Train {
-        /// Input corpus file (space-separated word_ids per line)
-        #[arg(short = 'i', long)]
-        input: PathBuf,
-
-        /// Output file (word2vec text format)
-        #[arg(short = 'o', long)]
-        output: PathBuf,
-
-        /// Embedding vector size
-        #[arg(long, default_value = "100")]
-        size: usize,
-
-        /// Context window size
-        #[arg(long, default_value = "5")]
-        window: usize,
-
-        /// Number of negative samples
-        #[arg(long, default_value = "5")]
-        negative: usize,
-
-        /// Minimum word count
-        #[arg(long, default_value = "10")]
-        min_count: u64,
-
-        /// Subsampling threshold (1e-4 = 0.0001)
-        #[arg(long, default_value = "0.0001")]
-        sample: f64,
-
-        /// Initial learning rate
-        #[arg(long, default_value = "0.025")]
-        alpha: f32,
-
-        /// Minimum learning rate
-        #[arg(long, default_value = "0.0001")]
-        min_alpha: f32,
-
-        /// Number of training epochs
-        #[arg(long, default_value = "3")]
-        epochs: usize,
-
-        /// Number of threads
-        #[arg(long, default_value = "8")]
-        threads: usize,
-
-        /// Output format (text or mcv1)
-        #[arg(short = 'f', long, default_value = "text")]
-        format: String,
-
-        /// For MCV1 output: maximum word_id in IPADIC
-        #[arg(long)]
-        max_word_id: Option<u32>,
-    },
-    /// Convert word2vec/fastText format to MCV1 binary format
-    Convert {
-        /// Input file (word2vec text format or gensim KeyedVectors)
-        #[arg(short = 'i', long)]
-        input: PathBuf,
-
-        /// Output file (MCV1 binary format)
-        #[arg(short = 'o', long)]
-        output: PathBuf,
-
-        /// Input format (word2vec-text, gensim)
-        #[arg(short = 'f', long, default_value = "word2vec-text")]
-        format: String,
-
-        /// Vocabulary file (`word_id<TAB>feature`) from dict dump --vocab
-        #[arg(short = 'v', long)]
-        vocab: Option<PathBuf>,
-    },
-    /// Show vector pool information
-    Info {
-        /// Vector pool file
-        #[arg(short = 'v', long)]
-        vector_pool: PathBuf,
-    },
-}
-
 #[derive(Args, Clone)]
 struct ParseArgs {
     /// Path to the dictionary directory
@@ -256,33 +159,9 @@ struct ParseArgs {
     #[arg(short = 'u', long)]
     userdic: Option<PathBuf>,
 
-    /// Path to semantic pool file (semantic.bin)
-    #[arg(short = 's', long)]
-    semantic_pool: Option<PathBuf>,
-
-    /// Path to vector pool file (vectors.bin)
-    #[arg(short = 'v', long)]
-    vector_pool: Option<PathBuf>,
-
-    /// Include semantic URIs in output (requires semantic pool)
-    #[arg(long)]
-    with_semantic: bool,
-
-    /// Include word embeddings in output (requires vector pool)
-    #[arg(long)]
-    with_vector: bool,
-
     /// Output format
     #[arg(short = 'O', long, value_enum, default_value_t = Format::Default)]
     output_format: Format,
-
-    /// Output wakati (space-separated surface forms only)
-    #[arg(short = 'w', long)]
-    wakati: bool,
-
-    /// Output wakati with word_id instead of surface (for Word2Vec training)
-    #[arg(long)]
-    wakati_word_id: bool,
 
     /// N-best output (number of alternative analyses to show)
     #[arg(short = 'n', long)]
@@ -305,69 +184,19 @@ struct ParseArgs {
     output: Option<PathBuf>,
 }
 
-#[cfg(feature = "full")]
-#[derive(Args)]
-struct BuildArgs {
-    /// Source dictionary CSV (e.g., unidic.csv, ipadic.csv)
-    #[arg(short = 's', long)]
-    source: PathBuf,
-
-    /// Wikidata JSON dump (latest-all.json.gz)
-    #[arg(short = 'w', long)]
-    wikidata: Option<PathBuf>,
-
-    /// Wikipedia abstract dump
-    #[arg(long)]
-    wikipedia: Option<PathBuf>,
-
-    /// Output directory for extended dictionary
-    #[arg(short = 'o', long)]
-    output: PathBuf,
-
-    /// Maximum semantic candidates per word (default: 5)
-    #[arg(long, default_value_t = 5)]
-    max_candidates: u8,
-
-    /// Number of parallel workers
-    #[arg(short = 'j', long)]
-    jobs: Option<usize>,
-
-    /// Verbose output
-    #[arg(short = 'v', long)]
-    verbose: bool,
-}
-
 #[derive(Copy, Clone, PartialEq, Eq, ValueEnum)]
 enum Format {
     /// Default MeCab format
     Default,
-    /// Wakati (space-separated)
-    Wakati,
     /// Dump all lattice information
     Dump,
-    /// JSON output
-    Json,
-    /// JSON-LD output with semantic URIs
-    Jsonld,
-    /// Turtle (TTL) RDF format
-    Turtle,
-    /// N-Triples RDF format
-    Ntriples,
-    /// N-Quads RDF format
-    Nquads,
 }
 
 impl From<Format> for OutputFormat {
     fn from(f: Format) -> Self {
         match f {
             Format::Default => OutputFormat::Default,
-            Format::Wakati => OutputFormat::Wakati,
             Format::Dump => OutputFormat::Dump,
-            Format::Json => OutputFormat::Json,
-            Format::Jsonld => OutputFormat::Jsonld,
-            Format::Turtle => OutputFormat::Turtle,
-            Format::Ntriples => OutputFormat::Ntriples,
-            Format::Nquads => OutputFormat::Nquads,
         }
     }
 }
@@ -378,10 +207,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match cli.command {
         Some(Commands::Parse(args)) => run_parse(args),
         Some(Commands::Explore(args)) => run_explore(args),
-        #[cfg(feature = "full")]
-        Some(Commands::Build(args)) => run_build(args),
         Some(Commands::Dict { command }) => run_dict(command),
-        Some(Commands::Vectors { command }) => run_vectors(command),
         None => {
             // Default: run parse with top-level args
             run_parse(cli.parse_args)
@@ -390,23 +216,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_explore(args: ExploreArgs) -> Result<(), Box<dyn std::error::Error>> {
-    tui::run_explore(&args.text, args.dicdir, args.semantic_pool)
+    tui::run_explore(&args.text, args.dicdir)
 }
 
 fn run_parse(args: ParseArgs) -> Result<(), Box<dyn std::error::Error>> {
-    let format = if args.wakati {
-        OutputFormat::Wakati
-    } else {
-        args.output_format.into()
-    };
+    let format = args.output_format.into();
 
     let mecrab = MeCrab::builder()
         .dicdir(args.dicdir)
         .userdic(args.userdic)
-        .semantic_pool(args.semantic_pool)
-        .vector_pool(args.vector_pool)
-        .with_semantic(args.with_semantic)
-        .with_vector(args.with_vector)
         .output_format(format)
         .build()?;
 
@@ -506,15 +324,7 @@ fn run_parse(args: ParseArgs) -> Result<(), Box<dyn std::error::Error>> {
         } else {
             let result = mecrab.parse(&line)?;
 
-            // Special handling for wakati-word-id mode (for Word2Vec training)
-            if args.wakati_word_id {
-                let word_ids: Vec<String> = result
-                    .morphemes
-                    .iter()
-                    .map(|m| m.word_id.to_string())
-                    .collect();
-                writeln!(output, "{}", word_ids.join(" "))?;
-            } else if use_color && matches!(format, OutputFormat::Default | OutputFormat::Dump) {
+            if use_color && matches!(format, OutputFormat::Default | OutputFormat::Dump) {
                 write_colored_result(&mut output, &result)?;
             } else {
                 writeln!(output, "{result}")?;
@@ -542,45 +352,6 @@ fn write_colored_result<W: Write>(w: &mut W, result: &mecrab::AnalysisResult) ->
         writeln!(w)?;
     }
     writeln!(w, "{}EOS{}", colors::DIM, colors::RESET)
-}
-
-#[cfg(feature = "full")]
-fn run_build(args: BuildArgs) -> Result<(), Box<dyn std::error::Error>> {
-    use mecrab_builder::BuildConfig;
-
-    eprintln!("KizaMe Builder - Semantic Dictionary Pipeline");
-    eprintln!("==============================================");
-    eprintln!("Source:         {:?}", args.source);
-    eprintln!("Wikidata:       {:?}", args.wikidata);
-    eprintln!("Wikipedia:      {:?}", args.wikipedia);
-    eprintln!("Output:         {:?}", args.output);
-    eprintln!("Max candidates: {}", args.max_candidates);
-    eprintln!();
-
-    let config = BuildConfig {
-        source_csv: args.source,
-        wikidata_path: args.wikidata,
-        wikipedia_path: args.wikipedia,
-        output_dir: args.output,
-        max_candidates: args.max_candidates,
-        num_workers: args.jobs.unwrap_or(0),
-        verbose: args.verbose,
-    };
-
-    let result = mecrab_builder::build_dictionary_sync(config)?;
-
-    eprintln!();
-    eprintln!("Build Complete!");
-    eprintln!("===============");
-    eprintln!("Entries processed:      {}", result.entries_processed);
-    eprintln!("Entries with semantics: {}", result.entries_with_semantics);
-    eprintln!("Total candidates:       {}", result.total_candidates);
-    eprintln!("Output files:");
-    for file in &result.output_files {
-        eprintln!("  - {:?}", file);
-    }
-
-    Ok(())
 }
 
 fn run_dict(command: DictCommands) -> Result<(), Box<dyn std::error::Error>> {
@@ -913,295 +684,6 @@ fn run_dict_info(dicdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Erro
     println!("Charset:           {}", dict.charset());
     println!("Lexicon size:      {} entries", dict.size());
     println!("Overlay size:      {} entries", dict.overlay_size());
-
-    Ok(())
-}
-
-fn run_vectors(command: VectorsCommands) -> Result<(), Box<dyn std::error::Error>> {
-    match command {
-        VectorsCommands::Train {
-            input,
-            output,
-            size,
-            window,
-            negative,
-            min_count,
-            sample,
-            alpha,
-            min_alpha,
-            epochs,
-            threads,
-            format,
-            max_word_id,
-        } => run_vectors_train(
-            &input,
-            &output,
-            size,
-            window,
-            negative,
-            min_count,
-            sample,
-            alpha,
-            min_alpha,
-            epochs,
-            threads,
-            &format,
-            max_word_id,
-        ),
-        VectorsCommands::Convert {
-            input,
-            output,
-            format,
-            vocab,
-        } => run_vectors_convert(&input, &output, &format, vocab.as_deref()),
-        VectorsCommands::Info { vector_pool } => run_vectors_info(&vector_pool),
-    }
-}
-
-fn run_vectors_info(vector_pool: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    use std::fs::File;
-    use std::sync::Arc;
-
-    use mecrab::vectors::VectorStore;
-
-    println!("Vector Pool Information: {:?}", vector_pool);
-    println!("================================================================================");
-    println!();
-
-    let file = File::open(vector_pool)?;
-    let mmap = unsafe { memmap2::MmapOptions::new().map(&file)? };
-    let store = VectorStore::from_mmap(Arc::new(mmap))?;
-
-    println!("Vocab size:  {}", store.vocab_size());
-    println!("Dimensions:  {}", store.dim());
-    println!(
-        "File size:   {} bytes",
-        std::fs::metadata(vector_pool)?.len()
-    );
-
-    Ok(())
-}
-
-fn run_vectors_convert(
-    input: &Path,
-    output: &Path,
-    format: &str,
-    vocab: Option<&Path>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use std::collections::HashMap;
-    use std::fs::File;
-    use std::io::BufRead;
-    use std::io::BufReader;
-    use std::io::Write;
-
-    match format {
-        "word2vec-text" => {
-            eprintln!("Converting word2vec text format to MCV1...");
-            eprintln!();
-
-            // Step 1: Load vocabulary mapping (surface → word_id)
-            let surface_to_word_id: HashMap<String, u32> = if let Some(vocab_path) = vocab {
-                eprintln!("Loading vocabulary from {:?}...", vocab_path);
-                let file = File::open(vocab_path)?;
-                let reader = BufReader::new(file);
-                let mut map = HashMap::new();
-
-                for line in reader.lines() {
-                    let line = line?;
-                    if line.starts_with('#') || line.trim().is_empty() {
-                        continue;
-                    }
-
-                    let parts: Vec<&str> = line.split('\t').collect();
-                    if parts.len() >= 2 {
-                        let word_id: u32 = parts[0].parse()?;
-                        // Extract surface from feature string (index 6)
-                        let features: Vec<&str> = parts[1].split(',').collect();
-                        if let Some(surface) = features.get(6) {
-                            if *surface != "*" {
-                                map.insert(surface.to_string(), word_id);
-                            }
-                        }
-                    }
-                }
-
-                eprintln!("  Loaded {} surface forms", map.len());
-                map
-            } else {
-                return Err("vocab file required for word2vec-text format".into());
-            };
-
-            // Step 2: Read word2vec text format
-            eprintln!("Reading word2vec file {:?}...", input);
-            let file = File::open(input)?;
-            let reader = BufReader::new(file);
-            let mut lines = reader.lines();
-
-            // Read header: vocab_size dim
-            let header = lines.next().ok_or("Empty word2vec file")??;
-            let header_parts: Vec<&str> = header.split_whitespace().collect();
-            if header_parts.len() != 2 {
-                return Err("Invalid word2vec header format".into());
-            }
-
-            let _w2v_vocab_size: usize = header_parts[0].parse()?;
-            let dim: usize = header_parts[1].parse()?;
-            eprintln!("  Dimensions: {}", dim);
-
-            // Determine max word_id for output vocab_size
-            let max_word_id = surface_to_word_id.values().max().copied().unwrap_or(0);
-            let vocab_size = (max_word_id + 1) as usize;
-            eprintln!(
-                "  Output vocab size: {} (max word_id: {})",
-                vocab_size, max_word_id
-            );
-
-            // Initialize vectors array (all zeros)
-            let mut vectors: Vec<f32> = vec![0.0; vocab_size * dim];
-
-            // Read vectors
-            let mut mapped_count = 0;
-            let mut unmapped_count = 0;
-
-            for line in lines {
-                let line = line?;
-                if line.trim().is_empty() {
-                    continue;
-                }
-
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() != dim + 1 {
-                    eprintln!("  Warning: skipping malformed line");
-                    continue;
-                }
-
-                let surface = parts[0];
-                let values: Result<Vec<f32>, _> = parts[1..].iter().map(|s| s.parse()).collect();
-
-                match values {
-                    Ok(vals) => {
-                        if let Some(&word_id) = surface_to_word_id.get(surface) {
-                            let idx = word_id as usize * dim;
-                            if idx + dim <= vectors.len() {
-                                vectors[idx..idx + dim].copy_from_slice(&vals);
-                                mapped_count += 1;
-                            }
-                        } else {
-                            unmapped_count += 1;
-                        }
-                    }
-                    Err(e) => {
-                        eprintln!("  Warning: failed to parse vector for '{}': {}", surface, e);
-                    }
-                }
-            }
-
-            eprintln!();
-            eprintln!("Mapping summary:");
-            eprintln!("  Mapped:   {} words", mapped_count);
-            eprintln!("  Unmapped: {} words (not in IPADIC)", unmapped_count);
-            eprintln!();
-
-            // Step 3: Write MCV1 format
-            eprintln!("Writing MCV1 format to {:?}...", output);
-            let mut file = File::create(output)?;
-
-            // Write header (32 bytes)
-            file.write_all(&0x3143564Du32.to_le_bytes())?; // Magic: MCV1
-            file.write_all(&(vocab_size as u32).to_le_bytes())?; // Vocab size
-            file.write_all(&(dim as u32).to_le_bytes())?; // Dimension
-            file.write_all(&0u32.to_le_bytes())?; // Data type: F32
-            file.write_all(&[0u8; 16])?; // Reserved
-
-            // Write vectors
-            for value in &vectors {
-                file.write_all(&value.to_le_bytes())?;
-            }
-
-            let file_size = std::fs::metadata(output)?.len();
-            eprintln!(
-                "  Wrote {} bytes ({} MB)",
-                file_size,
-                file_size / 1024 / 1024
-            );
-            eprintln!();
-            eprintln!("✓ Conversion complete!");
-
-            Ok(())
-        }
-        _ => Err(format!("Unsupported format: {}. Supported: word2vec-text", format).into()),
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn run_vectors_train(
-    input: &Path,
-    output: &Path,
-    size: usize,
-    window: usize,
-    negative: usize,
-    min_count: u64,
-    sample: f64,
-    alpha: f32,
-    min_alpha: f32,
-    epochs: usize,
-    threads: usize,
-    format: &str,
-    max_word_id: Option<u32>,
-) -> Result<(), Box<dyn std::error::Error>> {
-    use mecrab_word2vec::Word2VecBuilder;
-
-    eprintln!("Training Word2Vec model...");
-    eprintln!("  Input: {:?}", input);
-    eprintln!("  Output: {:?}", output);
-    eprintln!("  Vector size: {}", size);
-    eprintln!("  Window: {}", window);
-    eprintln!("  Negative samples: {}", negative);
-    eprintln!("  Min count: {}", min_count);
-    eprintln!("  Sample: {}", sample);
-    eprintln!("  Alpha: {} → {}", alpha, min_alpha);
-    eprintln!("  Epochs: {}", epochs);
-    eprintln!("  Threads: {}", threads);
-    eprintln!();
-
-    // Build model
-    let mut model = Word2VecBuilder::new()
-        .vector_size(size)
-        .window_size(window)
-        .negative_samples(negative)
-        .min_count(min_count)
-        .sample(sample)
-        .alpha(alpha)
-        .min_alpha(min_alpha)
-        .epochs(epochs)
-        .threads(threads)
-        .build_from_corpus(input)?;
-
-    // Train
-    model.train_from_file(input)?;
-
-    // Save
-    match format {
-        "text" | "word2vec-text" => {
-            eprintln!("\nSaving word2vec text format...");
-            model.save_text(output)?;
-        }
-        "mcv1" => {
-            eprintln!("\nSaving MCV1 binary format...");
-            let max_id = max_word_id.ok_or("--max-word-id required for MCV1 format")?;
-            model.save_mcv1(output, max_id)?;
-        }
-        _ => {
-            return Err(format!(
-                "Unsupported output format: {}. Supported: text, mcv1",
-                format
-            )
-            .into());
-        }
-    }
-
-    eprintln!();
-    eprintln!("✓ Training complete!");
 
     Ok(())
 }

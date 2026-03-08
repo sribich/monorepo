@@ -6,25 +6,11 @@
 
 **True Zero-Copy:** Architecture that mmaps dictionary files and performs zero memory copies from analysis to output.
 
-**Flyweight Semantic Pool:** Proprietary binary design that separates semantic information (URIs) as "Cold Data", maximizing Viterbi algorithm cache efficiency.
-
-## 2. Semantic Intelligence
-
-**Native JSON-LD:** Instead of just labels like "noun", outputs globally unique IDs like `http://www.wikidata.org/entity/Q1490`.
-
-**Bridge to LLM:** Transforms text into knowledge graphs, making it an essential component for RAG (Retrieval-Augmented Generation) and LLM preprocessing in the AI era.
-
 ## 3. Phonetic Backbone
 
 **IPA Output:** Outputs precise International Phonetic Alphabet (IPA) notation, not just reading pronunciations.
 
 **TTS Ready:** Directly embeddable as a backend for speech synthesis and Japanese language learning applications.
-
-## 4. Living Dictionary
-
-**The Builder Pipeline:** With mecrab-builder, automatically incorporate "yesterday's new words" from Wikidata and Wikipedia dumps into the dictionary.
-
-**No More "Unknown Words":** Systematically overcomes morphological analysis's greatest weakness—outdated dictionaries that can't analyze new terms.
 
 ## 5. Industrial Robustness
 
@@ -84,38 +70,6 @@ MeCab's debug output (like `-N2`) was just walls of text, making it painful to m
 
 ---
 
-### 2. "Vector-Ready" Output (Embedding on the Fly)
-
-*Complete text analysis and semantic vectorization in a single pass.*
-
-Normally, after tokenizing with MeCab, you vectorize with Python's gensim or PyTorch—a slow, memory-hungry double effort. MeCrab outputs vectors the moment it analyzes.
-
-#### Feature Details
-
-**Embedded Vectors:**
-- Store embedding vectors (Word2Vec, GloVe, chiVe, etc.) corresponding to each word in the dictionary (`semantic.bin`)
-- **Quantization:** Store as f16 (half-precision) or i8 (quantized) instead of f32 to reduce file size, expanding at load time
-
-**Output Formats:**
-- **Token Vectors:** Output each morpheme's vector directly
-- **Sentence Vector (Mean Pooling):** Rapidly compute and output the average of all word vectors in a sentence (Bag-of-Words style sentence vector)
-
-**Zero-Overhead:**
-- Copy vector arrays directly from the binary dictionary before any string processing (UTF-8 decoding, etc.)—10-100x faster than Python
-
-#### Implementation Approach
-
-- **Dict Extension:** Add `vector_offset` to `semantic.bin`
-- **SIMD:** Use Rust's `portable-simd` for blazing-fast vector addition (Mean Pooling)
-- **Format:** Binary output (NumPy `.npy` compatible, etc.) or JSON arrays
-
-#### Why It's Cool
-
-- **AI Pipeline Revolution:** Generate data directly from Rust backend to Vector DB without Python.
-- **Lightweight:** Complete vectorization with a single binary—no massive ML library installation required.
-
----
-
 ### 3. "Compile-Time" Dictionary (include_dict!)
 
 *Freedom from "dictionary file not found" forever.*
@@ -149,5 +103,4 @@ The biggest headache when distributing morphological analyzers is "dictionary pa
 ## Summary
 
 - **TUI Debugger** captures the hearts of *developers*.
-- **Vector Output** captures the hearts of *AI engineers*.
 - **Compile-Time Dict** captures the hearts of *infrastructure engineers*.

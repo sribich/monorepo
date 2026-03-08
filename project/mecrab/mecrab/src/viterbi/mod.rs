@@ -225,11 +225,13 @@ impl<'a> ViterbiSolver<'a> {
 
     /// Forward pass of the Viterbi algorithm
     fn forward_pass<'b>(&self, lattice: &'b Lattice<'b>) -> Vec<Vec<ViterbiEntry<'b>>> {
-        let n = lattice.len();
-        let mut entries: Vec<Vec<ViterbiEntry<'b>>> = vec![Vec::new(); n];
+        debug_assert!(lattice.len() == lattice.text.len() + 2);
+
+        let lattice_len = lattice.len();
+        let mut entries: Vec<Vec<ViterbiEntry<'b>>> = vec![Vec::new(); lattice_len];
 
         // Initialize BOS
-        for node in lattice.nodes_ending_at(0) {
+        for node in lattice.get_bos_node() {
             entries[0].push(ViterbiEntry {
                 node,
                 cost: 0,
@@ -238,8 +240,7 @@ impl<'a> ViterbiSolver<'a> {
             });
         }
 
-        // Process each position
-        for pos in 1..n {
+        for pos in 1..lattice_len {
             let nodes = lattice.nodes_ending_at(pos);
 
             for node in nodes {
@@ -247,20 +248,14 @@ impl<'a> ViterbiSolver<'a> {
                 let mut best_prev: Option<usize> = None;
                 let mut best_prev_pos: usize = 0;
 
-                // Find the best predecessor
-                let _start_pos = if node.start == 0 { 0 } else { node.start };
-
-                // Look at all nodes that end where this node starts
-                // (shifted by 1 due to BOS)
-                let prev_pos = if node.start == 0 && pos > 0 {
+                let prev_pos = if node.start == 0 {
                     0 // Connect to BOS
                 } else {
-                    node.start + 1
+                    node.start
                 };
 
-                if prev_pos < entries.len() {
+                if prev_pos < lattice_len {
                     for (prev_idx, prev_entry) in entries[prev_pos].iter().enumerate() {
-                        // Calculate connection cost
                         let conn_cost = self
                             .dictionary
                             .connection_cost(prev_entry.node.right_id, node.left_id)
@@ -268,7 +263,18 @@ impl<'a> ViterbiSolver<'a> {
 
                         let total_cost = prev_entry.cost + conn_cost + node.wcost as i64;
 
+                        /*
+                        println!("Checking {}", node.surface);
+                        println!("  Prev: {}", prev_entry.node.surface);
+                        println!(
+                            "    Cost: (prev = {}, conn = {}, wcost = {})",
+                            prev_entry.cost, conn_cost, node.wcost
+                        );
+                        println!("    Total: {}, Prev: {}", total_cost, best_cost);
+                         */
+
                         if total_cost < best_cost {
+                            println!("  Overriding");
                             best_cost = total_cost;
                             best_prev = Some(prev_idx);
                             best_prev_pos = prev_pos;
@@ -276,7 +282,7 @@ impl<'a> ViterbiSolver<'a> {
                     }
                 }
 
-                // Also check connections from earlier positions (for longer words)
+                //  Also check connections from earlier positions (for longer words)
                 for check_pos in 1..prev_pos {
                     if check_pos < entries.len() {
                         for (prev_idx, prev_entry) in entries[check_pos].iter().enumerate() {
@@ -317,13 +323,16 @@ impl<'a> ViterbiSolver<'a> {
         entries: &[Vec<ViterbiEntry<'b>>],
         lattice: &'b Lattice<'b>,
     ) -> Result<Vec<PathNode>> {
-        let n = lattice.len();
+        // Load the EOS Segment
 
         // Find the best EOS entry
-        let eos_entries = &entries[n - 1];
+        let eos_entries = &entries[lattice.len() - 1];
+
         if eos_entries.is_empty() {
             return Err(Error::ViterbiError("No path to EOS found".to_string()));
         }
+
+        println!("{:#?}", entries);
 
         let best_eos = eos_entries
             .iter()
@@ -334,15 +343,15 @@ impl<'a> ViterbiSolver<'a> {
         let mut current_idx = best_eos.prev;
         let mut prev_pos = best_eos.pos;
 
-        if !best_eos.node.surface.is_empty() {
-            path.push(PathNode {
-                surface: best_eos.node.surface.to_string(),
-                word_id: best_eos.node.word_id,
-                pos_id: best_eos.node.pos_id,
-                wcost: best_eos.node.wcost,
-                feature: best_eos.node.feature.clone(),
-            });
-        }
+        // if !best_eos.node.surface.is_empty() {
+        path.push(PathNode {
+            surface: best_eos.node.surface.to_string(),
+            word_id: best_eos.node.word_id,
+            pos_id: best_eos.node.pos_id,
+            wcost: best_eos.node.wcost,
+            feature: best_eos.node.feature.clone(),
+        });
+        // }
 
         while let Some(idx) = current_idx {
             if prev_pos > entries.len() || idx > entries[prev_pos].len() {
@@ -352,15 +361,15 @@ impl<'a> ViterbiSolver<'a> {
             let entry = &entries[prev_pos][idx];
 
             // Skip BOS and EOS
-            if !entry.node.surface.is_empty() {
-                path.push(PathNode {
-                    surface: entry.node.surface.to_string(),
-                    word_id: entry.node.word_id,
-                    pos_id: entry.node.pos_id,
-                    wcost: entry.node.wcost,
-                    feature: entry.node.feature.clone(),
-                });
-            }
+            // if !entry.node.surface.is_empty() {
+            path.push(PathNode {
+                surface: entry.node.surface.to_string(),
+                word_id: entry.node.word_id,
+                pos_id: entry.node.pos_id,
+                wcost: entry.node.wcost,
+                feature: entry.node.feature.clone(),
+            });
+            // }
 
             current_idx = entry.prev;
             prev_pos = entry.pos;

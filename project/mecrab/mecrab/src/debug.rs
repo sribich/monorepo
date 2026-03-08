@@ -9,7 +9,8 @@ use std::collections::HashMap;
 
 use crate::Result;
 use crate::dict::Dictionary;
-use crate::lattice::{Lattice, LatticeNode};
+use crate::lattice::Lattice;
+use crate::lattice::LatticeNode;
 
 /// A debug node representing a lattice node with computed costs
 #[derive(Debug, Clone)]
@@ -121,7 +122,7 @@ impl DebugSession {
 
         // Convert lattice nodes to debug nodes
         let nodes_at: Vec<Vec<DebugNode>> = lattice
-            .nodes_at
+            .nodes
             .iter()
             .enumerate()
             .map(|(pos, nodes)| {

@@ -26,8 +26,5 @@ fuzz_target!(|input: FuzzInput| {
 
         // Parse
         let _ = mecrab.parse(&input.text);
-
-        // Wakati
-        let _ = mecrab.wakati(&input.text);
     }
 });

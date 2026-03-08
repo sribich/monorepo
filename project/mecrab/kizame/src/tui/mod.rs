@@ -442,14 +442,10 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 pub fn run_explore(
     text: &str,
     dicdir: Option<std::path::PathBuf>,
-    semantic_pool: Option<std::path::PathBuf>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let dict = match (dicdir, semantic_pool) {
-        (Some(path), Some(semantic_path)) => {
-            mecrab::dict::Dictionary::load_with_semantics(&path, &semantic_path)?
-        }
-        (Some(path), None) => mecrab::dict::Dictionary::load(&path)?,
-        (None, _) => mecrab::dict::Dictionary::default_dictionary()?,
+    let dict = match dicdir {
+        Some(path) => mecrab::dict::Dictionary::load(&path)?,
+        None => mecrab::dict::Dictionary::default_dictionary()?,
     };
 
     let session = DebugSession::new(text, &dict)?;

@@ -62,13 +62,6 @@ mecrab/src/
 │   ├── simd.rs      # AVX2 acceleration
 │   ├── nbest.rs     # N-best A* search
 │   └── analysis.rs  # Cost analysis
-├── semantic/        # Semantic enrichment
-│   ├── mod.rs       # SemanticEntry, EntityType
-│   ├── pool.rs      # SemanticPool (5-byte entries)
-│   ├── jsonld.rs    # JSON-LD export
-│   ├── rdf.rs       # RDF/Turtle/N-Triples export
-│   ├── disambiguation.rs  # Disambiguation strategies
-│   └── extension.rs # TokenExtension
 ├── phonetic/        # Phonetic processing
 │   ├── mod.rs       # Reading extraction
 │   └── transducer.rs # Kana/Romaji/X-SAMPA/IPA
@@ -81,3 +74,8 @@ mecrab/src/
 ## License
 
 MIT OR Apache-2.0
+
+### Performance
+- [ ] AVX-512 Viterbi optimization
+- [ ] SoA (Struct of Arrays) layout
+- [ ] Dictionary preloading/caching
