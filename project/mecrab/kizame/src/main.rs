@@ -676,7 +676,7 @@ fn run_dict_info(dicdir: Option<PathBuf>) -> Result<(), Box<dyn std::error::Erro
     let dict = if let Some(path) = dicdir {
         mecrab::dict::Dictionary::load(&path)?
     } else {
-        mecrab::dict::Dictionary::default_dictionary()?
+        panic!("No dictionary set");
     };
 
     println!("Dictionary Information");

@@ -10,27 +10,37 @@ mod cost_panel;
 mod input;
 mod lattice_view;
 
-pub use cost_panel::CostPanel;
-pub use lattice_view::LatticeView;
-
-use std::io::{self, Stdout};
+use std::io::Stdout;
+use std::io::{self};
 use std::time::Duration;
 
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
-};
-use ratatui::{
-    Frame, Terminal,
-    backend::CrosstermBackend,
-    layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Modifier, Style},
-    text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
-};
-
+pub use cost_panel::CostPanel;
+use crossterm::event::Event;
+use crossterm::event::KeyCode;
+use crossterm::event::KeyEventKind;
+use crossterm::event::{self};
+use crossterm::execute;
+use crossterm::terminal::EnterAlternateScreen;
+use crossterm::terminal::LeaveAlternateScreen;
+use crossterm::terminal::disable_raw_mode;
+use crossterm::terminal::enable_raw_mode;
+pub use lattice_view::LatticeView;
 use mecrab::debug::DebugSession;
+use ratatui::Frame;
+use ratatui::Terminal;
+use ratatui::backend::CrosstermBackend;
+use ratatui::layout::Constraint;
+use ratatui::layout::Direction;
+use ratatui::layout::Layout;
+use ratatui::layout::Rect;
+use ratatui::style::Color;
+use ratatui::style::Modifier;
+use ratatui::style::Style;
+use ratatui::text::Line;
+use ratatui::text::Span;
+use ratatui::widgets::Block;
+use ratatui::widgets::Borders;
+use ratatui::widgets::Paragraph;
 
 /// The TUI application state
 pub struct App {
@@ -445,7 +455,7 @@ pub fn run_explore(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let dict = match dicdir {
         Some(path) => mecrab::dict::Dictionary::load(&path)?,
-        None => mecrab::dict::Dictionary::default_dictionary()?,
+        None => panic!("No dictionary set."),
     };
 
     let session = DebugSession::new(text, &dict)?;

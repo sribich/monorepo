@@ -15,10 +15,15 @@
 //!
 //! Index formula: matrix[rcAttr + lsize * lcAttr]
 
-use crate::{Error, Result};
-use byteorder::{ByteOrder, LittleEndian};
-use memmap2::Mmap;
 use std::sync::Arc;
+
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
+use memmap2::Mmap;
+
+use crate::Error;
+use crate::Result;
+use crate::lattice::LatticeNode;
 
 /// Connection matrix storing transition costs
 pub struct ConnectionMatrix {
@@ -98,20 +103,22 @@ impl ConnectionMatrix {
     /// * `right_id` - Right context attribute of the LEFT node
     /// * `left_id` - Left context attribute of the RIGHT node
     #[inline]
-    pub fn cost(&self, right_id: u16, left_id: u16) -> i16 {
-        let rc = right_id as usize;
-        let lc = left_id as usize;
+    pub fn cost(&self, left_node: &LatticeNode<'_>, right_node: &LatticeNode<'_>) -> i32 {
+        let rc_attr = left_node.right_id as usize;
+        let lc_attr = right_node.left_id as usize;
 
-        if rc >= self.rsize || lc >= self.lsize {
+        if rc_attr >= self.rsize || lc_attr >= self.lsize {
+            // panic!("Out of bounds lookup");
             // Return a high cost for out-of-bounds lookups
-            return i16::MAX;
+            return i32::MAX;
         }
 
-        // Index: rcAttr + lsize * lcAttr
-        let index = rc + self.lsize * lc;
+        let index = rc_attr + self.lsize * lc_attr;
 
-        // Safety: We verified the indices are in bounds
-        unsafe { *self.matrix_ptr.add(index) }
+        // SAFETY: Bounds have been checked
+        let matrix_cost = unsafe { *self.matrix_ptr.add(index) };
+
+        matrix_cost as i32 + right_node.wcost as i32
     }
 
     /// Get connection cost without bounds checking (hot path optimization)

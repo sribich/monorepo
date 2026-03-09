@@ -16,20 +16,32 @@ mod sys_dic;
 mod unknown;
 pub mod user_dict;
 
-pub use char_def::{CharCategory, CharDef, CharInfo};
-pub use connection_matrix::ConnectionMatrix;
-pub use double_array_trie::{DartsResult, DoubleArrayTrie};
-pub use feature::FeatureTable;
-pub use overlay::{OverlayDictionary, OverlayEntry};
-pub use sys_dic::{SysDic, Token};
-pub use unknown::UnknownDictionary;
-pub use user_dict::{DictFormat, UserDictManager, UserDictStats, UserEntry, ValidationResult};
-
-use crate::{Error, Result};
-use memmap2::Mmap;
 use std::fs::File;
 use std::path::Path;
 use std::sync::Arc;
+
+pub use char_def::CharCategory;
+pub use char_def::CharDef;
+pub use char_def::CharInfo;
+pub use connection_matrix::ConnectionMatrix;
+pub use double_array_trie::DartsResult;
+pub use double_array_trie::DoubleArrayTrie;
+pub use feature::FeatureTable;
+use memmap2::Mmap;
+pub use overlay::OverlayDictionary;
+pub use overlay::OverlayEntry;
+pub use sys_dic::SysDic;
+pub use sys_dic::Token;
+pub use unknown::UnknownDictionary;
+pub use user_dict::DictFormat;
+pub use user_dict::UserDictManager;
+pub use user_dict::UserDictStats;
+pub use user_dict::UserEntry;
+pub use user_dict::ValidationResult;
+
+use crate::Error;
+use crate::Result;
+use crate::lattice::LatticeNode;
 
 /// Dictionary file names (MeCab/IPADIC format)
 /// System dictionary file name
@@ -145,42 +157,6 @@ impl Dictionary {
         Ok(mmap)
     }
 
-    /// Try to load the default dictionary from standard locations
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if no dictionary is found in any standard location.
-    pub fn default_dictionary() -> Result<Self> {
-        // Standard dictionary locations (ordered by preference)
-        let locations = [
-            "/var/lib/mecab/dic/ipadic-utf8",
-            "/usr/lib/mecab/dic/ipadic-utf8",
-            "/usr/local/lib/mecab/dic/ipadic-utf8",
-            "/usr/share/mecab/dic/ipadic-utf8",
-            "/usr/lib/mecab/dic/ipadic",
-            "/usr/local/lib/mecab/dic/ipadic",
-            "/usr/share/mecab/dic/ipadic",
-            "/usr/lib64/mecab/dic/ipadic",
-        ];
-
-        // Also check home directory
-        if let Some(home) = std::env::var_os("HOME") {
-            let home_path = Path::new(&home).join(".local/share/mecrab/dic/ipadic");
-            if home_path.exists() {
-                return Self::load(&home_path);
-            }
-        }
-
-        for location in &locations {
-            let path = Path::new(location);
-            if path.exists() {
-                return Self::load(path);
-            }
-        }
-
-        Err(Error::DefaultDictionaryNotFound)
-    }
-
     /// Look up a word in the dictionary using common prefix search
     ///
     /// This checks the overlay dictionary first, then the system dictionary.
@@ -257,8 +233,12 @@ impl Dictionary {
     /// * `right_id` - Right context ID of the left node
     /// * `left_id` - Left context ID of the right node
     #[inline]
-    pub fn connection_cost(&self, right_id: u16, left_id: u16) -> i16 {
-        self.matrix.cost(right_id, left_id)
+    pub fn connection_cost(
+        &self,
+        left_node: &LatticeNode<'_>,
+        right_node: &LatticeNode<'_>,
+    ) -> i32 {
+        self.matrix.cost(left_node, right_node)
     }
 
     /// Get connection cost without bounds checking (hot path optimization)
@@ -339,8 +319,9 @@ mod tests {
 
 #[cfg(test)]
 mod integration_tests {
-    use super::*;
     use std::path::Path;
+
+    use super::*;
 
     #[test]
     fn test_load_ipadic() {

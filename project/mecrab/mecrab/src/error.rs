@@ -4,6 +4,7 @@
 
 use std::io;
 use std::path::PathBuf;
+
 use thiserror::Error;
 
 /// Result type alias for MeCrab operations
@@ -61,8 +62,8 @@ pub enum Error {
     EncodingError(String),
 
     /// Default dictionary not found
-    #[error("Default dictionary not found. Run 'mecrab init' to download and install IPADIC.")]
-    DefaultDictionaryNotFound,
+    #[error("A dictionary directory was not set")]
+    DictionaryNotSet,
 
     /// Feature string parsing error
     #[error("Feature parsing error: {0}")]
@@ -75,13 +76,6 @@ pub enum Error {
 
 impl From<std::fmt::Error> for Error {
     fn from(e: std::fmt::Error) -> Self {
-        Error::FormatError(e.to_string())
-    }
-}
-
-#[cfg(feature = "serde")]
-impl From<serde_json::Error> for Error {
-    fn from(e: serde_json::Error) -> Self {
         Error::FormatError(e.to_string())
     }
 }

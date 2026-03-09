@@ -6,13 +6,17 @@
 //! as a directed acyclic graph (DAG). Each node represents a potential
 //! word, and edges connect adjacent words.
 
-mod visualize;
+// mod visualize;
 
-pub use visualize::DotBuilder;
-pub use visualize::DotConfig;
-pub use visualize::NodeShape;
-pub use visualize::RankDir;
+use std::cell::Cell;
 
+use id_arena::Arena;
+use id_arena::Id;
+
+// pub use visualize::DotBuilder;
+// pub use visualize::DotConfig;
+// pub use visualize::NodeShape;
+// pub use visualize::RankDir;
 use crate::Result;
 use crate::dict::CharCategory;
 use crate::dict::Dictionary;
@@ -23,6 +27,7 @@ use crate::dict::DictionaryEntry;
 pub struct LatticeNode<'a> {
     /// Surface form (slice into original text)
     pub surface: &'a str,
+
     /// Start position in bytes
     pub start: usize,
     /// End position in bytes
@@ -41,13 +46,18 @@ pub struct LatticeNode<'a> {
     pub feature: String,
     /// Whether this is an unknown word
     pub is_unknown: bool,
+
+    ///
+    pub cost: Cell<i64>,
+    pub lnode_id: Cell<Option<Id<LatticeNode<'a>>>>,
+    pub is_best: Cell<bool>,
 }
 
 impl<'a> LatticeNode<'a> {
     /// Create a BOS (Beginning of Sentence) node
     pub fn bos() -> Self {
         Self {
-            surface: "BOS",
+            surface: "",
             start: 0,
             end: 0,
             word_id: u32::MAX, // BOS/EOS don't have word_id
@@ -57,6 +67,11 @@ impl<'a> LatticeNode<'a> {
             wcost: 0,
             feature: "BOS/EOS".to_string(),
             is_unknown: false,
+
+            //
+            cost: Cell::new(0),
+            lnode_id: Cell::new(None),
+            is_best: Cell::new(false),
         }
     }
 
@@ -75,6 +90,10 @@ impl<'a> LatticeNode<'a> {
             wcost: entry.wcost,
             feature: entry.feature,
             is_unknown: false,
+            //
+            cost: Cell::new(0),
+            lnode_id: Cell::new(None),
+            is_best: Cell::new(false),
         }
     }
 
@@ -91,6 +110,10 @@ impl<'a> LatticeNode<'a> {
             wcost: 0,
             feature: "BOS/EOS".to_string(),
             is_unknown: false,
+            //
+            cost: Cell::new(0),
+            lnode_id: Cell::new(None),
+            is_best: Cell::new(false),
         }
     }
 
@@ -113,6 +136,10 @@ impl<'a> LatticeNode<'a> {
             wcost: entry.wcost,
             feature,
             is_unknown: true,
+            //
+            cost: Cell::new(0),
+            lnode_id: Cell::new(None),
+            is_best: Cell::new(false),
         }
     }
 }
@@ -120,16 +147,66 @@ impl<'a> LatticeNode<'a> {
 /// The lattice structure representing all possible segmentations
 #[derive(Debug)]
 pub struct Lattice<'a> {
+    arena: Arena<LatticeNode<'a>>,
+
+    nodes_starting_at: Vec<Vec<Id<LatticeNode<'a>>>>,
+    nodes_ending_at: Vec<Vec<Id<LatticeNode<'a>>>>,
+
     /// Original input text
     pub text: &'a str,
-    /// Nodes at each byte position
-    /// Index 0 contains BOS, last index contains EOS
-
-    /// The list of notes, ordered by byte position.
-    pub nodes: Vec<Vec<LatticeNode<'a>>>,
 }
 
 impl<'a> Lattice<'a> {
+    /// Returns the BOS node.
+    pub fn bos_node(&self) -> &LatticeNode<'a> {
+        assert!(
+            !self.nodes_starting_at.is_empty(),
+            "Lattice should be initialized"
+        );
+
+        let nodes = &self.nodes_ending_at.first().unwrap();
+        let num_nodes = nodes.len();
+
+        assert!(
+            num_nodes == 1,
+            "Only 1 BOS segment should exist, but found {num_nodes}",
+        );
+
+        let node = &self.arena[nodes[0]];
+
+        assert!(
+            node.start == node.end,
+            "BOS nodes should have the same start/end position"
+        );
+
+        node
+    }
+
+    /// Returns the EOS node.
+    pub fn eos_node(&self) -> &LatticeNode<'a> {
+        assert!(
+            !self.nodes_starting_at.is_empty(),
+            "Lattice should be initialized"
+        );
+
+        let nodes = &self.nodes_starting_at.last().unwrap();
+        let num_nodes = nodes.len();
+
+        assert!(
+            num_nodes == 1,
+            "Only 1 EOS segment should exist, but found {num_nodes}",
+        );
+
+        let node = &self.arena[nodes[0]];
+
+        assert!(
+            node.start == node.end,
+            "EOS nodes should have the same start/end position."
+        );
+
+        node
+    }
+
     /// Build a lattice from the input text using the dictionary
     ///
     /// # Arguments
@@ -141,46 +218,58 @@ impl<'a> Lattice<'a> {
     ///
     /// Returns an error if lattice construction fails.
     pub fn build(text: &'a str, dict: &Dictionary) -> Result<Self> {
+        let mut arena = Arena::<LatticeNode<'a>>::new();
+
         let text_len = text.len();
 
-        let mut nodes: Vec<Vec<LatticeNode<'a>>> = vec![Vec::new(); text_len + 2];
+        let mut nodes_starting_at = vec![Vec::new(); text_len + 1];
+        let mut nodes_ending_at = vec![Vec::new(); text_len + 1];
 
-        nodes[0].push(LatticeNode::bos());
+        let bos_id = arena.alloc(LatticeNode::bos());
+        nodes_ending_at[0].push(bos_id);
 
-        // Build lattice by scanning through text
-        for (char_byte_pos, c) in text.char_indices() {
-            let subtext = &text[char_byte_pos..];
-
-            let entries = dict.lookup(subtext);
+        for (char_byte_pos, char) in text.char_indices() {
+            let entries = dict.lookup(&text[char_byte_pos..]);
 
             if entries.is_empty() {
-                Self::push_unknown_nodes(text, char_byte_pos, c, dict, &mut nodes);
+                Self::push_unknown_nodes(
+                    text,
+                    char_byte_pos,
+                    char,
+                    dict,
+                    &mut arena,
+                    &mut nodes_starting_at,
+                );
             } else {
                 for entry in entries {
-                    let node = LatticeNode::from_entry(text, char_byte_pos, entry);
+                    let node_id = arena.alloc(LatticeNode::from_entry(text, char_byte_pos, entry));
+                    let node = &arena[node_id];
+
                     let end_pos = node.end;
 
-                    // Add node to the end position + 1 (shifted for BOS)
                     if end_pos <= text_len {
-                        nodes[end_pos].push(node);
+                        nodes_starting_at[char_byte_pos].push(node_id);
                     }
                 }
             }
         }
 
         // Add EOS node at the final position
-        nodes[text_len + 1].push(LatticeNode::eos(text_len));
+        let eos_id = arena.alloc(LatticeNode::eos(text_len));
+        nodes_starting_at[text_len].push(eos_id);
 
-        // Handle case where no nodes reach the end
-        // This can happen with unknown characters at the end
-        let final_pos = text.len();
-        if nodes[final_pos + 1].is_empty() && !nodes[final_pos].is_empty() {
-            println!("{:#?}", nodes);
-            panic!("trailing");
-            // Check if we need to handle trailing characters
-        }
+        // TODO:
+        // let final_pos = text.len();
+        // if nodes[final_pos + 1].is_empty() && !nodes[final_pos].is_empty() {
+        //     panic!("Trailing UNK: {nodes:#?}");
+        // }
 
-        Ok(Self { text, nodes })
+        Ok(Self {
+            arena,
+            nodes_starting_at,
+            nodes_ending_at,
+            text,
+        })
     }
 
     /// Add unknown word nodes for a character
@@ -189,7 +278,8 @@ impl<'a> Lattice<'a> {
         pos: usize,
         c: char,
         dict: &Dictionary,
-        nodes_at: &mut [Vec<LatticeNode<'a>>],
+        arena: &mut Arena<LatticeNode<'a>>,
+        nodes_starting_at: &mut [Vec<Id<LatticeNode<'a>>>],
     ) {
         let category = dict.char_category(c);
 
@@ -202,7 +292,7 @@ impl<'a> Lattice<'a> {
             let end_pos = pos + char_len;
 
             if end_pos <= text.len() {
-                nodes_at[end_pos].push(LatticeNode {
+                let node_id = arena.alloc(LatticeNode {
                     surface: &text[pos..end_pos],
                     start: pos + 1,
                     end: end_pos,
@@ -213,7 +303,13 @@ impl<'a> Lattice<'a> {
                     wcost: 10000, // High cost for unknown
                     feature: format!("未知語,{category:?}"),
                     is_unknown: true,
+                    //
+                    cost: Cell::new(0),
+                    lnode_id: Cell::new(None),
+                    is_best: Cell::new(false),
                 });
+
+                nodes_starting_at[pos].push(node_id);
             }
         } else {
             for entry in &entries {
@@ -222,15 +318,17 @@ impl<'a> Lattice<'a> {
                 let node = LatticeNode::unknown(text, pos, entry.length, entry, feature);
                 let end_pos = node.end;
 
+                let node_id = arena.alloc(node);
+
                 if end_pos <= text.len() {
-                    nodes_at[end_pos].push(node);
+                    nodes_starting_at[pos].push(node_id);
                 }
             }
         }
 
         // Handle grouping for consecutive characters of the same category
         if dict.char_def.should_group(category) {
-            Self::add_grouped_unknown(text, pos, category, dict, nodes_at);
+            Self::add_grouped_unknown(text, pos, category, dict, arena, nodes_starting_at);
         }
     }
 
@@ -240,7 +338,8 @@ impl<'a> Lattice<'a> {
         start: usize,
         category: CharCategory,
         dict: &Dictionary,
-        nodes_at: &mut [Vec<LatticeNode<'a>>],
+        arena: &mut Arena<LatticeNode<'a>>,
+        nodes_starting_at: &mut [Vec<Id<LatticeNode<'a>>>],
     ) {
         let remaining = &text[start..];
         let mut length = 0;
@@ -261,14 +360,12 @@ impl<'a> Lattice<'a> {
                     let feature = entry.feature.clone();
 
                     let node = LatticeNode::unknown(text, start, length, entry, feature);
+                    let node_id = arena.alloc(node);
+
                     let end_pos = start + length;
 
-                    if end_pos <= text.len()
-                        && !nodes_at[end_pos + 1]
-                            .iter()
-                            .any(|n| n.start == start && n.end == end_pos)
-                    {
-                        nodes_at[end_pos + 1].push(node);
+                    if end_pos <= text.len() {
+                        nodes_starting_at[start].push(node_id);
                     }
                 }
             }
@@ -277,50 +374,40 @@ impl<'a> Lattice<'a> {
 
     /// Get the number of byte positions in the lattice
     pub fn len(&self) -> usize {
-        self.nodes.len()
+        self.nodes_starting_at.len()
     }
 
     /// Check if the lattice is empty
     pub fn is_empty(&self) -> bool {
-        self.nodes.is_empty()
+        self.nodes_starting_at.is_empty() && self.nodes_ending_at.is_empty()
+    }
+
+    pub fn get(&self, id: Id<LatticeNode<'a>>) -> &LatticeNode<'a> {
+        &self.arena[id]
     }
 
     /// Returns the nodes that begin at the given position.
-    pub fn get(&self, pos: usize) -> &[LatticeNode<'a>] {
+    pub fn nodes_starting_at(&self, pos: usize) -> Vec<Id<LatticeNode<'a>>> {
         debug_assert!(
-            pos < self.nodes.len(),
+            pos < self.nodes_starting_at.len(),
             "Attempted to fetch node at position outside bounds."
         );
 
-        &self.nodes[pos]
+        self.nodes_starting_at[pos].clone()
     }
 
     /// Get nodes ending at a specific position
-    pub fn nodes_ending_at(&self, pos: usize) -> &[LatticeNode<'a>] {
-        if pos < self.nodes.len() {
-            &self.nodes[pos]
-        } else {
-            &[]
-        }
-    }
-
-    pub fn get_bos_node(&self) -> &[LatticeNode<'a>] {
-        let nodes = self.get(0);
-        let num_nodes = nodes.len();
-
-        assert!(
-            num_nodes == 1,
-            "Only 1 BOS segment should exist, but found {num_nodes}",
+    pub fn nodes_ending_at(&self, pos: usize) -> Vec<Id<LatticeNode<'a>>> {
+        debug_assert!(
+            pos < self.nodes_ending_at.len(),
+            "Attempted to fetch node at position outside bounds."
         );
 
-        for node in nodes {
-            assert!(
-                node.start == node.end,
-                "BOS nodes should have the same start/end position.",
-            );
-        }
+        self.nodes_ending_at[pos].clone()
+    }
 
-        nodes
+    pub fn nodes_ending_at_mut(&mut self, pos: usize) -> &mut Vec<Id<LatticeNode<'a>>> {
+        &mut self.nodes_ending_at[pos]
     }
 }
 

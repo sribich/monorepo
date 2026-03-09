@@ -59,7 +59,7 @@
 #![allow(clippy::needless_pass_by_value)]
 
 pub mod bench;
-pub mod debug;
+// pub mod debug;
 pub mod dict;
 pub mod error;
 pub mod lattice;
@@ -141,62 +141,6 @@ impl fmt::Display for AnalysisResult {
         }
     }
 }
-/// Builder for configuring MeCrab instance
-#[derive(Debug, Default)]
-pub struct MeCrabBuilder {
-    dicdir: Option<PathBuf>,
-    userdic: Option<PathBuf>,
-    output_format: OutputFormat,
-}
-
-impl MeCrabBuilder {
-    /// Create a new builder with default settings
-    #[must_use]
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Set the dictionary directory
-    #[must_use]
-    pub fn dicdir(mut self, path: Option<PathBuf>) -> Self {
-        self.dicdir = path;
-        self
-    }
-
-    /// Set the user dictionary path
-    #[must_use]
-    pub fn userdic(mut self, path: Option<PathBuf>) -> Self {
-        self.userdic = path;
-        self
-    }
-
-    /// Set the output format
-    #[must_use]
-    pub fn output_format(mut self, format: OutputFormat) -> Self {
-        self.output_format = format;
-        self
-    }
-
-    /// Build the MeCrab instance
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the dictionary cannot be loaded.
-    pub fn build(self) -> Result<MeCrab> {
-        let dictionary = match self.dicdir {
-            Some(dicdir) => Dictionary::load(&dicdir)?,
-            None => {
-                // Try to auto-load from default directory
-                Dictionary::default_dictionary()?
-            }
-        };
-
-        Ok(MeCrab {
-            dictionary: Arc::new(dictionary),
-            output_format: self.output_format,
-        })
-    }
-}
 
 /// The main MeCrab morphological analyzer
 #[derive(Clone)]
@@ -206,15 +150,6 @@ pub struct MeCrab {
 }
 
 impl MeCrab {
-    /// Create a new MeCrab instance with default dictionary
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the default dictionary cannot be found or loaded.
-    pub fn new() -> Result<Self> {
-        Self::builder().build()
-    }
-
     /// Create a builder for configuring MeCrab
     #[must_use]
     pub fn builder() -> MeCrabBuilder {
@@ -226,16 +161,13 @@ impl MeCrab {
     /// # Errors
     ///
     /// Returns an error if parsing fails.
-    pub fn parse(&self, text: &str) -> Result<AnalysisResult> {
+    pub fn parse<'b>(&self, text: &'b str) -> Result<AnalysisResult> {
         // Build the lattice
-        let lattice = Lattice::build(text, &self.dictionary)?;
+        let mut lattice = Lattice::build(text, &self.dictionary)?;
 
         // Solve using Viterbi algorithm
         let solver = ViterbiSolver::new(&self.dictionary);
-        let path = solver.solve(&lattice)?;
-
-        panic!();
-        // println!("{:#?}", path);
+        let (_, path) = solver.solve(lattice)?;
 
         let morphemes = path
             .into_iter()
@@ -248,17 +180,10 @@ impl MeCrab {
             })
             .collect();
 
-        // let x = morphemes.clone();
-
-        println!("{:#?}", morphemes);
-
-        let x = AnalysisResult {
+        Ok(AnalysisResult {
             morphemes,
             format: self.output_format,
-        };
-
-        println!("{:#?}", x);
-        Ok(x)
+        })
     }
 
     /// Parse multiple texts in parallel using Rayon
@@ -322,6 +247,7 @@ impl MeCrab {
         self.dictionary.overlay_size()
     }
 
+    /*
     /// Parse the input text and return N-best analysis results
     ///
     /// Returns multiple alternative analyses ranked by cost, useful for
@@ -337,11 +263,11 @@ impl MeCrab {
     /// Returns an error if parsing fails.
     pub fn parse_nbest(&self, text: &str, n: usize) -> Result<Vec<(AnalysisResult, i64)>> {
         // Build the lattice
-        let lattice = Lattice::build(text, &self.dictionary)?;
+        let mut lattice = Lattice::build(text, &self.dictionary)?;
 
         // Solve using Viterbi algorithm with N-best
         let solver = ViterbiSolver::new(&self.dictionary);
-        let paths = solver.solve_nbest(&lattice, n)?;
+        let paths = solver.solve_nbest(&mut lattice, n)?;
 
         // Convert paths to analysis results
         let results = paths
@@ -369,6 +295,61 @@ impl MeCrab {
             .collect();
 
         Ok(results)
+    }
+    */
+}
+
+/// Builder for configuring a MeCrab instance.
+#[derive(Debug, Default)]
+pub struct MeCrabBuilder {
+    dicdir: Option<PathBuf>,
+    userdic: Option<PathBuf>,
+    output_format: OutputFormat,
+}
+
+impl MeCrabBuilder {
+    /// Create a new builder with default settings
+    #[must_use]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Sets the dictionary directory.
+    #[must_use]
+    pub fn dicdir(mut self, path: Option<PathBuf>) -> Self {
+        self.dicdir = path;
+        self
+    }
+
+    /// Sets the user dictionary path.
+    #[must_use]
+    pub fn userdic(mut self, path: Option<PathBuf>) -> Self {
+        self.userdic = path;
+        self
+    }
+
+    /// Sets the output format.
+    #[must_use]
+    pub fn output_format(mut self, format: OutputFormat) -> Self {
+        self.output_format = format;
+        self
+    }
+
+    /// Builds the MeCrab instance.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if the dictionary cannot be loaded.
+    pub fn build(self) -> Result<MeCrab> {
+        let dictionary = match self.dicdir {
+            Some(dicdir) => Dictionary::load(&dicdir)?,
+            None => return Err(Error::DictionaryNotSet),
+        };
+
+        Ok(MeCrab {
+            dictionary: Arc::new(dictionary),
+            output_format: self.output_format,
+        })
     }
 }
 

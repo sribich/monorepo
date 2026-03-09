@@ -8,7 +8,8 @@
 //!
 //! Reference: ../ref/mecab-0.996/src/darts.h
 
-use crate::{Error, Result};
+use crate::Error;
+use crate::Result;
 
 /// Result from a trie lookup containing value and matched length
 #[derive(Debug, Clone, Copy, Default)]
@@ -124,6 +125,8 @@ impl DoubleArrayTrie {
         result
     }
 
+    /// CHECKED
+    ///
     /// Perform common prefix search (compatible with Darts::commonPrefixSearch)
     ///
     /// Returns all values for prefixes of the key that exist in the trie.
@@ -137,41 +140,45 @@ impl DoubleArrayTrie {
             None => return 0,
         };
 
-        for (i, &byte) in key.iter().enumerate() {
+        // i -> byte_pos
+        for (byte_pos, &byte) in key.iter().enumerate() {
             // Check for a value at current position (before consuming the byte)
             // p = b (the base value points to the value node)
             let p = b as usize;
+
             if let Some(unit) = self.get(p) {
-                // Check: b == array[p].check and array[p].base < 0
-                if unit.check == b as u32 && unit.base < 0 && num_results < max_results {
-                    results[num_results] = DartsResult {
-                        value: -unit.base - 1,
-                        length: i,
-                    };
+                if b as u32 == unit.check && unit.base < 0 {
+                    if num_results < max_results {
+                        results[num_results] = DartsResult {
+                            value: -unit.base - 1,
+                            length: byte_pos,
+                        };
+                    }
+
                     num_results += 1;
                 }
             }
 
-            // Transition to next state
             let p = (b as usize).wrapping_add(byte as usize).wrapping_add(1);
 
             match self.get(p) {
-                // Check: b == array[p].check (parent's base equals child's check)
-                Some(unit) if unit.check == b as u32 => {
+                Some(unit) if b as u32 == unit.check => {
                     b = unit.base;
                 }
                 _ => return num_results,
             }
         }
 
-        // Check for a value at the final position
         let p = b as usize;
+
         if let Some(unit) = self.get(p) {
-            if unit.check == b as u32 && unit.base < 0 && num_results < max_results {
-                results[num_results] = DartsResult {
-                    value: -unit.base - 1,
-                    length: key.len(),
-                };
+            if b as u32 == unit.check && unit.base < 0 {
+                if num_results < max_results {
+                    results[num_results] = DartsResult {
+                        value: -unit.base - 1,
+                        length: key.len(),
+                    };
+                }
                 num_results += 1;
             }
         }

@@ -4,12 +4,14 @@ version.workspace = true
 edition.workspace = true
 
 [features]
-default = ["serde", "serde_json"]
-json = ["serde", "serde_json"]
+default = []
 parallel = ["rayon"]
 simd = []
 
 [dependencies]
+id-arena = { workspace = true }
+tinyvec = { workspace = true }
+
 # Core dependencies (always needed)
 memmap2.workspace = true
 byteorder.workspace = true
@@ -18,6 +20,4 @@ thiserror.workspace = true
 yada.workspace = true
 bytemuck.workspace = true
 
-serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
 rayon = { workspace = true, optional = true }

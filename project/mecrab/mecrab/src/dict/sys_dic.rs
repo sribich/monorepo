@@ -251,24 +251,29 @@ impl SysDic {
     /// Get feature string for a token
     pub fn get_feature(&self, token: &Token) -> &str {
         let offset = token.feature_offset as usize;
+
         if offset >= self.features_size {
+            // TODO: Panic? Error?
             return "";
         }
 
-        // Safety: We verified the offset is in bounds
+        // SAFETY: Offset has been checked to be within bounds.
         let ptr = unsafe { self.features_ptr.add(offset) };
 
-        // Find null terminator
         let mut len = 0;
+
         while len < self.features_size - offset {
+            // SAFETY: Adding len has been checked to be within bounds.
             if unsafe { *ptr.add(len) } == 0 {
                 break;
             }
             len += 1;
         }
 
-        // Safety: We found the null terminator
+        // SAFETY: We have a pointer and len that have been checked to
+        //         be within bounds.
         let slice = unsafe { std::slice::from_raw_parts(ptr, len) };
+
         std::str::from_utf8(slice).unwrap_or("")
     }
 
