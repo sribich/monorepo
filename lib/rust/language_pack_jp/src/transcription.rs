@@ -76,7 +76,7 @@ where
             .enumerate()
             .flat_map(|(index, item)| {
                 segmenter
-                    .segment(item.text())
+                    .segment(item.text(), true)
                     .into_iter()
                     .map(move |segment| Segment {
                         data: segment,

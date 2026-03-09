@@ -3,7 +3,7 @@
 pub trait TextSegmenter {
     type Feature: IsSegment;
 
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature>;
+    fn segment<S: AsRef<str>>(&self, text: S, strip_punctuation: bool) -> Vec<Self::Feature>;
 }
 
 pub trait IsSegment: PartialEq {
@@ -13,8 +13,8 @@ pub trait IsSegment: PartialEq {
 impl<T: TextSegmenter> TextSegmenter for &T {
     type Feature = T::Feature;
 
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
-        T::segment(self, text)
+    fn segment<S: AsRef<str>>(&self, text: S, strip_punctuation: bool) -> Vec<Self::Feature> {
+        T::segment(self, text, strip_punctuation)
     }
 }
 

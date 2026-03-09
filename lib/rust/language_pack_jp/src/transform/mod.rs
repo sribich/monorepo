@@ -98,7 +98,7 @@ pub fn transform_japanese_text(
     adaptive_readings: &Trie<u8, Option<usize>>,
 ) -> Vec<(String, String, Option<usize>)> {
     let segmenter = JapaneseTextSegmenter::new();
-    let segments = group_inflected(segmenter.segment(line));
+    let segments = group_inflected(segmenter.segment(line, false));
 
     let mut output = vec![];
 

@@ -225,7 +225,7 @@ impl JapaneseTextSegmenter {
 impl TextSegmenter for JapaneseTextSegmenter {
     type Feature = Morpheme;
 
-    fn segment<S: AsRef<str>>(&self, text: S) -> Vec<Self::Feature> {
+    fn segment<S: AsRef<str>>(&self, text: S, strip_punctuation: bool) -> Vec<Self::Feature> {
         let output = self.tagger.parse(text.as_ref()).unwrap().morphemes;
 
         let mut result = Vec::with_capacity(output.len());
@@ -239,20 +239,11 @@ impl TextSegmenter for JapaneseTextSegmenter {
 
             let (data, ranges) = pinned_result.unwrap();
 
-            /*
-            #[expect(
-                unsafe_code,
-                clippy::transmute_bytes_to_str,
-                reason = "Too many allocations tanks performance"
-            )]
-            // SAFETY: This type is owned by `data` which is stored in the resulting `tagged_data`
-            //         struct. If the below `matches` is satisfied, then we will return early and
-            //         drop `surface` before dropping `data`.
-            let surface = unsafe { std::mem::transmute::<&[u8], &'static str>(&data[ranges[0]]) };
-            */
             let surface = entry.surface;
 
-            if matches!(get_single_char(&surface), Some(c) if is_punctuation(c)) {
+            if strip_punctuation
+                && matches!(get_single_char(&surface), Some(c) if is_punctuation(c))
+            {
                 continue;
             }
 

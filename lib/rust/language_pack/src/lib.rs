@@ -69,7 +69,7 @@ where
             .par_iter()
             .enumerate()
             .flat_map(|(line_index, line)| {
-                let segments = segmenter.segment(&line.text);
+                let segments = segmenter.segment(&line.text, true);
 
                 let mut word_idx = 0;
                 let mut char_buf: [u8; 4] = [0; 4];

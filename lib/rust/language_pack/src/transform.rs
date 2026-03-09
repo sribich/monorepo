@@ -33,7 +33,7 @@ impl<'a> LanguageTransformer<'a> {
         while !work.is_empty() {
             let transform = TextTransform::new(work.to_owned());
 
-            let result = self.resolve_from(transform, ArrayVec::<[(usize, usize); 20]>::new());
+            let result = self.resolve_from(transform, ArrayVec::<[(usize, usize); 14]>::new());
 
             let mut result = result
                 .into_iter()
@@ -129,18 +129,9 @@ impl<'a> LanguageTransformer<'a> {
     fn resolve_from(
         &self,
         resolve: TextTransform,
-        mut seen: ArrayVec<[(usize, usize); 20]>,
+        seen: ArrayVec<[(usize, usize); 14]>,
     ) -> Vec<TextTransform> {
         let mut result = vec![];
-
-        // let subconditions = if resolve.conditions.is_empty() {
-        //     &[]
-        // } else {
-        //     self.conditions
-        //         .get(resolve.conditions.first().unwrap())
-        //         .unwrap()
-        //         .sub_conditions
-        // };
 
         for (transform_pos, transform) in self.transforms.iter().enumerate() {
             for (rule_pos, rule) in transform.rules.iter().enumerate() {
@@ -160,8 +151,8 @@ impl<'a> LanguageTransformer<'a> {
                         continue;
                     }
 
-                    let mut next_seen = seen;
-                    next_seen.push((transform_pos, rule_pos));
+                    let mut child_seen = seen;
+                    child_seen.push((transform_pos, rule_pos));
 
                     let mut data = self.resolve_from(
                         TextTransform {
@@ -170,10 +161,10 @@ impl<'a> LanguageTransformer<'a> {
                             inflection: format!("{}{}", inflection, resolve.inflection),
                             last_inflection: deinflection,
                             conditions,
-                            chain: next_seen,
+                            chain: child_seen,
                             i: resolve.i + 1,
                         },
-                        next_seen.clone(),
+                        child_seen,
                     );
 
                     result.append(&mut data);
@@ -302,7 +293,7 @@ pub struct TextTransform {
     pub inflection: String,
     pub last_inflection: String,
     pub conditions: u32,
-    pub chain: ArrayVec<[(usize, usize); 20]>,
+    pub chain: ArrayVec<[(usize, usize); 14]>,
     pub i: usize,
 }
 
@@ -314,7 +305,7 @@ impl TextTransform {
             inflection: String::new(),
             last_inflection: String::new(),
             conditions: 0,
-            chain: ArrayVec::<[(usize, usize); 20]>::new(),
+            chain: ArrayVec::<[(usize, usize); 14]>::new(),
             i: 0,
         }
     }
