@@ -659,9 +659,9 @@ dependencies = [
 
 [[package]]
 name = "bumpalo"
-version = "3.19.1"
+version = "3.20.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5dd9dc738b7a8311c7ade152424974d8115f2cdad61e8dab8dac9f2362298510"
+checksum = "5d20789868f4b01b2f2caec9f5c4e0213b41e3e5702a50157d699ae31ced2fcb"
 
 [[package]]
 name = "burn"
@@ -5287,6 +5287,9 @@ name = "id-arena"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3d3067d79b975e8844ca9eb072e16b31c3c1c36928edf9c6789548c524d0d954"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "ident_case"
@@ -5627,8 +5630,6 @@ dependencies = [
  "dirs 6.0.0",
  "indicatif",
  "mecrab",
- "mecrab-builder",
- "mecrab-word2vec",
  "memmap2",
  "ratatui",
 ]
@@ -6171,11 +6172,11 @@ dependencies = [
  "bytemuck",
  "byteorder",
  "encoding_rs",
+ "id-arena",
  "memmap2",
  "rayon",
- "serde",
- "serde_json",
  "thiserror 2.0.18",
+ "tinyvec",
  "yada",
 ]
 
@@ -6188,42 +6189,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "mecrab-builder"
-version = "0.0.0"
-dependencies = [
- "csv",
- "flate2",
- "futures",
- "indicatif",
- "mecrab",
- "rayon",
- "reqwest",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "tokio",
-]
-
-[[package]]
 name = "mecrab-fuzz"
 version = "0.0.0"
 dependencies = [
  "arbitrary",
  "libfuzzer-sys",
  "mecrab",
-]
-
-[[package]]
-name = "mecrab-word2vec"
-version = "0.0.0"
-dependencies = [
- "anyhow",
- "byteorder",
- "criterion 0.7.0",
- "memmap2",
- "rand 0.9.2",
- "rayon",
- "thiserror 2.0.18",
 ]
 
 [[package]]

@@ -92,8 +92,6 @@ typegen_typescript = { path = "./project/railgun/lib/rust/typegen_typescript" }
 ## Mecrab
 #################################################################################
 mecrab = { path = "./project/mecrab/mecrab" }
-mecrab-builder = { path = "./project/mecrab/mecrab-builder" }
-mecrab-word2vec = { path = "./project/mecrab/mecrab-word2vec" }
 
 #################################################################################
 ## Prisma
@@ -174,6 +172,7 @@ bit-vec = "0.6"
 blart = "0.4.0"
 bon = "3"
 # bson = "2"
+bumpalo = "3.20.2"
 byteorder = "1.5.0"
 bytes = "1"
 cfg_aliases = "0.2"
@@ -221,6 +220,7 @@ hex = "0.4"
 hound = "3.5.1"
 html5ever = "0.31.0"
 hyper = "0.14.32"
+id-arena = { version = "2.3.0", features = ["rayon"] }
 include_dir = "0.7.3"
 indexmap = "2"
 indoc = "2"
@@ -311,7 +311,7 @@ thiserror = "2.0.12"
 tiberius = { git = "https://github.com/prisma/tiberius", branch = "main", default-features = false }
 tikv-jemallocator = "0.6.0"
 tikv-jemalloc-ctl = "0.6.0"
-tinyvec = "1.10.0"
+tinyvec = { version = "1.10.0", features = ["alloc"] }
 tokio = "1.49.0"
 tokio-postgres = { git = "https://github.com/prisma/rust-postgres", branch = "pgbouncer-mode" }
 tokio-stream = "0.1.17"
