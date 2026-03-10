@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react"
-import { ArkErrors, scope } from "arktype"
+import { ArkErrors, scope, type } from "arktype"
 
 import { readBook } from "../../../generated/rpc-client/library_ReadBook"
 import { Sentence } from "../components/Sentence"
@@ -16,7 +16,7 @@ export const useBook = (bookId: string) => {
             return []
         }
 
-        const payload = payloadParser(JSON.parse(data.text))
+        const payload = v2PayloadParser(JSON.parse(data.text))
 
         // TODO: This should probably be a development only error, but we need
         //       to display the error.
@@ -25,18 +25,21 @@ export const useBook = (bookId: string) => {
         }
 
         return payload.map((item, id) => {
+            item[0][0] = Math.floor(item[0][0] * 1000)
+            item[0][1] = Math.floor(item[0][1] * 1000)
+
             return {
                 id,
                 component: <Sentence bookId={bookId} audioId={data.audioId} data={item} />,
                 // length: item.segments.reduce((acc, curr) => acc + curr.word.length, 0),
                 timestamp: {
-                    start: item.t0,
-                    end: item.t1,
+                    start: item[0][0],
+                    end: item[0][1],
                 },
             }
         })
     }, [data])
-
+    console.log("timestamp", data?.timestamp)
     return {
         entries,
         timestamp: data?.timestamp,
@@ -77,6 +80,13 @@ export interface TimeFrame {
     end: number | null
 }
 
+const v2PayloadParser = scope({
+    timestamp: ["number | null", "number | null"],
+    word: ["string", "string", "number | null"],
+    part: ["timestamp", "string", "word[]"],
+    payload: "part[]",
+}).export().payload
+
 const payloadParser = scope({
     segment: {
         word: "string",
@@ -105,4 +115,4 @@ type Payload = {
     component: ReactNode
 }
 
-export type SentenceData = (typeof payloadParser.infer)[number]
+export type SentenceData = (typeof v2PayloadParser.infer)[number]

@@ -12,18 +12,19 @@ export namespace Sentence {
 }
 
 export const Sentence = (props: Sentence.Props) => {
-    const sentence = props.data.segments.map((it) => it.word).join("")
-    const words = props.data.segments.map((segment, index) => {
+    const sentence = props.data[2].map((it) => it[0]).join("")
+
+    const words = props.data[2].map((segment, index) => {
         return (
             <Word
                 bookId={props.bookId}
-                word={segment.word}
-                dictWord={segment.base}
+                word={segment[0]}
+                dictWord={segment[1]}
                 wordTs={[0, 0]}
-                sentenceTs={[props.data.t0, props.data.t1]}
+                sentenceTs={[props.data[0][0], props.data[0][1]]}
                 sentenceAudio={props.audioId}
                 sentence={sentence}
-                freq={segment.freq}
+                freq={segment[2]}
             />
         )
     })
