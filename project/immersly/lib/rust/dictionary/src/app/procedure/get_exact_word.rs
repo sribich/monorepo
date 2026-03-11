@@ -71,7 +71,7 @@ impl Procedure for GetExactWordProcedure {
         let client = self.db.client();
         let db = Arc::clone(&self.db);
 
-        let words = client
+        let mut words = client
             .word()
             .find_many(vec![
                 model::word::word::equals(data.word.clone()),
@@ -84,6 +84,21 @@ impl Procedure for GetExactWordProcedure {
             .exec()
             .await
             .unwrap();
+
+        if words.len() == 0 {
+            words = client
+            .word()
+            .find_many(vec![
+                model::word::reading::equals(data.reading.clone().unwrap_or_default()),
+            ])
+            .with(model::word::dictionary::fetch())
+            .order_by(model::word::dictionary::order(vec![
+                model::dictionary::rank::order(SortOrder::Asc),
+            ]))
+            .exec()
+            .await
+            .unwrap();
+        }
 
         let bilingual_definition = db
             .client()
