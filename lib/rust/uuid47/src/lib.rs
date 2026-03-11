@@ -116,7 +116,6 @@ fn recode_bytes(bytes: &[u8; 16], timestamp: u64, version: u8) -> [u8; 16] {
     bytes
 }
 
-///
 fn mask_unmask_timestamp(bytes: &[u8; 16], hasher: &SipHasher24) -> u64 {
     let input = random_bytes(bytes);
 

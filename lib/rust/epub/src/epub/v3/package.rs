@@ -90,8 +90,6 @@ mod spec {
         Auto,
     }
 
-    
-
     /// The package element encapsulates all the information expressed in
     /// the package document.
     ///
@@ -110,7 +108,6 @@ mod spec {
         pub unique_identifier: String,
         #[serde(rename = "@version")]
         pub version: String,
-
         #[serde(rename = "metadata")]
         pub metadata: Metadata,
         #[serde(rename = "manifest")]
