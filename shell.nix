@@ -72,6 +72,7 @@
         cargo-mutants
         cargo-machete
         cargo-xbuild
+        cargo-fuzz
 
         cargo-watch
         unstable.bacon

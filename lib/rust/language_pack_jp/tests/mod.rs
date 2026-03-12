@@ -167,6 +167,8 @@ fn check_regressions() {
         //
         //
         // 面白くない   [面][白くない] -> [面白くない]
+
+        // 「……行きたくない」 is turning into okonai
     ];
 
     for test in tests {

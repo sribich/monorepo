@@ -1,16 +1,14 @@
 #![no_main]
+use std::path::PathBuf;
 
 use libfuzzer_sys::fuzz_target;
 use mecrab::MeCrab;
 
 fuzz_target!(|data: &str| {
-    // Skip empty or very long inputs
-    if data.is_empty() || data.len() > 10000 {
-        return;
-    }
+    let dicdir = std::env::var("DICTIONARY_DIR").unwrap();
+    let dicdir = Some(PathBuf::from(dicdir));
 
-    // Try to parse - should not panic
-    if let Ok(mecrab) = MeCrab::new() {
+    if let Ok(mecrab) = MeCrab::builder().dicdir(dicdir).build() {
         let _ = mecrab.parse(data);
     }
 });
