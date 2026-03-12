@@ -4,9 +4,15 @@
 //!
 //! Run with: cargo bench --bench viterbi
 
-use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
-use mecrab::MeCrab;
 use std::hint::black_box;
+use std::path::PathBuf;
+
+use criterion::BenchmarkId;
+use criterion::Criterion;
+use criterion::Throughput;
+use criterion::criterion_group;
+use criterion::criterion_main;
+use mecrab::MeCrab;
 
 /// Test sentences of varying complexity
 const SHORT_TEXT: &str = "テスト";
@@ -14,8 +20,15 @@ const MEDIUM_TEXT: &str = "すもももももももものうち";
 const LONG_TEXT: &str = "東京は日本の首都であり、世界有数の大都市である。人口は約1400万人で、政治・経済・文化の中心地として機能している。";
 const VERY_LONG_TEXT: &str = "吾輩は猫である。名前はまだ無い。どこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。";
 
+fn mecrab() -> MeCrab {
+    let dicdir = std::env::var("DICTIONARY_DIR").unwrap();
+    let dicdir = PathBuf::from(dicdir);
+
+    MeCrab::builder().dicdir(Some(dicdir)).build().unwrap()
+}
+
 fn parse_benchmark(c: &mut Criterion) {
-    let mecrab = MeCrab::new().expect("Failed to load dictionary");
+    let mecrab = mecrab();
 
     let mut group = c.benchmark_group("parse");
 
@@ -55,7 +68,7 @@ fn parse_benchmark(c: &mut Criterion) {
 }
 
 fn batch_benchmark(c: &mut Criterion) {
-    let mecrab = MeCrab::new().expect("Failed to load dictionary");
+    let mecrab = mecrab();
 
     // Create batch of 100 sentences
     let batch: Vec<&str> = vec![MEDIUM_TEXT; 100];
@@ -80,7 +93,7 @@ fn batch_benchmark(c: &mut Criterion) {
 }
 
 fn large_batch_benchmark(c: &mut Criterion) {
-    let mecrab = MeCrab::new().expect("Failed to load dictionary");
+    let mecrab = mecrab();
 
     // Create batch of 1000 sentences
     let batch: Vec<&str> = vec![MEDIUM_TEXT; 1000];

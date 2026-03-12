@@ -5,8 +5,12 @@
 
 #![allow(clippy::cast_precision_loss)]
 
-use std::fs::{File, OpenOptions};
-use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::io::BufRead;
+use std::io::BufReader;
+use std::io::BufWriter;
+use std::io::Write;
 use std::path::Path;
 
 use super::overlay::OverlayDictionary;
@@ -282,7 +286,7 @@ impl UserDictManager {
 
     /// Sort entries by cost (lowest first)
     pub fn sort_by_cost(&mut self) {
-        self.entries.sort_by(|a, b| a.cost.cmp(&b.cost));
+        self.entries.sort_by_key(|a| a.cost);
     }
 }
 

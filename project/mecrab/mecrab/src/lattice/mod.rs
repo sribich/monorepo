@@ -46,10 +46,13 @@ pub struct LatticeNode<'a> {
     pub feature: String,
     /// Whether this is an unknown word
     pub is_unknown: bool,
-
-    ///
+    /// The cost of the node from the viterbi forward pass.
     pub cost: Cell<i64>,
+    /// The node id to the left that we are connecting to. This is
+    /// the previous `is_best` node.
     pub lnode_id: Cell<Option<Id<LatticeNode<'a>>>>,
+    /// Whether this is the best node at the current level for
+    /// backtracking.
     pub is_best: Cell<bool>,
 }
 
@@ -382,6 +385,7 @@ impl<'a> Lattice<'a> {
         self.nodes_starting_at.is_empty() && self.nodes_ending_at.is_empty()
     }
 
+    /// Fetches a `LatticeNode` by its `Id` from the arena.
     pub fn get(&self, id: Id<LatticeNode<'a>>) -> &LatticeNode<'a> {
         &self.arena[id]
     }
@@ -397,6 +401,7 @@ impl<'a> Lattice<'a> {
     }
 
     /// Get nodes ending at a specific position
+    /// TODO: Convert to nodes_engin-at_mut or just a ref so we dont clone.
     pub fn nodes_ending_at(&self, pos: usize) -> Vec<Id<LatticeNode<'a>>> {
         debug_assert!(
             pos < self.nodes_ending_at.len(),
@@ -406,6 +411,7 @@ impl<'a> Lattice<'a> {
         self.nodes_ending_at[pos].clone()
     }
 
+    /// Returns all nodes ending at the given position.
     pub fn nodes_ending_at_mut(&mut self, pos: usize) -> &mut Vec<Id<LatticeNode<'a>>> {
         &mut self.nodes_ending_at[pos]
     }

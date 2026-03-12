@@ -36,7 +36,7 @@ exclude = [
     "lib/rust/pitch_detection",
     "project/fude/bin/fude-storybook",
     "project/immersly/bin/desktop-ui",
-    "project/mecrab/docss",
+    "project/mecrab/mecrab-docs",
     "project/obsidian/bin/obsidian-plugin-datatables",
     "project/obsidian/bin/obsidian-plugin-keymaps",
     "project/obsidian/bin/obsidian-plugin-privacy",

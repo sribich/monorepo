@@ -163,7 +163,7 @@ impl MeCrab {
     /// Returns an error if parsing fails.
     pub fn parse<'b>(&self, text: &'b str) -> Result<AnalysisResult> {
         // Build the lattice
-        let mut lattice = Lattice::build(text, &self.dictionary)?;
+        let lattice = Lattice::build(text, &self.dictionary)?;
 
         // Solve using Viterbi algorithm
         let solver = ViterbiSolver::new(&self.dictionary);

@@ -31,13 +31,13 @@ export const Size = meta.story((props) => (
 
 export const Variant = meta.story((props) => (
     <div className="flex flex-row items-center gap-2">
-        <Button {...props} variant="solid" color="primary">
+        <Button variant="solid" color="primary" {...props}>
             Solid
         </Button>
-        <Button {...props} variant="ghost" color="primary">
+        <Button variant="ghost" color="primary" {...props}>
             Ghost
         </Button>
-        <Button {...props} variant="light" color="primary">
+        <Button variant="light" color="primary" {...props}>
             Light
         </Button>
     </div>

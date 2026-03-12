@@ -45,19 +45,6 @@ pub struct PathNode {
     pub feature: String,
 }
 
-/// Entry in the Viterbi table
-#[derive(Debug, Clone)]
-struct ViterbiEntry<'a> {
-    /// The lattice node
-    node: &'a LatticeNode<'a>,
-    /// Cumulative cost to reach this node
-    cost: i64,
-    /// Back pointer to the previous entry
-    prev: Option<usize>,
-    /// Position in the nodes_at vector for backtracking
-    pos: usize,
-}
-
 /// Viterbi solver for finding the optimal path through the lattice
 pub struct ViterbiSolver<'a> {
     dictionary: &'a Dictionary,
@@ -85,7 +72,7 @@ impl<'a> ViterbiSolver<'a> {
 
         self.forward_pass(&mut lattice);
 
-        let path = Self::backward_pass(&mut lattice)?;
+        let path = Self::backward_pass(&mut lattice);
 
         Ok((lattice, path))
     }
@@ -265,18 +252,12 @@ impl<'a> ViterbiSolver<'a> {
     }
 
     /// Backward pass: trace the optimal path
-    fn backward_pass<'b>(lattice: &mut Lattice<'b>) -> Result<Vec<PathNode>> {
+    fn backward_pass(lattice: &mut Lattice<'_>) -> Vec<PathNode> {
         let mut node = lattice.eos_node();
 
         let mut result = vec![];
 
-        loop {
-            let prev_node_id = if let Some(prev_node_id) = node.lnode_id.get() {
-                prev_node_id
-            } else {
-                break;
-            };
-
+        while let Some(prev_node_id) = node.lnode_id.get() {
             let prev_node = lattice.get(prev_node_id);
             prev_node.is_best.swap(&Cell::new(true));
 
@@ -347,7 +328,7 @@ impl<'a> ViterbiSolver<'a> {
         Ok(path)
          */
 
-        Ok(result)
+        result
     }
 }
 
