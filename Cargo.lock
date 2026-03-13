@@ -5622,19 +5622,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e2db585e1d738fc771bf08a151420d3ed193d9d895a36df7f6f8a9456b911ddc"
 
 [[package]]
-name = "kizame"
-version = "0.0.0"
-dependencies = [
- "clap 4.5.58",
- "crossterm",
- "dirs 6.0.0",
- "indicatif",
- "mecrab",
- "memmap2",
- "ratatui",
-]
-
-[[package]]
 name = "kstring"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6188,6 +6175,17 @@ version = "0.0.0"
 dependencies = [
  "criterion 0.7.0",
  "mecrab",
+]
+
+[[package]]
+name = "mecrab-cli"
+version = "0.0.0"
+dependencies = [
+ "clap 4.5.58",
+ "crossterm",
+ "indicatif",
+ "mecrab",
+ "ratatui",
 ]
 
 [[package]]

@@ -3,7 +3,6 @@ pub mod bench;
 pub mod dict;
 pub mod error;
 pub mod lattice;
-pub mod normalize;
 pub mod viterbi;
 
 use std::fmt;

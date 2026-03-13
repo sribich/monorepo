@@ -421,7 +421,7 @@ impl DebugSession {
                 let conn_cost = if prev_node.right_id == left_id && curr_node.left_id == right_id {
                     new_cost
                 } else {
-                    dict.connection_cost(prev_node.right_id, curr_node.left_id)
+                    dict.connection_cost(&prev_node, &curr_node)
                 };
 
                 total_cost += conn_cost as i64 + curr_node.wcost as i64;

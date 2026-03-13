@@ -65,7 +65,7 @@ impl Token {
 /// System dictionary containing trie, tokens, and features
 pub struct SysDic<'a> {
     /// Double-Array Trie
-    trie: DoubleArrayTrie,
+    trie: DoubleArrayTrie<'a>,
     /// Pointer to token array
     tokens_ptr: *const Token,
     /// Number of tokens
@@ -103,7 +103,7 @@ impl<'a> std::fmt::Debug for SysDic<'a> {
             .field("left_size", &self.left_size)
             .field("right_size", &self.right_size)
             .field("charset", &self.charset)
-            .field("trie_size", &self.trie.size())
+            .field("trie", &self.trie)
             .field("tokens_count", &self.tokens_count)
             .finish()
     }
@@ -169,7 +169,7 @@ impl<'a> SysDic<'a> {
         );
 
         let da_offset = HEADER_SIZE;
-        let trie = DoubleArrayTrie::from_bytes(&data[da_offset..], da_size)?;
+        let trie = DoubleArrayTrie::from_bytes(&data[da_offset..(da_offset + da_size)], da_size)?;
 
         let token_offset = da_offset + da_size;
         let tokens_ptr = data[token_offset..].as_ptr() as *const Token;
@@ -313,10 +313,5 @@ impl<'a> SysDic<'a> {
     /// Get the right context size
     pub fn right_size(&self) -> usize {
         self.right_size as usize
-    }
-
-    /// Get the trie size in units
-    pub fn trie_size(&self) -> usize {
-        self.trie.size()
     }
 }

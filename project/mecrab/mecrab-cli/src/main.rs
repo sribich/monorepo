@@ -63,7 +63,6 @@ fn pos_color(pos: &str) -> &'static str {
 
 #[derive(Parser)]
 #[command(name = "kizame")]
-#[command(author = "COOLJAPAN OU (Team KitaSan)")]
 #[command(version)]
 #[command(about = "KizaMe (刻め!) - MeCrab morphological analyzer CLI")]
 #[command(
@@ -369,11 +368,7 @@ fn run_dict(command: DictCommands) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_dict_init(target: Option<PathBuf>) -> Result<(), Box<dyn std::error::Error>> {
-    let target = target.unwrap_or_else(|| {
-        dirs::data_local_dir()
-            .map(|p| p.join("mecrab").join("dic").join("ipadic"))
-            .unwrap_or_else(|| PathBuf::from("./ipadic"))
-    });
+    let target = target.unwrap();
 
     println!("MeCrab Dictionary Initialization");
     println!("=================================");
@@ -650,24 +645,6 @@ fn run_dict_dump(dicdir: &Path, vocab: bool) -> Result<(), Box<dyn std::error::E
         );
     }
     println!();
-
-    // Connection matrix sample
-    println!("=== Connection Matrix (sample costs) ===");
-    println!("  Format: cost(left_id, right_id)");
-    let sample_ids = [0u16, 1, 10, 100, 1000];
-    print!("       ");
-    for right in &sample_ids {
-        print!("{:>7}", right);
-    }
-    println!();
-    for left in &sample_ids {
-        print!("  {:>4}:", left);
-        for right in &sample_ids {
-            let cost = dict.connection_cost(*left, *right);
-            print!("{:>7}", cost);
-        }
-        println!();
-    }
 
     Ok(())
 }

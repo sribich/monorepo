@@ -45,6 +45,9 @@ pub enum ParseError {
     #[error(display("Dictionary pointer was not aligned"))]
     InvalidAlignment { location: Location },
 
+    #[error(display("Data is corrupt: {reason}"))]
+    Corrupt { reason: String, location: Location },
+
     //
     #[error(display("..."))]
     General {
@@ -75,16 +78,6 @@ pub enum Error {
     /// I/O error
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
-
-    /// Dictionary not found at the specified path
-
-    /// Invalid dictionary format
-    #[error("Invalid dictionary format: {0}")]
-    InvalidDictionaryFormat(String),
-
-    /// Dictionary file corrupted or truncated
-    #[error("Dictionary file corrupted: {0}")]
-    CorruptedDictionary(String),
 
     /// Memory mapping error
     #[error("Memory mapping error: {0}")]

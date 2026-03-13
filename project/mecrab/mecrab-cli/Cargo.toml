@@ -1,0 +1,19 @@
+[package]
+name = "mecrab-cli"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "mecrab-cli"
+path = "src/main.rs"
+
+[features]
+default = []
+
+[dependencies]
+mecrab = { workspace = true }
+
+clap = { workspace = true }
+crossterm = { workspace = true }
+indicatif = { workspace = true }
+ratatui = { workspace = true }
