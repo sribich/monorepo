@@ -1,12 +1,3 @@
-//! Dictionary module for MeCrab
-//!
-//! Copyright 2026 COOLJAPAN OU (Team KitaSan)
-//!
-//! This module handles loading and managing MeCab-compatible dictionaries.
-//! It supports IPADIC format with memory-mapped file I/O for efficiency.
-//!
-//! Reference: ../ref/mecab-0.996/src/dictionary.cpp
-
 mod char_def;
 mod connection_matrix;
 mod double_array_trie;
@@ -14,7 +5,6 @@ mod feature;
 mod overlay;
 mod sys_dic;
 mod unknown;
-pub mod user_dict;
 
 use std::fs::File;
 use std::path::Path;
@@ -30,129 +20,102 @@ pub use feature::FeatureTable;
 use memmap2::Mmap;
 pub use overlay::OverlayDictionary;
 pub use overlay::OverlayEntry;
+use railgun_error::ResultExt;
+use railgun_error::ensure;
 pub use sys_dic::SysDic;
 pub use sys_dic::Token;
 pub use unknown::UnknownDictionary;
-pub use user_dict::DictFormat;
-pub use user_dict::UserDictManager;
-pub use user_dict::UserDictStats;
-pub use user_dict::UserEntry;
-pub use user_dict::ValidationResult;
 
-use crate::Error;
-use crate::Result;
+use crate::error::NotFoundContext;
+use crate::error::ParseError;
 use crate::lattice::LatticeNode;
 
-/// Dictionary file names (MeCab/IPADIC format)
 /// System dictionary file name
-pub const SYS_DIC_FILE: &str = "sys.dic";
+const SYS_DIC_FILE: &str = "sys.dic";
 /// Unknown word dictionary file name
-pub const UNK_DIC_FILE: &str = "unk.dic";
+const UNK_DIC_FILE: &str = "unk.dic";
 /// Connection matrix file name
-pub const MATRIX_FILE: &str = "matrix.bin";
-/// Character property binary file name
-pub const CHAR_BIN_FILE: &str = "char.bin";
+const MATRIX_FILE: &str = "matrix.bin";
+/// Character property file name
+const CHAR_BIN_FILE: &str = "char.bin";
 
-/// Dictionary type constants (from MeCab)
-/// System dictionary type
 pub const MECAB_SYS_DIC: u32 = 0;
-/// User dictionary type
 pub const MECAB_USR_DIC: u32 = 1;
-/// Unknown word dictionary type
 pub const MECAB_UNK_DIC: u32 = 2;
 
-/// Type alias for surface form → URIs mapping
-pub type SurfaceMap = std::collections::HashMap<String, Vec<(String, f32)>>;
-
-/// The main dictionary structure containing all loaded dictionary data
+/// The dictionary containing all the sub-dictionaries that are required
+/// for locating and scoring words.
+#[derive(Debug)]
 pub struct Dictionary {
     /// System dictionary (contains trie, tokens, features)
-    pub sys_dic: SysDic,
+    pub sys_dic: SysDic<'static>,
     /// Unknown word dictionary
-    pub unknown: UnknownDictionary,
+    pub unknown: UnknownDictionary<'static>,
     /// Connection matrix for transition costs
-    pub matrix: ConnectionMatrix,
+    pub matrix: ConnectionMatrix<'static>,
     /// Character category definitions
-    pub char_def: CharDef,
+    pub char_def: CharDef<'static>,
     /// Overlay dictionary for runtime word additions
     pub overlay: OverlayDictionary,
-    /// Surface form → URIs mapping (optional)
-    pub surface_map: Option<Arc<SurfaceMap>>,
     /// Memory maps (kept alive to maintain the mapped regions)
     _mmaps: Vec<Arc<Mmap>>,
 }
 
-impl std::fmt::Debug for Dictionary {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Dictionary")
-            .field("sys_dic", &self.sys_dic)
-            .field("matrix", &self.matrix)
-            .field("char_def", &self.char_def)
-            .field("overlay", &self.overlay)
-            .finish()
-    }
-}
-
 impl Dictionary {
-    /// Load a dictionary from the specified directory
-    ///
-    /// # Arguments
-    ///
-    /// * `path` - Path to the dictionary directory containing sys.dic, matrix.bin, etc.
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if any dictionary file is missing or corrupted.
-    pub fn load(path: &Path) -> Result<Self> {
-        if !path.exists() {
-            return Err(Error::DictionaryNotFound(path.to_path_buf()));
-        }
+    /// Loads a dictionary from the specified directory
+    pub fn load(path: &Path) -> Result<Self, ParseError> {
+        ensure!(
+            path.exists(),
+            NotFoundContext {
+                path: path.to_path_buf()
+            }
+        );
 
         let mut mmaps = Vec::new();
 
-        // Load system dictionary
         let sys_path = path.join(SYS_DIC_FILE);
         let sys_mmap = Arc::new(Self::open_mmap(&sys_path)?);
-        let sys_dic = SysDic::from_mmap(Arc::clone(&sys_mmap))?;
-        mmaps.push(sys_mmap);
+        let sys_dic = SysDic::from_mmap(&sys_mmap)?;
+        mmaps.push(Arc::clone(&sys_mmap));
 
-        // Load connection matrix
         let matrix_path = path.join(MATRIX_FILE);
         let matrix_mmap = Arc::new(Self::open_mmap(&matrix_path)?);
-        let matrix = ConnectionMatrix::from_mmap(Arc::clone(&matrix_mmap))?;
-        mmaps.push(matrix_mmap);
+        let matrix = ConnectionMatrix::from_mmap(&matrix_mmap)?;
+        mmaps.push(Arc::clone(&matrix_mmap));
 
-        // Load character definitions
         let char_path = path.join(CHAR_BIN_FILE);
         let char_mmap = Arc::new(Self::open_mmap(&char_path)?);
-        let char_def = CharDef::from_mmap(Arc::clone(&char_mmap))?;
-        mmaps.push(char_mmap);
+        let char_def = CharDef::from_mmap(&char_mmap)?;
+        mmaps.push(Arc::clone(&char_mmap));
 
-        // Load unknown word dictionary
         let unk_path = path.join(UNK_DIC_FILE);
         let unk_mmap = Arc::new(Self::open_mmap(&unk_path)?);
-        let unknown = UnknownDictionary::from_mmap(Arc::clone(&unk_mmap))?;
-        mmaps.push(unk_mmap);
+        let unknown = UnknownDictionary::from_mmap(&unk_mmap)?;
+        mmaps.push(Arc::clone(&unk_mmap));
 
         Ok(Self {
-            sys_dic,
-            unknown,
-            matrix,
-            char_def,
+            sys_dic: unsafe { std::mem::transmute::<SysDic<'_>, SysDic<'static>>(sys_dic) },
+            unknown: unsafe {
+                std::mem::transmute::<UnknownDictionary<'_>, UnknownDictionary<'static>>(unknown)
+            },
+            matrix: unsafe { std::mem::transmute::<_, _>(matrix) },
+            char_def: unsafe { std::mem::transmute::<CharDef<'_>, CharDef<'static>>(char_def) },
             overlay: OverlayDictionary::new(),
-            surface_map: None,
             _mmaps: mmaps,
         })
     }
 
-    /// Open a file and create a memory map
-    fn open_mmap(path: &Path) -> Result<Mmap> {
-        if !path.exists() {
-            return Err(Error::DictionaryNotFound(path.to_path_buf()));
-        }
+    /// Attempts to open a memory-mapped file.
+    fn open_mmap(path: &Path) -> Result<Mmap, ParseError> {
+        ensure!(
+            path.exists(),
+            NotFoundContext {
+                path: path.to_path_buf()
+            }
+        );
 
-        let file = File::open(path)?;
-        let mmap = unsafe { Mmap::map(&file)? };
+        let file = File::open(path).boxed_local()?;
+        let mmap = unsafe { Mmap::map(&file).boxed_local()? };
 
         Ok(mmap)
     }
@@ -295,26 +258,6 @@ pub struct DictionaryEntry {
     pub wcost: i16,
     /// Feature string
     pub feature: String,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_dictionary_file_names() {
-        assert_eq!(SYS_DIC_FILE, "sys.dic");
-        assert_eq!(MATRIX_FILE, "matrix.bin");
-        assert_eq!(CHAR_BIN_FILE, "char.bin");
-        assert_eq!(UNK_DIC_FILE, "unk.dic");
-    }
-
-    #[test]
-    fn test_dictionary_types() {
-        assert_eq!(MECAB_SYS_DIC, 0);
-        assert_eq!(MECAB_USR_DIC, 1);
-        assert_eq!(MECAB_UNK_DIC, 2);
-    }
 }
 
 #[cfg(test)]

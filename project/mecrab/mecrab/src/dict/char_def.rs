@@ -11,11 +11,14 @@
 //! - First 4 bytes: csize (u32) - number of categories
 //! - Next csize * 32 bytes: category names (32 bytes each, null-padded)
 //! - Next 0xffff * 4 bytes: CharInfo table indexed by UCS-2 code point
-
-use crate::{Error, Result};
-use byteorder::{ByteOrder, LittleEndian};
-use memmap2::Mmap;
 use std::sync::Arc;
+
+use byteorder::ByteOrder;
+use byteorder::LittleEndian;
+use memmap2::Mmap;
+
+use crate::Error;
+use crate::Result;
 
 /// Character category names (matching IPADIC)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
@@ -126,20 +129,20 @@ impl CharInfo {
 }
 
 /// Character definition table
-pub struct CharDef {
-    /// Memory map (kept alive)
-    _mmap: Arc<Mmap>,
+pub struct CharDef<'a> {
     /// Category names
-    categories: Vec<String>,
+    categories: Vec<&'a str>,
     /// Pointer to CharInfo table (0xFFFF entries)
     map_ptr: *const CharInfo,
+    /// Memory map (kept alive)
+    _mmap: &'a Mmap,
 }
 
 // Safety: The map_ptr points to immutable memory-mapped data
-unsafe impl Send for CharDef {}
-unsafe impl Sync for CharDef {}
+unsafe impl<'a> Send for CharDef<'a> {}
+unsafe impl<'a> Sync for CharDef<'a> {}
 
-impl std::fmt::Debug for CharDef {
+impl<'a> std::fmt::Debug for CharDef<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("CharDef")
             .field("categories", &self.categories)
@@ -147,54 +150,50 @@ impl std::fmt::Debug for CharDef {
     }
 }
 
-impl CharDef {
+impl<'a> CharDef<'a> {
     /// Number of entries in the CharInfo table (0xFFFF = 65535)
     pub const TABLE_SIZE: usize = 0xFFFF;
 
-    /// Load character definitions from memory-mapped file
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the file is corrupted.
-    pub fn from_mmap(mmap: Arc<Mmap>) -> Result<Self> {
+    /// Loads the character property dictionary from a memory-mapped file.
+    pub fn from_mmap(mmap: &'a Arc<Mmap>) -> Result<CharDef<'a>> {
         let data = &mmap[..];
 
         if data.len() < 4 {
-            return Err(Error::CharDefError(
-                "Character definition file too small".to_string(),
+            return Err(Error::DictionaryParseError(
+                "Character property file too small".to_string(),
             ));
         }
 
-        // Read the number of categories
-        let csize = LittleEndian::read_u32(&data[0..4]) as usize;
+        let num_categories = LittleEndian::read_u32(&data[0..4]) as usize;
 
-        // Validate file size
-        // Expected: 4 + (csize * 32) + (0xFFFF * 4)
-        let expected_size = 4 + (csize * 32) + (Self::TABLE_SIZE * CharInfo::SIZE);
+        let expected_size = 4 + (num_categories * 32) + (Self::TABLE_SIZE * CharInfo::SIZE);
+
         if data.len() != expected_size {
-            return Err(Error::CharDefError(format!(
-                "Character definition file size mismatch: expected {}, got {}",
+            return Err(Error::DictionaryParseError(format!(
+                "Character property file size mismatch: expected {}, got {}",
                 expected_size,
                 data.len()
             )));
         }
 
-        // Read category names
-        let mut categories = Vec::with_capacity(csize);
+        let mut categories = Vec::with_capacity(num_categories);
         let mut offset = 4;
-        for _ in 0..csize {
+
+        for _ in 0..num_categories {
             let name_bytes = &data[offset..offset + 32];
-            let name_end = name_bytes
-                .iter()
-                .position(|&b| b == 0)
-                .unwrap_or(name_bytes.len());
-            let name = String::from_utf8_lossy(&name_bytes[..name_end]).to_string();
+
+            let name = memchr::memchr(0, name_bytes).map_or_else(
+                || "",
+                |pos| str::from_utf8(&name_bytes[..pos]).unwrap_or(""),
+            );
+
             categories.push(name);
             offset += 32;
         }
 
-        // Get pointer to CharInfo table
         let map_ptr = data[offset..].as_ptr() as *const CharInfo;
+
+        assert!(map_ptr.is_aligned(), "CharInfo is not aligned");
 
         Ok(Self {
             _mmap: mmap,
@@ -238,7 +237,7 @@ impl CharDef {
 
     /// Get category name by ID
     pub fn category_name(&self, id: usize) -> Option<&str> {
-        self.categories.get(id).map(String::as_str)
+        self.categories.get(id).map(|it| *it)
     }
 
     /// Get number of categories
@@ -248,7 +247,7 @@ impl CharDef {
 
     /// Get category ID by name
     pub fn category_id(&self, name: &str) -> Option<usize> {
-        self.categories.iter().position(|n| n == name)
+        self.categories.iter().position(|n| *n == name)
     }
 
     /// Check if a category should group consecutive characters

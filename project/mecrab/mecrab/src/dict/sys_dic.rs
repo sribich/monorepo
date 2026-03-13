@@ -12,12 +12,15 @@ use std::sync::Arc;
 use byteorder::ByteOrder;
 use byteorder::LittleEndian;
 use memmap2::Mmap;
+use railgun_error::ensure;
 
 use super::DictionaryEntry;
 use super::double_array_trie::DartsResult;
 use super::double_array_trie::DoubleArrayTrie;
-use crate::Error;
-use crate::Result;
+use crate::error::FileTooSmallContext;
+use crate::error::IncorrectSizeContext;
+use crate::error::IncorrectVersionContext;
+use crate::error::ParseError;
 
 /// Magic number for system dictionary validation
 /// From MeCab: const unsigned int DictionaryMagicID = 0xef718f77u;
@@ -52,14 +55,15 @@ pub struct Token {
 }
 
 impl Token {
-    /// Size of Token in bytes
-    pub const SIZE: usize = 16;
+    /// The size, in bytes, that the token occupies in memory.
+    pub const SIZE: usize = const {
+        assert!(std::mem::size_of::<Token>() == 16);
+        16
+    };
 }
 
 /// System dictionary containing trie, tokens, and features
-pub struct SysDic {
-    /// Memory map (kept alive)
-    _mmap: Arc<Mmap>,
+pub struct SysDic<'a> {
     /// Double-Array Trie
     trie: DoubleArrayTrie,
     /// Pointer to token array
@@ -81,14 +85,16 @@ pub struct SysDic {
     /// Right context size
     right_size: u32,
     /// Character set (e.g., "UTF-8")
-    charset: String,
+    charset: &'a str,
+    /// Memory map (kept alive)
+    _mmap: &'a Arc<Mmap>,
 }
 
-// Safety: The pointers point to immutable memory-mapped data
-unsafe impl Send for SysDic {}
-unsafe impl Sync for SysDic {}
+// SAFETY: ...
+unsafe impl<'a> Send for SysDic<'a> {}
+unsafe impl<'a> Sync for SysDic<'a> {}
 
-impl std::fmt::Debug for SysDic {
+impl<'a> std::fmt::Debug for SysDic<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("SysDic")
             .field("version", &self.version)
@@ -103,44 +109,40 @@ impl std::fmt::Debug for SysDic {
     }
 }
 
-impl SysDic {
+impl<'a> SysDic<'a> {
     /// Load system dictionary from memory-mapped file
     ///
     /// # Errors
     ///
     /// Returns an error if the file is corrupted or has invalid format.
-    pub fn from_mmap(mmap: Arc<Mmap>) -> Result<Self> {
+    pub fn from_mmap(mmap: &'a Arc<Mmap>) -> Result<Self, ParseError> {
         let data = &mmap[..];
+        ensure!(
+            data.len() >= HEADER_SIZE,
+            FileTooSmallContext {
+                min_bytes: HEADER_SIZE,
+                actual_bytes: data.len(),
+            }
+        );
 
-        if data.len() < HEADER_SIZE {
-            return Err(Error::CorruptedDictionary(format!(
-                "Dictionary file too small: {} bytes (minimum {} bytes)",
-                data.len(),
-                HEADER_SIZE
-            )));
-        }
-
-        // Read and validate magic number
-        // magic ^ DictionaryMagicID == filesize
         let magic = LittleEndian::read_u32(&data[0..4]);
-        let expected_size = magic ^ DICTIONARY_MAGIC_ID;
-
-        if expected_size != data.len() as u32 {
-            return Err(Error::InvalidDictionaryFormat(format!(
-                "Magic number mismatch: expected file size {}, got {}",
+        let expected_size = (magic ^ DICTIONARY_MAGIC_ID) as usize;
+        ensure!(
+            expected_size == data.len(),
+            IncorrectSizeContext {
                 expected_size,
-                data.len()
-            )));
-        }
+                actual_size: data.len()
+            }
+        );
 
-        // Read header fields
         let version = LittleEndian::read_u32(&data[4..8]);
-        if version != DIC_VERSION {
-            return Err(Error::InvalidDictionaryFormat(format!(
-                "Incompatible dictionary version: expected {}, got {}",
-                DIC_VERSION, version
-            )));
-        }
+        ensure!(
+            version == DIC_VERSION,
+            IncorrectVersionContext {
+                expected_version: DIC_VERSION as usize,
+                actual_version: version as usize
+            }
+        );
 
         let dict_type = LittleEndian::read_u32(&data[8..12]);
         let lexicon_size = LittleEndian::read_u32(&data[12..16]);
@@ -151,37 +153,33 @@ impl SysDic {
         let feature_size = LittleEndian::read_u32(&data[32..36]) as usize;
         // data[36..40] is dummy/padding
 
-        // Read charset (32 bytes, null-terminated)
         let charset_bytes = &data[40..72];
-        let charset_end = charset_bytes
-            .iter()
-            .position(|&b| b == 0)
-            .unwrap_or(charset_bytes.len());
-        let charset = String::from_utf8_lossy(&charset_bytes[..charset_end]).to_string();
+        let charset = memchr::memchr(0, charset_bytes).map_or_else(
+            || "",
+            |pos| str::from_utf8(&charset_bytes[..pos]).unwrap_or(""),
+        );
 
-        // Validate sizes
-        let expected_total = HEADER_SIZE + da_size + token_size + feature_size;
-        if data.len() < expected_total {
-            return Err(Error::CorruptedDictionary(format!(
-                "Dictionary file truncated: expected {} bytes, got {}",
-                expected_total,
-                data.len()
-            )));
-        }
+        let expected_size = HEADER_SIZE + da_size + token_size + feature_size;
+        ensure!(
+            data.len() == expected_size,
+            IncorrectSizeContext {
+                expected_size,
+                actual_size: data.len()
+            }
+        );
 
-        // Create Double-Array Trie
         let da_offset = HEADER_SIZE;
         let trie = DoubleArrayTrie::from_bytes(&data[da_offset..], da_size)?;
 
-        // Get token array pointer
         let token_offset = da_offset + da_size;
         let tokens_ptr = data[token_offset..].as_ptr() as *const Token;
         let tokens_count = token_size / Token::SIZE;
+        assert!(tokens_ptr.is_aligned());
 
-        // Get feature strings pointer
         let feature_offset = token_offset + token_size;
         let features_ptr = data[feature_offset..].as_ptr();
         let features_size = feature_size;
+        assert!(features_ptr.is_aligned());
 
         Ok(Self {
             _mmap: mmap,
@@ -320,26 +318,5 @@ impl SysDic {
     /// Get the trie size in units
     pub fn trie_size(&self) -> usize {
         self.trie.size()
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_token_size() {
-        assert_eq!(std::mem::size_of::<Token>(), 16);
-        assert_eq!(Token::SIZE, 16);
-    }
-
-    #[test]
-    fn test_magic_id() {
-        assert_eq!(DICTIONARY_MAGIC_ID, 0xef71_8f77);
-    }
-
-    #[test]
-    fn test_header_size() {
-        assert_eq!(HEADER_SIZE, 72);
     }
 }

@@ -8,46 +8,42 @@
 //!
 //! Reference: ../ref/mecab-0.996/src/dictionary.cpp
 
-use crate::{Error, Result};
-use memmap2::Mmap;
 use std::sync::Arc;
+
+use memmap2::Mmap;
+use railgun_error::ensure;
 
 use super::DictionaryEntry;
 use super::sys_dic::SysDic;
+use crate::error::IncorrectTypeContext;
+use crate::error::ParseError;
 
 /// Unknown word dictionary
 ///
 /// This uses the same format as the system dictionary (sys.dic)
 /// but contains entries keyed by category name (e.g., "HIRAGANA", "KATAKANA").
-pub struct UnknownDictionary {
+#[derive(Debug)]
+pub struct UnknownDictionary<'a> {
     /// Underlying system dictionary structure
-    inner: SysDic,
+    inner: SysDic<'a>,
 }
 
-impl std::fmt::Debug for UnknownDictionary {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("UnknownDictionary")
-            .field("inner", &self.inner)
-            .finish()
-    }
-}
-
-impl UnknownDictionary {
+impl<'a> UnknownDictionary<'a> {
     /// Load unknown word dictionary from memory-mapped file
     ///
     /// # Errors
     ///
     /// Returns an error if the file is corrupted.
-    pub fn from_mmap(mmap: Arc<Mmap>) -> Result<Self> {
+    pub fn from_mmap(mmap: &'a Arc<Mmap>) -> Result<Self, ParseError> {
         let inner = SysDic::from_mmap(mmap)?;
 
-        // Verify this is actually an unknown dictionary (type = 2)
-        if inner.dict_type() != super::MECAB_UNK_DIC {
-            return Err(Error::InvalidDictionaryFormat(format!(
-                "Expected unknown dictionary (type=2), got type={}",
-                inner.dict_type()
-            )));
-        }
+        ensure!(
+            inner.dict_type() == super::MECAB_UNK_DIC,
+            IncorrectTypeContext {
+                expected_type: 2 as usize,
+                actual_type: inner.dict_type() as usize,
+            }
+        );
 
         Ok(Self { inner })
     }

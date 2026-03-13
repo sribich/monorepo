@@ -52,21 +52,6 @@ pub fn predecessor_batch(
 
 ---
 
-## Platform Support
-
-Portable SIMD automatically maps to the best available instruction set:
-
-| Platform | SIMD Width | Backend | Status |
-|----------|------------|---------|--------|
-| x86_64 (AVX2) | 256-bit | 8x i32 | ✅ Auto |
-| x86_64 (SSE2) | 128-bit | 4x i32 | ✅ Auto |
-| ARM64 (NEON) | 128-bit | 4x i32 | ✅ Auto |
-| Other | Scalar | 1x i32 | ✅ Fallback |
-
----
-
-## Portable SIMD Implementation
-
 ### Batch Cost Addition
 
 ```rust

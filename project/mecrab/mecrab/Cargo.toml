@@ -9,8 +9,11 @@ parallel = ["rayon"]
 simd = []
 
 [dependencies]
+railgun_error = { workspace = true }
+railgun_error_derive = { workspace = true }
+
 id-arena = { workspace = true }
-tinyvec = { workspace = true }
+memchr = { workspace = true }
 
 # Core dependencies (always needed)
 memmap2.workspace = true

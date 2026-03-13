@@ -5,7 +5,60 @@
 use std::io;
 use std::path::PathBuf;
 
+use railgun_error::Location;
 use thiserror::Error;
+
+#[derive(railgun_error::Error)]
+pub enum ParseError {
+    #[error(display("Dictionary could not be found at '{path:?}'"))]
+    NotFound { path: PathBuf, location: Location },
+    #[error(display(
+        "Dictionary file too small. Expected a minimum of '{min_bytes}' bytes, got '{actual_bytes}' bytes"
+    ))]
+    FileTooSmall {
+        min_bytes: usize,
+        actual_bytes: usize,
+        location: Location,
+    },
+    #[error(display(
+        "Incorrect dictionary size. Expected '{expected_size}' bytes, got '{actual_size}' bytes"
+    ))]
+    IncorrectSize {
+        expected_size: usize,
+        actual_size: usize,
+        location: Location,
+    },
+    #[error(display(
+        "Incompatible dictionary version. Expected version '{expected_version}', got '{actual_version}'"
+    ))]
+    IncorrectVersion {
+        expected_version: usize,
+        actual_version: usize,
+        location: Location,
+    },
+    #[error(display("Incorrect dictionary type. Expected '{expected_type}', got '{actual_type}'"))]
+    IncorrectType {
+        expected_type: usize,
+        actual_type: usize,
+        location: Location,
+    },
+    #[error(display("Dictionary pointer was not aligned"))]
+    InvalidAlignment { location: Location },
+
+    //
+    #[error(display("..."))]
+    General {
+        #[error(impl_from)]
+        error: Error,
+        location: Location,
+    },
+    #[error(transparent)]
+    Other {
+        #[error(impl_from)]
+        error: Box<dyn core::error::Error>,
+        location: Location,
+    },
+}
 
 /// Result type alias for MeCrab operations
 pub type Result<T> = std::result::Result<T, Error>;
@@ -13,13 +66,17 @@ pub type Result<T> = std::result::Result<T, Error>;
 /// Error type for MeCrab operations
 #[derive(Error, Debug)]
 pub enum Error {
+    #[error("The provided dictionary could not be found at: {0}")]
+    DictionaryNotFound(PathBuf),
+
+    #[error("Error parsing dictionary: {0}")]
+    DictionaryParseError(String),
+
     /// I/O error
     #[error("I/O error: {0}")]
     Io(#[from] io::Error),
 
     /// Dictionary not found at the specified path
-    #[error("Dictionary not found at: {0}")]
-    DictionaryNotFound(PathBuf),
 
     /// Invalid dictionary format
     #[error("Invalid dictionary format: {0}")]
@@ -72,6 +129,9 @@ pub enum Error {
     /// Format error (for DOT output, etc.)
     #[error("Format error: {0}")]
     FormatError(String),
+
+    #[error(transparent)]
+    Any(#[from] Box<dyn core::error::Error>),
 }
 
 impl From<std::fmt::Error> for Error {

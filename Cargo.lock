@@ -6173,10 +6173,12 @@ dependencies = [
  "byteorder",
  "encoding_rs",
  "id-arena",
+ "memchr",
  "memmap2",
+ "railgun_error",
+ "railgun_error_derive",
  "rayon",
  "thiserror 2.0.18",
- "tinyvec",
  "yada",
 ]
 

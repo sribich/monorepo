@@ -1,63 +1,3 @@
-//! MeCrab - A high-performance morphological analyzer compatible with MeCab
-//!
-//! Copyright 2026 COOLJAPAN OU (Team KitaSan)
-//!
-//! # Overview
-//!
-//! MeCrab is a pure Rust implementation of a morphological analyzer that is
-//! compatible with MeCab dictionaries (IPADIC format). It provides:
-//!
-//! - Zero-copy parsing where possible
-//! - Memory-mapped dictionary loading via `memmap2`
-//! - Thread-safe design using Rust's ownership model
-//! - Double-Array Trie (DAT) for fast dictionary lookups
-//! - Viterbi algorithm for optimal path finding
-//! - SIMD-accelerated cost calculations using portable SIMD
-//!
-//! # Example
-//!
-//! ```no_run
-//! use mecrab::MeCrab;
-//!
-//! let mecrab = MeCrab::new()?;
-//! let result = mecrab.parse("すもももももももものうち")?;
-//! println!("{}", result);
-//! # Ok::<(), mecrab::Error>(())
-//! ```
-
-#![warn(missing_docs)]
-#![warn(clippy::all)]
-#![warn(clippy::pedantic)]
-#![allow(clippy::module_name_repetitions)]
-#![allow(clippy::must_use_candidate)]
-#![allow(clippy::doc_markdown)]
-#![allow(clippy::cast_possible_truncation)]
-#![allow(clippy::cast_sign_loss)]
-#![allow(clippy::cast_lossless)]
-#![allow(clippy::cast_possible_wrap)]
-#![allow(clippy::similar_names)]
-#![allow(clippy::missing_fields_in_debug)]
-#![allow(clippy::cast_ptr_alignment)]
-#![allow(clippy::ptr_as_ptr)]
-#![allow(clippy::manual_let_else)]
-#![allow(clippy::match_same_arms)]
-#![allow(clippy::explicit_iter_loop)]
-#![allow(clippy::uninlined_format_args)]
-#![allow(clippy::missing_panics_doc)]
-#![allow(clippy::missing_errors_doc)]
-#![allow(clippy::struct_excessive_bools)]
-#![allow(clippy::items_after_statements)]
-#![allow(clippy::cast_precision_loss)]
-#![allow(clippy::redundant_closure_for_method_calls)]
-#![allow(clippy::format_push_string)]
-#![allow(clippy::derivable_impls)]
-#![allow(clippy::map_unwrap_or)]
-#![allow(clippy::collapsible_if)]
-#![allow(clippy::needless_lifetimes)]
-#![allow(clippy::unused_self)]
-#![allow(clippy::return_self_not_must_use)]
-#![allow(clippy::needless_pass_by_value)]
-
 pub mod bench;
 // pub mod debug;
 pub mod dict;
@@ -74,6 +14,7 @@ use dict::Dictionary;
 pub use error::Error;
 pub use error::Result;
 use lattice::Lattice;
+use railgun_error::ResultExt;
 use viterbi::ViterbiSolver;
 
 /// Output format for morphological analysis results
@@ -342,7 +283,7 @@ impl MeCrabBuilder {
     /// Returns an error if the dictionary cannot be loaded.
     pub fn build(self) -> Result<MeCrab> {
         let dictionary = match self.dicdir {
-            Some(dicdir) => Dictionary::load(&dicdir)?,
+            Some(dicdir) => Dictionary::load(&dicdir).boxed_local()?,
             None => return Err(Error::DictionaryNotSet),
         };
 
