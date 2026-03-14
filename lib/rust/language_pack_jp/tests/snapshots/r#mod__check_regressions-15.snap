@@ -2,12 +2,6 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
-- - 泣きそう
-  - 泣く
-  - 466
-- - に
-  - に
-  - 3
-- - なった
-  - なう
-  - 43653
+- - という
+  - という
+  - 55

@@ -2,6 +2,21 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
+- - 本
+  - 本
+  - 172
+- - が
+  - が
+  - 4
+- - すぐそこ
+  - すぐそこ
+  - ~
+- - に
+  - に
+  - 3
 - - ある
   - ある
   - 16
+- - のに
+  - のに
+  - 97

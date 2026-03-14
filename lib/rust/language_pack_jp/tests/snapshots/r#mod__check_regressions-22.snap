@@ -2,6 +2,15 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
+- - 本に
+  - 本に
+  - 44408
+- - 潰されて
+  - 潰す
+  - 1729
 - - 死んだ
   - 死ぬ
   - 192
+- - のは
+  - のは
+  - ~

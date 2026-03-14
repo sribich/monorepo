@@ -1,0 +1,16 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 本
+  - false
+- - に
+  - false
+- - 潰されて
+  - true
+- - 死んだ
+  - true
+- - の
+  - false
+- - は
+  - false

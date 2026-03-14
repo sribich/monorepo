@@ -2,6 +2,6 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
-- - という
-  - という
-  - 55
+- - すぐそこ
+  - すぐそこ
+  - ~

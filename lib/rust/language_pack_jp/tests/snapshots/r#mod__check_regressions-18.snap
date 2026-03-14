@@ -2,9 +2,6 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
-- - すぐそこ
-  - すぐそこ
-  - ~
-- - に
-  - に
-  - 3
+- - おばあさん
+  - おばあさん
+  - 10393

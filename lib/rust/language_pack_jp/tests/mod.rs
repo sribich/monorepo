@@ -125,11 +125,8 @@ fn load_dictionaries() -> (
     ((words_buf, readings_buf), words, readings)
 }
 
-#[test]
-fn check_inflection_breakpoints() {
-    let segmenter = JapaneseTextSegmenter::new();
-
-    let tests = [
+fn get_test_segments() -> &'static [&'static str] {
+    &[
         "響いてた",
         "くる",
         "駆け寄ってくる",
@@ -150,29 +147,40 @@ fn check_inflection_breakpoints() {
         "おばあさん",
         "というおばあさん",
         "預けられていた", // Should fully match
+        "死んだ",
+        "本に潰されて死んだのは",
+        "マインは蜘蛛の巣が怖いのか仕方がないな父さんが取ってやろう",
+        "思いつかなかった",
+        "保存食",
+        "信じられない",
+        // "「……行きたくない」",   - Mostly good, but ] is tacked on to the end in splitting
+        // "もうしかして",
+        // "面白くない",
 
-                          // マインは蜘蛛の巣が怖いのか仕方がないな父さんが取ってやろう
-                          // CURR: [父][さんが][取って][やろう]
-                          // GOOD: [父さん][が][取って][やろう]
-                          //
-                          // TO FIX THIS, WE SHOULD MAKE SURE THAT PARTICLES ARE NOT EVALUATED
-                          //
-                          // Checks should be histeruics based. If a word was not inflicted and is all kana
-                          // then we should prefer a kana lookup if one exists, only falling back to reading
-                          // based lookups if one does not exist.
-                          //
-                          // If it was inflicted, :shrug:
+        // トゥーリ != トゥー + リ == トゥーリ
+        // Custom Dictionary Needed
 
-                          // のところにはわたしと同じような子供が
-                          // 溶かした鍋に[入れたり][出したり]する何度も
-                          //
-                          //
-                          // 面白くない   [面][白くない] -> [面白くない]
+        // TO FIX THIS, WE SHOULD MAKE SURE THAT PARTICLES ARE NOT EVALUATED
+        //
+        // Checks should be histeruics based. If a word was not inflicted and is all kana
+        // then we should prefer a kana lookup if one exists, only falling back to reading
+        // based lookups if one does not exist.
+        //
+        // If it was inflicted, :shrug:
 
-                          // 「……行きたくない」 is turning into okonai
-    ];
+        // TODO: Word Tree
+        // - 入手不可能
+        //   - 入手 - 不 - 可能
+        //   - 入手 - 不可能
+        //   - 入手不可能
+    ]
+}
 
-    for test in tests {
+#[test]
+fn check_inflection_breakpoints() {
+    let segmenter = JapaneseTextSegmenter::new();
+
+    for test in get_test_segments() {
         let result = group_inflected(segmenter.segment(test, false));
         assert_yaml_snapshot!(result)
     }
@@ -182,77 +190,8 @@ fn check_inflection_breakpoints() {
 fn check_regressions() {
     let (_buf, dictionary, dictionary_readings) = load_dictionaries();
 
-    let tests = [
-        "響いてた",
-        "くる",
-        "駆け寄ってくる",
-        "駆け寄って",
-        "ついて",
-        "たとえ雨が降っても、外に出よう。",
-        "雨が降ったけれど、外に出た。",
-        "漬けこんでやろう",
-        "臭くない",
-        "臭くない",
-        "名前は",
-        "ある",
-        "本がすぐそこにあるのに",
-        // BROKEN
-        "なった",
-        "泣きそうになった",
-        "という",
-        "すぐそこ",
-        "すぐそこに",
-        "おばあさん",
-        "というおばあさん",
-        "預けられていた", // Should fully match
-
-                          // マインは蜘蛛の巣が怖いのか仕方がないな父さんが取ってやろう
-                          // CURR: [父][さんが][取って][やろう]
-                          // GOOD: [父さん][が][取って][やろう]
-                          //
-                          // TO FIX THIS, WE SHOULD MAKE SURE THAT PARTICLES ARE NOT EVALUATED
-                          //
-                          // Checks should be histeruics based. If a word was not inflicted and is all kana
-                          // then we should prefer a kana lookup if one exists, only falling back to reading
-                          // based lookups if one does not exist.
-                          //
-                          // If it was inflicted, :shrug:
-
-                          // のところにはわたしと同じような子供が
-                          // 溶かした鍋に[入れたり][出したり]する何度も
-                          //
-                          //
-                          // 面白くない   [面][白くない] -> [面白くない]
-
-                          // 「……行きたくない」 is turning into okonai
-    ];
-
-    for test in tests {
+    for test in get_test_segments() {
         let result = transform_japanese_text(test, &dictionary, &dictionary_readings);
         assert_yaml_snapshot!(result)
     }
 }
-/*
-トゥーリ != トゥー + リ == トゥーリ
-駆け寄ってくる != 駆け + 寄 + っ + てくる == 駆け寄って + くる
-響いてた != 響い + てた == 響いてた
-*/
-
-// # Conjugation
-//
-//   - もうしかして -> もうしかして NOT もう_か_して
-//
-// # Word Separation
-//
-// - 入手不可能
-//   - 入手 - 不 - 可能
-//   - 入手 - 不可能
-//   - 入手不可能
-//
-//
-
-// 思いつかなかった。is broken. った is separated
-
-// 保存食 shoku is split
-
-// 信じられない is showing shinzuru not shinjiru

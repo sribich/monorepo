@@ -1,0 +1,32 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - マイン
+  - false
+- - は
+  - false
+- - 蜘蛛
+  - false
+- - の
+  - false
+- - 巣
+  - false
+- - が
+  - false
+- - 怖い
+  - true
+- - のか
+  - true
+- - 仕方
+  - false
+- - がないな
+  - true
+- - 父
+  - true
+- - さん
+  - true
+- - が
+  - false
+- - 取ってやろう
+  - true

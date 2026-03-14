@@ -13,7 +13,13 @@ mod transforms;
 
 fn attaches(pos: &str, pos2: &str, prev_feature: &Morpheme, curr_feature: &Morpheme) -> bool {
     ["助詞", "助動詞"].contains(&pos)
-        && !["係助詞", "格助詞", "準体助詞" /*"接続助詞"*/].contains(&pos2)
+        && ![
+            "一般",
+            "係助詞",
+            "格助詞",
+            "準体助詞", /*"接続助詞"*/
+        ]
+        .contains(&pos2)
         && !prev_feature.is_terminator()
         || (pos == "副詞" && prev_feature.pos() == "名詞")
         || curr_feature.pos2() == "非自立可能"
@@ -35,7 +41,8 @@ fn inflects(pos: &str) -> bool {
 fn is_new_root(prev_feature: &Morpheme, curr_feature: &Morpheme) -> bool {
     let pos = curr_feature.pos();
 
-    ["形状詞", "動詞"].contains(&pos) && prev_feature.pos2() != "接続助詞"
+    ["形状詞", "動詞"].contains(&pos)
+        && (prev_feature.pos2() != "接続助詞" || curr_feature.pos2() != "非自立可能")
 }
 
 fn is_conjugating(s: &str) -> bool {
@@ -59,6 +66,17 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
 
                 let conjugating = prev.last().is_some_and(|it| is_conjugating(&it.0));
 
+                /*
+                println!(
+                    "Word={} Inflects={} Attaches={} NewRoot={} Conjugating={}",
+                    curr,
+                    inflects(curr.pos()),
+                    attaches(curr.pos(), curr.pos2(), init, curr),
+                    is_new_root(init, curr),
+                    conjugating
+                );
+                 */
+
                 if inflects(curr.pos())
                     || conjugating
                     || attaches(curr.pos(), curr.pos2(), init, curr)
@@ -67,8 +85,10 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
                         let prev_mut = prev.last_mut().unwrap();
                         let next = format!("{}{}", prev_mut.0, curr);
                         *prev_mut = (next, true);
+                        println!("...");
                     } else {
                         prev.push((curr.to_string(), true));
+                        println!("......");
                     }
 
                     return prev;
