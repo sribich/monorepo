@@ -85,10 +85,8 @@ pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
                         let prev_mut = prev.last_mut().unwrap();
                         let next = format!("{}{}", prev_mut.0, curr);
                         *prev_mut = (next, true);
-                        println!("...");
                     } else {
                         prev.push((curr.to_string(), true));
-                        println!("......");
                     }
 
                     return prev;
