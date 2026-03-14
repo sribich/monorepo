@@ -128,13 +128,15 @@ pub async fn handler(
             (
                 true,
                 it.fields["Word"].value.clone(),
-                it.fields
-                    .get("Word With Reading").map_or_else(|| {
+                it.fields.get("Word With Reading").map_or_else(
+                    || {
                         it.fields
                             .get("WordReading")
                             .map(|it| it.value.clone())
                             .unwrap_or_default()
-                    }, |it| it.value.clone()),
+                    },
+                    |it| it.value.clone(),
+                ),
             )
         })
         .collect::<Vec<_>>();
@@ -151,7 +153,7 @@ pub async fn handler(
         .map(|it| (false, it.word, it.reading))
         .collect::<Vec<_>>();
 
-    cards.extend_from_slice(&anki_cards);
+    // cards.extend_from_slice(&anki_cards);
 
     let mut freq_map: HashMap<String, i32> = HashMap::default();
     let mut known_words: Vec<KnownWord> = vec![];
