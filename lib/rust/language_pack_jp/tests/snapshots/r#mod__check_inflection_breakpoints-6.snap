@@ -1,0 +1,22 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - たとえ
+  - false
+- - 雨
+  - false
+- - が
+  - false
+- - 降って
+  - true
+- - も
+  - false
+- - 、
+  - true
+- - 外
+  - false
+- - に
+  - false
+- - 出よう。
+  - true

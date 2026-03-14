@@ -1,6 +1,3 @@
-use std::ffi::CStr;
-use std::ffi::CString;
-
 use itertools::Itertools;
 use language_pack::segment::TextSegmenter;
 use language_pack::transform::LanguageTransformer;
@@ -9,13 +6,19 @@ use trie_rs::map::Trie;
 
 use crate::segment::JapaneseTextSegmenter;
 use crate::segment::Morpheme;
+use crate::text::is_fully_kana;
+use crate::text::is_fully_katakana;
 
 mod transforms;
 
-fn attaches(pos: &str, pos2: &str) -> bool {
-    ["助詞", "助動詞"].contains(&pos) && !["係助詞", "格助詞", "準体助詞"].contains(&pos2)
+fn attaches(pos: &str, pos2: &str, prev_feature: &Morpheme, curr_feature: &Morpheme) -> bool {
+    ["助詞", "助動詞"].contains(&pos)
+        && !["係助詞", "格助詞", "準体助詞" /*"接続助詞"*/].contains(&pos2)
+        && !prev_feature.is_terminator()
+        || (pos == "副詞" && prev_feature.pos() == "名詞")
+        || curr_feature.pos2() == "非自立可能"
 }
-
+// 終止形
 fn inflects(pos: &str) -> bool {
     ![
         "名詞",
@@ -29,8 +32,10 @@ fn inflects(pos: &str) -> bool {
     .contains(&pos)
 }
 
-fn is_new_root(pos: &str) -> bool {
-    ["形状詞", "動詞"].contains(&pos)
+fn is_new_root(prev_feature: &Morpheme, curr_feature: &Morpheme) -> bool {
+    let pos = curr_feature.pos();
+
+    ["形状詞", "動詞"].contains(&pos) && prev_feature.pos2() != "接続助詞"
 }
 
 fn is_conjugating(s: &str) -> bool {
@@ -38,36 +43,47 @@ fn is_conjugating(s: &str) -> bool {
 }
 
 pub fn group_inflected(list: Vec<Morpheme>) -> Vec<(String, bool)> {
-    // TODO: This can be a static
-    let morpheme = Morpheme::Untagged("".to_owned());
+    let morpheme = Morpheme::Untagged(String::new());
 
     list.iter()
-        .chain([&morpheme])
+        .chain([&morpheme, &morpheme])
         .tuple_windows()
-        .fold(vec![(String::new(), true)], |mut prev, (curr, next)| {
-            let conjugating = prev.last().map(|it| is_conjugating(&it.0)).unwrap_or(false);
-
-            if inflects(curr.pos()) || conjugating || attaches(curr.pos(), curr.pos2()) {
-                if !is_new_root(curr.pos()) || conjugating {
+        .fold(
+            vec![(String::new(), true)],
+            |mut prev, (init, curr, next)| {
+                if prev.len() == 1 && prev.first().unwrap().0.is_empty() {
                     let prev_mut = prev.last_mut().unwrap();
-                    let next = format!("{}{}", prev_mut.0, curr);
-                    *prev_mut = (next, true);
-                } else {
-                    prev.push((curr.to_string(), true));
+                    let next_str = format!("{}{}", prev_mut.0, init);
+                    *prev_mut = (next_str, attaches(init.pos(), init.pos2(), init, curr));
                 }
 
-                return prev;
-            }
+                let conjugating = prev.last().is_some_and(|it| is_conjugating(&it.0));
 
-            if attaches(next.pos(), next.pos2()) {
-                prev.push((curr.to_string(), true));
-            } else {
-                prev.push((curr.to_string(), false));
-                prev.push((String::new(), true));
-            }
+                if inflects(curr.pos())
+                    || conjugating
+                    || attaches(curr.pos(), curr.pos2(), init, curr)
+                {
+                    if !is_new_root(init, curr) || conjugating {
+                        let prev_mut = prev.last_mut().unwrap();
+                        let next = format!("{}{}", prev_mut.0, curr);
+                        *prev_mut = (next, true);
+                    } else {
+                        prev.push((curr.to_string(), true));
+                    }
 
-            prev
-        })
+                    return prev;
+                }
+
+                if attaches(next.pos(), next.pos2(), curr, next) {
+                    prev.push((curr.to_string(), true));
+                } else {
+                    prev.push((curr.to_string(), false));
+                    prev.push((String::new(), true));
+                }
+
+                prev
+            },
+        )
         .into_iter()
         .filter(|it| !it.0.is_empty())
         .collect::<Vec<_>>()
@@ -94,8 +110,8 @@ fn either_dict_has_exact(
 
 pub fn transform_japanese_text(
     line: &str,
-    adaptive: &Trie<u8, Option<usize>>,
-    adaptive_readings: &Trie<u8, Option<usize>>,
+    dictionary: &Trie<u8, Option<usize>>,
+    dictionary_readings: &Trie<u8, Option<usize>>,
 ) -> Vec<(String, String, Option<usize>)> {
     let segmenter = JapaneseTextSegmenter::new();
     let segments = group_inflected(segmenter.segment(line, false));
@@ -104,9 +120,9 @@ pub fn transform_japanese_text(
 
     for (segment, inflects) in &segments {
         let dict_entry: Option<(String, String, Option<String>)> =
-            if adaptive.exact_match(segment).is_some() {
+            if dictionary.exact_match(segment).is_some() {
                 Some((segment.clone(), segment.clone(), None))
-            } else if adaptive_readings.exact_match(segment).is_some() {
+            } else if dictionary_readings.exact_match(segment).is_some() {
                 Some((segment.clone(), segment.clone(), None))
             } else {
                 None
@@ -118,8 +134,8 @@ pub fn transform_japanese_text(
             let mut transformer = LanguageTransformer::new(
                 JAPANESE_TRANSFORMS,
                 conditions,
-                adaptive,
-                adaptive_readings,
+                dictionary,
+                dictionary_readings,
             );
 
             let resolve = transformer.resolve(segment);
@@ -204,7 +220,7 @@ pub fn transform_japanese_text(
             continue;
         }
 
-        if !adaptive.is_prefix(&segment.0) && !adaptive_readings.is_prefix(&segment.0) {
+        if !dictionary.is_prefix(&segment.0) && !dictionary_readings.is_prefix(&segment.0) {
             result.push(segment.clone());
             i += 1;
             continue;
@@ -216,8 +232,8 @@ pub fn transform_japanese_text(
         while curr_check < output.len() {
             let data = output[i..=curr_check].iter().map(|it| &it.0).join("");
 
-            if either_dict_has_prefix(&data, adaptive, adaptive_readings) {
-                if either_dict_has_exact(&data, adaptive, adaptive_readings) {
+            if either_dict_has_prefix(&data, dictionary, dictionary_readings) {
+                if either_dict_has_exact(&data, dictionary, dictionary_readings) {
                     key_with_boundary = curr_check + 1;
                 }
 
@@ -248,15 +264,21 @@ pub fn transform_japanese_text(
 
     result
         .into_iter()
-        .map(|it| {
-            let text = if let Some(it) = it.2 {
+        .map(|mut it| {
+            let mut text = if let Some(it) = it.2 {
                 it
             } else {
                 it.1.clone()
             };
 
-            let freq_a = adaptive_readings.exact_match(&text).flatten_ref();
-            let freq_b = adaptive.exact_match(&text).flatten_ref();
+            if is_fully_kana(&it.0)
+                && let Some(freq) = dictionary_readings.exact_match(&it.0)
+            {
+                return (it.0.clone(), it.0.clone(), *freq);
+            }
+
+            let freq_a = dictionary_readings.exact_match(&text).flatten_ref();
+            let freq_b = dictionary.exact_match(&text).flatten_ref();
 
             let freq = match (freq_a, freq_b) {
                 (None, None) => None,
@@ -315,8 +337,8 @@ mod test {
                 // panic!();
                 // println!("{:#?}", group_inflected(segments));
 
-                let mut adaptive = TreeMap::<CString, Option<usize>>::new();
-                let mut adaptive_readings = TreeMap::<CString, Option<usize>>::new();
+                let mut d = TreeMap::<CString, Option<usize>>::new();
+                let mut dictionary_readings = TreeMap::<CString, Option<usize>>::new();
 
                 let lines = BufReader::new(File::open("/home/nulliel/Result_45.csv").unwrap()).lines();
                 for line in lines.map_while(Result::ok) {
@@ -329,18 +351,18 @@ mod test {
                             let freq = usize::from_str_radix(right, 10).ok();
 
                             if left != r#""""# {
-                                adaptive.insert(CString::new(left).unwrap(), freq);
+                                d.insert(CString::new(left).unwrap(), freq);
                             }
 
                             if middle != r#""""# {
-                                adaptive_readings.insert(CString::new(middle).unwrap(), freq);
+                                dictionary_readings.insert(CString::new(middle).unwrap(), freq);
                             }
                         }
                     }
                 }
 
                 // let mut transform = TextTransform::new("言っても".to_owned());
-                // let resolve = transform.resolve(&adaptive);
+                // let resolve = transform.resolve(&d);
                 // println!("{:#?}", resolve);
                 // panic!();
 
@@ -354,7 +376,7 @@ mod test {
                 for (segment, inflects) in &segments {
                     if *inflects {
                         let mut transform = TextTransform::new(segment.to_owned());
-                        let resolve = transform.resolve(&adaptive);
+                        let resolve = transform.resolve(&d);
 
                         if resolve.is_empty() {
                             output.push((segment.clone(), segment.clone()));
@@ -406,7 +428,7 @@ mod test {
                         continue;
                     }
 
-                    if !adaptive.contains_key(&CString::new(segment.0.as_bytes()).unwrap()) {
+                    if !d.contains_key(&CString::new(segment.0.as_bytes()).unwrap()) {
                         result.push(segment.clone());
                         i += 1;
                         continue;
@@ -416,7 +438,7 @@ mod test {
                     let mut curr_check = i + 2;
 
                     while curr_check <= output.len()
-                        && let Some(prefix) = adaptive.get_prefix(
+                        && let Some(prefix) = d.get_prefix(
                             &CString::new(
                                 output[i..curr_check]
                                     .iter()
@@ -427,7 +449,7 @@ mod test {
                             .unwrap(),
                         )
                     {
-                        if adaptive.contains_key(
+                        if d.contains_key(
                             &CString::new(
                                 output[i..curr_check]
                                     .iter()
@@ -464,10 +486,10 @@ mod test {
                 let result = result
                     .into_iter()
                     .map(|it| {
-                        let freq = adaptive
+                        let freq = d
                             .get(&CString::new(it.0.as_bytes()).unwrap())
                             .or_else(|| {
-                                adaptive_readings
+                                dictionary_readings
                                     .get(&CString::new(it.0.as_bytes()).unwrap())
                                     .or(None)
                             });

@@ -8,6 +8,9 @@ use std::pin::Pin;
 
 use insta::assert_snapshot;
 use insta::assert_yaml_snapshot;
+use language_pack::segment::TextSegmenter;
+use language_pack_jp::segment::JapaneseTextSegmenter;
+use language_pack_jp::transform::group_inflected;
 use language_pack_jp::transform::transform_japanese_text;
 use trie_rs::map::Trie;
 
@@ -123,6 +126,59 @@ fn load_dictionaries() -> (
 }
 
 #[test]
+fn check_inflection_breakpoints() {
+    let segmenter = JapaneseTextSegmenter::new();
+
+    let tests = [
+        "響いてた",
+        "くる",
+        "駆け寄ってくる",
+        "駆け寄って",
+        "ついて",
+        "たとえ雨が降っても、外に出よう。",
+        "雨が降ったけれど、外に出た。",
+        "漬けこんでやろう",
+        "臭くない",
+        "名前は",
+        "ある",
+        "本がすぐそこにあるのに",
+        "なった",
+        "泣きそうになった",
+        "という",
+        "すぐそこ",
+        "すぐそこに",
+        "おばあさん",
+        "というおばあさん",
+        "預けられていた", // Should fully match
+
+                          // マインは蜘蛛の巣が怖いのか仕方がないな父さんが取ってやろう
+                          // CURR: [父][さんが][取って][やろう]
+                          // GOOD: [父さん][が][取って][やろう]
+                          //
+                          // TO FIX THIS, WE SHOULD MAKE SURE THAT PARTICLES ARE NOT EVALUATED
+                          //
+                          // Checks should be histeruics based. If a word was not inflicted and is all kana
+                          // then we should prefer a kana lookup if one exists, only falling back to reading
+                          // based lookups if one does not exist.
+                          //
+                          // If it was inflicted, :shrug:
+
+                          // のところにはわたしと同じような子供が
+                          // 溶かした鍋に[入れたり][出したり]する何度も
+                          //
+                          //
+                          // 面白くない   [面][白くない] -> [面白くない]
+
+                          // 「……行きたくない」 is turning into okonai
+    ];
+
+    for test in tests {
+        let result = group_inflected(segmenter.segment(test, false));
+        assert_yaml_snapshot!(result)
+    }
+}
+
+#[test]
 fn check_regressions() {
     let (_buf, dictionary, dictionary_readings) = load_dictionaries();
 
@@ -164,11 +220,11 @@ fn check_regressions() {
 
                           // のところにはわたしと同じような子供が
                           // 溶かした鍋に[入れたり][出したり]する何度も
-        //
-        //
-        // 面白くない   [面][白くない] -> [面白くない]
+                          //
+                          //
+                          // 面白くない   [面][白くない] -> [面白くない]
 
-        // 「……行きたくない」 is turning into okonai
+                          // 「……行きたくない」 is turning into okonai
     ];
 
     for test in tests {

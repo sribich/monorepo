@@ -3454,6 +3454,26 @@ pub const JAPANESE_TRANSFORMS: &[Transform] = &[
         ],
     },
     Transform {
+        name: "-やる",
+        description: indoc! {"
+            TODO
+        "},
+        rules: &[
+            suffix_inflection(
+                "てやる",
+                "て",
+                Conditions::V1.with_subconditions(),
+                Conditions::TE.with_subconditions(),
+            ),
+            suffix_inflection(
+                "でやる",
+                "で",
+                Conditions::V1.with_subconditions(),
+                Conditions::TE.with_subconditions(),
+            ),
+        ],
+    },
+    Transform {
         name: "-き",
         description: indoc! {"
             Attributive form (連体形) of i-adjectives. An archaic form that remains in modern Japanese.

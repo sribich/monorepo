@@ -2,6 +2,7 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
-- - 預けられていた
-  - 預く
-  - ~
+- - 名前
+  - false
+- - は
+  - false

@@ -59,6 +59,13 @@ impl Morpheme {
             Morpheme::Tagged(tag) => tag.feature.pos2,
         }
     }
+
+    pub fn is_terminator(&self) -> bool {
+        match self {
+            Morpheme::Untagged(_) => false,
+            Morpheme::Tagged(tag) => tag.feature.c_form.starts_with("終止形"),
+        }
+    }
 }
 
 impl Display for Morpheme {

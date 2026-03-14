@@ -3,11 +3,8 @@ source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
 - - 泣きそう
-  - 泣く
-  - 466
+  - true
 - - に
-  - に
-  - 3
+  - true
 - - なった
-  - なう
-  - 43653
+  - true

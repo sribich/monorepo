@@ -1,0 +1,20 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - 本
+  - false
+- - が
+  - false
+- - すぐ
+  - false
+- - そこ
+  - false
+- - に
+  - true
+- - ある
+  - true
+- - の
+  - false
+- - に
+  - false

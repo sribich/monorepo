@@ -1,0 +1,14 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - と
+  - false
+- - いう
+  - true
+- - おば
+  - false
+- - あさ
+  - false
+- - ん
+  - false

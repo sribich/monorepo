@@ -104,6 +104,10 @@ pub const fn is_hiragana(c: char) -> bool {
     ('\u{3040}'..='\u{309f}').contains(&c)
 }
 
+pub fn is_fully_hiragana(s: &str) -> bool {
+    s.chars().all(is_hiragana)
+}
+
 /// Checks whether a given `char` is valid katakana based on the
 /// [Unicode definition of katakana].
 ///
@@ -118,6 +122,10 @@ pub const fn is_hiragana(c: char) -> bool {
 /// [Unicode definition of katakana]: https://www.unicode.org/charts/PDF/U30A0.pdf
 pub const fn is_katakana(c: char) -> bool {
     ('\u{30a0}'..='\u{30ff}').contains(&c)
+}
+
+pub fn is_fully_katakana(s: &str) -> bool {
+    s.chars().all(is_katakana)
 }
 
 /// Kanji appear in the Unicode range 4e00 to 9ffc, with the final Kanji
@@ -148,6 +156,10 @@ pub fn is_kanji(c: char) -> bool {
         || ('\u{2b820}'..='\u{2cea1}').contains(&c) // Extension E
         || ('\u{2ceb0}'..='\u{2ebe0}').contains(&c) // Extension F
         || ('\u{30000}'..='\u{3134a}').contains(&c) // Extension G
+}
+
+pub fn is_fully_kana(s: &str) -> bool {
+    s.chars().all(|c| is_hiragana(c) || is_katakana(c))
 }
 
 pub fn get_reading_from_anki(s: String) -> String {

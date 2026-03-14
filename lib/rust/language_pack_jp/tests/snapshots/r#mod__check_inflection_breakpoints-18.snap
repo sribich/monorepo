@@ -2,6 +2,9 @@
 source: lib/rust/language_pack_jp/tests/mod.rs
 expression: result
 ---
-- - 預けられていた
-  - 預く
-  - ~
+- - おば
+  - false
+- - あさ
+  - false
+- - ん
+  - false
