@@ -156,6 +156,7 @@ fn get_test_segments() -> &'static [&'static str] {
         // "「……行きたくない」",   - Mostly good, but ] is tacked on to the end in splitting
         // "もうしかして",
         // "面白くない",
+        // 赤く染まった akaku is broken up
 
         // トゥーリ != トゥー + リ == トゥーリ
         // Custom Dictionary Needed

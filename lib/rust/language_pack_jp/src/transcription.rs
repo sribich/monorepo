@@ -40,7 +40,32 @@ where
         let source = *self.source(segment);
         let segment = &mut self.0[source];
 
-        segment.time = timestamp;
+        let acceptee = timestamp;
+
+        segment.time = (
+            acceptee
+                .0
+                .map(|it| {
+                    if let Some(t0) = segment.time.0 {
+                        Some(it.min(t0))
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .or(timestamp.0),
+            acceptee
+                .1
+                .map(|it| {
+                    if let Some(t1) = segment.time.1 {
+                        Some(it.max(t1))
+                    } else {
+                        None
+                    }
+                })
+                .flatten()
+                .or(timestamp.1),
+        );
     }
 
     fn try_accept_ranged(
@@ -52,7 +77,33 @@ where
 
         if segment.iter().all(|it| it.source == source) {
             let segment = &mut self.0[source];
-            segment.time = timestamp;
+
+            let acceptee = timestamp;
+
+            segment.time = (
+                acceptee
+                    .0
+                    .map(|it| {
+                        if let Some(t0) = segment.time.0 {
+                            Some(it.min(t0))
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+                    .or(timestamp.0),
+                acceptee
+                    .1
+                    .map(|it| {
+                        if let Some(t1) = segment.time.1 {
+                            Some(it.max(t1))
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+                    .or(timestamp.1),
+            );
 
             true
         } else {
