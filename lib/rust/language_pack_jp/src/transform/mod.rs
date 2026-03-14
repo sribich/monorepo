@@ -194,10 +194,6 @@ pub fn transform_japanese_text(
                         let inflected = it.0.map_or_else(
                             || (base.clone(), None),
                             |inflection| {
-                                if inflection.last_inflection.is_empty() {
-                                    return (base.clone(), None);
-                                }
-
                                 if inflection.last_inflection.len() == base.len() {
                                     return (inflection.inflection, None);
                                 }

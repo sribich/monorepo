@@ -1,0 +1,10 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - そう
+  - そう
+  - 31
+- - 考えれば
+  - 考え
+  - 884

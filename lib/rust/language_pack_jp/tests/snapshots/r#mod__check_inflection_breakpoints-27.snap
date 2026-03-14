@@ -1,0 +1,8 @@
+---
+source: lib/rust/language_pack_jp/tests/mod.rs
+expression: result
+---
+- - そう
+  - false
+- - 考えれば
+  - true

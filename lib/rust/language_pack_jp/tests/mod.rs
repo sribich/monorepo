@@ -153,10 +153,13 @@ fn get_test_segments() -> &'static [&'static str] {
         "思いつかなかった",
         "保存食",
         "信じられない",
+        "そう考えれば",
         // "「……行きたくない」",   - Mostly good, but ] is tacked on to the end in splitting
         // "もうしかして",
         // "面白くない",
         // 赤く染まった akaku is broken up
+        // 気が付いた -- When we are doing word combinations, we are not basing them off of the
+        //              roots at all, so we are missing when they are inflected.
 
         // トゥーリ != トゥー + リ == トゥーリ
         // Custom Dictionary Needed
