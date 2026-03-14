@@ -80,6 +80,7 @@ export namespace PronunciationSelection {
         word: string
         reading: string
         onIdChange: (_: string) => void
+        isFirst?: boolean
     }
 }
 
@@ -123,7 +124,7 @@ export const PronunciationSelection = (props: PronunciationSelection.Props) => {
     return (
         <>
             {speakerData && (
-                <AudioPlayer src={`${host}/rpc/resource/${speakerData.resourceId}`} autoPlay>
+                <AudioPlayer src={`${host}/rpc/resource/${speakerData.resourceId}`} autoPlay={props.isFirst}>
                     ...
                 </AudioPlayer>
             )}
@@ -148,11 +149,12 @@ export const PronunciationSelection = (props: PronunciationSelection.Props) => {
 export const DefinitionLookup = ({ searchTerm, addCard }) => {
     const { data, refetch } = getWord([searchTerm], { word: searchTerm }, {})
 
-    const components = (data?.definitions ?? []).map((definition) => (
+    const components = (data?.definitions ?? []).map((definition, idx) => (
         <DictionaryEntry
             key={`${definition.word}${definition.reading}`}
             definition={definition}
             addCard={addCard}
+            isFirst={idx === 0}
         />
     ))
 
@@ -166,10 +168,11 @@ export namespace DictionaryEntry {
     export interface Props {
         addCard?: (reading: string) => void
         definition: DefinitionEntry
+        isFirst?: boolean
     }
 }
 
-export const DictionaryEntry = ({ addCard, definition }: DictionaryEntry.Props) => {
+export const DictionaryEntry = ({ addCard, definition, isFirst }: DictionaryEntry.Props) => {
     const { styles } = useStyles(dictionaryEntryStyles, {})
 
     const [audioId, onIdChange] = useState("")
@@ -211,6 +214,7 @@ export const DictionaryEntry = ({ addCard, definition }: DictionaryEntry.Props) 
                             word={definition.word}
                             reading={definition.reading}
                             onIdChange={onIdChange}
+                            isFirst={isFirst}
                         />
                         <Button onPress={test}>Add Card</Button>
                     </div>
