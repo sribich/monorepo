@@ -6,6 +6,7 @@
     }
   ],
   "rules": {
+    "react-hooks-js/todo": "error",
     "react-hooks-js/config": "error",
     "react-hooks-js/error-boundaries": "error",
     "react-hooks-js/component-hook-factories": "error",
