@@ -8,8 +8,8 @@
     "@sribich/config-typescript": "0.0.0",
     "@sribich/tsbuild": "0.0.0",
     "@typescript-eslint/parser": "8.54.0",
-    "eslint": "9.39.2",
     "eslint-plugin-react-hooks": "7.0.1",
+    "oxlint": "1.55.0",
     "typescript": "5.9.3",
     "typescript-language-server": "5.1.3"
   }

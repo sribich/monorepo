@@ -6,4 +6,4 @@ tasks:
     command: vitest
 
   lint:
-    command: biome lint && eslint
+    command: biome lint; oxlint lint .
