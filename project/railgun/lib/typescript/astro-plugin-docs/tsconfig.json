@@ -1,5 +1,0 @@
-{
-  "extends": ["@sribich/config-typescript/bundler/node22/lib"],
-  "compilerOptions": {},
-  "include": ["src/**/*"]
-}
