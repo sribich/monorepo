@@ -14,6 +14,7 @@ mecrab = { path = "../mecrab" }
 
 [dev-dependencies]
 criterion.workspace = true
+gungraun.workspace = true
 
 [[bench]]
 name = "parsing"
@@ -25,4 +26,8 @@ harness = false
 
 [[bench]]
 name = "dictionary"
+harness = false
+
+[[bench]]
+name = "library_benchmark"
 harness = false

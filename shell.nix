@@ -68,8 +68,11 @@
         cargo-hack
         grcov
         bunyan-rs
+
         valgrind
         cargo-valgrind
+        # TODO: cargo install gungraun-runner
+        kdePackages.kcachegrindk
 
         lldb
         gdb

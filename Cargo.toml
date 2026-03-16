@@ -40,7 +40,7 @@ exclude = [
     "project/obsidian/bin/obsidian-plugin-datatables",
     "project/obsidian/bin/obsidian-plugin-keymaps",
     "project/obsidian/bin/obsidian-plugin-privacy",
-    "project/railgun/bin/docs",
+    "project/railgun/bin/railgun-docs",
 ]
 resolver = "3"
 
@@ -215,6 +215,7 @@ futures-util = "0.3.31"
 getrandom = "0.2"
 gix = "0.74.1"
 graphql-parser = { git = "https://github.com/prisma/graphql-parser" }
+gungraun = "0.17.2"
 hashbrown = "0.16"
 heapless = "0.8.0"
 heck = "0.5.0"
@@ -344,10 +345,18 @@ walkdir = "2.5.0"
 zip = "8.1.0"
 
 ################################################################################
+## Profiler Profile
+################################################################################
+[profile.bench]
+inherit = "release"
+
+debug = true
+strip = "none"
+
+################################################################################
 ## Test Profile
 ################################################################################
 [profile.test]
-# codegen-backend = "llvm"
 debug = true
 strip = "none"
 
@@ -355,24 +364,13 @@ strip = "none"
 ## Dev Profile
 ################################################################################
 [profile.dev]
-# Enable basic optimizations for _our_ code. This additionally fixes some
-# issues with LeakSanitizer not detecting memory leaks in unoptimized builds.
 opt-level = 1
 
 debug = true
 strip = "none"
 
-# debug = false
-# strip = false
-# codegen-backend = "cranelift"
-
 [profile.dev.package."*"]
-# Fully optimize dependencies so that development performance is not bottlenecked
-# by external factors.
-# opt-level = 3
 opt-level = 3
-
-# codegen-backend = "llvm"
 
 ################################################################################
 ## Release Profile

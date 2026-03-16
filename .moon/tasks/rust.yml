@@ -46,6 +46,8 @@ tasks:
 
   cargo:
     command: cargo
+    options:
+      cache: false
 
   geiger:
     command: cargo geiger
